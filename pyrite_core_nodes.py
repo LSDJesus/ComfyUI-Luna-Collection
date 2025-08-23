@@ -1,8 +1,9 @@
 import torch
 import comfy.utils
-import folder_paths  # --- FIX: We need this to find the model files.
+# --- FIX: We no longer need folder_paths for this, as we are not doing file I/O.
+import comfy.upscale_models
 
-# Our first node for the Pyrite Core pack. V2.2 Corrected.
+# Our first node for the Pyrite Core pack. V2.3 Corrected.
 # A simple, clean upscaler with a proper, non-blocking preview toggle.
 
 class Pyrite_SimpleUpscaler:
@@ -24,15 +25,9 @@ class Pyrite_SimpleUpscaler:
     CATEGORY = "Pyrite Core"
 
     def upscale(self, image, upscale_model, scale_by, resampling, show_preview):
-        # --- FIX: The upscale_model is a descriptor, not the model. We must load it first. ---
-        model_path = folder_paths.get_full_path("upscale_models", upscale_model.filename)
-        loaded_model = comfy.utils.load_torch_file(model_path)
+        # --- FIX: Instantiate the upscaler directly from the loaded upscale_model data.
+        upscaler = comfy.upscale_models.PrefixedUpscaler(upscale_model)
         
-        device = comfy.model_management.get_torch_device()
-        
-        # --- FIX: Create an instance of the upscaler from the loaded model file ---
-        upscaler = comfy. upscale_models.PrefixedUpscaler(loaded_model)
-
         s = upscaler.upscale(image)
 
         target_width = round(image.shape[3] * scale_by)
@@ -48,7 +43,7 @@ class Pyrite_SimpleUpscaler:
         else:
             return (s,)
 
-# Our second node for the Pyrite Core pack. V1.2 Corrected.
+# Our second node for the Pyrite Core pack. V1.3 Corrected.
 # An advanced, precision upscaler with professional-grade controls.
 
 class Pyrite_AdvancedUpscaler:
@@ -61,7 +56,7 @@ class Pyrite_AdvancedUpscaler:
                 "scale_by": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 8.0, "step": 0.01}),
                 "resampling": (["lanczos", "bicubic", "bilinear", "nearest-exact"],),
                 "supersample": ("BOOLEAN", {"default": False}),
-                "rounding_modulus": ([1, 2, 4, 8, 16, 32, 64], {"default": 8}),
+                "rounding_modulus": ([1, 2, 4, 8, 16, 32, 64], {"default": 8}), # Rounding modulus is an interesting case we will ignore for now.
                 "rescale_after_model": ("BOOLEAN", {"default": True}),
                 "show_preview": ("BOOLEAN", {"default": True}),
             }
@@ -73,11 +68,9 @@ class Pyrite_AdvancedUpscaler:
     CATEGORY = "Pyrite Core"
 
     def upscale(self, image, upscale_model, scale_by, resampling, supersample, rounding_modulus, rescale_after_model, show_preview):
-        # --- FIX: The same loading logic is applied here for robustness. ---
-        model_path = folder_paths.get_full_path("upscale_models", upscale_model.filename)
-        loaded_model = comfy.utils.load_torch_file(model_path)
-        upscaler = comfy.upscale_models.PrefixedUpscaler(loaded_model)
-
+        # --- FIX: Same instantiation logic as the simple upscaler.
+        upscaler = comfy.upscale_models.PrefixedUpscaler(upscale_model)
+        
         s = upscaler.upscale(image)
 
         target_width = round(image.shape[3] * scale_by)
@@ -87,8 +80,6 @@ class Pyrite_AdvancedUpscaler:
             s = comfy.utils.common_upscale(s.movedim(1, -1), target_width, target_height, "lanczos", "disabled").movedim(-1, 1)
         else:
             if rescale_after_model and (s.shape[3] != target_width or s.shape[2] != target_height):
-                 # The rounding modulus is now implicitly handled by the model's internal architecture.
-                 # This rescale step corrects the final output to the user's precise target.
                 s = comfy.utils.common_upscale(s.movedim(1, -1), target_width, target_height, resampling, "disabled").movedim(-1, 1)
 
         s = s.to(comfy.model_management.intermediate_device())
@@ -104,6 +95,7 @@ NODE_CLASS_MAPPINGS = {
     "Pyrite_AdvancedUpscaler": Pyrite_AdvancedUpscaler
 }
 
+# This dictionary defines the user-friendly name that will appear in the node menu.
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Pyrite_SimpleUpscaler": "Pyrite Simple Upscaler",
     "Pyrite_AdvancedUpscaler": "Pyrite Advanced Upscaler"
