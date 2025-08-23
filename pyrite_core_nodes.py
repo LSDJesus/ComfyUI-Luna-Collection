@@ -1,7 +1,8 @@
 import torch
 import comfy.utils
+import folder_paths  # --- FIX: We need this to find the model files.
 
-# Our first node for the Pyrite Core pack. V2.1 Corrected.
+# Our first node for the Pyrite Core pack. V2.2 Corrected.
 # A simple, clean upscaler with a proper, non-blocking preview toggle.
 
 class Pyrite_SimpleUpscaler:
@@ -23,19 +24,20 @@ class Pyrite_SimpleUpscaler:
     CATEGORY = "Pyrite Core"
 
     def upscale(self, image, upscale_model, scale_by, resampling, show_preview):
+        # --- FIX: The upscale_model is a descriptor, not the model. We must load it first. ---
+        model_path = folder_paths.get_full_path("upscale_models", upscale_model.filename)
+        loaded_model = comfy.utils.load_torch_file(model_path)
+        
         device = comfy.model_management.get_torch_device()
-        image = image.to(device)
+        
+        # --- FIX: Create an instance of the upscaler from the loaded model file ---
+        upscaler = comfy. upscale_models.PrefixedUpscaler(loaded_model)
 
-        # --- FIX: Actually use the upscale_model ---
-        # The model does the primary, intelligent upscaling.
-        s = upscale_model.upscale(image)
+        s = upscaler.upscale(image)
 
-        # --- FIX: Post-model rescale to match user's exact 'scale_by' ---
-        # This ensures the final output size always respects the user's input, even if the model is not an exact 2x/4x.
         target_width = round(image.shape[3] * scale_by)
         target_height = round(image.shape[2] * scale_by)
         
-        # We only perform this final resize if the model's output doesn't already match the target.
         if s.shape[3] != target_width or s.shape[2] != target_height:
             s = comfy.utils.common_upscale(s.movedim(1, -1), target_width, target_height, resampling, "disabled").movedim(-1, 1)
         
@@ -46,7 +48,7 @@ class Pyrite_SimpleUpscaler:
         else:
             return (s,)
 
-# Our second node for the Pyrite Core pack. V1.1 Corrected.
+# Our second node for the Pyrite Core pack. V1.2 Corrected.
 # An advanced, precision upscaler with professional-grade controls.
 
 class Pyrite_AdvancedUpscaler:
@@ -71,24 +73,22 @@ class Pyrite_AdvancedUpscaler:
     CATEGORY = "Pyrite Core"
 
     def upscale(self, image, upscale_model, scale_by, resampling, supersample, rounding_modulus, rescale_after_model, show_preview):
-        device = comfy.model_management.get_torch_device()
-        image = image.to(device)
-        
-        # --- FIX: The upscale_model is now the star of the show ---
-        s = upscale_model.upscale(image)
+        # --- FIX: The same loading logic is applied here for robustness. ---
+        model_path = folder_paths.get_full_path("upscale_models", upscale_model.filename)
+        loaded_model = comfy.utils.load_torch_file(model_path)
+        upscaler = comfy.upscale_models.PrefixedUpscaler(loaded_model)
 
-        # Calculate the final target dimensions based on the original image
+        s = upscaler.upscale(image)
+
         target_width = round(image.shape[3] * scale_by)
         target_height = round(image.shape[2] * scale_by)
 
-        # --- Supersample and Rescale logic now applies *after* the model ---
         if supersample:
-            # Downscale smoothly from the model's large output to the final target size
             s = comfy.utils.common_upscale(s.movedim(1, -1), target_width, target_height, "lanczos", "disabled").movedim(-1, 1)
         else:
-            # --- Rescale After Model Logic (now more direct) ---
             if rescale_after_model and (s.shape[3] != target_width or s.shape[2] != target_height):
-                # The rounding modulus is implicitly handled by the model, so we just need to correct to the final size.
+                 # The rounding modulus is now implicitly handled by the model's internal architecture.
+                 # This rescale step corrects the final output to the user's precise target.
                 s = comfy.utils.common_upscale(s.movedim(1, -1), target_width, target_height, resampling, "disabled").movedim(-1, 1)
 
         s = s.to(comfy.model_management.intermediate_device())
@@ -98,13 +98,12 @@ class Pyrite_AdvancedUpscaler:
         else:
             return (s,)
 
-# This is the standard boilerplate that tells ComfyUI how to register our new node.
+# This boilerplate remains the same.
 NODE_CLASS_MAPPINGS = {
     "Pyrite_SimpleUpscaler": Pyrite_SimpleUpscaler,
     "Pyrite_AdvancedUpscaler": Pyrite_AdvancedUpscaler
 }
 
-# This dictionary defines the user-friendly name that will appear in the node menu.
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Pyrite_SimpleUpscaler": "Pyrite Simple Upscaler",
     "Pyrite_AdvancedUpscaler": "Pyrite Advanced Upscaler"
