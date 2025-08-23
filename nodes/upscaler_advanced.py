@@ -5,7 +5,8 @@ import numpy as np
 from PIL import Image
 import math
 import os
-from ..utils.tiling import pyrite_tiling_orchestrator
+# --- FIX: The arrogant relative import is dead. Long live the confident absolute import.
+from utils.tiling import pyrite_tiling_orchestrator
 
 class ImageModelDescriptor: pass
 
