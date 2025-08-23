@@ -1,9 +1,15 @@
 import torch
 import comfy.utils
-# We don't need any special imports beyond the basics,
-# as we are receiving the already-loaded model object.
+import folder_paths
+import numpy as np
+from PIL import Image
 
-# Our first node for the Pyrite Core pack. V2.4 Corrected.
+# This class is a placeholder for the upscale_model object.
+# It helps type-hinting and makes the code clearer.
+class ImageModelDescriptor:
+    pass
+
+# Our first node for the Pyrite Core pack. V2.5 Final.
 # A simple, clean upscaler built to the correct ComfyUI specifications.
 
 class Pyrite_SimpleUpscaler:
@@ -24,39 +30,43 @@ class Pyrite_SimpleUpscaler:
     FUNCTION = "upscale"
     CATEGORY = "Pyrite Core"
 
-    def upscale(self, image, upscale_model, scale_by, resampling, show_preview):
+    def upscale(self, image: torch.Tensor, upscale_model: ImageModelDescriptor, scale_by: float, resampling: str, show_preview: bool):
         device = comfy.model_management.get_torch_device()
         
-        # --- FIX: Move the model to the GPU before use. ---
         upscale_model.to(device)
-        
-        # Prepare the image tensor for processing
         in_img = image.movedim(-1, -3).to(device)
 
-        # --- FIX: Use the robust tiled_scale utility, treating the model as a callable function. ---
-        # We use the model's inherent scale factor for this primary pass.
         s = comfy.utils.tiled_scale(in_img, lambda a: upscale_model(a), tile_x=512, tile_y=512, overlap=32, upscale_amount=upscale_model.scale)
-
-        # --- FIX: Clean up by moving the model back to the CPU. ---
-        upscale_model.to("cpu")
         
-        # Post-model rescale to match the user's exact 'scale_by' target.
+        upscale_model.to("cpu")
+
         target_width = round(image.shape[3] * scale_by)
         target_height = round(image.shape[2] * scale_by)
         
         if s.shape[3] != target_width or s.shape[2] != target_height:
             s = comfy.utils.common_upscale(s, target_width, target_height, resampling, "disabled")
         
-        # Final formatting and cleanup.
         s = torch.clamp(s.movedim(-3, -1), min=0, max=1.0)
         s = s.to(comfy.model_management.intermediate_device())
 
         if show_preview:
-            return {"ui": {"images": s[0:1]}, "result": (s,)}
+            # --- FIX: Save a temporary preview image and pass its filename to the UI. ---
+            previews = []
+            for i in range(s.shape[0]):
+                preview_image = s[i].cpu().numpy()
+                preview_image = (preview_image * 255).astype(np.uint8)
+                img = Image.fromarray(preview_image)
+                
+                output_dir = folder_paths.get_temp_directory()
+                filename = f"PyritePreview_{torch.randint(0, 2**32, (1,)).item()}.png"
+                img.save(os.path.join(output_dir, filename), "PNG")
+                previews.append({'filename': filename, 'type': 'temp'})
+            
+            return {"ui": {"images": previews}, "result": (s,)}
         else:
             return (s,)
 
-# Our second node for the Pyrite Core pack. V1.4 Corrected.
+# Our second node for the Pyrite Core pack. V1.5 Final.
 # An advanced, precision upscaler built to the same correct specifications.
 
 class Pyrite_AdvancedUpscaler:
@@ -79,13 +89,12 @@ class Pyrite_AdvancedUpscaler:
     FUNCTION = "upscale"
     CATEGORY = "Pyrite Core"
 
-    def upscale(self, image, upscale_model, scale_by, resampling, supersample, rescale_after_model, show_preview):
+    def upscale(self, image: torch.Tensor, upscale_model: ImageModelDescriptor, scale_by: float, resampling: str, supersample: bool, rescale_after_model: bool, show_preview: bool):
         device = comfy.model_management.get_torch_device()
         
         upscale_model.to(device)
         in_img = image.movedim(-1, -3).to(device)
 
-        # --- FIX: The core logic is the same, using the callable model with tiling.
         s = comfy.utils.tiled_scale(in_img, lambda a: upscale_model(a), tile_x=512, tile_y=512, overlap=32, upscale_amount=upscale_model.scale)
         
         upscale_model.to("cpu")
@@ -103,7 +112,19 @@ class Pyrite_AdvancedUpscaler:
         s = s.to(comfy.model_management.intermediate_device())
 
         if show_preview:
-            return {"ui": {"images": s[0:1]}, "result": (s,)}
+            # --- FIX: Same preview logic as the simple upscaler. ---
+            previews = []
+            for i in range(s.shape[0]):
+                preview_image = s[i].cpu().numpy()
+                preview_image = (preview_image * 255).astype(np.uint8)
+                img = Image.fromarray(preview_image)
+                
+                output_dir = folder_paths.get_temp_directory()
+                filename = f"PyritePreview_{torch.randint(0, 2**32, (1,)).item()}.png"
+                img.save(os.path.join(output_dir, filename), "PNG")
+                previews.append({'filename': filename, 'type': 'temp'})
+
+            return {"ui": {"images": previews}, "result": (s,)}
         else:
             return (s,)
 
