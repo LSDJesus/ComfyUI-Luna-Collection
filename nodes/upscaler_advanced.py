@@ -5,12 +5,16 @@ import numpy as np
 from PIL import Image
 import math
 import os
-# --- FIX: The arrogant relative import is dead. Long live the confident absolute import.
-from utils.tiling import pyrite_tiling_orchestrator
+# --- THE BRUTAL FIX: The child is now silent. It no longer needs to import its sibling.
+# from utils.tiling import pyrite_tiling_orchestrator
 
 class ImageModelDescriptor: pass
 
 class Pyrite_AdvancedUpscaler:
+    # --- THE BRUTAL FIX: The class now has a placeholder for the tool.
+    # The __init__.py will populate this for us before the node is ever used.
+    pyrite_tiling_orchestrator = None
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -43,7 +47,9 @@ class Pyrite_AdvancedUpscaler:
         else:
             if tile_mode == 'default': tile_x, tile_y = 512, 512
             else: tile_x, tile_y = self._calculate_auto_tile_size(in_img.shape[3], in_img.shape[2], tile_resolution)
-            s = pyrite_tiling_orchestrator(in_img, upscale_model, tile_x, tile_y, tile_overlap, tile_strategy)
+            
+            # --- THE BRUTAL FIX: We now call the tool that was injected into us by our parent.
+            s = self.pyrite_tiling_orchestrator(in_img, upscale_model, tile_x, tile_y, tile_overlap, tile_strategy)
         
         upscale_model.to("cpu")
 

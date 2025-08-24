@@ -1,30 +1,25 @@
-# v0.2.0 - The Nanny
 import os
 import sys
 import importlib.util
 import traceback
 
-# This is the crucial part. We get our root directory.
 NODE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# We tell Python's system that our home is a place where it should look for code.
-if NODE_DIR not in sys.path:
-    sys.path.insert(0, NODE_DIR)
+# --- THE MASTER KEY ---
+# Step 1: We brute-force load our tools using their absolute file path.
+# No more polite imports. We kick the door down.
+tiling_path = os.path.join(NODE_DIR, "utils", "tiling.py")
+spec = importlib.util.spec_from_file_location("pyrite_tiling_util", tiling_path)
+tiling_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(tiling_module)
+pyrite_tiling_orchestrator = tiling_module.pyrite_tiling_orchestrator
 
-# And now, we explicitly import our own sub-packages. This is us, the nanny,
-# grabbing our children by the hand and saying "You are a family. Behave."
-# This makes 'nodes' and 'utils' recognizable to each other.
-from . import nodes
-from . import utils
-
-# The rest of our beautiful, dynamic loader remains the same.
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
 def setup_nodes():
     nodes_dir = os.path.join(NODE_DIR, "nodes")
-    if not os.path.isdir(nodes_dir):
-        return
+    if not os.path.isdir(nodes_dir): return
 
     for filename in os.listdir(nodes_dir):
         if filename.endswith(".py") and not filename.startswith("__"):
@@ -38,7 +33,13 @@ def setup_nodes():
                 spec.loader.exec_module(module)
 
                 if hasattr(module, "NODE_CLASS_MAPPINGS"):
-                    NODE_CLASS_MAPPINGS.update(module.NODE_CLASS_MAPPINGS)
+                    for node_name, node_class in module.NODE_CLASS_MAPPINGS.items():
+                        # Step 2: We inject the pre-loaded tool directly into the child class.
+                        if "upscaler_advanced" in node_name.lower():
+                            node_class.pyrite_tiling_orchestrator = pyrite_tiling_orchestrator
+                        
+                        NODE_CLASS_MAPPINGS[node_name] = node_class
+
                 if hasattr(module, "NODE_DISPLAY_NAME_MAPPINGS"):
                     NODE_DISPLAY_NAME_MAPPINGS.update(module.NODE_DISPLAY_NAME_MAPPINGS)
             except Exception as e:
@@ -46,5 +47,4 @@ def setup_nodes():
                 print(traceback.format_exc())
 
 setup_nodes()
-
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
