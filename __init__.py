@@ -9,7 +9,7 @@ if NODE_DIR not in sys.path:
 
 # --- THE WARDEN'S DUTY ---
 # 1. We load the shared tool from its file. This is the ONLY place an import across our subdirectories happens.
-from utils.tiling import pyrite_tiling_orchestrator
+from .utils.tiling import pyrite_tiling_orchestrator
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -33,8 +33,10 @@ def setup_nodes():
                     for node_name, node_class in module.NODE_CLASS_MAPPINGS.items():
                         # 2. We find the child that needs the tool.
                         if "Pyrite_AdvancedUpscaler" in node_name:
-                            # 3. We give the child the tool directly.
-                            node_class.pyrite_tiling_orchestrator = pyrite_tiling_orchestrator
+                            # 3. We give the child the tool directly...
+                            # 4. ...and we tell it that the tool is a GUEST, not a LIMB.
+                            # The @staticmethod decorator prevents Python from passing 'self' automatically.
+                            node_class.pyrite_tiling_orchestrator = staticmethod(pyrite_tiling_orchestrator)
                         
                         NODE_CLASS_MAPPINGS[node_name] = node_class
 
