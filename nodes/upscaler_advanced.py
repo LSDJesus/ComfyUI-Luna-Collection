@@ -5,25 +5,23 @@ import numpy as np
 from PIL import Image
 import math
 import os
-# --- THE BRUTAL FIX: The child is now silent. It no longer needs to import its sibling.
-# from utils.tiling import pyrite_tiling_orchestrator
+import torch.nn.functional as F
 
 class ImageModelDescriptor: pass
 
 class Pyrite_AdvancedUpscaler:
-    # --- THE BRUTAL FIX: The class now has a placeholder for the tool.
-    # The __init__.py will populate this for us before the node is ever used.
-    pyrite_tiling_orchestrator = None
-
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
-                "image": ("IMAGE",), "upscale_model": ("UPSCALE_MODEL",),
+                "image": ("IMAGE",),
+                "upscale_model": ("UPSCALE_MODEL",),
                 "scale_by": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 8.0, "step": 0.01}),
-                "resampling": (["lanczos", "bicubic", "bilinear", "nearest-exact"],),
-                "supersample": ("BOOLEAN", {"default": False}), "rescale_after_model": ("BOOLEAN", {"default": True}),
-                "tile_strategy": (["linear", "chess", "none"],), "tile_mode": (["default", "auto"],),
+                "resampling": (["bicubic", "bilinear"],), # Limited to modes supported by F.interpolate
+                "supersample": ("BOOLEAN", {"default": False}),
+                "rescale_after_model": ("BOOLEAN", {"default": True}),
+                "tile_strategy": (["linear", "chess", "none"],),
+                "tile_mode": (["default", "auto"],),
                 "tile_resolution": ("INT", {"default": 512, "min": 256, "max": 4096, "step": 64}),
                 "tile_overlap": ("INT", {"default": 32, "min": 0, "max": 256, "step": 8}),
                 "show_preview": ("BOOLEAN", {"default": True}),
@@ -39,29 +37,39 @@ class Pyrite_AdvancedUpscaler:
         return tile_width, tile_height
 
     def upscale(self, image: torch.Tensor, upscale_model: ImageModelDescriptor, scale_by: float, resampling: str, tile_strategy: str, tile_mode: str, tile_resolution: int, tile_overlap: int, supersample: bool, rescale_after_model: bool, show_preview: bool):
-        device = comfy.model_management.get_torch_device()
-        upscale_model.to(device)
+        device = comfy.model_management.get_torch_device(); upscale_model.to(device);
+        # We now import the orchestrator from the correct, absolute path.
+        from utils.tiling import pyrite_tiling_orchestrator
+        
         in_img = image.movedim(-1, -3).to(device)
         
-        if tile_strategy == "none": s = upscale_model(in_img)
+        if tile_strategy == "none":
+            s = upscale_model(in_img)
         else:
             if tile_mode == 'default': tile_x, tile_y = 512, 512
             else: tile_x, tile_y = self._calculate_auto_tile_size(in_img.shape[3], in_img.shape[2], tile_resolution)
-            
-            # --- THE BRUTAL FIX: We now call the tool that was injected into us by our parent.
-            s = self.pyrite_tiling_orchestrator(in_img, upscale_model, tile_x, tile_y, tile_overlap, tile_strategy)
+            s = pyrite_tiling_orchestrator(in_img, upscale_model, tile_x, tile_y, tile_overlap, tile_strategy)
         
         upscale_model.to("cpu")
 
         target_width = round(image.shape[3] * scale_by); target_height = round(image.shape[2] * scale_by)
-        if supersample: s = comfy.utils.common_upscale(s, target_width, target_height, "lanczos", "disabled")
+        
+        # We now use the GPU-native F.interpolate for all resizing.
+        s_reshaped = s.movedim(-1,1) # Prepare tensor for interpolate
+        
+        if supersample:
+            s_resized = F.interpolate(s_reshaped, size=(target_height, target_width), mode='bicubic', antialias=True)
         else:
             if rescale_after_model and (s.shape[3] != target_width or s.shape[2] != target_height):
-                s = comfy.utils.common_upscale(s, target_width, target_height, resampling, "disabled")
+                s_resized = F.interpolate(s_reshaped, size=(target_height, target_width), mode=resampling, antialias=True)
+            else:
+                s_resized = s_reshaped
 
-        s = torch.clamp(s.movedim(-3, -1), min=0, max=1.0); s = s.to(comfy.model_management.intermediate_device())
+        s = s_resized.movedim(1,-1) # Return tensor to comfy's expected IMAGE format
+
+        s = torch.clamp(s, min=0, max=1.0); s = s.to(comfy.model_management.intermediate_device())
         if show_preview:
-            previews = []
+            previews = [];
             for i in range(s.shape[0]):
                 preview_image = s[i].cpu().numpy(); preview_image = (preview_image * 255).astype(np.uint8); img = Image.fromarray(preview_image)
                 output_dir = folder_paths.get_temp_directory(); filename = f"PyritePreview_{torch.randint(0, 2**32, (1,)).item()}.jpg"
