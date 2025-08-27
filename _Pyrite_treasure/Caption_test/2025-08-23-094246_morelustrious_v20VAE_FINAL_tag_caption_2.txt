@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic_realism, soft_lighting, sensual, ethereal, high-detail, glossy, hyperrealism, boudoir",
+  "pyrite_content_tags": "1girl, nude, lying on back, bed, white bedsheets, pillow, black and white two-tone long hair, looking at viewer, yellow eyes, small breasts, nipples, navel, pussy, anus, clitoris, spread legs, completely nude, indoors, smile, lamp, wooden bedside table, warm light, soft skin, glossy skin, wooden bed frame, streaked hair",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, unnatural skin texture",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on back on bed, white sheets, black and white streaked long hair, yellow eyes, small breasts, nipples, pussy, anus, looking at viewer, soft lighting, hyperrealism, glossy skin, intricate details, eroticism, boudoir, indoors --blurry --bad anatomy --ugly"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, soft lighting, golden hour, ethereal, intimate, seductive",
+  "pyrite_content_tags": "1girl, nude, solo, lying on back, looking at viewer, long multicolored hair, two-tone hair (black and blonde), brown eyes, small breasts, nipples, defined abs, toned body, hands near genitals, spread legs, exposed genitals, lips, fingernails, pillow, bed, satin sheets, navel, wet skin",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies (abs perhaps overdrawn), potentially some minor artifacting",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece nude portrait of a beautiful woman with long black and blonde hair, brown eyes, small breasts, lying on a bed, soft lighting, realistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

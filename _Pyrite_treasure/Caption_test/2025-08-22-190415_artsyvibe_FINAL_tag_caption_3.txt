@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, natural skin tones, high detail, intimate, portrait",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, bed, breasts, nipples, female pubic hair, black hair, long hair, looking at viewer, navel piercing, pillow, tissue box, lips, medium breasts",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight asymmetry, some artifacts on the sheets, hands are ambiguous",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic portrait of a beautiful woman, nude, lying on a bed, black hair, long hair, looking at the viewer, medium breasts, detailed skin, natural skin tones, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

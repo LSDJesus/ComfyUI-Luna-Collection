@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, dreamy, sensual, photorealistic, intimate, golden_hour",
+  "pyrite_content_tags": "woman, lying_down, black_hair, brown_eyes, white_pillow, tan bedding, burgundy leather bra, burgundy leather panties, hands_clasped, sunlight, wooden_chair, green leather chair, white sheets, wooden table, open window, wood floor, cherry blossoms",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual woman with black hair and brown eyes lying on a bed, wearing a burgundy leather bra and panties, hands clasped over her chest, soft sunlight, golden hour, photorealistic"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, intimate, natural_beauty, golden_hour, sensual, calm, realistic",
+  "pyrite_content_tags": "1girl, nude, breasts, nipples, navel, laying on bed, white bedding, pillows, long dark brown hair, light skin, brown eyes, sunlight, indoor, lips, slightly parted, blurred background, bookshelf, various objects,",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic close-up of a nude woman laying on a white bed in the sunlight, breasts and nipples visible, long dark brown hair, soft focus, natural beauty, intimate setting, golden hour lighting"
+}
+```

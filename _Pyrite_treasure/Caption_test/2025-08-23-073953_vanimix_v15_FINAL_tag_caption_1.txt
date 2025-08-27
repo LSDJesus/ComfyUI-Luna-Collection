@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, realistic, sensual, high_detail, bedroom, glossy, anime_style",
+  "pyrite_content_tags": "nude_woman, black_and_white_hair, yellow_eyes, white sheets, bed, window, sunlight, beige_curtains, gold_framed_painting, exposed_breasts, open_legs, fair_skin, wet_skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, blurry_details",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A highly detailed anime woman, black and white hair, yellow eyes, nude, lying on a white bed, soft light through the window, wet skin --realistic --bad anatomy --blurry"
+}
+```

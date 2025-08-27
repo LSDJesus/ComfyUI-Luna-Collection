@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, ethereal, surreal, soft lighting, detailed, idyllic, hyperrealism, painterly, atmospheric",
+  "pyrite_content_tags": "1girl, 2boys, group sex, threesome, nudity, white hair, long white hair, blue eyes, bald heads, pale skin, medium breasts, nipples, navel, standing, arms behind back, black hair ribbons, black earrings, mole, fingers touching genitals, blue sky, green grass, clouds, day, male genitalia, smooth skin, muscular male bodies, lips",
+  "pyrite_sexual_tags": "nudity, fingering, group sex, boy sandwich, pussy",
+  "pyrite_flaw_tags": "bad_hands, anatomy_issues, blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), (2boys), group sex, ethereal lighting, detailed skin, hyperrealism, pale skin, white long hair, blue eyes, bald men, nipples, pussy, fingering, day, green grass, blue sky, clouds, perfect anatomy, masterpiece"
+}
+```

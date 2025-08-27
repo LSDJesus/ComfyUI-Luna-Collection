@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, sensual, erotic, photorealistic, cinematic lighting, soft focus, detailed, suggestive, pristine",
+  "pyrite_content_tags": "1girl, white hair, blue eyes, large breasts, looking at viewer, crop top, blue short-sleeved collared shirt, shirt detail, green thong underwear, high-leg panties, navel, exposed midriff, long white hair, twintails, low twintails, ahoge, hair ornament, covered nipples, bookshelf, books, library, indoors, highleg panties, skin texture, detailed",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((masterpiece))), 1girl, white hair, blue eyes, ((large breasts)), ((looking at viewer)), detailed face, detailed crop top, ((blue short-sleeved collared shirt)), exposed midriff, ((green thong underwear)), high-leg panties, ((twintails)), ahoge, ((hair ornament)), bookshelf background, library setting, soft lighting, photorealistic, sensual, erotic"
+}
+```

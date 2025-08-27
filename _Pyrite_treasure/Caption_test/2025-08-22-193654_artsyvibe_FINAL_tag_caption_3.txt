@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, soft lighting, photorealistic, intimate, domestic, nude, morning light",
+  "pyrite_content_tags": "1girl, solo, black hair, white streak, lying in bed, nude, on her back, breasts, nipples, hand on stomach, parted lips, bedsheets, pillows, bedroom, window, side table, plant",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomy issues, slight blurry artifacts, hands could be better",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic portrait of a beautiful woman with black hair and a white streak, lying nude in bed, soft lighting, sensual, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

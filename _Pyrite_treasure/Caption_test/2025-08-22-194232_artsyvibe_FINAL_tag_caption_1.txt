@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dreamy, sunlight, soft lighting, realistic, sensual, portrait, bedroom",
+  "pyrite_content_tags": "young woman, nude, light skin, black hair, blue eyes, open hands, pink areolas, beige satin bedsheets, white pillows, wooden chair, wooden dresser, books, bedroom, sunlit, soft shadows, long flowing hair, rosy cheeks, slight smile",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A young woman with long black hair and blue eyes, nude, lying on a bed with beige satin sheets, soft sunlight streaming through the window, creating a sensual and dreamy atmosphere, realistic style, soft lighting."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, hyperrealism, soft lighting, bedroom_scene, provocative, focused, tan_lines",
+  "pyrite_content_tags": "1girl, nude, black hair with white streak, long hair, green eyes, tan skin, tanlines, small breasts, nipples, spread legs, pussy, clitoris, open vulva, abs, bed, white satin bedsheets, white pillows, wooden headboard, wooden nightstands, glass lamps, looking at viewer, visible navel, solo, realistic skin texture, droplets, wet, bedroom",
+  "pyrite_sexual_tags": "nudity, pussy, clitoris, open vulva, wet, droplets",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, black hair with white streak, long hair, green eyes, tan skin, tanlines, small breasts, spread legs, open vulva, close-up, wet, droplets, soft lighting, realistic, bedroom, white satin bedsheets, intricate details, high resolution"
+}
+```

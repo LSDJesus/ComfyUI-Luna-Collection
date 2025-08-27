@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high_contrast, soft_lighting, photorealistic, suggestive, erotic, intimate, golden_hour, cinematic_lighting",
+  "pyrite_content_tags": "1girl, nude, lying on bed, spread legs, on back, breasts, small breasts, nipples, pussy, barefoot, multicolored hair (black, white, yellow), yellow eyes, long hair, smile, looking at viewer, ivory satin sheets, cream colored pillows, yellow wall, wooden bedframe, golden lamp, indoor setting, navel, visible lips, realistic skin",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Highly detailed photorealistic image of a sensual young woman, lying nude on a bed with ivory satin sheets and pillows. Her multicolored hair (black, white, yellow) frames her face, with yellow eyes gazing directly at the viewer. Emphasize soft lighting and a golden hour ambiance to enhance the intimate and erotic mood. Include detailed textures like skin, satin, and shadows.  Add a touch of suggestive pose, with spread legs and a smile for added allure. High resolution."
+}
+```

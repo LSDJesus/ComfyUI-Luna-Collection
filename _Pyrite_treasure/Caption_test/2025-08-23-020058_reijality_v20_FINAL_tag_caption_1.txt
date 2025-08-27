@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, contemporary_art, soft_focus, surreal, moody, cinematic_lighting, high_contrast, dreamlike, unsettling",
+  "pyrite_content_tags": "nude_female, white bedsheets, silk pillow, black hair with white streaks, yellow paint splattered on chest and face, green eyes, pale skin, wooden nightstand, dim lighting, relaxed pose, open legs, hand near genitals, defined abdominal muscles",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "jpeg_artifacts, blurry_areas",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman, white bedsheets, black hair with white streaks, green eyes, surreal paint splatter, dramatic lighting, soft focus, high contrast, erotica, cinematic, contemporary art, unsettling, open legs, hand near genitals, defined abs, pale skin."
+}
+```

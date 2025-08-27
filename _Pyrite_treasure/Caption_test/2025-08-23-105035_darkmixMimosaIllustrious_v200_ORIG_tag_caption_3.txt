@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, erotic, hyperrealism, bright lighting, bedroom, suggestive",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, split-color hair, black and white hair, yellow eyes, long hair, breasts, nipples, pussy, spread legs, hands near genitals, bare feet, toes, bed, white sheets, pillow, smile, looking at viewer, navel, small breasts, abs, toes, toenails",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inaccuracies, proportions, lighting inconsistencies",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, anime-style portrait of a woman with split-color black and white hair and yellow eyes, lying on a bed, nude, hands near genitals, photorealistic, (detailed eyes, perfect face:1.2), (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, high_contrast, soft_lighting, sensual, ethereal, smooth_skin, suggestive, bedroom",
+  "pyrite_content_tags": "1girl, nude, lying on bed, white bedsheets, barefoot, multicolored hair (black and white), yellow eyes, small breasts, visible nipples, hand on stomach, navel, pale skin, indoor, bedroom, window with light, smile, upside-down",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "((1girl)), nude, lying on white bedsheets, hand on stomach, black and white streaked hair, yellow eyes, soft lighting, indoor, bedroom, anime style, high-contrast, sensual, ((masterpiece))"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_fantasy, cinematic lighting, high contrast, seductive, sensual, photorealistic, detailed, moody",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, ponytail, yellow eyes, sitting, leather armchair, lingerie, black bra, black panties, choker, navel piercing, breasts, books, indoor, window, bookshelf, looking at viewer",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a seductive woman with long black hair, yellow eyes, wearing black lace lingerie, sitting in a leather armchair in a dimly lit library, cinematic lighting, highly detailed, (artgerm, greg rutkowski:1.2)"
+}
+```

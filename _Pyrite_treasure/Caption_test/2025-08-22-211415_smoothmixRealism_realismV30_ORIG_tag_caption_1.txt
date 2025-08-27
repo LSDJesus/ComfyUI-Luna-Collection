@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_focus, natural_light, sensual, golden_hour, hyperrealism, idyllic, intimate",
+  "pyrite_content_tags": "female, young woman, nude, tan lines, long black hair, brown eyes, smiling, bed, white sheets, wooden headboard, bedroom, sunlight, muscular physique, pink nipples, exposed vulva",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "unnatural_anatomy, blurry, jpg_artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(((realistic))), ((young woman)), nude, long black hair, brown eyes, tan lines, sitting on bed, white sheets, wooden headboard, natural light, soft lighting, hyperrealism, detailed skin,  intimate pose, perfect anatomy, masterpiece"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "natural_light, soft_focus, intimate, sensual, clean, photorealistic",
+  "pyrite_content_tags": "1girl, nude, sitting on a white bed, medium breasts, visible nipples, female pubic hair, brown hair, long hair, brown eyes, natural skin tone, navel visible, looking at viewer, lips, indoors, soft white sheets, window with blinds in the background, arm support, relaxed pose, no clothing, simple background",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, sitting on a white bed, medium breasts, female pubic hair, long brown hair, brown eyes, looking at viewer, natural light, soft focus, photorealistic, intimate, sensual"
+}
+```

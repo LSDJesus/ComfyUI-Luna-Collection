@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, photorealistic, sensual, glossy, anime, detailed, high-resolution",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, on bed, looking at viewer, upside-down, multicolored hair, two-tone hair, yellow eyes, medium breasts, nipples, knees up, smile, suggestive pose, bed, pillow, indoor, breasts apart",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy, weird texture",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic, 1girl, nude, lying on bed, looking at viewer, upside-down, multicolored hair with black and white, yellow eyes, glossy skin, soft lighting, intricate details, (by artgerm, greg rutkowski:1.2)"
+}
+```

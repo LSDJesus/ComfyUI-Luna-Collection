@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, high-contrast, golden_hour, sensual, intimate, soft_focus, detailed skin texture, cinematic lighting, suggestive",
+  "pyrite_content_tags": "1girl, nude, lying on bed, spread legs, tan skin, long black hair, visible pubic hair, small breasts, tan lines on shoulders, navel, golden yellow eyes, full lips, smile, open armpits, white bedsheets, wooden bedframe, cream-colored pillows, table lamp, small breasts, realistic detail, solo, looking at viewer",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, tan skin, long black hair, golden yellow eyes, small breasts, lying on a bed, spread legs, detailed skin texture, soft lighting, looking at viewer, photorealistic, cinematic lighting --ar 3:4 --style expressive"
+}
+```

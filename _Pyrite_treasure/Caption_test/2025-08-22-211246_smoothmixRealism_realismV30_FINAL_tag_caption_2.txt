@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, sensual, photorealistic, golden_hour, alluring, intimate, detailed, warm_tones",
+  "pyrite_content_tags": "one_girl, nude, black_hair, long_hair, tan_skin, brown_eyes, looking_at_viewer, small_breasts, nipples, open_pussy, spread_legs, on_bed, bed, white_pillows, wooden_bed_frame, sunlight, indoors, smile, toned_body, abs, navel, collarbone, smooth_skin, hand_on_pussy, no_clothing, completely_nude",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), detailed skin, realistic, nude, black hair, long hair, tan skin, brown eyes, small breasts, nipples, pussy, spread legs, on bed, white sheets, wooden bed frame, warm sunlight, soft shadows, seductive gaze, intimate, high detail"
+}
+```

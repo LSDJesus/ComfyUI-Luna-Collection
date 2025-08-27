@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "hyperrealism, soft_lighting, anime_style, erotic, sensuous, vibrant_colors, detailed_rendering, dreamlike",
+  "pyrite_content_tags": "nude woman, muscular physique, black and white split hair, yellow eyes, fair skin, white sheets, yellow headboard, wooden bed frame, white pillows, lamp on nightstand, hand on genitals, bed, open legs, visible vulva, exposed nipples",
+  "pyrite_sexual_tags": "nudity, hand_on_genitals",
+  "pyrite_flaw_tags": "anatomical_inconsistencies, unnatural_lighting, over-rendered_skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, hyperrealism nude woman with black and white split hair, yellow eyes, muscular build, open legs, hand on genitals, detailed vulva, lying on white sheets, soft lighting, erotic."
+}
+```

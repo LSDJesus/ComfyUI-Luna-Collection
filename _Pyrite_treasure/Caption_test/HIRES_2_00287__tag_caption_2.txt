@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, wet, sensual, anime, soft lighting, high detail, polished, erotic, suggestive",
+  "pyrite_content_tags": "1girl, white hair, blue eyes, spread legs, nudity, large breasts, inverted nipples, navel, abs, white panties, panties around one leg, white shower, sitting, hair ornament: black flower, explicit, looking at viewer, parted lips, mole under eye, anal, pussy, water droplets, sex toy, object insertion, anal object insertion, mole on chest, shower head, background: white tile",
+  "pyrite_sexual_tags": "nudity, anal, object insertion, oral",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), white hair, blue eyes, spread legs, wet skin, large breasts, inverted nipples, navel, abs, white panties, panties around one leg, white shower, sitting, hair ornament: black flower, explicit, looking at viewer, parted lips, mole under eye, anal, pussy, water droplets, sex toy, object insertion, anal object insertion, mole on chest, shower head, high detail, hyperrealism"
+}
+```

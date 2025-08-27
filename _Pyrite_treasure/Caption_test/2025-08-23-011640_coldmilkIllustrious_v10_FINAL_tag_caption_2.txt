@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "high_contrast, soft_lighting, cinematic_lighting, realistic, seductive, smooth_skin, detailed_textures, sensual",
+  "pyrite_content_tags": "1girl, lying on bed, nudity, on back, spread legs, yellow eyes, black and white hair, small breasts, nipples, pussy, completely nude, white pillow, white satin sheets, wooden bed frame, indoor, looking at viewer, smile, teeth, soft shadows, realistic skin texture",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, lying on satin sheets, spread legs, completely nude, black and white hair, yellow eyes, small breasts, nipples, realistic skin, soft lighting, high-contrast, cinematic lighting, looking at viewer, smile, indoor, wooden bed frame, focus on detail"
+}
+```

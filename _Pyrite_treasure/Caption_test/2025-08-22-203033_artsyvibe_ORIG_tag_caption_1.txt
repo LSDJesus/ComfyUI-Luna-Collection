@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, natural_light, sensual, minimalist, portrait, serene, realistic, intimate, warm_tones",
+  "pyrite_content_tags": "woman, nude, black hair, fair skin, brown eyes, sitting on bed, gray bedsheets, pale skin tone, looking away, gold earring, sunlight, window, neutral background, small ring on finger, bare breasts, natural lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A woman with long black hair and brown eyes reclines on a bed with grey linens, bathed in soft, natural light. Emphasize the sensual nature of the scene with gentle lighting and a neutral background. Include gold earrings and a subtle ring. Focus on the bare breasts and the woman's serene expression."
+}
+```

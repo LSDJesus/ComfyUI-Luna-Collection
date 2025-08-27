@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, sensual, boudoir, natural_lighting, romantic, serene, pastel_tones, realistic",
+  "pyrite_content_tags": "woman, lying down, nude, fair skin, black hair with bangs, brown eyes, gray underwear with tie details, white bedsheets, gray pillows, wooden floor, window with sunlight, arms outstretched, serene expression, small areolas",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual woman with fair skin, long black hair and brown eyes, nude, lying on a bed with white sheets and gray pillows, wearing light gray underwear with bow details, natural lighting, soft focus, serene expression, romantic boudoir photography."
+}
+```

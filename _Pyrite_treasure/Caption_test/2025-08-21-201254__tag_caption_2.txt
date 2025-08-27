@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sun-kissed, natural lighting, serene, seductive, classical, pristine, sensuous, idyllic",
+  "pyrite_content_tags": "1girl, nude, brown hair, hazel eyes, looking at viewer, medium breasts, nipples, navel, bare shoulders, smooth skin, poolside, swimming pool, blue water, terracotta tiles, green hedge, lounge chairs (out of focus), day, outdoor setting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, brown hair, hazel eyes, looking at viewer, medium breasts, nipples, navel, poolside, swimming pool, bright sunlight, photorealistic, sun-kissed skin, soft focus, idyllic, outdoors"
+}
+```

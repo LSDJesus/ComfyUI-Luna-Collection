@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, cinematic, sensual, oiled skin, high detail, erotic, sunny, alluring",
+  "pyrite_content_tags": "1girl, nude, sitting on bed, spread legs, black and white split hair, yellow eyes, looking at viewer, small breasts, nipples, pussy, clitoris, long hair, pale skin, satin sheets, white pillow, wooden bed frame, window, daylight, curtains, lamp, yellow wall, indoors, hand on stomach, completely nude",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, a photorealistic image of a nude woman with split black and white hair, yellow eyes, spread legs, small breasts, and pale skin, sitting on a satin-sheeted bed, bathed in soft, cinematic lighting. The scene is indoors, with a window providing daylight and a yellow wall. The woman looks directly at the viewer, adding to the erotic allure. Include detailed rendering of oiled skin and focus on the feminine anatomy."
+}
+```

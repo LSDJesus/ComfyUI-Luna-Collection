@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, detailed_skin, sensual, realistic, bedroom, high_detail, wet_skin",
+  "pyrite_content_tags": "nude woman, yellow eyes, black and white hair, cat ears, white bedsheets, bedroom, wood frame, golden lamp, white curtains, bed, white pillows, tan skin, exposed vagina, detailed nipples, well defined abs, hands on genitals, painted nails",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, wonky_eyes",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, nude woman, wet skin, muscular abdomen, black and white hair, cat ears, yellow eyes, sensual pose, luxurious bed, realistic, detailed skin, detailed vagina."
+}
+```

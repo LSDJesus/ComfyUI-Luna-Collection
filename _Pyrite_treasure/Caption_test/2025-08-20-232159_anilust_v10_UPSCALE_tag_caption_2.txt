@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, ethereal, sci-fi, soft lighting, pastel, detailed, digital art, anime style",
+  "pyrite_content_tags": "1girl, nude, blue hair, parted lips, pink eyes, fair skin, medium breasts, nipples, navel, blue cybernetic markings on skin, blue cybernetic collar, skull earrings, skull hair ornaments, white flowers, green field, sunset background, looking at viewer, upper body",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, nude, blue hair, pink eyes, detailed, cybernetic markings, cybernetic collar, skull earrings, skull hair ornaments, white flowers, green field, sunset background, soft lighting, anime style"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, erotic_art, sensual, bedroom_setting, soft_lighting, high_detail, expressive_faces, vulnerable_expression, cum_shot",
+  "pyrite_content_tags": "1girl, 1boy, pink hair, red eyes, low twintails, ahoge, open mouth, pink cardigan, white and pink striped socks, white pantyhose, bare breasts, nipples, black hair, cum on face, cum on body, penis, testicles, bed, lamp, bedroom, wood dresser, framed picture",
+  "pyrite_sexual_tags": "nudity, oral, penetration, cum_in_pussy",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), (1boy), sensual anime art, pink hair, red eyes, twintails, open mouth, exposed breasts, pink cardigan, striped socks, pantyhose, penetration, cum on face, cum on body, bedroom setting, soft lighting, detailed background, high quality render"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, erotic, suggestive, polished, soft lighting, detailed shading",
+  "pyrite_content_tags": "1girl, white hair, ahoge, purple eyes, hair ribbon, pigtails, white crop top, pink trim, visible nipples, bike shorts, pink shorts, straddling, couch, midriff, toned abs, visible navel, parted lips, looking at viewer, indoors, painting on wall",
+  "pyrite_sexual_tags": "nudity, suggestive, straddling",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, beautiful anime girl, white hair with pigtails and ribbons, purple eyes, wearing a white crop top with pink trim and shiny pink bike shorts, straddling a couch, looking at the viewer, detailed abs and navel, soft lighting, (by artgerm, ross tran:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, cinematic lighting, elegant, library, classic, art deco, warm tones, soft focus",
+  "pyrite_content_tags": "1girl, solo, indoors, bookshelf, books, library, window, leaning on desk, black jacket, black skirt, long brown hair, looking at viewer, red lipstick, desk, documents, leather bound books, classic style",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "slight blur, overly smooth rendering, slight uncanny valley appearance on the face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a beautiful woman leaning on a wooden desk in a classic library, wearing a black jacket and skirt, long brown hair, red lipstick, books and documents on the desk, cinematic lighting, art by (Greg Rutkowski:1.2)"
+}
+```

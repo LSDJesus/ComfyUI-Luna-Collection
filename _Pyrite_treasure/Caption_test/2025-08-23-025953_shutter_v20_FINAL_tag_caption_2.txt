@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, photorealistic, high-contrast, natural_lighting, wet, erotic, provocative",
+  "pyrite_content_tags": "1girl, nude, on bed, spread legs, cum on body, cum, nipples, pussy, small breasts, white sheets, yellow pillows, black and yellow two-tone hair, long hair, green eyes, looking at viewer, tan skin, navel, lips, realistic, bed frame, wooden nightstands, candle",
+  "pyrite_sexual_tags": "nudity, cum",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, on bed, spread legs, covered in cum, nipples, pussy, small breasts, white sheets, yellow pillows, black and yellow two-tone hair, long hair, green eyes, looking at viewer, realistic, photorealistic, natural lighting, wet skin, intimate, erotic"
+}
+```

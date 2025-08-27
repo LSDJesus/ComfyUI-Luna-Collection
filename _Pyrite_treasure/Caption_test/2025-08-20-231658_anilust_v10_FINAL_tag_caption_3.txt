@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "D",
+  "pyrite_aesthetic_tags": "anime, hyperrealistic, sterile, artificial, clinical, poorly lit, grotesque, plastic, polished",
+  "pyrite_content_tags": "1girl, solo, nude, white hair, long hair, blue eyes, large breasts, nipples, inverted nipples, parted lips, navel, hair ornament, hair ribbon, panties, white panties, panties around one leg, spread legs, sitting, abs, shower head, looking at viewer, sex toy, anal, pussy, explicit, anal object insertion, object insertion",
+  "pyrite_sexual_tags": "nudity, suggestive, anal sex, sex toy",
+  "pyrite_flaw_tags": "anatomical distortions, unnatural skin texture, low-quality rendering, poor lighting, artificial rendering, unsettling proportions, incorrect physics",
+  "pyrite_subjective_quality": "bad quality",
+  "pyrite_direct_prompt_suggestion": "Improvement needed. Focus on anatomical realism, skin texture, and lighting: masterfully detailed nude woman with white hair, blue eyes, large breasts, sitting in a pristine, well-lit bathroom, soft lighting, photorealistic, (by artgerm, greg rutkowski:1.2) --neg: cartoon, anime, bad anatomy, distorted, lowres, blurry"
+}
+```

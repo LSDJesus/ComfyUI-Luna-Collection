@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, soft_lighting, sensual, bedroom, morning_light, clean_lines, natural_skin_tones",
+  "pyrite_content_tags": "woman, nude, black hair, dark eyes, lying on bed, white bedsheets, pillows, sunlight, open window, wooden blinds, wooden floor, chair, blue carpet with floral pattern, pile of clothes, pink towel, blue t-shirt, skin reflections, closed eyes, relaxed pose",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic image of a nude woman with long black hair lying on a bed in soft sunlight, white bedsheets, sensual pose, clean lines, open window with blinds, soft skin reflections"
+}
+```

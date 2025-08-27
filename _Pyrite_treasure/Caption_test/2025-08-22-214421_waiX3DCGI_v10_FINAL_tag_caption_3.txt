@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime-style, sensual, soft-lighting, detailed, glossy, provocative, suggestive",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, two-tone hair (black and white with yellow accents), yellow eyes, looking at viewer, breasts, nipples, hands on stomach, navel, pillow, white satin sheets, ornate bed frame, long hair, implied genitalia",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies (right leg), some artifacts, slightly unnatural skin gloss",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece anime style portrait of a beautiful woman with black and white hair and yellow highlights, yellow eyes, nude, lying on a bed with white satin sheets, soft lighting, detailed rendering, (by artgerm, greg rutkowski:1.2)"
+}
+```

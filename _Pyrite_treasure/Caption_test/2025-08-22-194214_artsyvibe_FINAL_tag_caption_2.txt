@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, serene, realistic, sensual, cinematic_lighting, warm_tones, high-detail, elegant",
+  "pyrite_content_tags": "1girl, solo, long black hair, closed eyes, pale skin, medium breasts, white bra, white panties, underwear, bare navel, navel, lying on bed, on bed, barefoot, white silk bedsheets, bedroom, indoor, window, sunlight, pillow, plant, wooden furniture",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful woman with long black hair, lying on a bed with white silk sheets, wearing a white bra and panties. Soft lighting, realistic, cinematic, indoor setting."
+}
+```

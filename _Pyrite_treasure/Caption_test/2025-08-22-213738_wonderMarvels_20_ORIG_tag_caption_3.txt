@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, sensual, photorealistic, soft lighting, golden tones, ethereal, provocative, digital art",
+  "pyrite_content_tags": "1girl, solo, nudity, lying on back, black hair, red highlights, yellow eyes, small breasts, nipples, long hair, armpits, lips, smiling, pussy, ribs, bed, golden bedsheets, hand on stomach, looking at viewer, nude, fair skin, realistic",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "poor anatomy, unnatural proportions",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece nude portrait of a beautiful woman with black hair and fiery red highlights, yellow cat eyes, small breasts, lying on a golden bed, soft lighting, realistic skin, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

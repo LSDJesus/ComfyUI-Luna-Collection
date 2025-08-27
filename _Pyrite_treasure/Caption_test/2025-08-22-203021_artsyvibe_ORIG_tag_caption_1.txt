@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, natural_lighting, intimate, sensual, bedroom_setting, realistic_skin, serene",
+  "pyrite_content_tags": "young_woman, fair skin, dark hair, brown eyes, nude, exposed breasts, open legs, visible pubic area, sitting on a bed, grey bedsheets, white pillow, wooden headboard, vertical blinds, soft lighting, focused gaze",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A young woman with fair skin, dark flowing hair, and brown eyes sits nude on a bed. Soft, natural lighting, intimate pose, sensual focus."
+}
+```

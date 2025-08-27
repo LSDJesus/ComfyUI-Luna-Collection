@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, realistic, sensual, bedroom, sunlight, natural, warm_tones, intimate, peaceful",
+  "pyrite_content_tags": "1girl, black hair, long hair, closed eyes, topless, medium breasts, visible nipples, white panties, underwear only, navel, lying on a bed, white bedsheets, white pillow, light skin, slender figure, hand over chest, indoor, sunlight streaming through window blinds, potted plants, wooden floor, wooden chair, open box",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, realistic, topless, black hair, long hair, closed eyes, lying on a bed, white bedsheets, soft natural lighting, sunlight streaming through window blinds, intimate, sensual, white panties, medium breasts, visible nipples."
+}
+```

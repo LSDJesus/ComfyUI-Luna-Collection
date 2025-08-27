@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, intimate, elegant",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, nude, lying on bed, yellow eyes, breasts, small breasts, nipples, navel, abs, toned, covering privates, pillow, indoors, looking at viewer, on back",
+  "pyrite_sexual_tags": "nudity, suggestive, covering crotch",
+  "pyrite_flaw_tags": "Anatomy is slightly off. Some details are oversharpened. ",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a woman with black, long hair, lying in bed, yellow eyes, small breasts, nipples, abs, covering privates, soft lighting, sensual, (by artgerm, greg rutkowski:1.2)"
+}
+```

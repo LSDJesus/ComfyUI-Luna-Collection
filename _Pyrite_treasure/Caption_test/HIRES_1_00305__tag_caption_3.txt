@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, photorealistic, soft lighting, suggestive, sensual, detailed, seductive",
+  "pyrite_content_tags": "1girl, white hair, purple eyes, pink hairband, twintails, white shirt, pink trim, crop top, see-through shirt, medium breasts, nipples, pink shorts, white stripes, bike shorts, abs, toned, looking at viewer, indoors, couch, wooden door, framed picture, seductive pose, suggestive",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical distortions, hands are slightly off",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, white hair, purple eyes, pink hairband, twintails, white shirt, pink trim, crop top, see-through shirt, medium breasts, nipples, pink shorts, white stripes, bike shorts, abs, toned, looking at viewer, indoors, on a luxurious couch, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

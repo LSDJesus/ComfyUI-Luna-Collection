@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dreamlike, hyperrealism, soft_lighting, sensual, warm_tones, cinematic_lighting, smooth_skin, angelic, ethereal",
+  "pyrite_content_tags": "nude woman, fair skin, black and white hair, yellow eyes, lying on bed, white bedsheets, wooden headboard, tree painting, framed artwork, white walls, window, curtains, sunbeams, light skin, long hair, perfect skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with white and black hair and golden eyes lies on a bed with white sheets, cinematic lighting, hyperrealism, soft and sensual."
+}
+```

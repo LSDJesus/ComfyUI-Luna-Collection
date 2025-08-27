@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, high_contrast, realistic, sensuous, polished, glistening_skin, romantic, ethereal",
+  "pyrite_content_tags": "woman, lying down, nude, dark_hair, brown_eyes, pale skin, satin_sheets_beige, pillow, breasts, areolas, hands, fingers interlaced, sunlight, glossy skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, jpeg_artifacts, unnatural_skin_texture, distorted_nipples",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, beautiful young woman, nude, lying on satin sheets, glistening skin, soft lighting, high detail, realistic, sunlight"
+}
+```

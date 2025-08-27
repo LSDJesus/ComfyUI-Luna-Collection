@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dark_fantasy, anime, suggestive, erotic, high contrast, detailed",
+  "pyrite_content_tags": "1girl, 1boy, solo, nude, red hair, yellow eyes, smiling, looking at viewer, ass, abs, sex from behind, top-down bottom-up, makima, black stitching, stylized teeth",
+  "pyrite_sexual_tags": "nudity, sex from behind, suggestive",
+  "pyrite_flaw_tags": "anatomy errors, slightly unnatural skin tones",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece illustration of Makima from Chainsaw Man in a suggestive pose, red hair, yellow eyes, looking at the viewer, (explicit:1.2), (detailed skin:1.2), high contrast, artistic lighting"
+}
+```

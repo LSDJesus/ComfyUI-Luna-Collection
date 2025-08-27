@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "glamour_photography, soft_lighting, studio_lighting, sensual, smooth_skin, hyperrealism, bedroom_setting, elegant, realistic",
+  "pyrite_content_tags": "nude_female, caucasian, long_black_hair, olive_skin, light_brown_eyes, hand_on_vagina, hand_in_hair, white_bed_sheets, white_pillow, padded_headboard, wooden_nightstand, gold_lamp, bed, exposed_breast, thin_body",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude Caucasian woman with long black hair and olive skin, lying on a white bed with white sheets and pillows in a bedroom setting. Soft studio lighting, focused on skin texture and sensuality, hyperrealism, realistic."
+}
+```

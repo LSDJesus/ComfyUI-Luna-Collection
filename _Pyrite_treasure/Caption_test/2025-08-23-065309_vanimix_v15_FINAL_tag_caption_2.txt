@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, erotic, sensual, high-key_lighting, cinematic_lighting, hyperrealism, soft_focus, dreamy, glistening, seductive",
+  "pyrite_content_tags": "1girl, lying on a bed, nude, small breasts, spread legs, yellow eyes, black and white two-tone hair, long wavy hair, barefoot, navel, visible teeth, open lips, smiling, white bed sheets, white pillows, wooden headboard, wooden nightstand, green glass lamp, room, indoors, pale skin, visible ribs, realistic skin texture, wet looking skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, unrealistic_proportions, jpg_artifacts, slightly blurry, distorted face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "1girl, nude, lying on a bed, spread legs, yellow eyes, black and white two-tone hair, long wavy hair, cinematic lighting, realistic skin texture, soft focus, highly detailed, masterpiece, wet looking skin"
+}
+```

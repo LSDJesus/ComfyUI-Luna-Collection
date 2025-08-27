@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, detailed_lighting, cinematic_lighting, high_contrast, seductive, sensual, digital_art, dramatic_sky, nocturne",
+  "pyrite_content_tags": "1girl, Makima (Chainsaw Man), red hair, yellow eyes, black shiny sports bra, black latex pants with red stripes, toned body, abs, navel, collarbone, visible lips, railway tracks, railway signals, sunset, power lines, 1boy, white t-shirt, straddling, cowgirl position, penis, vaginal, breasts, outdoors, ringed eyes, pussy",
+  "pyrite_sexual_tags": "sex, penetration, nudity, oral",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, highly detailed) 1girl, Makima (Chainsaw Man), red hair, yellow eyes, wearing black shiny latex sports bra, black latex pants with red stripes, toned body, abs, straddling, cowgirl position, with a railway, dramatic sky, cinematic lighting, perfect anatomy"
+}
+```

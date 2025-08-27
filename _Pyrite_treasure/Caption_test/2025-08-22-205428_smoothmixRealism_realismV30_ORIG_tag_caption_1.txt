@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, intimate, soft_lighting, realistic, high_detail, vulnerable, bedroom",
+  "pyrite_content_tags": "nude_female, brown_hair, brown_eyes, fair_skin, open_legs, hand_on_vagina, male_genitalia, caucasian, beige_bedsheets, wooden_bedframe, bedside_table, warm_lighting, brass_lamp, pillow, arm_raised, slight_smile",
+  "pyrite_sexual_tags": "nudity, oral, penetration",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Realistic erotic photo of a woman with brown hair and brown eyes, fair skin, lying in bed, legs spread, hand on vagina, receiving oral sex, soft lighting, intimate, high detail."
+}
+```

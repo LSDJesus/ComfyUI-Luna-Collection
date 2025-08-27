@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, modern, natural, photorealistic, minimalist, soft lighting, neutral palette",
+  "pyrite_content_tags": "1girl, solo, barefoot, glasses, realistic, blonde hair, long hair, feet, lips, looking at viewer, toes, sitting, spread legs, black-framed eyewear, bare legs, bare shoulders, full body, black bodysuit, brick wall background, exposed skin, neutral color palette, well lit",
+  "pyrite_sexual_tags": "suggestive, nudity",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies, texture issues on the floor",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a beautiful woman with long blonde hair, wearing black glasses, looking directly at the viewer, sitting with legs spread, wearing a black bodysuit, natural lighting, minimalist style, in a concrete-like room. (by artgerm, greg rutkowski:1.2)"
+}
+```

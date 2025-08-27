@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft_lighting, high_detail, anime_style, sensual, inviting, intimate, polished, volumetric_lighting",
+  "pyrite_content_tags": "1girl, nude, lying on bed, white bedsheets, white pillow, multicolor hair (black and white), long hair, streaked hair, yellow eyes, small breasts, nipples, barefoot, hands on stomach, navel, looking at viewer, smiling, brown wooden bed frame, brown wooden nightstand, lamp, picture frame, indoors, completely nude, female, young",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic, anime style, 1girl, nude, lying on bed, white bedsheets, multicolor hair (black and white), yellow eyes, looking at viewer, smiling, soft lighting, intimate, high detail"
+}
+```

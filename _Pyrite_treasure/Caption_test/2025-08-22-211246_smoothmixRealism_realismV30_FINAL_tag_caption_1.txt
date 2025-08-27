@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft_lighting, cinematic_lighting, sensuous, erotic, golden_hour, intimate, warm_tones",
+  "pyrite_content_tags": "young_woman, nude, laying in bed, long black hair, orange eyes, fair skin, smooth skin, small breasts, hands touching genitals, light brown bed sheets, wooden bed frame, white pillows, sunlight, bedroom interior, natural light, soft focus, relaxed expression",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic, young woman, nude, laying in bed, long black hair, orange eyes, hands near genitals, soft lighting, warm colors, cinematic lighting, golden hour, bedroom interior"
+}
+```

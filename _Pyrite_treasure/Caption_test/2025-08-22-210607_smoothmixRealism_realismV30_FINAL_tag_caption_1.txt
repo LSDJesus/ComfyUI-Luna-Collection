@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, soft_lighting, bedroom, natural_light, realism, intimate, warm_tones, delicate",
+  "pyrite_content_tags": "nude_woman, long black hair, bangs, brown eyes, fair skin, small breasts, woman lying on bed, white sheets, wooden bed frame, cream pillow, hand on pubic area, natural pose, bedroom interior, no visible clothing, focused gaze, smooth skin, natural lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, slight_artifacts, poor_hands",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with long black hair and bangs, lying on a bed with white sheets, soft lighting, focused gaze, smooth skin, natural pose, natural lighting, detailed, realistic, bedroom interior, small breasts, hand on pubic area, warm tones, depth of field."
+}
+```

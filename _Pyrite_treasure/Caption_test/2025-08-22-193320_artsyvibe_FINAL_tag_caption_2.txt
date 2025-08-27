@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "doll-like, artificial_beauty, high_detail, studio_lighting, soft_focus, sensual, glamorous, realistic, provocative",
+  "pyrite_content_tags": "1girl, lying on back, nude, breasts, nipples, pussy, yellow eyes, black hair with white streak, long hair, red nail polish, delicate necklace, pale skin, white bedsheet, pillow, sunlight, luxury furniture, golden chair details, uncensored",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "artificial_appearance, plastic_skin, seam_marks, uncanny_valley",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on a bed, realistic skin, black hair with white streak, yellow eyes, red nail polish, soft studio lighting, detailed pussy, high detail, uncensored"
+}
+```

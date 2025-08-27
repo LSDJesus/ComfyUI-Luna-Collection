@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, science_fiction, high-tech, sleek, futuristic, digital_art, cinematic_lighting, dynamic_pose",
+  "pyrite_content_tags": "1girl, solo, full body, looking at viewer, indoors, standing, long silver hair, ponytail, bangs, medium breasts, brown eyes, black skintight bodysuit with glowing golden circuit patterns, fingerless gloves, black boots, holding a black tablet, data center, server racks, monitors, code on screens",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "blurry, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), cyberpunk, science fiction, skintight black bodysuit with glowing golden circuit patterns, long silver hair, ponytail, brown eyes, standing in a data center with server racks and code on the screens, holding a black tablet, dramatic lighting, dynamic pose, ultra detailed, sharp focus"
+}
+```

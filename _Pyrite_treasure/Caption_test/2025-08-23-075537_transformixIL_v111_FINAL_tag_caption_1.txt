@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, soft_lighting, realistic, natural, high_detail, smooth_skin, bedroom_vibe, portrait, seductive",
+  "pyrite_content_tags": "nude_woman, lying on a bed, white sheets, black hair with blonde highlights, fair skin, green eyes, bare breasts, hand on breast, visible pubic region, bedroom setting, natural light, ruffled sheets, beige wall",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with black hair and blonde highlights lies on a white bed, bedroom setting, natural light, soft lighting, high detail, realistic"
+}
+```

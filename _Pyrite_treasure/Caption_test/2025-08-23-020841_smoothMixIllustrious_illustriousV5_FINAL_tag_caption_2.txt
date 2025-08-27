@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "artistic_lighting, sensual, realistic, high_detail, high-contrast, anime_style, elegant, soft_focus",
+  "pyrite_content_tags": "1girl, nude, lying on bed, white bedsheets, two-tone hair (black and white), long hair, yellow eyes, small breasts, bare feet, looking at viewer, navel visible, nipples, indoors, sunlight, bed, sheet grab, barefoot",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "((masterpiece)), 1girl, lying on white silk bedsheets, two-tone black and white hair, yellow eyes, small breasts, nude, artistic lighting, highly detailed, elegant, realistic, sensual, indoors, soft focus, sunlight, cinematic lighting, on back, sheet grab, looking at viewer, (nipples:1.2)"
+}
+```

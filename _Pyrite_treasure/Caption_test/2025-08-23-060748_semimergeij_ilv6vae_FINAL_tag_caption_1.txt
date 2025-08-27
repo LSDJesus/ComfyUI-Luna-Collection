@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft_focus, high-key, natural_light, intimate, art_nouveau, ethereal, minimalist",
+  "pyrite_content_tags": "nude_woman, fair_skin, tan_lines, long_black_hair, blonde_streaks, yellow_highlights, hazel_eyes, open_legs, hand_on_vagina, white_bedding, floral_pattern, yellow_pillows, wood_bedframe",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual, high-key photograph of a nude woman with long black hair and blonde streaks, lying on white bedding with a floral pattern. The woman has tan lines, hazel eyes, and a hand on her vagina. The scene is lit by natural light, with a soft focus aesthetic, in the style of art nouveau."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, high-contrast, cinematic_lighting, surreal, gothic_architecture, muted_tones, stylized, suggestive, urban_decay",
+  "pyrite_content_tags": "1girl, nude, white hair, orange eyes, small breasts, slender physique, pronounced ribs, toned abs, white panties, pulling down panties, pussy, wet fluids, earrings, navel, pierced ears, standing in a European city street, cobblestone street, buildings with detailed architecture, sky, day, people in the background, jewelry, looking to the side",
+  "pyrite_sexual_tags": "nudity, exhibitionism",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, white hair, orange eyes, slender physique, pulling down white panties, pussy, wet fluids, European city street, gothic architecture, high contrast, cinematic lighting, ethereal --ar 3:5 --style expressive"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "stylized, digital art, wet, sensual, hyperrealism, cartoonish, bright, clean, dreamlike, aesthetic",
+  "pyrite_content_tags": "1girl, solo, nude, kneeling, wet skin, dark skin, afro, black hair, brown eyes, parted lips, navel, nipples, toned physique, abs, barefoot, shower, shower stall, tiles, tile wall, looking at viewer, hand covering crotch, hand covering privates, tan lines, butterfly tattoo, minimal background",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies, overly smooth skin, stylized proportions",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A hyperrealistic, wet, stylized portrait of a young woman with dark skin and an afro kneeling in a glass shower stall, nude, with brown eyes, parted lips, and looking at the viewer, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

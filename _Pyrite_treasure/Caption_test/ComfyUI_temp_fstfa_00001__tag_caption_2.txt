@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dramatic_lighting, cinematic, portrait, soft_focus, photorealistic, elegant, sensual, warm_tones",
+  "pyrite_content_tags": "woman, long_hair, brown hair with blonde highlights, green eyes, bare chest, black blazer, black pants, seated, wooden desk, gold pen, white paper, library, bookshelves, antique books, wooden paneling",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a beautiful woman in a library, wearing a black blazer and black pants, bare chest, holding a gold pen, warm lighting, cinematic, detailed bookshelves, antique books, soft focus, elegant, sensual."
+}
+```

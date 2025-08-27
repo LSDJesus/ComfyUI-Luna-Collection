@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, smooth_skin, sensual, erotic, high_detail, studio_lighting, hyperrealistic, fantasy",
+  "pyrite_content_tags": "female, black hair with white highlights, yellow eyes, nude body, bed, white bedsheets, wooden headboard, yellow wall, white pillows, open legs, hands on genitals, small breasts, bare feet, glowing skin, toned muscles",
+  "pyrite_sexual_tags": "nudity, ahegao",
+  "pyrite_flaw_tags": "anatomical_inconsistencies, distorted_anatomy",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, female with black and white hair, yellow eyes, perfect skin, sitting on bed with open legs, hands on genitals, ahegao, hyperrealistic, studio lighting, detailed anatomy, (improve anatomy)."
+}
+```

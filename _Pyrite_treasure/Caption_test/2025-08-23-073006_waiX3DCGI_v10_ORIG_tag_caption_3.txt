@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, suggestive, soft lighting, dreamy, intimate",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, spread legs, looking at viewer, black hair, two-tone hair, yellow eyes, small breasts, nipples, navel, bedsheets, pillows, window, indoor, upside down",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies, eyes are oddly shaped, some artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece nude of a woman with black and white hair, yellow eyes, lying on a bed, spread legs, looking at the viewer, soft lighting, highly detailed, photorealistic (by artgerm, greg rutkowski:1.2)"
+}
+```

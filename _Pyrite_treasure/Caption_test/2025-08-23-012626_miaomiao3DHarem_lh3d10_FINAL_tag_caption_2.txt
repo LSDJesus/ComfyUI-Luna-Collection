@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, high_contrast, studio_lighting, smooth skin, dramatic, hyperrealistic, vibrant colors",
+  "pyrite_content_tags": "1girl, completely nude, pale skin, black and white streaked short hair, heterochromia eyes (yellow, orange), small breasts, nipples, navel, lying on back, upside down, looking at viewer, barefoot, white bed sheet, yellow curtain background, studio setting, pussy",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic, 1girl, completely nude, pale skin, black and white streaked short hair, heterochromia eyes (yellow, orange), small breasts, lying on white silk bed sheet, dramatic studio lighting, yellow curtain background"
+}
+```

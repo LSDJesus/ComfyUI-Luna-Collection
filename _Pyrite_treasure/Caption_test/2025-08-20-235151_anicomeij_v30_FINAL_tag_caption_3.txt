@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "Stylized, clean lines, soft lighting, wet, digital art, ethereal, cartoonish",
+  "pyrite_content_tags": "1girl, solo, nude, kneeling, afro, dark skin, brown eyes, wet skin, navel, barefoot, in shower, bathroom, tile wall, tile floor, water droplets, covering privates, forehead mark, facial mark, toned, abs, flat chest, looking at viewer",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "Anatomy issues, unrealistic water effects, proportions off, bland background",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Highly detailed digital art of a slender dark-skinned woman with an afro, kneeling in a shower, water glistening on her skin, soft lighting, expressive brown eyes, a gentle expression, detailed tile background, (by artgerm, alphonse mucha:1.2)"
+}
+```

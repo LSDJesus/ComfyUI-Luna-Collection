@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "fantasy_art, high-contrast, cinematic_lighting, opulent, detailed_texture, digital_painting, seductive, glamorous, surreal",
+  "pyrite_content_tags": "young_woman, long_hair, black and white hair, yellow eyes, smiling, nude, pale skin, white bedsheets, wooden headboard, wooden nightstand, candle lamp, golden yellow wall decor, bare breast, fingers touching stomach, bedroom",
+  "pyrite_sexual_tags": "nudity, seductive",
+  "pyrite_flaw_tags": "blurry, over-processed",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A seductive young woman with black and white hair and glowing yellow eyes, nude, lying on a bed, cinematic lighting, high detail, golden yellow wall, digital painting"
+}
+```

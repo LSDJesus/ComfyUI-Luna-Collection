@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, warm_lighting, soft_focus, natural_skin, realistic, mature_erotica, tasteful",
+  "pyrite_content_tags": "brunette woman, brown hair, hazel eyes, nude, pierced navel, pale skin, outstretched arm, hand on vulva, man below, pale skin, male torso, exposed penis, beige bed sheets, two beige pillows, wooden bed frame, natural lighting, indoor, intimate setting, mature couple",
+  "pyrite_sexual_tags": "nudity, oral, penetration",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Sensual image of a nude brunette woman with hazel eyes, engaged in oral sex. Warm lighting, soft focus, intimate setting, realistic skin textures, mature erotica. Include details: beige bed sheets, wooden bed frame."
+}
+```

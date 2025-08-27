@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft lighting, sensual, delicate, detailed skin, bedroom",
+  "pyrite_content_tags": "1girl, nude, breasts, nipples, yellow eyes, black hair, white streak, solo, spread legs, navel, barefoot, lying, long hair, two-tone hair, indoors, sheet grab",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical issues (rib cage), soft hands",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece detailed anime art of a beautiful woman with black and white streaked long hair and bright yellow eyes, nude, lying on a satin bed, soft lighting, looking at viewer, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, realistic, high-contrast, cinematic_lighting, ethereal, intimate, soft_focus, dreamlike",
+  "pyrite_content_tags": "1girl, solo, nude, completely nude, lying on back, black hair, long hair, yellow eyes, looking at viewer, breasts, medium breasts, nipples, pussy, navel, lips, bed, pillow, indoors, chair, window, white bedsheets, small painting on wall, wooden bedside table, disarray, red clothing, wooden floor, soft lighting, skin highlights",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((masterpiece))), (1girl), solo, nude, completely nude, lying on a bed, black hair, long flowing hair, yellow eyes, looking at the viewer, (((detailed nipples))), pussy, navel, lips, indoors, soft lighting, blurry, high contrast, cinematic lighting, realistic, ethereal, dreamlike"
+}
+```

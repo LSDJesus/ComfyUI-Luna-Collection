@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, hyperrealism, soft_lighting, clean, intimate, alluring",
+  "pyrite_content_tags": "1girl, nude, lying on back, long black hair with blonde highlights, brown eyes, visible nipples, small breasts, open legs, hands touching her leg, navel visible, bed, cream colored pillow, cream colored sheets, wooden headboard, fair skin, smiling, lips parted",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with long black hair and blonde highlights, lying on a bed, soft lighting, realistic, intimate, high detail, hyperrealism"
+}
+```

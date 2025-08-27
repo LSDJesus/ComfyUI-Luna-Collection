@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "glamour, hyperrealism, golden_hour, bedroom_scene, soft_lighting, sensuality, detailed_rendering, anime_style, erotic",
+  "pyrite_content_tags": "nude_female, pale skin, black and white hair, yellow highlights, yellow eyes, sitting, bed, satin_sheets, white pillows, wooden headboard, wooden bed frame, window, beige curtains, bedside lamp, gold lamp shade, yellow wall, sunny day, smooth skin, hands on body",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, unrealistic anatomy, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Beautiful nude anime woman with black and white hair, yellow eyes, smooth skin, sitting on a bed with satin sheets, soft lighting, golden hour, hyperrealism, detailed rendering, bedroom scene, window, gold lamp, best quality"
+}
+```

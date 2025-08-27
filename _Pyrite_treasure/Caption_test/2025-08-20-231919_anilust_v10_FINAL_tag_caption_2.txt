@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, detailed_illustration, soft_lighting, sensual, library_setting, high-quality, digital_art",
+  "pyrite_content_tags": "1girl, long white hair, light blue eyes, blue collared shirt, short sleeves, crop top, exposed navel, blue thong, high-leg panties, black hair ornaments, twintails, ahoge, covered nipples, large breasts, library, bookshelves, books, looking at viewer, fair skin, pouty lips, athletic build",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "wonky_eyes, slight_distortion_in_anatomy",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, detailed anime girl with white hair and blue eyes, wearing a light blue crop top collared shirt and a blue thong, standing in a library, bookshelves, soft lighting, high detail, perfect anatomy, looking at viewer."
+}
+```

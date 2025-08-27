@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dreamy, ethereal, soft lighting, realistic, sensual, golden, glossy, digital painting",
+  "pyrite_content_tags": "1girl, nude, lying on back, looking at viewer, long hair, multicolored hair (blonde, black), brown eyes, small breasts, nipples, prominent navel, pillow, bed, golden bed frame, satin sheets, pale skin, glossy skin, open mouth, slight smile",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, unrealistic skin texture, wonky_eyes, artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "1girl, nude, lying on back, looking at viewer, long multicolored hair (blonde, black), brown eyes, small breasts, nipples, prominent navel, dreamy lighting, bed, satin sheets, realistic skin texture, glossy skin, masterpiece, digital painting"
+}
+```

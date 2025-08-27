@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic_lighting, boudoir, sensual, glamorous, high_contrast, elegant, soft_focus, detailed, photorealistic",
+  "pyrite_content_tags": "young woman, Asian, black hair, pale skin, gray eyes, black lace lingerie set, black choker necklace, sitting on a leather armchair, library background, books, window, warm lighting, fire, black leather gloves, dark, moody, sensual pose",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A glamorous Asian woman in black lace lingerie, sitting in a leather armchair in a library, cinematic lighting, soft focus, high-contrast, detailed, sensual pose."
+}
+```

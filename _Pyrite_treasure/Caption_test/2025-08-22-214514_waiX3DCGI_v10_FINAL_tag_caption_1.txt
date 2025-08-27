@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, serene, sensual, photorealistic, clean_lines, satin, digital_art",
+  "pyrite_content_tags": "woman, nude, fair skin, black and white split hair, yellow eyes, bed, white satin sheets, white satin pillow, exposed breasts, hands, floorboards, sunlight, relaxed pose",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime woman with black and white split hair and yellow eyes, lying nude on a bed with white satin sheets, soft lighting, photorealistic, serene, sensual"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, dreamlike, soft_focus, painterly, sensual, romantic, flowing, water_effects, cinematic_lighting",
+  "pyrite_content_tags": "1girl, nude, sitting, long brown hair, small breasts, visible nipples, white flowing fabric, soft lighting, natural light, slight smile, clear skin, fair complexion, neutral eye color, suggestive pose, blurred background, water droplets, wet hair",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "blurry, slight distortion",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, highres), a woman, nude, sitting, long brown hair, small breasts, visible nipples, draped in white flowing fabric, soft lighting, dreamlike, water droplets, cinematic lighting, ethereal, romantic --ar 3:4"
+}
+```

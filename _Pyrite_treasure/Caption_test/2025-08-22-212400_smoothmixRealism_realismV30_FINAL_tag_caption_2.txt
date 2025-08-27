@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, realistic, soft lighting, cinematic lighting, delicate, ethereal, provocative",
+  "pyrite_content_tags": "1girl, nude, lying on bed, light brown hair with blonde highlights, brown eyes, small breasts, toned body, visible abs, visible ribs, open lips, spread legs, hands near genitals, fingernails, cream-colored bedsheets, cream-colored pillow, bed, looking at viewer, nipples",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, lying on a bed, light brown hair with blonde highlights, brown eyes, small breasts, toned body, visible abs, hands near genitals, spread legs, realistic, soft lighting, cinematic lighting, looking at viewer, delicate, ethereal"
+}
+```

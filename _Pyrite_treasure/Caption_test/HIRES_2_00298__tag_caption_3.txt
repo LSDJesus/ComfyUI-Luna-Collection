@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic lighting, hyperrealism, anime-style, erotic, moody, dramatic, urban, post-apocalyptic",
+  "pyrite_content_tags": "1girl, makima (chainsaw man), red hair, yellow eyes, navel, looking at viewer, straddling, black sports bra, black pants, latex clothing, abs, collarbone, vaginal, 1boy, penis, railway tracks, outdoors, traffic lights, power lines, sunset, toned, shiny clothes, solo focus, explicit, breasts, pussy, lips, ringed eyes, hetero, cowgirl position, clothed sex, uncensored",
+  "pyrite_sexual_tags": "nudity, sex, vaginal sex, explicit",
+  "pyrite_flaw_tags": "slight anatomy issues, slight quality variations",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of Makima from Chainsaw Man, red hair, yellow eyes, straddling a man on a railway track at dusk, wearing a black latex sports bra and pants, cinematic lighting, dramatic, hyperrealism, (by artgerm, greg rutkowski:1.2) --explicit --uncensored"
+}
+```

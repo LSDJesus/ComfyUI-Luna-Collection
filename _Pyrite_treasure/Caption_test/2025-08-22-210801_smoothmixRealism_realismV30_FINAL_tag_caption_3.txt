@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, warm_lighting, soft_focus, sensual, realistic, suggestive",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, lying on bed, looking at viewer, nudity, breasts, nipples, navel, pussy, spread legs, abs, toned body, small breasts, pillow, sheets, indoors, sunlight, smile",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "unnatural body proportions, oil artifacts, slight anatomical errors",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, anime style portrait of a beautiful woman with black hair, lying on bed, looking at the viewer, nude, sunlight, soft lighting, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

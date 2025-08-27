@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, wet, hyperrealistic, sensual, soft_lighting, high_detail, erotic, seductive",
+  "pyrite_content_tags": "1girl, white_hair, long_hair, ahoge, pink eyes, inverted nipples, huge breasts, abs, pussy, open legs, white panties, panties around one leg, hair ornament (black bow-shaped), white tiled bathroom, shower head, water droplets, navel, sex toy (purple), anal object insertion, solo, nude, looking at viewer",
+  "pyrite_sexual_tags": "nudity, sex toy, object insertion, anal",
+  "pyrite_flaw_tags": "blurry, wonky_eyes",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((1girl))), white hair, long hair, ahoge, pink eyes, inverted nipples, huge breasts, abs, pussy, open legs, white panties, panties around one leg, hair ornament (black bow-shaped), white tiled bathroom, shower head, water droplets, navel, sex toy (purple), anal object insertion, solo, nude, looking at viewer, ((erotic)), ((sensual)), ((wet)), highly detailed, sharp focus, realistic lighting"
+}
+```

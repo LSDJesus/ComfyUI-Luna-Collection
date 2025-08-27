@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dreamlike, soft lighting, sensual, fantasy, angelic, photorealistic, satin sheets, golden tones",
+  "pyrite_content_tags": "nude female, fair skin, black hair with orange highlights, yellow eyes, right arm raised above head, left hand on stomach, thin body, bed, golden satin sheets, nightstand, book, soft shadows, toned stomach, small breasts",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "anatomy issues, unnatural proportions",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful, nude female with long black hair with orange highlights, lying in bed on golden satin sheets, soft lighting, angelic, dreamlike, photorealistic."
+}
+```

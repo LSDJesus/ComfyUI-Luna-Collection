@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "realistic, soft_lighting, sensual, intimate, high_detail, smooth_skin, bedroom_setting, photorealistic",
+  "pyrite_content_tags": "1girl, nude, long black hair, red eyes, smiling, lying on back on beige bed, visible nipples, small breasts, spread legs, open vulva, hand on pussy, holding cum, beige pillow, wooden headboard, wooden nightstand, lit lamp, beige sheets, navel",
+  "pyrite_sexual_tags": "nudity, cum",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.00), nude, realistic, smiling with red eyes, long black hair, lying on a beige bed, spread legs, holding cum, high detail, soft lighting, intimate, sensual, photorealistic"
+}
+```

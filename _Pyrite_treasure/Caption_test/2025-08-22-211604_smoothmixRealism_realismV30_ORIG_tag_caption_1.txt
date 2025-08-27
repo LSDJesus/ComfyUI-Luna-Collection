@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "hyperrealism, soft_lighting, sensual, artistic_anatomy, warm_tones, detailed_textures, suggestive_pose",
+  "pyrite_content_tags": "nude_woman, brown_hair, brown_eyes, fair_skin, muscular_physique, laying_in_bed, white_sheets, cream_colored_pillow, fingers_near_vagina, open_legs, looking_at_viewer, natural_lighting, bed, nipples",
+  "pyrite_sexual_tags": "nudity, self_touch",
+  "pyrite_flaw_tags": "anatomical_inconsistencies, slightly_off_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A highly detailed hyperrealistic nude woman with brown hair and brown eyes laying in bed, muscular physique, soft lighting, sensual pose, fingers near vagina, white sheets and a cream colored pillow, artistic_anatomy, warm tones."
+}
+```

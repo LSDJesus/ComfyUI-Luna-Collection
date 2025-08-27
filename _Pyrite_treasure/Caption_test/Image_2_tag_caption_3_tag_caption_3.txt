@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, minimalist, ethereal, sensual, photorealistic, delicate, pastel, portrait",
+  "pyrite_content_tags": "1girl, solo, nude, black hair, short hair, looking at viewer, brown eyes, parted lips, sitting, bed, bed sheet, on bed, small breasts, nipples, visible pubic hair, navel, hip bones, skinny, loli",
+  "pyrite_sexual_tags": "nudity, suggestive, loli",
+  "pyrite_flaw_tags": "anatomy, disproportionate body, uncanny valley face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece photograph of a young woman, seated on a bed, with dark hair and brown eyes, realistic skin, soft lighting, (by artgerm, greg rutkowski:1.2), anatomical correctness"
+}
+```

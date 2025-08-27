@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, soft_lighting, natural_skin, realistic, bedroom, warm_tones, high_detail",
+  "pyrite_content_tags": "1girl, nude, lying on bed, on back, looking at viewer, black hair, long hair, brown eyes, small breasts, nipples, pussy, tanlines, tan skin, hand on own stomach, spread legs, white bedsheets, wooden headboard, slight smile, realistic skin texture, visible navel, bare armpits",
+  "pyrite_sexual_tags": "nudity, explicit, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, nude, lying on bed, looking at viewer, black hair, brown eyes, small breasts, visible pussy, hand on stomach, tanlines, soft lighting, realistic skin texture, highly detailed, intimate, warm tones"
+}
+```

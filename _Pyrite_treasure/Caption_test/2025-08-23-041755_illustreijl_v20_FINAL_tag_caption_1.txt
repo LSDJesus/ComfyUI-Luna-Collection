@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, manga, realistic, soft_lighting, sensual, clean, minimalist, bed, natural_light",
+  "pyrite_content_tags": "nude female, Caucasian skin, black and white hair, yellow eyes, bed, white pillows, white sheets, wooden headboard, sunlight, smiling, gold necklace, bare breasts, pubic hair, legs spread, open legs, hand on pubic area, athletic physique, slender, small breasts",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, realistic female, black and white hair, yellow eyes, nude on white sheets, sunlight, sensual pose, minimalist setting, athletic build, detailed skin, high resolution, best quality"
+}
+```

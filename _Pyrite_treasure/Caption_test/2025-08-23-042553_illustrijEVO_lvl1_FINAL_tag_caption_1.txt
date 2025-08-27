@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft_lighting, cinematic_lighting, ethereal, fine_art_photography, portrait, detailed, focused, intimate",
+  "pyrite_content_tags": "nude_female, pale skin, black and white hair, yellow eyes, bed, white satin sheets, wooden headboard, white pillows, bedside lamps, gold genital piercing, slender physique, open legs, exposed vulva",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A stunning close-up fine art photograph of a nude woman with black and white hair, yellow eyes, delicate features, lying on a bed with white satin sheets, soft lighting, detailed textures, cinematic lighting."
+}
+```

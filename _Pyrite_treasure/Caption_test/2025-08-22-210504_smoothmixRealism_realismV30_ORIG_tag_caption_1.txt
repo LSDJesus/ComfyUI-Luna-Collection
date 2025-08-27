@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, ethereal, soft_lighting, hyperrealism, intimate, dreamlike, cinematic",
+  "pyrite_content_tags": "young woman, laying on bed, nudity, black hair, yellow eyes, tanned skin, bare chest, sculpted abs, hand covering pubic area, cream colored bed sheets, cream colored pillow, wooden bedside table, wooden bed frame, green lamp, boudoir, soft focus",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A hyperrealistic image of a young woman with black hair and yellow eyes lying on a bed, nude with her hand covering her pubic area, soft lighting, cream-colored bedding, intimate, cinematic"
+}
+```

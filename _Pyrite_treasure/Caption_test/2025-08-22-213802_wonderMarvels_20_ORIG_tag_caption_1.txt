@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, golden_light, hyperrealism, sensual, glowing, muscular, fantasy, soft_focus, seductive",
+  "pyrite_content_tags": "nude_woman, black_hair, white_streak_hair, yellow_eyes, golden_energy_effects, muscular_physique, relaxed_pose, lying_on_bed, beige_bedding, white_pillow, golden_drape_background, smooth_skin, small_nipples, open_legs, hand_on_chest, bedroom",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, wonky_eyes",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A hyperrealistic nude woman with black hair and a white streak, golden eyes, and glowing golden energy effects over her body. She is lying on a bed with beige bedding in a bedroom, lit with golden light. Sensual pose."
+}
+```

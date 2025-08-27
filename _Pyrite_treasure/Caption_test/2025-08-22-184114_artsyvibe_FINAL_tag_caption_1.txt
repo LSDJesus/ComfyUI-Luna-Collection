@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "gothic, elegant, library, high contrast, dramatic lighting, anime, digital art, sensual",
+  "pyrite_content_tags": "woman, black hair, orange eyes, pale skin, black blazer, black lace bra, black choker with gold clasp, black belt, black pen, white paper, wooden desk, leather chair, library, bookshelves, books, sunlight, open book, dark atmosphere",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A gothic librarian writing in a library, sensual, black lace bra, black blazer, black choker, dramatic lighting, anime style, orange eyes, pale skin"
+}
+```

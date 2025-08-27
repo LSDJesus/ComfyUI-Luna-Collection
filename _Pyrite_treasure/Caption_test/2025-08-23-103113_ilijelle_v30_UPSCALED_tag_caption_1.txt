@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, sensual, erotic, fantasy, high-contrast, soft_lighting, detailed, clean_lines, seductive",
+  "pyrite_content_tags": "nude_female, pale skin, black and white hair, golden eyes, pointed fangs, yellow nail polish, arm resting on crotch, laying on white sheets, ornate wooden bed, nightstand with lamp, pillows, warm_lighting, smooth_skin, defined_abs",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands, blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Hyperrealistic nude female with black and white hair and golden eyes, laying seductively on white sheets with ornate wooden bed, defined abs, and detailed lighting."
+}
+```

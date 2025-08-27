@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "high_contrast, fantasy, sensual, cinematic_lighting, dramatic, boudoir, ethereal, gothic_aesthetic",
+  "pyrite_content_tags": "woman, Caucasian, short, black and white hair, yellow eyes, fangs, nude, white sheets, dark wooden bed frame, golden wallpaper, oil lamp, white pillows, bedroom interior, hand on stomach, pale skin, long fingernails, arched eyebrows",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands, blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with black and white hair and yellow eyes, fangs, laying on a bed, cinematic lighting, high contrast, sensual, gothic aesthetic, fantasy."
+}
+```

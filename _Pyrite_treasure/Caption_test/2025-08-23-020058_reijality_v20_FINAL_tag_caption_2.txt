@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, ethereal, cinematic_lighting, high-contrast, erotic, dreamlike, abstract, modern art, minimalist, hyperrealism",
+  "pyrite_content_tags": "1girl, solo, nude, lying on a bed, white satin sheets, white pillow, black hair with white streaks, yellow eyes, looking at viewer, open legs, flat chest, navel, nipples, yellow paint on body, pussy, lips, wooden nightstand in background, bedroom, soft lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, realistic:1.2) 1girl, nude, lying on a bed, black hair with white streaks, yellow eyes, yellow paint on skin, open legs, looking at the viewer, intimate pose, cinematic lighting, high contrast, (erotic, sensual), sharp focus, detailed skin, ultra-detailed, masterpiece"
+}
+```

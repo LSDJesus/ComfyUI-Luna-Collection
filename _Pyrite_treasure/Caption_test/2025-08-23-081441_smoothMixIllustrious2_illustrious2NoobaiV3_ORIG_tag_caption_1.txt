@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sensual, sunlight, smooth, photorealistic, seductive, inviting, soft_lighting, high_detail",
+  "pyrite_content_tags": "female, nude, white skin, long black hair, white streak in hair, yellow eyes, small breasts, hand over pubic area, hand on bed, bed sheets, soft white sheets, wooden window, sunlight, clean background, bedroom, no clothes",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, bad_hands",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic anime woman, lying on a bed, nude, high detail, black hair with white highlights, golden eyes, cinematic lighting, soft shadows, sunlight through the window, soft sheets, seductive pose, good hands"
+}
+```

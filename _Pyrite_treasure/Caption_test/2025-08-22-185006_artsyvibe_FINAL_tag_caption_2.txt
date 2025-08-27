@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_fantasy, cinematic_lighting, ethereal, gothic_ambiance, high-contrast, sensual, seductive, detailed_textures",
+  "pyrite_content_tags": "1girl, solo, indoors, sitting in an armchair, black hair with white highlight, blunt bangs, long hair, yellow eyes, black lace bra, medium breasts, black lace panties, navel, black choker, crossed legs, leather armchair, window in background, fireplace with fire in background, bookshelf in background, blurry background, book on table, delicate hands, smooth skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), gothic_ambiance, cinematic lighting, ethereal, black hair with white streak, blunt bangs, yellow eyes, black lace lingerie, sitting in leather armchair, fireplace, bookshelf, depth of field, detailed textures, high detail, blurry background, bad hands"
+}
+```

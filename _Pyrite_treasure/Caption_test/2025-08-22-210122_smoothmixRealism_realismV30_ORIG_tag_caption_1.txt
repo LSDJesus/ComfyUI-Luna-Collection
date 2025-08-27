@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft_lighting, sensual, seductive, detailed, smooth skin, focused_lighting, warm_tones",
+  "pyrite_content_tags": "woman, Caucasian, nude, long black hair, amber eyes, laying on bed, white comforter, white pillow, exposed breasts, open legs, visible genitalia, hand on pubic area, wooden bed frame, natural light, tan skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic nude woman with long black hair and amber eyes, laying on a bed, hand on pubic area, soft lighting, warm tones."
+}
+```

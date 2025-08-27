@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, high_detail, soft_lighting, suggestive, sensual, photorealistic, detailed background, anime_art",
+  "pyrite_content_tags": "1girl, white hair, long twin tails, blue eyes, light-blue eyes, hair ornament (black flower-shaped), light-blue collared crop top shirt with logo, covered nipples, light-blue high-leg thong panties, navel, visible abs, indoors, bookshelf, many books, wooden shelves, looking at the viewer, short sleeves",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, white hair, long twin tails, blue eyes, light-blue collared crop top shirt with logo, light-blue high-leg thong panties, navel, visible abs, indoors, bookshelf, many books, looking at the viewer, soft lighting, anime_style, high detail"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, photorealistic, anime, sensual, warm, detailed, bokeh, elegant",
+  "pyrite_content_tags": "1girl, solo, black hair, white streak, amber eyes, sitting, black lace bra, black blazer, open book, pen, writing, library, bookshelf, leather chair, choker, golden necklace, slight smile, looking at viewer, medium breasts, indoors",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "hands slightly off, slight facial asymmetry, inconsistent lighting on the left side of the image",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman with long black hair and a white streak, amber eyes, wearing a black blazer and black lace bra, writing in a book, sitting in a library, soft lighting, photorealistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

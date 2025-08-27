@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, hyperrealism, studio_lighting, provocative, androgynous, soft_focus, intimate, tender",
+  "pyrite_content_tags": "nude_woman, lying_on_bed, white_bedding, black_and_white_hair, yellow_highlights, tan_lines, green_eyes, bare_breasts, open_legs, hands_covering_genitals, wooden_bedframe, silk_bedsheets, perfect_anatomy, smooth_skin, intense_gaze, room lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A hyperrealistic image of a androgynous woman with black and white hair with yellow highlights, green eyes, lying on white bedsheets. Intense studio lighting, focusing on tan lines and smooth skin, bare breasts and open legs with hands covering genitalia, sensual and provocative, highly detailed anatomy."
+}
+```

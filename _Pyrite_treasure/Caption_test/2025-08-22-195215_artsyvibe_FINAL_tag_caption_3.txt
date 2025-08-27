@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, dreamy, romantic, morning light, golden hour",
+  "pyrite_content_tags": "1girl, solo, lying on bed, nude, nudity, black hair, long hair, bangs, closed eyes, medium breasts, nipples, navel, white sheet, satin sheets, indoors, messy room, sunlight, fair skin",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "unnatural skin texture, slight anatomical inconsistencies in hand and breasts, slight over-saturation",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman, nude, lying on a bed with white satin sheets, long black hair, closed eyes, soft lighting, realistic skin texture, morning light, (by artgerm, greg rutkowski:1.2)"
+}
+```

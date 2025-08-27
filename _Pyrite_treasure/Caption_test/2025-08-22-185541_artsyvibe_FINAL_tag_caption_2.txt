@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, futuristic, neon, high-tech, sleek, stylized lighting, cinematic lighting, digital art",
+  "pyrite_content_tags": "1girl, solo, standing, full body, black hair with white highlights, long ponytail, yellow glowing eyes, medium breasts, black skin-tight bodysuit with orange glowing circuitry patterns, black gloves, black boots, holding a black device, computer monitors displaying code, server racks with glowing lights, cables, indoors, blurred background, window, covered navel, thigh gap",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "blurry, none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.00) in a cyberpunk tech laboratory, wearing a black skin-tight bodysuit with glowing orange circuitry, black hair with white highlights, long ponytail, and glowing yellow eyes, futuristic setting, cinematic lighting, detailed, digital art, sci-fi --blurry"
+}
+```

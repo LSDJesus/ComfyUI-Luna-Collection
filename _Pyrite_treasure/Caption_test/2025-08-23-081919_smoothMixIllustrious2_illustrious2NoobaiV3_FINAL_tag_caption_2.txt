@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, sensual, clean_lines, high_detail, digital_art, bright_colors, intimate",
+  "pyrite_content_tags": "1girl, nude, completely nude, black hair, white streaks in hair, long hair, yellow eyes, small breasts, nipples, pussy, spread legs, barefoot, on bed, lying on back, white bedsheet, wooden bed frame, pillow, indoors, looking at viewer, smile, navel, bedside table, lamp, beige wall, shadow, visible skin texture",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, oil_effect, uneven_lighting",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, black hair with white streaks, yellow eyes, small breasts, pussy, spread legs, on bed, lying on back, white bedsheet, soft lighting, anime style, intimate, digital art, high detail"
+}
+```

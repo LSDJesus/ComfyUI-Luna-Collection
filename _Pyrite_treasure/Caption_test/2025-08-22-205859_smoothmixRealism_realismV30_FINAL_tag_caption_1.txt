@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, natural_lighting, soft_focus, intimate, bedroom, skin_texture, realistic",
+  "pyrite_content_tags": "nude_woman, brown hair, black bangs, hazel eyes, smiling, lying on white satin sheets, natural body, open legs, hands near genitals, bed frame, light_wood, pillow, cream-colored pillow, soft_focus, daylight",
+  "pyrite_sexual_tags": "nudity, self_touch",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual nude woman with brown hair and hazel eyes lying on white satin sheets in a bedroom, natural lighting, soft focus, open legs, hand near genitals, realistic skin texture."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, sensual, intimate, bedroom, warm tones",
+  "pyrite_content_tags": "1girl, solo, nude, black hair, long hair, lying on bed, on back, spread legs, hands near genitals, covering crotch, smile, looking at viewer, small breasts, nipples, navel, bed sheets, pillow, armpits, bedroom, lamp",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies, potential uncanny valley effect in face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a beautiful woman with long black hair, lying on a bed, nude, spread legs, looking at the viewer, soft lighting, intimate setting, (by artgerm, greg rutkowski:1.2)"
+}
+```

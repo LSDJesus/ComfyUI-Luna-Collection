@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, sensual, soft lighting, photorealistic, clean, high-detail, glossy, hyperrealism",
+  "pyrite_content_tags": "nude female, fair skin, black hair, white highlights, yellow eyes, lying on bed, white silk bedding, soft folds in sheets, small wooden nightstand, white ceramic pitcher, soft shadows, pale lips, delicate features, athletic physique, neutral background, relaxed pose",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic nude anime girl with black hair and white highlights, yellow eyes, lying on a bed with silk bedding, soft lighting, high detail, soft folds in the sheets, cinematic"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, natural lighting, sensual, intimate, soft focus, delicate, summery",
+  "pyrite_content_tags": "1girl, solo, nude, black hair, long hair, yellow eyes, lying on bed, on back, tan, tanlines, small breasts, nipples, hand on stomach, white bedsheets, pillow, navel, visible genitalia, bare skin, realistic",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues (specifically in the ribcage and torso), inconsistent lighting on the skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece photograph of a young woman with long black hair and yellow eyes, nude, lying on a bed, natural light, tan lines, detailed skin, (by Annie Leibovitz:1.2), (soft focus:0.8), (intimate:0.8)"
+}
+```

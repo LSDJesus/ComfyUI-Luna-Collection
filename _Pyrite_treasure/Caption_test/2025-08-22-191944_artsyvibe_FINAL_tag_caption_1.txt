@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, cinematic_lighting, intimate, serene, natural_light, realistic_rendering, bedroom_scene, sensual",
+  "pyrite_content_tags": "woman, nude, black hair, light skin, closed eyes, gray sweatpants, white bedding, white pillow, sunlight, messy room, brown curtains, window, wooden floor, small breasts, hands clasped, bare chest, bare skin, natural light",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Cinematic shot of a woman with black and white hair in a messy bedroom, lying nude in a bed with soft sunlight illuminating her skin. She wears gray sweatpants, hands clasped over her chest. Soft lighting, intimate, realistic rendering."
+}
+```

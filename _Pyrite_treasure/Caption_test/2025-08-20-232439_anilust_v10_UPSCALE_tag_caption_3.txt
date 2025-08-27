@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, suggestive, digital art, detailed, smooth, polished, dark, sensual, anime-inspired",
+  "pyrite_content_tags": "1girl, 1boy, nude, completely nude, red hair, short hair, yellow eyes, looking at viewer, open mouth, ass, abs, sex, doggystyle, sex from behind, top-down bottom-up, tattoos on face, fangs, intimate, suggestive pose",
+  "pyrite_sexual_tags": "nudity, sex, doggystyle",
+  "pyrite_flaw_tags": "anatomy inconsistencies, slightly unnatural skin texture, slight detail artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece erotic illustration of a red-haired anime girl and a male figure, nude, doggystyle position, looking at the viewer, open mouth, detailed abs, smooth skin, highly detailed, cinematic lighting, (artgerm, greg rutkowski:1.2)"
+}
+```

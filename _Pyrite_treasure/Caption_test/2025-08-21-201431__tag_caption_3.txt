@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, erotic, seductive, sensual, clean lines, shiny",
+  "pyrite_content_tags": "1girl, brown hair, short hair, brown eyes, looking at viewer, pov, oral, fellatio, 1boy, hetero, explicit, deepthroat, nude, navel, lips, bathroom, toilet, indoors",
+  "pyrite_sexual_tags": "nudity, fellatio, deepthroat, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, brown hair, brown eyes, POV, oral sex, fellatio, deepthroat, in a bathroom, clean lines, anime style, highly detailed, glossy skin, (by artgerm, ross tran:1.2)"
+}
+```

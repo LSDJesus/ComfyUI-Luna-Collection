@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sunlit, sensual, photorealistic, anime_inspired, soft_lighting, ethereal, high_detail, delicate",
+  "pyrite_content_tags": "nude_female, white_silk_bedding, bed, black_and_white_hair, yellow_eyes, fair_skin, thin_body, long_hair, wooden_panel_backdrop, bamboo_screen, shadows, hands on body, breasts, bed frame, white_pillow, slight_smile",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic anime-inspired woman with black and white hair, yellow eyes, lying nude on white silk bedding, soft sunlight, wooden panel backdrop, delicate details, high quality render"
+}
+```

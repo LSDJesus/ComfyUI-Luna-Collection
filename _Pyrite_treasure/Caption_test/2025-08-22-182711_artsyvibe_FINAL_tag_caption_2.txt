@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic lighting, gothic, dark_academia, sensual, dramatic, detailed, warm lighting, soft focus, realistic",
+  "pyrite_content_tags": "1girl, sitting at desk, long black hair, blunt bangs, amber eyes, full lips, black bra, black jacket, gold pen, choker with emblem, black choker, visible cleavage, medium breasts, black underwear, book on the table, books on the bookshelf, library, gothic architecture, white paper, pale skin, holding pen, long sleeves, indoors, candle, writing",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, in a library, long black hair, amber eyes, black bra, black jacket, writing, gold pen, choker, visible cleavage, medium breasts, dramatic lighting, cinematic, gothic, dark academia, detailed."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "hyperrealism, soft_lighting, sensual, romantic, dramatic_shadows, photorealistic, warm_tones, smooth_skin",
+  "pyrite_content_tags": "nude_woman, lying_on_bed, black_and_white_hair, yellow_eyes, yellow_nail_polish, white_bedsheets, silk_pillow, bed_frame, natural_light, open_window, brick_wall, lake_view, mountains_in_background, yellow_flowers",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands, unrealistic_musculature, slight_blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Realistic portrait of a nude woman with black and white hair and yellow eyes lying on a silk-covered bed in a sunlit room, open window with lake and mountain view, detailed and sensual, hyperrealism, warm colors, dramatic lighting, soft focus, detailed hands"
+}
+```

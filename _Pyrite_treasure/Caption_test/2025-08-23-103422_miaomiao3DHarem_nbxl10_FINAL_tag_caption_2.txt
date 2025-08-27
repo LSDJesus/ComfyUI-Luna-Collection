@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dreamy, soft lighting, ethereal, delicate, minimalist, sensual, studio lighting, satin, flowing fabric",
+  "pyrite_content_tags": "1girl, nude, lying on back, long black and white streaked hair, yellow eyes, barefoot, hand on stomach, breasts, nipples, bed, white satin bedsheet, white draped curtains, soft shadows, pale skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, bad anatomy, slightly wonky_eyes, jpg_artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece), (1girl), nude, lying on a bed with white satin sheets, soft lighting, long black and white streaked hair, yellow eyes, looking at viewer, studio lighting, cinematic lighting, highly detailed, 8k, (bad anatomy:1.3), (blurry:1.3)"
+}
+```

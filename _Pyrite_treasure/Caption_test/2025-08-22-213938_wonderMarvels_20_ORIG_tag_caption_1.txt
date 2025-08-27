@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "surrealism, golden, ethereal, dreamlike, high-contrast, fantasy art, divine, smooth",
+  "pyrite_content_tags": "nude woman, gold skin, black hair, blonde streaks, yellow eyes, bed, satin sheets, golden pillow, ornate headboard, flame on chest, pale skin, visible ribs, fair skin, hands",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, hands, slightly blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful gold-skinned woman with flowing black and blonde hair, bright yellow eyes, lying on a satin sheet bed with a flame on her chest, surreal, ethereal, fantasy art, highly detailed, sharp focus, cinematic lighting"
+}
+```

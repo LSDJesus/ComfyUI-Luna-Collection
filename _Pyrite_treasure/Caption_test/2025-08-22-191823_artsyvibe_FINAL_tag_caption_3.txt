@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, intimate, bedroom, naturalistic, hyperrealism",
+  "pyrite_content_tags": "1girl, nude, solo, lying on bed, spread legs, long black hair, closed eyes, on back, breasts, nipples, abs, navel, indoors, bedsheets, messy room, chair, radiator",
+  "pyrite_sexual_tags": "nudity, suggestive, uncensored",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies, slightly unnatural pose",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic, 1girl, nude, lying on bed, spread legs, long black hair, closed eyes, soft lighting, intimate bedroom scene, (artgerm, greg rutkowski:1.2)"
+}
+```

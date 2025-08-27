@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "D",
+  "pyrite_aesthetic_tags": "anime, erotic, glossy, hyperrealistic, suggestive, unnatural",
+  "pyrite_content_tags": "1girl, solo, nude, white hair, long hair, ahoge, hair ornament, breasts, huge breasts, inverted nipples, nipples, pussy, spread legs, white panties, panties around one leg, panties, looking at viewer, abs, sex toy, object insertion, anal object insertion, navel, uncensored",
+  "pyrite_sexual_tags": "nudity, anal, suggestive, object insertion",
+  "pyrite_flaw_tags": "unnatural anatomy, distorted proportions, glossy skin effect, generic face",
+  "pyrite_subjective_quality": "bad quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece anime style portrait of a beautiful woman with white hair, long hair, ahoge, hair ornament, huge breasts, inverted nipples, in a bathroom, wearing a pair of white panties around one leg, wet skin, detailed anatomy, (by artgerm, ross tran:1.3)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, photorealistic, soft lighting, ethereal, sensuous, suggestive, high contrast, seductive, detailed skin",
+  "pyrite_content_tags": "1girl, nude, lying on a white bed, looking at viewer, long black and white streaked hair, yellow eyes, visible nipples, medium breasts, smooth skin, barefoot, white pillows, white bedsheets, small smile, navel, pussy, visible vulva, wooden nightstand, ceramic water jug",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic, (1girl:1.00), nude, lying on a white bed, looking at viewer, long black and white streaked hair, yellow eyes, visible nipples, medium breasts, smooth skin, (soft lighting), detailed skin"
+}
+```

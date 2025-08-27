@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, cinematic_lighting, intimate, modern, high-contrast, oiled_skin, studio_lighting",
+  "pyrite_content_tags": "nude woman, fair skin, black hair with white streaks, yellow eyes, lying on a bed, white pillows, white sheets, wooden bed frame, wooden nightstand, gold lamp, yellow wall, indoor, natural light, wet hair",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a nude woman with black and white streaked hair, yellow eyes, lying on a bed with white sheets, in a room with cinematic lighting. Oiled skin. RAW photo."
+}
+```

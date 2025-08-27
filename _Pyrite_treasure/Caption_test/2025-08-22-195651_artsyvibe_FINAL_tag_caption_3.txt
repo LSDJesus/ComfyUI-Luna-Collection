@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, ethereal, dreamlike, romantic, sensual, photorealistic, classical, dramatic, fallen_angel",
+  "pyrite_content_tags": "1girl, solo, breasts, nipples, black hair, long hair, closed eyes, lying on back, topless, white sheet, white clothing, torn clothes, see-through, indoors, blood, torn dress, messy room, wood floor, sunny, serene",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies, slight blurring, some artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman with long black hair lying on a white sheet, topless, soft lighting, sunlight, torn white dress, serene, photorealistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

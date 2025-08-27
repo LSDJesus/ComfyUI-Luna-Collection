@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, ethereal, pastel colors, soft lighting, cafe, digital art, polished",
+  "pyrite_content_tags": "1girl, solo, white hair, pink eyes, underwear, bra, panties, breasts, navel, white skin, long hair, twintails, ahoge, hair ornament, standing, cafe, table, iced coffee, drinking straw, looking at viewer, bracelet, jewelry, collarbone",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical issues, proportions slightly off, visible artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece anime art, pale-skinned woman, white hair, pink eyes, wearing a pink floral bra and panties, standing in a cafe, detailed environment, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, vibrant, aquatic, ethereal, high-detail, cinematic lighting, soft_shading",
+  "pyrite_content_tags": "1girl, solo, green hair, double buns, braided buns, hands on face, hands on cheeks, looking at viewer, open mouth, white collared shirt, wet white shirt, water droplets, blush, coral, light blue eyes, yellow and orange irises",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece anime illustration of a young woman with double braided green buns, white collared shirt, and light blue eyes, hands on her cheeks in front of a background with coral, wet clothing, water droplets, cinematic lighting."
+}
+```

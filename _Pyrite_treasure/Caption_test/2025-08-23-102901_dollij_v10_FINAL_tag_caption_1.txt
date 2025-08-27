@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, sensual, detailed, romantic, digital_art, floral, smooth, dreamlike, soft_focus",
+  "pyrite_content_tags": "woman, lying on bed, nude, black hair with white streaks, yellow eyes, yellow skin, yellow nails, yellow flower details, light tan bedsheets, satin pillows, brass bed frame, open legs, touching herself, dark background, floral elements, realistic skin texture",
+  "pyrite_sexual_tags": "nudity, masturbation, vulva, nipples",
+  "pyrite_flaw_tags": "blurry, digital_artifacts, uneven lighting, anatomical_inconsistencies",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "anime style, a sensual nude woman with black and white hair and yellow eyes on a bed with floral elements, soft lighting, detailed skin, realistic skin texture, realistic vulva, masturbation"
+}
+```

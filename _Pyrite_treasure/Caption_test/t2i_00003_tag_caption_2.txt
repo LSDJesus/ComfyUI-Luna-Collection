@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, romantic, clean lines, pastel_colors, cute, sweet, innocent",
+  "pyrite_content_tags": "1girl, solo, blonde hair, long hair, twintails, blue eyes, red lips, lipstick, makeup, white dress, spaghetti strap dress, medium breasts, cleavage, black choker necklace with a pendant, black bracelet, heart, looking at viewer, pink background, white hearts in background, fair skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), solo, blonde hair, long hair, twintails, blue eyes, red lips, lipstick, makeup, white spaghetti strap dress, cleavage, black choker necklace, black bracelet, heart, looking at viewer, pink background with white hearts, soft lighting, anime style, clean lines, perfect anatomy, high resolution"
+}
+```

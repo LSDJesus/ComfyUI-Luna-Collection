@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "high contrast, cinematic_lighting, detailed, sensual, hyperrealism, anime, digital art, dramatic",
+  "pyrite_content_tags": "1girl, 1boy, red hair, yellow eyes, black latex sports bra, black latex pants with red stripe, toned physique, navel, abs, exposed cleavage, railway tracks, railway signals, power lines, trees, dusk sky, white fabric, tanned skin, ringed eyes, looking at viewer, long hair",
+  "pyrite_sexual_tags": "nudity, penetration, cowgirl, explicit",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, Makima, straddling, cowgirl, penetration, red hair, yellow eyes, black latex sports bra, black latex pants with red stripe, toned abs, dusk sky, cinematic lighting, hyperrealism, detailed, anime"
+}
+```

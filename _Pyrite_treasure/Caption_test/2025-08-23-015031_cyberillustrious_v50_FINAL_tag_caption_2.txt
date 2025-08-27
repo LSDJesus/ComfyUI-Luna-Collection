@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, high-contrast, cinematic lighting, sensual, intimate, hyperrealism, provocative, natural light, realistic",
+  "pyrite_content_tags": "1girl, nude, sitting on a bed, spread legs, spread pussy, looking at viewer, small breasts, nipples, multicolor hair (black, yellow, and turquoise), green eyes, smiling, wet skin, navel, open pussy, silk sheets, white pillow, wooden bed frame, wooden nightstand, lamp, indoor",
+  "pyrite_sexual_tags": "nudity, spread pussy",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, photorealistic), 1girl, nude, sitting on a bed, spread legs, spread pussy, looking at viewer, small breasts, nipples, multicolor hair (black, yellow, and turquoise), green eyes, smiling, wet skin, navel, indoor, sunlight, silk sheets, wooden bed frame, cinematic lighting"
+}
+```

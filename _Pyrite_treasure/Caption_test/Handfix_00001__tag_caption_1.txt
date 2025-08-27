@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "summertime, natural_light, photorealistic, sunny, youthful, candid, scenic, vibrant_colors",
+  "pyrite_content_tags": "young_woman, blonde_hair, blue eyes, teal-green ribbed mini-dress, cut-out detail at chest, long sleeves, holding black leather bag, waterfront, pier, blue water, blue boat, red boat, clear blue sky, bright sunlight, background_cityscape, boat name 'ANN HM'",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A young, beautiful woman with long blonde hair and blue eyes, wearing a teal-green ribbed mini-dress with a cut-out, walking on a pier holding a black leather bag. Bright sunny day, blue water, boats, and a cityscape in the background, photorealistic, natural lighting, summertime."
+}
+```

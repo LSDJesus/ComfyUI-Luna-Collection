@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, sensual, high_detail, digital_art, fantasy, seductive, detailed_skin, realistic_anatomy",
+  "pyrite_content_tags": "female, nude, caucasian skin, black and white hair, yellow highlights, yellow eyes, yellow glowing nipples, white satin sheets, white pillows, golden bed frame, floral wallpaper, exposed chest, hand over genitals, muscular physique",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, half black and white hair with yellow highlights, muscular woman, nude, lying on a bed with satin sheets, yellow eyes, detailed skin, sensual lighting."
+}
+```

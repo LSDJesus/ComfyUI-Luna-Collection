@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, digital_art, soft_lighting, hyperrealistic, smooth_skin, sensual, seductive, detailed_anatomy, sunny",
+  "pyrite_content_tags": "nude_female, long black and white hair, yellow eyes, white bedsheets, wooden bed frame, white pillows, hand on the chest, open legs, blonde strands, sunlight, bed, bare skin, muscular abs, pale skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, sensual nude female, open legs, muscular abs, black and white hair with blonde strands, yellow eyes, white bedsheets, soft lighting, hyperrealistic detail, sunlight, wooden bed frame."
+}
+```

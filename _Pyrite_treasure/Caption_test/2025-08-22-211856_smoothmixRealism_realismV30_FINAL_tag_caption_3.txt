@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, soft focus, sensual, smooth skin, photorealistic, natural lighting, intimate",
+  "pyrite_content_tags": "1girl, solo, nude, on back, bed, pillow, lying, looking at viewer, black hair, orange highlights, small breasts, nipples, pussy, spread legs, hands on body, smooth skin, realistic texture",
+  "pyrite_sexual_tags": "nudity, suggestive, explicit",
+  "pyrite_flaw_tags": "anatomical inconsistencies, unnatural posture, strange substance on chest",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a woman with black hair and orange highlights, lying nude on a bed, looking at the viewer, soft lighting, detailed skin, (artgerm:1.2), (greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sensual, clean lines, detailed, vibrant, soft lighting, suggestive",
+  "pyrite_content_tags": "1girl, solo, large breasts, white hair, blue eyes, twintails, hair ornament, crop top, collared shirt, navel, abs, high-leg panties, g-string, bookshelf, indoors, library, looking at viewer, covered nipples, short sleeves",
+  "pyrite_sexual_tags": "suggestive, nudity",
+  "pyrite_flaw_tags": "anatomical inconsistencies, slight distortion",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of an anime girl with white hair and blue eyes, wearing a blue crop top and high-leg panties, standing in a library, bookshelf in the background, detailed, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, digital_painting, soft_lighting, high_detail, sensuous, erotic, photorealistic",
+  "pyrite_content_tags": "female, nude, fair skin, black and white hair, long hair, yellow eyes, white bedding, white pillow, black headboard, floral patterned pillow, sunlight, hands on body, open legs, visible pubic hair, glossy skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands, unnatural_anatomy",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Beautiful anime girl with black and white hair, yellow eyes, nude, open legs, lying on a white bed, soft lighting, high detail, photorealistic"
+}
+```

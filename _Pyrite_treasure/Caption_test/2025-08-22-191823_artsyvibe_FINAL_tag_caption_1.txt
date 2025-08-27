@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, sensual, cinematic_lighting, realistic, intimate, dreamy, artistic_photography",
+  "pyrite_content_tags": "nude_woman, pale skin, long black hair, brown eyes, lying on white bedsheets, open legs, small breasts, visible pubic hair, room with window, white curtains, wooden chair with white fabric, dark wooden side table, white radiator, messy room, crumpled paper, soft natural light, bed pillows",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual nude woman lying on a bed with soft lighting, realistic, cinematic lighting, long black hair, open legs, visible pubic hair, soft focus"
+}
+```

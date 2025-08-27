@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "cinematic lighting, gothic, sensual, detailed, fantasy, warm colors, realistic, soft focus",
+  "pyrite_content_tags": "woman, bust, black hair with white streak, brown eyes, black blazer, black lace choker, writing, pen with flame design, wooden desk, white paper, stacked books, wooden chair, library, bookshelves, books with golden cover, window with light, warm lighting, fair skin, red lipstick",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "bad_hands, slight_blur, odd_lighting",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A woman in a dark, gothic library, wearing a black blazer, writing with a flaming pen, artistic lighting, nudity, cinematic, realistic. Library with bookshelves and warm lighting, highly detailed."
+}
+```

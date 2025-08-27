@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, wet, ethereal, suggestive, hyperrealism, sensuality, dreamlike, surreal",
+  "pyrite_content_tags": "1girl, solo, nude, completely nude, breasts, nipples, medium breasts, white hair, long hair, blue eyes, looking at viewer, wet skin, navel, armpits, ribs, arms up, suggestive pose, abstract background, pool, pool ladder, standing, blunt bangs, ponytail, pussy",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "poor anatomy",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful anime woman, white hair, blue eyes, nude, wet, suggestive pose, ethereal atmosphere, dreamy lighting, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

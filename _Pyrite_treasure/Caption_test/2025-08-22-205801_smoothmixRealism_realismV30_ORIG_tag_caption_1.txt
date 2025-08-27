@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, ethereal, realistic, soft lighting, intimate, inviting",
+  "pyrite_content_tags": "nude woman, brown hair, red eyes, fair skin, tan lines, beige bedsheets, wooden headboard, wooden nightstand, circular object on nightstand, lying on bed, looking at viewer, hand in hair, small breasts, defined abs, slender physique",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "realistic nude woman, brown hair, red eyes, sensual expression, lying in bed, soft lighting, detailed skin, high-resolution"
+}
+```

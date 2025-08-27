@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sunset, cinematic lighting, photorealistic, serene, slightly unsettling, stylized",
+  "pyrite_content_tags": "1girl, solo, pink hair, short hair, grey eyes, topless, nipples, abs, toned body, navel, black skirt, side slit, fruit on head, standing on a road, sky, power lines",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies, slightly off-center composition, somewhat uncanny valley",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, anime style, 1girl, pink short hair, grey eyes, topless, toned abs, black skirt, side slit, fruit on head, standing on a road, sunset background, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

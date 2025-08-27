@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, sensual, realistic, high_detail, anime_style, smooth_skin, erotic, intimate, inviting",
+  "pyrite_content_tags": "1girl, nude, black hair, long hair, yellow eyes, breasts, small breasts, nipples, lying on a bed, on back, looking at the viewer, covering privates, covering crotch with hand, navel, ribs, abs, collarbone, shiny skin, pillow, bed, lips, smile, spread legs, ass visible through thighs, no clothing, bedsheets, wooden nightstand in background, realistic skin texture",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on a bed, black hair, yellow eyes, small breasts, nipples, covering crotch with hand, soft lighting, high detail, realistic skin, anime style, smile, sensual"
+}
+```

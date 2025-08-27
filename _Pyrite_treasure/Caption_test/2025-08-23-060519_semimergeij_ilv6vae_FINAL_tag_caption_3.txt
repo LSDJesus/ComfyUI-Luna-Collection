@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, intimate, natural lighting, photorealistic, soft focus, bedroom setting, modern",
+  "pyrite_content_tags": "1girl, solo, nude, on bed, spread legs, black hair, streaked hair, two-tone hair, looking at viewer, barefoot, breasts, small breasts, nipples, pussy, explicit, realistic, pillow, bed, indoors, feet, navel, lips, anus, brown eyes, sitting",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "poor anatomy, unnatural skin, inconsistent lighting",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a woman with black and white streaked hair, nude, laying in bed with legs spread, looking at the viewer, realistic, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

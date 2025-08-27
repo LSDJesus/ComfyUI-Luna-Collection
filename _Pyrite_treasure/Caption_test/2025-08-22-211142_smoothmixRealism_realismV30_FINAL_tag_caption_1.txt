@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft_lighting, hyperrealism, elegant, erotic, glossy, seductive, boudoir, detailed",
+  "pyrite_content_tags": "nude woman, long dark hair with white highlights, brown eyes, tan lines on shoulders, laying on bed, white satin sheets, hand touching herself, open legs, visible genitalia, light skin, small breasts, bed frame, gold chandelier, beige padded headboard, wooden nightstand",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "oil paint look",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual hyperrealistic oil painting of a nude woman laying on a bed with white satin sheets, long dark hair with white highlights, brown eyes, tan lines on shoulders, hand touching herself, visible genitalia, soft lighting, elegant, gold chandelier, beige padded headboard, detailed skin."
+}
+```

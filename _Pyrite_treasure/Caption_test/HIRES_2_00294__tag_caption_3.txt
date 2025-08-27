@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sensual, erotic, inviting, cinematic lighting, soft focus, detailed, digital painting",
+  "pyrite_content_tags": "1girl, solo, bound, navel, cleavage, large breasts, purple eyes, short twintails, bandages, rope, sitting, orange hair, indoors, bare shoulders, parted lips, bondgage, sleeveless, crop top, band-aid on face, band-aid on nose, looking at viewer, bed, sunset background, exposed torso",
+  "pyrite_sexual_tags": "nudity, bdsm, suggestive",
+  "pyrite_flaw_tags": "artifacts, anatomy issues, facial distortions",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful anime woman with orange twin-tails, purple eyes, band-aid on face, bandaged wrists, rope bondage, sitting on a bed, wearing a crop top and red skirt, revealing navel and cleavage, bare shoulders, cinematic lighting, sunset background, (artgerm, greg rutkowski:1.2) --bad anatomy, deformed, artifacts"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, serene, realistic_render, high_detail, dramatic_lighting",
+  "pyrite_content_tags": "nude_female, pale_skin, black_and_white_hair, white_bedding, tan_wooden_bedframe, yellow_eyes, fair_skin, slender_body, minimalist_background, right_hand_on_chest, left_hand_on_bed, smooth_skin",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "anatomical_distortion, slightly_wonky_eye",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "anime style woman with black and white hair and yellow eyes, nude, lying on a white bed, soft lighting, high detail, dramatic pose, realistic render, minimalist background"
+}
+```

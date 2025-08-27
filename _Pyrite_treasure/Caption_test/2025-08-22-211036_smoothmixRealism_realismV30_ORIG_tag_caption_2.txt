@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high-detail, golden_lighting, realistic, seductive, anime_style",
+  "pyrite_content_tags": "1girl, nude, lying on back, tanlines, spread legs, black long hair, yellow eyes, navel, small breasts, visible nipples, arms up, toned abs, realistic skin, silk sheets, golden background, smiling, looking at viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), lying on silk sheets, nude with tan lines, arms up, toned abs, spread legs, long black hair, yellow eyes, looking at viewer, realistic skin, seductive, golden lighting, detailed, anime style"
+}
+```

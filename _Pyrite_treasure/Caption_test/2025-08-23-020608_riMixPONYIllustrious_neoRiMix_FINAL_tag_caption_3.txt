@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, anime-inspired, soft lighting, alluring, inviting, vibrant, detailed",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, bed, white sheets, pillow, animal ears, two-tone hair, black hair, white streaks, yellow eyes, barefoot, spread legs, spread pussy, small breasts, nipples, navel, abs, feet, toes, lips, smiling, looking at viewer",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, solo, nude, lying on back, spread legs, spread pussy, animal ears, two-tone hair, yellow eyes, white sheets, soft lighting, photorealistic, detailed, (by artgerm:1.2), (by ross tran:1.2)"
+}
+```

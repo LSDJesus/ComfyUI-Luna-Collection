@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, erotic, surreal, soft_lighting, high_detail, dreamlike, bedroom_setting, sensual",
+  "pyrite_content_tags": "nude_female, pale skin, long legs, arms raised, hands touching, black and white hair, heterochromia eyes, yellow eyes, grey eyes, bedsheets, bedroom, window with sunlight, bedside table, picture frame, pillows, white curtains",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime nude woman, black and white hair, heterochromia yellow and grey eyes, bedroom setting, soft lighting, legs in the air, surreal, erotic, high detail, dreamlike"
+}
+```

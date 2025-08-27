@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, soft_lighting, realistic, intimate, high_contrast, sensual, voyeuristic, clean",
+  "pyrite_content_tags": "1girl, nude, sitting on a bed, white bedsheets, bare feet, spread legs, hand on genitalia, exposed breasts, nipples, navel, multicolored hair (black and white), long hair, yellow eyes, looking at viewer, realistic skin tone, toes visible, pillow, wooden headboard, indoor setting",
+  "pyrite_sexual_tags": "nudity, pussy",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, sitting on a bed with white bedsheets, bare feet, legs spread, hand on genitalia, exposed breasts, nipples, black and white long hair, yellow eyes, looking at viewer, realistic skin tone, intimate lighting, soft focus"
+}
+```

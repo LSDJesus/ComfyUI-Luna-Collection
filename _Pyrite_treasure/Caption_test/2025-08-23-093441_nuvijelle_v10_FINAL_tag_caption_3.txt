@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, suggestive, hyperrealism, soft lighting, bedroom, sensual, inviting",
+  "pyrite_content_tags": "1girl, solo, black and white hair, yellow eyes, nude, breasts, small breasts, spread legs, bed, silk sheets, pillow, window, natural light, lips, pussy, clitoris, looking at viewer",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, inconsistent shading, some artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a beautiful woman with black and white hair, glowing yellow eyes, sitting nude on a bed with silk sheets, natural light, soft shadows, hyperrealistic, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

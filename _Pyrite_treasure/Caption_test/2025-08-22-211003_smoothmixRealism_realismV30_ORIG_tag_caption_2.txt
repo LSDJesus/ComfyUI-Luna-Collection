@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "hyperrealistic, soft lighting, sensuous, smooth skin, high detail, seductive, glossy",
+  "pyrite_content_tags": "1girl, nude, black hair, long hair, brown eyes, small breasts, nipples, on back, looking at viewer, lying on pillow, satin sheets, tanned skin, full lips, open legs",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "artificial skin, unnatural proportions, some jpg_artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on a satin bed, soft lighting, hyperrealistic, black long flowing hair, brown eyes, small breasts, nipples, looking at viewer, open legs, full lips, glossy skin, high detail, cinematic lighting"
+}
+```

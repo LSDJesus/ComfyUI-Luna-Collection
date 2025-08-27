@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, ethereal, high-contrast, soft_lighting, realistic, cinematic_lighting, intimate, natural_light, detailed",
+  "pyrite_content_tags": "nude woman, black_hair_with_silver_streaks, fair skin, medium_breasts, visible_nipples, closed_eyes, red lips, slender body, lying on white satin sheets, bed, navel, pussy, arms outstretched, wooden floor, white bedsheets, natural light, indoors, solo focus, completely nude",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual, realistic photograph of a nude woman with black hair and silver streaks, medium breasts, closed eyes, lying on a white satin bed, cinematic lighting, natural light, indoors."
+}
+```

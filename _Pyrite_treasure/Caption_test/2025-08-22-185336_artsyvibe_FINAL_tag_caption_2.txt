@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, futuristic, high-tech, digital_art, cinematic_lighting, detailed, sleek, vibrant, sci-fi",
+  "pyrite_content_tags": "1girl, solo, looking at viewer, standing, full body, indoors, black hair with a white streak, long hair, ponytail, green eyes, armored bodysuit, black with orange glowing accents, revealing, breastplate, navel, black thigh highs with orange circuit pattern, black high heels with orange glow, gun holster, weapon, server room, computers, cables, wires, bright lighting, futuristic architecture",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, slight ai artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl) in a cyberpunk server room, wearing a black armored bodysuit with orange glowing circuitry, long black hair with a white streak, green eyes, detailed lighting, cinematic lighting, looking at the viewer, futuristic, high-tech, solo, gun holster, full body, <lora:add-detailed-eyes:0.5>"
+}
+```

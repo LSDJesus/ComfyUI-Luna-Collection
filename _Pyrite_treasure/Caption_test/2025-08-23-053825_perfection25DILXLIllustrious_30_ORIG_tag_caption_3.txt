@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, intimate, erotic, high-contrast, studio lighting",
+  "pyrite_content_tags": "1girl, solo, nude, sitting on bed, spread legs, black hair, long hair, two-tone hair, white streak, yellow eyes, nipples, small breasts, navel, pussy, tan lines, bed sheet, pillows, looking at viewer, realistic",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies, unrealistic musculature, tan lines are artificial",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a beautiful athletic woman with black hair, white streak, and glowing yellow eyes, sitting nude on a bed, with tan lines, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

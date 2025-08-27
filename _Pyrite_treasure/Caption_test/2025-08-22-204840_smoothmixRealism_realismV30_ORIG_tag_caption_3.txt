@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, ethereal, dreamy, pale, realistic, innocent, portrait",
+  "pyrite_content_tags": "1girl, solo, nude, sitting, on bed, looking at viewer, long black hair, bangs, brown eyes, small breasts, nipples, navel, pussy, leaning back, white bedsheets, lamp",
+  "pyrite_sexual_tags": "nudity, loli, suggestive",
+  "pyrite_flaw_tags": "anatomy (slightly off), generic pose, bland background",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a young woman, nude, sitting on a white bed, long black hair, bangs, innocent expression, large brown eyes, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

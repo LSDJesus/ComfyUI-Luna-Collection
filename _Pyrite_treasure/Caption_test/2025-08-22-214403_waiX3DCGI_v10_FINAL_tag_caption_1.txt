@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "golden_skin, anime_style, sensual, high_detail, soft_lighting, silky_texture, surreal, erotic, dreamlike",
+  "pyrite_content_tags": "nude_female_figure, laying in bed, white satin bed sheets, white pillow, gold-plated skin, black and white hair, yellow eyes, cat ears, gold-colored ear accessories, hand near vagina, pale skin, sunlight, ornate headboard, skin highlights, visible nipples",
+  "pyrite_sexual_tags": "nudity, hand_near_vagina",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "highly detailed anime golden skinned woman in bed, white satin sheets, white pillow, black and white hair, yellow eyes, cat ears, gold-colored ear accessories, hand near vagina, soft lighting, erotic"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dreamy, soft_lighting, realistic, sensual, serene, bedroom_scene, natural_light",
+  "pyrite_content_tags": "woman, asian, black_hair_with_white_streaks, eye_makeup, red_lipstick, nude, lying_on_bed, cream_colored_bedding, white_pillows, wooden_chair, grey_drape, white_tshirt_on_chair, wooden_nightstand, small_plant_in_gold_pot, bare_chest, exposed_nipples, fair_skin, indoor_shot",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "slightly_unrealistic_skin, possibly_ai_generated_look",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual, realistic depiction of a beautiful Asian woman with black hair and white streaks, lying nude in a sunlit bedroom, capturing soft lighting and creamy bedding. Focus on skin texture and fine details."
+}
+```

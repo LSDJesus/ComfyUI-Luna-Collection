@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, suggestive, sensual, intimate, vibrant colors",
+  "pyrite_content_tags": "1girl, nude, lying on back, spread legs, on bed, pillow, tan skin, black hair, brown eyes, looking at viewer, nipples, small breasts, abs, navel, pussy, smile, grin, long hair, tanlines, toned body, ribs",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical issues, slightly unnatural skin texture, inconsistent detail levels",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman with black hair, glowing brown eyes, lying on a bed, looking at the viewer, spread legs, soft lighting, photorealistic, (by artgerm, greg rutkowski:1.2), detailed anatomy, flawless skin."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, naturalism, domestic, intimate, elegant, detailed",
+  "pyrite_content_tags": "1girl, solo, lying on back, nude, breasts, nipples, white panties, underwear, black hair, long hair, white hair streak, hand on stomach, navel piercing, bed, pillow, open window, natural light, curtains, messy room, scattered papers, chair",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, a beautiful woman with black hair and a white streak, lying on a bed with white linens, nude, hand on her stomach, natural light from a window, scattered papers on the floor, detailed, photorealistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dreamy, erotic, anime, sensual, high contrast, ethereal, soft lighting, idyllic, painterly",
+  "pyrite_content_tags": "1girl, 2boys, threesome, nude, outdoors, day, blue sky, grass, clouds, long white hair, blunt bangs, twintails, ahoge, red eyes, earrings, black hair ribbons, bald, muscular, smooth skin, navel, medium breasts, nipples, arms behind back, fingers, pussy, boy sandwich",
+  "pyrite_sexual_tags": "nudity, fingering, group sex, mmf threesome",
+  "pyrite_flaw_tags": "bad_anatomy",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), (2boys), nude, outdoors, dreamy lighting, anime style, long white hair, blunt bangs, twintails, red eyes, group sex, fingering, boy sandwich, muscular figures, blue sky, clouds, detailed anatomy"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, soft_lighting, sensual, anime_style, fantasy, high_detail, digital_painting, delicate_shadows",
+  "pyrite_content_tags": "1girl, nude, blue skin, white hair, blunt bangs, low twintails, black hair ribbons, red eyes, medium breasts, nipples, tattoo (black, tribal design), navel, sitting on bed, white bed sheet, pillow, gold ornate bed frame, indoors, window, sunlight, looking at viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands, slight_artifacting",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, nude, blue skin, white hair, blunt bangs, low twintails, black hair ribbons, red eyes, detailed breasts, nipples, tribal tattoo on arm, navel, sitting on a bed, white bed sheets, gold ornate bed frame, indoors, soft lighting, sunlight, looking at viewer, anime style, digital painting, high detail, delicate shadows, no hands issues, perfect anatomy"
+}
+```

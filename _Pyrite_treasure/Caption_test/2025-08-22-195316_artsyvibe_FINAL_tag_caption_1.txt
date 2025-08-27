@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, bedroom, soft lighting, realism, dreamy, ethereal, delicate, romantic, boudoir, elegant",
+  "pyrite_content_tags": "nude woman, laying in bed, long black hair, pale skin, closed eyes, red blush on cheeks, small red nipples, white bedsheets, white pillow, old wooden chair, grey wooden floor, pink and blue garments on chair, old wooden bedside table, closed window, natural light, messy room",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful nude woman with long black hair, pale skin, and red blush on her cheeks, laying in bed with natural light, soft lighting, realism, dreamy"
+}
+```

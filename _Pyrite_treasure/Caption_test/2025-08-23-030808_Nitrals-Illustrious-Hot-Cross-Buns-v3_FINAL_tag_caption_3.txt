@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sensual, photorealistic, soft lighting, smooth skin, suggestive, inviting",
+  "pyrite_content_tags": "1girl, nude, solo, lying on bed, white bedsheets, two-tone hair, black and white hair, yellow eyes, looking at viewer, nipples, small breasts, hand on stomach, barefoot, indoors, bedroom, bed, pillow, wooden headboard, picture frame, lamp, navel, smile, completely nude",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues (especially legs), possible artifacts around the hair",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, lying on bed, white bedsheets, two-tone hair, black and white hair, yellow eyes, looking at viewer, soft lighting, detailed skin, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

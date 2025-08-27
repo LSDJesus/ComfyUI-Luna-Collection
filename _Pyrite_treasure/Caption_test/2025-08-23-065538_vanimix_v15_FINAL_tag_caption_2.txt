@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "high_contrast, erotic, sensuous, hyperrealism, soft lighting, cinematic lighting, alluring, suggestive, polished_skin",
+  "pyrite_content_tags": "1girl, nude, bare skin, black and white two-tone hair, long hair, yellow eyes, cat ears, small breasts, visible nipples, visible navel, visible pussy, spread legs, lying on a white satin bed, white pillow, barefoot, detailed feet, indoors, natural light, smile, looking at the viewer, high detailed skin, soft lips, golden eye color",
+  "pyrite_sexual_tags": "nudity, explicit, solo",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, bare skin, black and white two-tone hair, long hair, yellow eyes, cat ears, small breasts, visible nipples, visible navel, pussy, spread legs, lying on a white satin bed, white pillow, barefoot, detailed feet, indoors, natural light, smile, looking at the viewer, high detailed skin, soft lips, hyperrealism, soft lighting, cinematic lighting"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, ethereal, high_contrast, cinematic_lighting, wet, stylized, hyperrealism, digital_art",
+  "pyrite_content_tags": "1girl, dark skin, afro, black hair, brown eyes, kneeling, nude, completely nude, barefoot, indoors, bathroom, tile wall, tile floor, nipples, navel, abs, toned body, facial mark, forehead mark, covering privates, covering crotch, wet skin, water droplets, shower, silver shower fixtures, blue tile, stylized skin, pale lips, flat chest, looking at viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, dark skin, afro, kneeling in shower, wet skin, water droplets, cinematic lighting, high detail, nipples, navel, abs, stylized skin, looking at viewer, blue forehead mark, perfect anatomy, hyperrealism"
+}
+```

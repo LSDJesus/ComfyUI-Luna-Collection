@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, high-contrast, detailed, photorealistic, bedroom, suggestive, anime-inspired, soft lighting",
+  "pyrite_content_tags": "1girl, nude, lying on bed, black and white two-tone hair, blunt bangs, yellow eyes, yellow nails, hand on stomach, barefoot, smile, bed, white sheets, wooden headboard, pillows, lamp, white nightstand, nipples, pussy, spread legs, navel, visible ribs, small breasts, long hair with blonde highlights, fingernails, mascara, teeth, toes, toenails, toenail polish, clear skin, detailed skin texture",
+  "pyrite_sexual_tags": "nudity, pussy, explicit",
+  "pyrite_flaw_tags": "bad_hands, anatomy_issues",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, nude, lying on a bed, black and white two-tone hair with blonde highlights, blunt bangs, yellow eyes, smiling, hand on stomach, soft lighting, detailed skin, photorealistic, anime style, high detail, ultra-realistic, (anatomical details:1.2), (perfect hands:1.3)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, suggestive, anime, hyperrealism, digital art, provocative, sexual",
+  "pyrite_content_tags": "1girl, 1boy, nude, completely nude, sex, hetero, red hair, yellow eyes, short hair, open mouth, smile, doggystyle, ass, abs, looking at viewer, tattoos, anime-style eyes, erotic pose",
+  "pyrite_sexual_tags": "nudity, sex, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, distorted perspective, slightly off-model",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, erotic illustration of a red-haired anime girl, smiling with open mouth, doggystyle pose with a nude male, intense detail, hyperrealism, cinematic lighting, (by artgerm, ross tran:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, erotic, soft_lighting, high_detail, suggestive, sensual, intimate, bedroom_scene",
+  "pyrite_content_tags": "1girl, 1boy, nude_female, nude_male, pink hair, long pink twintails, red eyes, open mouth, cum on face, small breasts, white stockings with pink and teal stripes, pink cardigan, black hair, brown eyes, white cum, exposed penis, open clothes, straddling, sitting on bed, indoor, bedroom setting, lamp, dresser, framed picture, white sheets, fair skin, visible testicles",
+  "pyrite_sexual_tags": "nudity, oral, penetration, cum, girl on top",
+  "pyrite_flaw_tags": "blurry, uneven_rendering, anatomical_inconsistencies",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Create a highly detailed anime-style artwork featuring a nude female with pink hair in a twintails, red eyes, and white stockings. She is straddling a nude male with black hair, open mouth, visible testicles.  Focus on intimate bedroom lighting and sensual poses, emphasizing cum on faces and bodies, while correcting any anatomical flaws, and enhancing the overall render quality. Include a lamp, a dresser, and a framed picture to enhance the setting's intimacy."
+}
+```

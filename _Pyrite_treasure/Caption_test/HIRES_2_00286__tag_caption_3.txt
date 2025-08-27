@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, photorealistic, cinematic lighting, dramatic sunset, detailed, melancholic, suggestive, surreal",
+  "pyrite_content_tags": "1girl, solo, topless, nipples, pink hair, short hair, food on head, cherry, white floral headpiece, black skirt, side slit, navel, abs, toned physique, outdoors, standing, power lines, utility pole, road, sunset, looking at viewer",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy (ribcage too prominent), slight distortion of facial features, hands are poorly rendered.",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, hyperrealistic portrait of a young woman with pink hair, wearing a black skirt with a side slit, topless, with a cherry on her head and a white floral headpiece, standing on a road at sunset, cinematic lighting, (by artgerm, greg rutkowski:1.2), best quality, highres, detailed"
+}
+```

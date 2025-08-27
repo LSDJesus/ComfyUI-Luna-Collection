@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, soft_lighting, photorealistic, bedroom, intimate, oil_paint, warm_tones",
+  "pyrite_content_tags": "1girl, nude, solo, lying on bed, spread legs, pussy visible, nipples, breasts, looking at viewer, multicolored hair, two-tone hair, white streak, blonde streak, bedroom, bed, pillows, sunlight, smooth skin, realistic, smile",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "anatomical distortions, oiliness effect is excessive, somewhat generic face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, a beautiful woman, nude, lying on bed, spread legs, breasts, pussy visible, realistic skin, two-tone hair, sunlight, soft lighting, (detailed face:1.2) (by artgerm, greg rutkowski:1.1)"
+}
+```

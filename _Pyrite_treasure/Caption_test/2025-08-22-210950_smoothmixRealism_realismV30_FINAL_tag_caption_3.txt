@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "golden_hour, soft_lighting, sensual, photorealistic, dreamy, warm tones",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, long black hair, looking at viewer, breasts, nipples, navel, soft skin, realistic skin texture, bed, silk sheets, hand on body, natural light, amber eyes",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies, possible uncanny valley effect in facial rendering",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, nude woman, long black hair, amber eyes, lying on silk sheets, golden hour, soft lighting, photorealistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

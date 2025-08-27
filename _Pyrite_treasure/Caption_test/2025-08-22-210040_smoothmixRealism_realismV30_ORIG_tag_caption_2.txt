@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high_detail, photorealistic, soft_lighting, intimate, inviting, provocative",
+  "pyrite_content_tags": "1girl, nude, long black hair, yellow eyes, looking at viewer, smiling, small breasts, nipples, toned abs, open vulva, pussy, lips, hand on vulva, sitting on bed, beige bed sheets, beige headboard, completely nude, uncensored, navel, realistic, tongue out, reclined",
+  "pyrite_sexual_tags": "nudity, explicit, pussy",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, nude, long black hair, yellow eyes, smiling, small breasts, toned abs, hand on vulva, pussy, sitting on bed, soft lighting, high detail, photorealistic, provocative"
+}
+```

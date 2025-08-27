@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, latex, sexy, detailed, photorealistic, vibrant, hyperrealistic, inviting",
+  "pyrite_content_tags": "1girl, solo, latex bodysuit, latex, breasts, nipples, navel, long turquoise hair, hairband, looking at viewer, selfie, brown eyes, lips, skin tight, sidelocks, indoors, room with door, medium breasts",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "unnatural anatomy, thinness, slight distortion",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, detailed, photorealistic 1girl, solo, beautiful woman, long turquoise hair, brown eyes, latex bodysuit, breasts, nipples, looking at viewer, selfie, hyperrealistic, perfect anatomy (by artgerm, greg rutkowski:1.2)"
+}
+```

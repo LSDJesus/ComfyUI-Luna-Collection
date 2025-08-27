@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high-detail, realistic, soft lighting, cinematic lighting, natural skin, clean lines, intimate",
+  "pyrite_content_tags": "1girl, nude, lying on a bed, black hair, long hair, yellow eyes, small breasts, toned abdomen, navel, covering crotch, hands covering privates, on back, beige satin bedsheets, pillow, wooden bedside table, lamp, indoors, nipples visible, visible pussy, realistic skin texture",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece), 1girl, nude, lying on a satin bed, black hair, long hair, yellow eyes, toned abdomen, covering crotch with hands, soft lighting, realistic skin texture, highly detailed, cinematic lighting, on back, looking at viewer"
+}
+```

@@ -1,0 +1,1 @@
+(1girl:1.00), (sensitive:0.96), (solo:0.94), (long hair:0.93), (ponytail:0.89), (bodysuit:0.88), (breasts:0.85), (looking at viewer:0.84), (indoors:0.76), (standing:0.73), (medium breasts:0.73), (holding:0.63), (blurry:0.63), (science fiction:0.62), (full body:0.58), (fingerless gloves:0.57), (gloves:0.57), (cyberpunk:0.54), (from side:0.51), (brown eyes:0.50)

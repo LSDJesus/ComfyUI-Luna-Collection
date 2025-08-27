@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, erotic, sensual, vibrant, soft lighting, suggestive",
+  "pyrite_content_tags": "1girl, solo, breasts, nipples, multicolored hair, nude, yellow eyes, spread legs, long black and white hair, pillow, looking at viewer, barefoot, navel, on bed, smile, feet, lying on back, bed, small breasts, completely nude, two-tone hair, nail polish, yellow nails, lips, toes, toenails, blonde streak, abs, high heels, bed frame, sunlight, female genitalia",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy imperfections",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece anime-style portrait of a beautiful woman with black and white hair, yellow eyes, smiling and looking at the viewer, lying nude on a bed, sunlight, (detailed, highres), perfect anatomy, by artgerm, greg rutkowski:1.2"
+}
+```

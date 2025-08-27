@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, erotic, sensual, soft lighting, bedroom, pastel colors, suggestive pose, delicate, intimate",
+  "pyrite_content_tags": "1girl, 1boy, pink-haired woman with red eyes and ahoge wearing a pink cardigan and white stockings with pink and blue stripes, standing on the bed, partially clothed, exposed breasts, nipples visible, black-haired man with red eyes, on bed, room interior with a lamp, a picture on the wall, open mouth, male penis and testicles visible, vaginal area visible, suggestive pose, girl on top, reverse cowgirl position, uncensored, nudity",
+  "pyrite_sexual_tags": "nudity, sex, penetration, loli",
+  "pyrite_flaw_tags": "bad_anatomy, weird_hands, inconsistent_lighting, blurry",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece anime art style, intimate bedroom scene, a pink-haired woman with red eyes wearing a pink cardigan, partially clothed, and white striped stockings, on top of a black-haired man with red eyes, visible penis and testicles, penetration, soft lighting, detailed anatomy, high quality, loli"
+}
+```

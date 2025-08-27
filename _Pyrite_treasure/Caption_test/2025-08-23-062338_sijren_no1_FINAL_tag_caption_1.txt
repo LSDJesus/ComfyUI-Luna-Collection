@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft_lighting, high_detail, photorealistic, studio_lighting, smooth_skin, glossy",
+  "pyrite_content_tags": "nude_woman, lying_on_bed, white_bedding, black_and_white_hair, black_hair, white_streaks, yellow_eyes, open_legs, hand_on_vagina, light_skin, wooden_furniture, white_pillows, smiling, small_breasts",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic nude woman with black and white hair, yellow eyes, lying on white bedding with open legs, hand on vagina, soft lighting."
+}
+```

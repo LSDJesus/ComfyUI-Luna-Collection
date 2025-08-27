@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sensual, erotic, suggestive, bedroom, soft lighting, painterly",
+  "pyrite_content_tags": "1girl, 1boy, nudity, sex, heterosexual, cum, pink hair, twintails, red eyes, ahoge, open mouth, striped thigh-high socks, open cardigan, sitting, on bed, vaginal, penis, small breasts, breasts, nipples, testicles, cum on body, cum in pussy, navel, indoors, lamp, picture frame, bedroom, teeth, collarbone, straddling, girl on top",
+  "pyrite_sexual_tags": "nudity, sex, vaginal, penis, cum, cum on body, cum in pussy, explicit act",
+  "pyrite_flaw_tags": "anatomical inaccuracies, specifically in the male figure; some blurring and softness detracts from focus; slightly unnatural poses",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, detailed), 1girl, pink hair, red eyes, twintails, open mouth, open cardigan, striped thigh-high socks, straddling, on bed, 1boy, male nude, cum, sex, detailed anatomy, soft lighting, bedroom, (by artgerm, greg rutkowski:1.2)"
+}
+```

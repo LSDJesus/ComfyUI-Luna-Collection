@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, seductive, high-key, smooth, detailed, digital art, anime, realistic, soft lighting",
+  "pyrite_content_tags": "nude woman, slender body, fair skin, black hair with white and yellow streaks, yellow eyes, on bed, white satin sheets, pillows, bedroom, open pose, hand on chest, visible genitals, pale skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A realistic anime girl, nude, fair skin, black hair with white and yellow streaks, yellow eyes, on a white satin bed, open pose, erotic, soft lighting, detailed, high-key"
+}
+```

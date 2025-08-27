@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, photorealistic, hyperrealism, urban, ethereal, soft lighting, desaturated, melancholic",
+  "pyrite_content_tags": "1girl, solo, nude, white hair, orange eyes, standing, looking to the side, earrings, exposed breasts, small breasts, navel, pussy, pulling down underwear, panties, wet, public indecency, outdoors, city street, cobblestone, buildings, day, skinny, ribs, toned, abs, piercing",
+  "pyrite_sexual_tags": "nudity, explicit, exhibitionism, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, hands, rendering inconsistencies",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, a young woman with white hair and orange eyes, nude, standing on a cobblestone street, pulling down her underwear, detailed anatomy, realistic skin, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

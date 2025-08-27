@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, sensual, bedroom, photorealistic, seductive, anime_girl",
+  "pyrite_content_tags": "nude, anime woman, black and white hair, yellow eyes, lying on bed, white sheets, wooden bed frame, curtains, skin, breasts, hand on hip, hand on stomach, light skin, small breasts, no clothing, white pillow, bedroom, light source, gold jewelry",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, unnatural_skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "anime girl with black and white hair and yellow eyes, nude, lying on a bed with white sheets, soft lighting, detailed skin, high detail, photorealistic"
+}
+```

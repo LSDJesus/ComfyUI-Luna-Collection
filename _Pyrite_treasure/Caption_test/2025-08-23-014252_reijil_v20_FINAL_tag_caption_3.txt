@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, erotic, anime, photorealistic, soft lighting, morning light, suggestive, hyperrealism",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, multicolor hair, black and white hair, yellow eyes, looking at viewer, smile, spread legs, bare feet, breasts, nipples, pussy, navel, bed sheets, pillow, indoors, lamp, morning sun, two-tone hair",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "Anatomy slightly off, especially in the hips and groin area, slight oil paint artifacting",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic, nude anime girl with black and white hair and yellow eyes lying on a bed, spread legs, soft lighting, morning light, (by artgerm, greg rutkowski:1.2), highly detailed, perfect anatomy"
+}
+```

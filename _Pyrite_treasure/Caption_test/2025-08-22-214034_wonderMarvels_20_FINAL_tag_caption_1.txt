@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, divine_feminine, ethereal, fiery_lighting, muscle definition, high_detail, sensual, golden_aura, photorealistic",
+  "pyrite_content_tags": "nude woman, tan skin, white and black hair, glowing yellow eyes, fire-like energy emanating from head and chest, muscular physique, beige bedsheet, ornate gold headboard, beige pillow, hand near pubic area, small nipples, bedroom setting, natural light, soft shadows, detailed muscles, long legs, fair complexion, glowing energy",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic, nude woman, muscular physique, fire-like energy emanating from head and chest, golden eyes, sitting on a bed, highly detailed muscles, sensual pose, high contrast, soft lighting, gold headboard."
+}
+```

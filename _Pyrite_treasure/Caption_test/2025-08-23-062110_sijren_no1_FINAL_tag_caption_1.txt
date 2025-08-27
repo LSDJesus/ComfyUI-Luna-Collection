@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high-contrast, soft_lighting, ethereal, photorealistic, hyperrealism, body_positivity, anime_style, provocative",
+  "pyrite_content_tags": "nude_female, pale skin, extremely slender physique, long black hair with white and yellow highlights, yellow eyes, small breasts, hand on genitalia, open legs, on white bedsheets, slight smile, direct gaze, visible pubic hair, smooth skin, shiny",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic nude female with very slender physique, pale skin, long black hair with white and yellow highlights, yellow eyes, small breasts, hand on genitalia, open legs, on white bedsheets, slight smile, direct gaze, visible pubic hair, smooth skin, shiny, soft lighting, high-contrast, anime_style."
+}
+```

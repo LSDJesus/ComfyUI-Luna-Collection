@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_fantasy, seductive, cinematic_lighting, high_contrast, detailed_rendering, anime_style, alluring, sensual",
+  "pyrite_content_tags": "1girl, black hair, long hair, two-tone hair (black with white streak), yellow eyes, red lips, black choker, black bra with lace details, black jacket, indoors, library background, wooden table, holding pen, pen, lace trim, medium breasts, upper body, looking at viewer, underwear",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, seductive pose, looking at viewer, black hair, long hair, two-tone hair (black with white streak), yellow eyes, red lips, black choker, black bra with lace details, black jacket, library background, wooden table, holding pen, high quality, cinematic lighting, detailed rendering, anime style."
+}
+```

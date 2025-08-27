@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic lighting, photorealistic, detailed, dark academia, seductive, glamorous, noir",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, white highlights, yellow eyes, choker, black jacket, black lace bra, holding pen, writing, leather office chair, library, bookshelves, wooden desk, suggestive",
+  "pyrite_sexual_tags": "suggestive, nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a seductive woman with black hair, yellow eyes, wearing a black jacket and black lace bra, sitting in a leather office chair in a library, writing with a pen, cinematic lighting, detailed, photorealistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

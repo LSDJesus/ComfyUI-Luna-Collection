@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, golden hour, luxury, hyperrealism",
+  "pyrite_content_tags": "1girl, solo, nude, long black hair with white streak, brown eyes, looking at viewer, breasts, nipples, spread legs, on bed, bedsheets, pillow, toned body, abs, shiny skin, tan, navel, pussy, lips, open pose, luxury bedroom, ornate headboard, chandelier",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, skin texture is slightly artificial",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece photorealistic portrait of a beautiful nude woman with long black hair and a white streak, brown eyes, looking at the viewer, lying on a bed with golden light, hyperrealism, (by artgerm, greg rutkowski:1.2)"
+}
+```

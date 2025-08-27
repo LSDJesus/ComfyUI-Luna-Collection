@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, cinematic_lighting, sensual, high-contrast, realistic, seductive, dreamy, soft_focus",
+  "pyrite_content_tags": "1girl, nude, lying on bed, black hair with blunt bangs, yellow eyes, medium breasts, nipples, pale skin, hand on stomach, pussy, navel, bed, white pillows, sunlight, window, window blinds, chair, wooden floor, books, drawers, shiny skin, indoors, explicit, completely nude",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, nude, lying on a bed, black hair with blunt bangs, yellow eyes, medium breasts, nipples, pale skin, hand on stomach, sunlight, window, cinematic lighting, realistic, soft focus"
+}
+```

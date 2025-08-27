@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, seductive, sensual, high-contrast, soft_lighting, glistening_skin, suggestive pose, clean_lines",
+  "pyrite_content_tags": "1girl, black hair, long hair, yellow eyes, nude, small breasts, nipples, looking at viewer, lying on bed, white bedsheets, bed, pillow, navel, abs, toned body, shiny skin, tan skin, brown skin, smile, indoors, collarbone, hands touching self",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, ultra-detailed:1.2), 1girl, black hair, long hair, yellow eyes, nude, small breasts, nipples, looking at viewer, lying on bed, white bedsheets, bed, pillow, navel, abs, toned body, shiny skin, tan skin, brown skin, smile, indoors, collarbone, hands touching self, soft lighting, sensual pose, anime style"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "C",
+  "pyrite_aesthetic_tags": "photorealistic, bedroom, soft lighting, sensual, focused",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, nude, tan lines, spread legs, looking at viewer, smile, bed, sheets, brown eyes, nipples, navel, realistic, skinny, sitting, indoors, breasts",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "unnatural skin tones, poor anatomy in the arms, tan lines are too harsh, slightly off proportions",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a slender woman with long black hair, brown eyes, sitting on a bed, nude, natural skin tones, soft lighting, realistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

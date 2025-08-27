@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, soft lighting, hyperrealism, sensual, detailed, elegant, seductive, artistic",
+  "pyrite_content_tags": "1girl, nude, lying on back, spread legs, on bed, white pillow, white bedsheets, barefoot, feet, toes, multicolor hair (black, white, gold streaks), long hair, yellow eyes, smiling, small breasts, nipples, visible navel, visible pussy, open mouth, exposed body, small breasts, fair skin, wooden bedside table, indoor, bedroom",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, detailed, hyperrealism:1.2) 1girl, lying on white bedsheets, spread legs, nude, multicolor hair (black, white, gold streaks), yellow eyes, smiling, nipples, visible navel, visible pussy, soft lighting, sensual, erotic, close up, (on bed:1.1), realistic skin texture"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, futuristic, neon_lights, high_tech, sleek, digital_art, glossy, detailed",
+  "pyrite_content_tags": "female_figure, black_hair, bangs, ponytail, fair_skin, brown_eyes, black_bodysuit with orange circuit board detailing, black boots, standing, leaning against a table, server_room, computer_monitors, data_racks, blue neon lights, orange wires",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "futuristic cyberpunk female with black hair in ponytail, black bodysuit with glowing orange circuit design, server room, neon blue lighting, high detail"
+}
+```

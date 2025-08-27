@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, erotic, cum-covered, suggestive, vibrant, outdoors, landscape",
+  "pyrite_content_tags": "1girl, solo, large breasts, nipples, cum, cum on body, cum on breasts, cum in mouth, facial, open mouth, blue hair, long braid, brown eyes, earrings, heart-shaped earring, navel, blue latex outfit, outdoors, sky, landscape, elbow gloves, looking at viewer, ahoge, tongue, cum on tongue",
+  "pyrite_sexual_tags": "nudity, cum, oral sex, suggestive",
+  "pyrite_flaw_tags": "anatomy flaws, unrealistic proportions, cum texture",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece anime art, a beautiful woman with blue hair and brown eyes, large breasts covered in cum, a cum facial, outdoors with a cloudy sky and mountains, wearing a blue latex outfit, heart-shaped earring, (artgerm, greg rutkowski:1.2)"
+}
+```

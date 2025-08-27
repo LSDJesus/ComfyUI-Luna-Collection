@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, vibrant, sensual, dramatic_lighting, soft_shading, seductive_pose, erotic, high_detail, photorealistic",
+  "pyrite_content_tags": "1girl, solo, looking at viewer, purple eyes, orange hair in short twintails, parted lips, pale skin, bare shoulders, orange and black sleeveless cheongsam top with deep cleavage cutout, navel, red mini-skirt, bound wrists with white bandages, bound with rope, covered nipples, sitting on a white bed, indoors, window with sunset view, wooden interior",
+  "pyrite_sexual_tags": "nudity, bondage",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, solo, looking at viewer, purple eyes, orange hair, short twintails, parted lips, pale skin, bare shoulders, orange and black sleeveless cheongsam top, deep cleavage cutout, navel, red mini-skirt, bound wrists, white bandages, rope, covered nipples, sitting on white bed, wooden interior, sunset view, dramatic lighting, soft shading, high detail, anime"
+}
+```

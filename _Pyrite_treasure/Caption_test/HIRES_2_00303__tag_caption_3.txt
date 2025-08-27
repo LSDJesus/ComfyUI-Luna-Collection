@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, sensual, atmospheric, clean, minimalist, wet, elegant",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, blue eyes, white hair, long hair, blunt bangs, ponytail, arms up, looking at viewer, navel, parted lips, shiny skin, pool ladder, ribs, armpits, wet skin, tiles",
+  "pyrite_sexual_tags": "nudity, suggestive, pussy",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, anime style, 1girl, nude, wet skin, blue eyes, white hair, parted lips, arms raised, clean background, shiny skin, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft lighting, hyperrealism, intimate, inviting, erotic, golden hour, high detail",
+  "pyrite_content_tags": "1girl, nude, long dark brown hair, lying on cream colored bed, cream colored pillow, looking at viewer with a smile, open legs, hand touching pussy, visible nipples, prominent abs, toned body, light brown eyes, visible navel, soft skin, sunlight, smooth textures, uncensored",
+  "pyrite_sexual_tags": "nudity, solo, pussy",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, highres:1.2), 1girl, nude, lying on bed, sensual smile, looking at viewer, long flowing dark brown hair, hand on pussy, soft lighting, hyperrealism, intimate, detailed skin, golden hour lighting, cinematic lighting, sharp focus, (detailed pussy), (nipples), (visible abs), (toned body)",
+}
+```

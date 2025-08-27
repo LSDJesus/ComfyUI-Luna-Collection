@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, golden_hour_lighting, high_contrast, photorealistic, intimate, soft_focus, sun-kissed, idyllic",
+  "pyrite_content_tags": "1girl, nude, spread legs, black hair, long hair, brown eyes, smiling, prominent tan lines on shoulders and breasts, visible navel, sitting on a white bed, rumpled white sheets, wooden bed frame, exposed breasts with visible nipples, visible ribs, skinny physique, indoor setting, sunlight, perfect teeth, golden skin",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, spread legs, black hair, long hair, brown eyes, smiling, tan lines on shoulders and breasts, visible navel, sitting on a white bed, rumpled white sheets, wooden bed frame, sunlight, golden skin, photorealistic, golden hour lighting"
+}
+```

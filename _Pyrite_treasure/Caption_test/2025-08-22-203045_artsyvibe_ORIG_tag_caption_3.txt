@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, natural, clean, skin detail",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, black hair, long hair, medium breasts, nipples, pubic hair, female pubic hair, navel, arm behind head, pillow, on back, asian, closed eyes, smiling, armpits, bed",
+  "pyrite_sexual_tags": "nudity, explicit, uncensored, suggestive",
+  "pyrite_flaw_tags": "slight anatomical imperfections, slightly generic face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a beautiful asian woman, nude, lying on a bed with soft lighting, natural skin detail, long black hair, looking at the viewer, (by artgerm, greg rutkowski:1.2)"
+}
+```

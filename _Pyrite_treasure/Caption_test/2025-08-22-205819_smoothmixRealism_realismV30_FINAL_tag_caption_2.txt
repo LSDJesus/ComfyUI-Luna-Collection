@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft_lighting, warm_tones, high_detail, realistic, intimate, painterly, smooth, natural",
+  "pyrite_content_tags": "1girl, nude, lying on back, looking at viewer, brown eyes, black hair with bangs, small breasts, visible nipples, partially visible pubic hair, beige bedsheets, wooden bed frame, small nightstand, beige pillow, smeared white substance on body, natural skin tone, navel visible",
+  "pyrite_sexual_tags": "nudity, pussy",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((1girl))), nude, lying on back, looking at viewer, brown eyes, black hair with bangs, small breasts, visible nipples, partially visible pubic hair, beige bedsheets, wooden bed frame, small nightstand, beige pillow, smeared white substance on body, soft lighting, realistic, high detail, warm tones"
+}
+```

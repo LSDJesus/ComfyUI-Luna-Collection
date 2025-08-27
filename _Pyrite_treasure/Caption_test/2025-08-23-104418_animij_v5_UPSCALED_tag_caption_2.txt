@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, soft lighting, anime, realistic, high detail, vibrant, seductive, oil painting",
+  "pyrite_content_tags": "1girl, nude, breasts, nipples, pussy, multicoloured hair, explicit, solo, long black and white streaked hair, yellow eyes, spread legs, pillow, white bedsheets, looking at viewer, barefoot, navel, feet, lying on back, small breasts, bed, smile, yellow nail polish, toes, toenails, visible lips, wooden headboard, sunlight, suggestive pose",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, nude, sitting on a bed, long black and white streaked hair, yellow eyes, spread legs, looking at viewer, small breasts, realistic, soft lighting, high detail, oil painting, cinematic lighting."
+}
+```

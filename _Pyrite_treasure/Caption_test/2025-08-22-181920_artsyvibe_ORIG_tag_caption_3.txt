@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, cinematic lighting, sensual, elegant, library, shallow depth of field, soft focus",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, earrings, necklace, jewelry, breasts, jacket, open jacket, no bra, library, bookshelf, book, writing, pen, notebook, looking at viewer, parted lips",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor distortions in the hands, slightly blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman with long black hair, wearing an open black jacket, no bra, writing in a notebook in a library, cinematic lighting, soft focus, (by artgerm, greg rutkowski:1.2)"
+}
+```

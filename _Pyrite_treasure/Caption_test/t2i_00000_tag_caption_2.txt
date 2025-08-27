@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealistic, high_detail, cinematic_lighting, ethereal, macro, glistening, melancholic, surreal, atmospheric",
+  "pyrite_content_tags": "close-up, human face, eye, eyelashes, teal and gold iris, blue eyes, brown eyebrows, water droplets, dripping liquid (amber), auburn hair, wet skin, freckles, looking at viewer, shallow depth of field, focus on eye, clear drops",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "hyperrealistic close-up of a human face with focus on a teal and gold eye, blue eyes, dripping amber liquid, wet skin, water droplets, atmospheric lighting, cinematic, ethereal, macro, shallow depth of field."
+}
+```

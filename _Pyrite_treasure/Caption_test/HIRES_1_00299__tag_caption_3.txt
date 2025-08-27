@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, clean lines, vibrant, soft lighting, suggestive, selfie, shiny",
+  "pyrite_content_tags": "1girl, solo, selfie, looking at viewer, indoors, latex bodysuit, nipples, medium breasts, navel, long teal hair, hairband, sidelocks, open zipper, visible skin, brown eyes, shiny latex, black latex pants",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies in the torso, slightly distorted hand/arm",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality:1.2), selfie of a beautiful anime woman with teal long hair, brown eyes, and a latex bodysuit, looking at the viewer, indoors, soft lighting, (realistic skin, glossy latex:1.3), highly detailed face, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

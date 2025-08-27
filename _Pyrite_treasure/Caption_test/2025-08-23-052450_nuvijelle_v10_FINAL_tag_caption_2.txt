@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, high_contrast, cinematic_lighting, sensual, erotic, studio_lighting, smooth_skin, golden_hour",
+  "pyrite_content_tags": "1girl, nude, black hair with white streaks, yellow eyes, looking at viewer, parted lips, small breasts, exposed nipples, spread legs, pubic hair, sitting on bed, white satin bed sheets, yellow wall, wooden headboard, wooden bedside table, blue lamp, glass of water, window, indoors, shiny skin, abs",
+  "pyrite_sexual_tags": "nudity, pussy, explicit, solo",
+  "pyrite_flaw_tags": "bad_anatomy, blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic image of a sensual 1girl with black and white streaked hair and yellow eyes, nude, sitting spread-legged on a white satin bedsheet, looking at the viewer, with cinematic studio lighting and high contrast, focusing on the smooth, shiny skin. Include exposed nipples and detailed pubic hair. Correct anatomy to perfection."
+}
+```

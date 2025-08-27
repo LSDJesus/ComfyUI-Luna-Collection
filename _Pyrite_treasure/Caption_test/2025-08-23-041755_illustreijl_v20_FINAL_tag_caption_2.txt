@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, high-contrast, soft lighting, sensual, anime_inspired, ethereal, detailed_skin, clean_lines, minimalist",
+  "pyrite_content_tags": "1girl, nude, completely nude, black and white streaked hair, long hair, yellow eyes, bare breasts, small breasts, nipples, spread legs, pussy, clitoris, navel, barefoot, on bed, white sheets, fluffy pillows, lying on back, looking at viewer, smiling, defined abs, detailed skin, sunlight, toes, nose, lips, simple golden necklace",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic anime style 1girl, nude, lying on white bed sheets, black and white streaked long hair, yellow eyes, bare breasts, spread legs, looking at viewer, soft lighting, detailed skin."
+}
+```

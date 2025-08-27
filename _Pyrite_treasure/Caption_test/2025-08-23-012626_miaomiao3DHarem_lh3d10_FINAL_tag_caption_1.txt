@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, anime, vibrant, studio_lighting, surreal, bright, digital_art",
+  "pyrite_content_tags": "nude female figure, white skin, anime-style character, black and white hair, yellow eyes, no clothing, lying on white satin fabric, yellow curtain background, long eyelashes, small breasts, upturned pose, hands resting, smooth skin, minimalist setting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A photorealistic anime nude female figure with black and white hair and yellow eyes, lying on white satin fabric, upturned pose, yellow curtain background, studio lighting, digital art."
+}
+```

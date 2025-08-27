@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, high-contrast, sensual, intimate, soft_lighting, natural_light, portrait",
+  "pyrite_content_tags": "1girl, solo, nude, completely nude, breasts, small breasts, nipples, pussy, spread legs, long black hair, brown eyes, looking at viewer, navel, skin texture, asian, sitting on a bed, hand resting on genital, bed sheets, beige and patterned wallpaper, picture frame",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), photorealistic, nude, sitting on a bed, spread legs, looking at viewer, long black hair, brown eyes, small breasts, nipples, pussy, hand resting on genital, natural light, soft lighting, skin texture, intimate, sensual"
+}
+```

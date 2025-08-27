@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "realistic, high-detail, soft lighting, intimate, wet, natural skin, beauty, sensual",
+  "pyrite_content_tags": "1girl, solo, nude, fair skin, wet hair, short dark brown hair, brown eyes, shower, white fingernails, black shower head, droplets of water, bare shoulders, looking at viewer, bathroom setting, gray tiled wall",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), solo, nude, realistic, wet hair, short dark brown hair, brown eyes, standing in a shower, black shower head, water droplets, soft lighting, intimate portrait, looking at viewer"
+}
+```

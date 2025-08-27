@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, natural_lighting, sensual, inviting, intimate, soft_focus, sun-kissed, warm",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, brown eyes, nipples, nude, explicit, spread legs, pussy, on bed, bed, tanlines, breasts, tan, navel, smile, teeth, looking at viewer, pillow, indoors, sitting, small breasts, tanlines",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inaccuracies, unrealistic muscle definition, possibly AI-generated",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic portrait of a young woman with black hair, brown eyes, lying on a bed, nude, tanlines, soft sunlight, intimate, (by artgerm, greg rutkowski:1.2)"
+}
+```

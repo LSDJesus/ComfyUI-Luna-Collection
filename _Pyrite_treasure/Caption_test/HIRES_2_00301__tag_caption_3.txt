@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "C",
+  "pyrite_aesthetic_tags": "anime, grotesque, surreal, sexual, anatomical, hyperrealistic, unnatural, overcast, digital art",
+  "pyrite_content_tags": "1girl, solo, outdoors, sitting, spread legs, nude, breasts, nipples, open mouth, pink hair, short hair, blunt bangs, pink eyes, glowing eyes, abs, toned, navel, penis, pussy, teeth, sweat, saliva, box, barefoot, feet, toes, fingernails, toenails, nail polish, pink nails, cloudy sky, grass, open bodysuit, full-length zipper, collarbone, veins, fangs, linea alba, looking at viewer, two-footed footjob, nail polish, penis, pussy, pussy juice",
+  "pyrite_sexual_tags": "nudity, explicit, footjob, penis, vagina",
+  "pyrite_flaw_tags": "anatomical distortion, uncanny valley, incoherent composition, unnatural lighting, rendering issues",
+  "pyrite_subjective_quality": "bad quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, photorealistic, anime-style girl with pink hair and glowing pink eyes, sitting outdoors on a wooden box, spread legs, explicit nudity, visible veins, strong abs, and a visible penis, perfect anatomy, dramatic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft_lighting, high_detail, intimate, warm, sun_kissed, smooth skin, implied_motion",
+  "pyrite_content_tags": "1girl, nude, lying on back, spread legs, dark brown hair with blonde streaks, tan skin, tanlines, light brown eyes, full pink lips, small breasts, visible nipples, hand on pubic area, beige pillow, beige bedsheets, armpits visible, bedroom setting, sunlit",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands, unrealistic_anatomy, artifacts, blurry_background",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), lying on bed, nude, sunlit skin, detailed face, dark brown hair with blonde highlights, small breasts, tanlines, spread legs, hand on pubic area, high detail, photorealistic, soft lighting, perfect anatomy, (masterpiece:1.2)"
+}
+```

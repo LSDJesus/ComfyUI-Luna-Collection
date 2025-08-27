@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, photorealistic, sensual, intimate, portrait, hyperrealism, warm_tones, inviting, natural",
+  "pyrite_content_tags": "1girl, lying on back, nude, black hair, long hair, brown eyes, small breasts, nipples, toned abs, spread legs, hand touching genitals, navel, pale skin, white bedsheets, pillow, bed, looking at viewer, full body shot",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a nude woman with long, black hair and brown eyes, lying on white sheets with soft lighting, hands caressing genitals, toned abs, small breasts, looking directly at the viewer."
+}
+```

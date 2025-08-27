@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, soft_lighting, serene, intimate, elegant, wet, detailed_skin",
+  "pyrite_content_tags": "young_woman, long_black_hair, bangs, green_eyes, nude, small_breasts, light_skin, silver_glitter_panties, sitting_on_bed, white_sheets, room, painting_on_wall, lamp, window_blinds, table, water_droplets_on_skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A photorealistic image of a young woman with long black hair and green eyes, sitting nude on a bed with white sheets, wearing silver glitter panties, with water droplets on her skin. Soft, intimate lighting, in a bedroom, with a painting on the wall and a lamp."
+}
+```

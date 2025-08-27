@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark academia, cinematic lighting, anime style, high contrast, sensual, detailed, realistic, elegant, gothic",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, hair between eyes, yellow eyes, black jacket, open jacket revealing black lace bra, black choker, black belt with silver buckle, pen held in hand, holding pen, sitting, indoor, book, library background with bookshelves, medium breasts, realistic skin texture, red lips, dark skin tone, writing",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, black hair, long hair, yellow eyes, black jacket, open jacket revealing black lace bra, black choker, black belt with silver buckle, pen held in hand, holding pen, sitting, library background with bookshelves, medium breasts, detailed skin, realistic, cinematic lighting"
+}
+```

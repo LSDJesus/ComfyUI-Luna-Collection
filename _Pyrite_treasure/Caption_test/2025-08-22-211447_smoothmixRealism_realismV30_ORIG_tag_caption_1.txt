@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, erotic, soft_lighting, dreamlike, intimate, fantasy, tan_lines, hyperrealism",
+  "pyrite_content_tags": "nude_female, long_dark_hair, tan skin, hazel_eyes, yellow_irises, bedsheets, white pillow, bed, wooden bedside table, lamp, neutral tones, relaxed pose, open legs, arms above head, visible nipples, defined abdominal muscles",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful woman with long dark hair and yellow irises lies in bed, nude, with a sensual pose and soft lighting, creating an intimate and dreamlike atmosphere. Hyperrealism and tan lines are important."
+}
+```

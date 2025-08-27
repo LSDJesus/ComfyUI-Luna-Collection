@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high-key, realistic, intimate, soft_focus, natural_lighting",
+  "pyrite_content_tags": "1girl, nude, solo, sitting on bed, beige bedsheets, wooden bed frame, pillow, medium breasts, nipples, spread legs, pussy, hand touching pussy, brown eyes, multicolor hair (dark roots, blonde tips), navel, toned body, lips, looking at viewer",
+  "pyrite_sexual_tags": "nudity, pussy, spread pussy, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, sitting on bed, legs spread, pussy visible, brown eyes, multicolor hair (dark roots, blonde tips), intimate pose, soft lighting, high-key, realistic, looking at viewer"
+}
+```

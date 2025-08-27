@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, cinematic_lighting, high_detail, realistic, sensual, soft_focus, intimate, suggestive",
+  "pyrite_content_tags": "1girl, nude, lying on bed, spread legs, black hair, long hair, closed eyes, medium breasts, visible nipples, toned abs, visible pussy, navel, white bedsheets, interior room, wooden chair with white cloth, wooden side table, metal radiator, sunlit, messy environment, scattered items, no clothing",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A highly detailed, realistic image of a woman with long black hair lying on a rumpled white bed, legs spread, closed eyes, soft focus, high-key lighting, visible pussy and nipples, sensual pose, cinematic lighting, intimate setting, messy room. --ar 3:4 --style erotic"
+}
+```

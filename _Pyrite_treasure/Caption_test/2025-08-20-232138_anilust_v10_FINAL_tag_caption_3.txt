@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, photorealistic, dark fantasy, sensual, cinematic lighting, detailed, moody",
+  "pyrite_content_tags": "1girl, solo, breasts, nipples, nude, gagged, gag, thighhighs, flower, hair ornament, forest, outdoors, navel, pussy, sitting, looking at viewer, long hair, sweat, explicit, abs, collarbone, ball gag, grey hair, grey eyes, white thighhighs, arms behind back, saliva, white flowers, small breasts, wet skin, realistic lighting",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor_anatomical_issues, slight_rendering_artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a nude woman with silver hair, gagged, sitting in a misty forest, with white thigh highs and white flowers, detailed skin and cinematic lighting, (by artgerm, greg rutkowski:1.2), sweat, wet skin"
+}
+```

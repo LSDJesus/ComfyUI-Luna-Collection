@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, dreamlike, high contrast, soft lighting, anime, sensuous, erotic, golden hues",
+  "pyrite_content_tags": "1girl, nude, lying on bed, yellow eyes, black and white two-tone long hair, yellow highlights, small breasts, exposed nipples, smooth skin, yellow fingernails, hands on stomach, open legs, visible vulva, yellow flower, beige bedsheets, ornate headboard",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, bad_hands, bad_anatomy",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, ultra-detailed, realistic) 1girl, nude, lying on bed, black and white two-tone long hair, yellow highlights, yellow eyes, small breasts, exposed nipples, hands on stomach, visible vulva, flowers, soft lighting, cinematic lighting, ethereal --bad anatomy, blurry"
+}
+```

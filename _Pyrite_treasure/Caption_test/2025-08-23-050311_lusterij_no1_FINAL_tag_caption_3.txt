@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, erotic, soft lighting, sensual, anime-inspired",
+  "pyrite_content_tags": "1girl, solo, lying on bed, nude, breasts, nipples, pussy, spread legs, yellow eyes, black and white hair, long hair, streaked hair, looking at viewer, navel",
+  "pyrite_sexual_tags": "nudity, suggestive, explicit",
+  "pyrite_flaw_tags": "anatomy issues (hands), slightly off-model face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman with black and white hair, yellow eyes, nude, lying on a bed, soft lighting, focus on details, (artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, cinematic lighting, realism, dramatic, provocative, erotic, dark, railway",
+  "pyrite_content_tags": "1girl, red hair, yellow eyes, toned body, abs, black sports bra, black leggings, shiny material, outdoors, railway tracks, power lines, sunset, straddling, 1boy, pov, penis, vaginal, explicit, nudity, breast, parted lips, looking at viewer",
+  "pyrite_sexual_tags": "nudity, explicit sex, vaginal",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies, slight artifacting",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, anime style, erotic scene of a red-haired woman with yellow eyes in a black sports bra and leggings straddling a man on railway tracks, cinematic lighting, realistic rendering, (artgerm, greg rutkowski:1.2), (detailed face and body, perfect anatomy)"
+}
+```

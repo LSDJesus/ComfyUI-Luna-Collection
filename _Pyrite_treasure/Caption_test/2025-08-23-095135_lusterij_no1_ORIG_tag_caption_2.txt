@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, hyperrealism, soft_lighting, high_detail, sensual, anime, glossy, inviting",
+  "pyrite_content_tags": "1girl, nude, lying on bed, white bedsheets, yellow and brown headboard, black and white long hair, yellow eyes, small breasts, tan skin, navel, visible ribs, abs, hand on genitals, armpits, exposed clitoris, lips, pillow, lamp on nightstand, looking at viewer, open legs, solo",
+  "pyrite_sexual_tags": "nudity, explicit, pussy, spread legs",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, nude, lying on a bed, white bedsheets, yellow and brown headboard, black and white long hair, yellow eyes, small breasts, hand on genitals, visible abs, open legs, hyperrealism, soft lighting, high detail, inviting"
+}
+```

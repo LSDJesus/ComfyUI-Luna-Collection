@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, intimate, soft lighting, realistic, suggestive, dreamlike, bedroom, sunlight",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, looking at viewer, black hair with white and yellow streaks, yellow eyes, smile, breasts, small breasts, nipples, hand on stomach, pussy, on back, realistic skin, sunlight, indoor, bedsheets, pillows",
+  "pyrite_sexual_tags": "nudity, suggestive, explicit",
+  "pyrite_flaw_tags": "anatomy distortions, oil effects slightly overdone",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman with black hair with yellow and white streaks, yellow eyes, smiling, nude, lying in bed, sunlight, highly detailed skin, (by artgerm, greg rutkowski:1.2), soft lighting, cinematic lighting"
+}
+```

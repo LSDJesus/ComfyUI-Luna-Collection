@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, seductive, soft_lighting, high_detail, wet_skin, realistic_rendering, bedroom",
+  "pyrite_content_tags": "female_figure, lying_on_bed, white_bedding, semi-nude, black_and_white_hair, yellow_hair_streak, yellow_eyes, light_skin, small_breasts, perfect_body, hands_touching_body, bedroom_interior, sunlight_and_shadows, nude_body, delicate_features",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime girl, semi-nude, lying on white bed sheets, wet skin, black and white hair with yellow highlights, yellow eyes, soft lighting, detailed rendering, seductive pose."
+}
+```

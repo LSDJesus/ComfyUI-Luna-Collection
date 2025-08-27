@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, high-contrast, cinematic_lighting, sensual, fantasy, glowing, dynamic pose, muscular, seductive, golden hues",
+  "pyrite_content_tags": "1girl, nude, on bed, spread legs, covering crotch, hand over crotch, long two-tone hair (black and white), glowing yellow hair, yellow eyes, looking at viewer, small breasts, nipples, muscular physique, toned abs, navel, bed, pillow, golden headboard, white bedsheets, glowing energy effects around the body, piercing, lips, smooth skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, on bed, spread legs, hand over crotch, black and white hair, glowing yellow hair and eyes, muscular physique, toned abs, glowing energy effects, high-contrast lighting, cinematic lighting, sensual, fantasy."
+}
+```

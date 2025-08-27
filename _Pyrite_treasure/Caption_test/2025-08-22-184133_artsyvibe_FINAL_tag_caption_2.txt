@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, elegant, gothic, high_contrast, atmospheric_lighting, sensual, library_setting",
+  "pyrite_content_tags": "1girl, long black hair with white highlights, yellow eyes, black choker with silver emblem, black lace bra, black jacket (open), visible navel, pen in hand, sitting, indoors, library, bookshelves filled with red books, wooden chair, large arched window, natural light, holding pen, fair skin, closed mouth, pen silver, white paper on a black desk",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry background",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((1girl))), anime style, long black hair with white highlights, yellow eyes, elegant black choker with silver emblem, black lace bra, black open jacket, visible navel, holding a silver pen, sitting in a library, bookshelves, large arched window, natural light, masterpiece, cinematic lighting, high detail"
+}
+```

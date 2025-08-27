@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "futuristic, sleek, high-contrast, digital_art, glossy, anime_style, seductive, photorealistic",
+  "pyrite_content_tags": "1girl, selfie, looking at viewer, latex bodysuit, black latex clothing, black hairband, turquoise hair, long hair, sidelocks, brown eyes, medium breasts, exposed nipples, navel, thin physique, indoors, doorway, wooden door frame, open door, soft lighting, minimal background",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, slight anatomical distortions",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), selfie, wearing a black latex bodysuit, turquoise hair, long hair, brown eyes, medium breasts, exposed nipples, navel, thin physique, indoors, doorway, wooden door frame, soft lighting, glossy, anime style, photorealistic, high-contrast, futuristic, perfect anatomy, sharp focus, cinematic lighting"
+}
+```

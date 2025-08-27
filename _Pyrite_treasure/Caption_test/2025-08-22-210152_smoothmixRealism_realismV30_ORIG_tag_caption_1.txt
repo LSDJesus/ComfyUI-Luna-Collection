@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_focus, erotic, sensual, realistic, natural_light, bedroom, smooth_skin, intimate",
+  "pyrite_content_tags": "nude_woman, long_black_hair, yellow_eyes, pale_skin, muscular_torso, hand_on_vagina, open_legs, bed, white_bedding, padded_headboard, wooden_nightstand, golden_lamp, natural_lighting, smiling",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "unnatural_muscle_definition, slight_face_distortion, blurry_details",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with long black hair and yellow eyes, muscular physique, lying on a bed with white bedding and a padded headboard, natural lighting, soft focus, hand on vagina, open legs, sensual, realistic, smiling."
+}
+```

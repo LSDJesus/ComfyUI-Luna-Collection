@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, wet_skin, detailed lighting, soft focus, cinematic, suggestive, erotic",
+  "pyrite_content_tags": "1girl, 1boy, brown hair, brown eyes, upturned eyes, looking at viewer, lips, navel, nude, bathroom, toilet, white porcelain toilet, short hair, bare chest, light skin tone, female receiving oral sex",
+  "pyrite_sexual_tags": "nudity, oral, fellatio, deepthroat, hetero",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(Masterpiece, best quality, extremely detailed) 1girl, brown hair, brown eyes, upturned eyes, receiving oral sex, POV, looking at the viewer, wet skin, bathroom, toilet, cinematic lighting, soft focus."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "realistic, erotic, sensual, intimate, soft lighting, natural skin tones, bedroom setting, focused, high detail",
+  "pyrite_content_tags": "1girl, 1boy, nude, breasts, nipples, penis, vaginal, brown hair, brown eyes, looking at viewer, spread legs, bed, navel piercing, medium breasts, veiny penis, mole on breast, explicit",
+  "pyrite_sexual_tags": "nudity, sex, heterosexual",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Realistic, intimate portrait of a woman and a man, nude, on a bed. The woman is looking at the viewer, brown eyes, spread legs, medium breasts, nipples, explicit, close-up detail, focused, soft lighting."
+}
+```

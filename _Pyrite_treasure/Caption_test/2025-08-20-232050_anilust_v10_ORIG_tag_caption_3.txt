@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, vibrant, sensual, suggestive, soft lighting, detailed, realistic",
+  "pyrite_content_tags": "1girl, solo, orange hair, twintails, short twintails, purple eyes, looking at viewer, breasts, large breasts, cleavage, navel, bound wrists, bandage arm, rope, bdsm, sitting, indoors, bare shoulders, skirt, orange outfit, covered nipples, clothing cutout, lips",
+  "pyrite_sexual_tags": "nudity, bondage, suggestive",
+  "pyrite_flaw_tags": "hands, slight asymmetry",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a beautiful anime girl with orange twintails, purple eyes, bound wrists with rope, sitting indoors, large breasts, cleavage, detailed skin, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

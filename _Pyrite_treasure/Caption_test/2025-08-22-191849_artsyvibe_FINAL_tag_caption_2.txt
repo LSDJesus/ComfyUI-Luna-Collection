@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "golden_hour, soft_lighting, sensual, intimate, painterly_realism, dreamy, elegant, neoclassical_style",
+  "pyrite_content_tags": "1girl, sitting on a bed, black hair, long hair cascading, closed eyes, fair skin, small breasts, visible nipples, nude, beige lace panties, navel visible, white bedsheets, white pillow, indoor setting, sunlight streaming through a window, window with white blinds, wooden chair, antique room decor, pale wall color, golden wall sconces, blurred background details",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "slight_blurry, minor_artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((masterpiece))), (1girl:0.99), sitting on bed, nude, black hair, sunlight, sensual, golden hour, realistic, soft lighting, closed eyes, detailed, white bedsheets, white pillow, window blinds, (antique room decor:1.2), (blurry background:1.1), (small breasts, visible nipples), detailed face, best quality, highres"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, vibrant, suggestive, erotic, scenic, cum-filled, surreal",
+  "pyrite_content_tags": "1girl, solo, large breasts, nipples, cum, cum on body, cum on breasts, blue hair, braid, long hair, brown eyes, open mouth, looking at viewer, earrings, ahoge, latex outfit, outdoors, sky, bare shoulders, navel, jewelry, elbow gloves, landscape",
+  "pyrite_sexual_tags": "nudity, cum, facial",
+  "pyrite_flaw_tags": "hands are obscured, anatomy issues, liquid physics, potentially inconsistent rendering styles",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece:1.2) anime girl, blue hair and braid, brown eyes, cum facial and on large breasts, latex outfit, outdoors, scenic background, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

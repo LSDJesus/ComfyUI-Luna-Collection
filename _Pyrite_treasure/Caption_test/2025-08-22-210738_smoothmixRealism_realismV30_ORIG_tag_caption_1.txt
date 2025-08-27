@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, sensual, smooth_skin, bedroom, detailed_anatomy, vibrant_colors, digital_art, illustration",
+  "pyrite_content_tags": "nude_woman, black_hair, brown_eyes, yellow_irises, pale_skin, bedsheets, pillows, hand_on_vagina, open_legs, light_source_from_left, lamp, wooden_nightstand, flesh_toned skin, small_breasts, exposed_nipples, soft_light",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "uneven_lighting, unrealistic_anatomy, slightly_wonky_face",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime woman, black hair, brown eyes, lying in bed, soft light, nude, detailed anatomy, sensual, realistic skin texture, add realistic shading."
+}
+```

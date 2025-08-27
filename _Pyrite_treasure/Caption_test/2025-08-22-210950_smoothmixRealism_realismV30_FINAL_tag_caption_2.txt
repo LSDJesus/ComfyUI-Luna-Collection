@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "golden_light, sensual, realistic, high-detail, oil painting, dreamlike, erotic, elegant, intimate",
+  "pyrite_content_tags": "1girl, nude, black hair, long hair, fair skin, golden eyes, full lips, laying on back, on bed, silk bedding, detailed skin, hands on stomach, small breasts, nipples, navel, light from window, warm tones, sunlit room",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, black hair, long hair, fair skin, golden eyes, silk bedding, golden light, sensual, realistic, high-detail, oil painting, intimate, looking at viewer"
+}
+```

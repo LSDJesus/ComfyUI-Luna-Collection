@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic_lighting, high_contrast, soft_focus, sensual, realistic, bedroom, elegant, melancholic",
+  "pyrite_content_tags": "woman, lying on bed, nude, white underwear, black hair with grey highlights, fair skin, closed eyes, hands on chest, white sheets, white pillow, wooden floor, scattered papers, beige curtains, wooden chair, red chair, window, shutters, natural light",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A woman lying on a bed, nude, wearing white underwear, black hair with grey highlights, fair skin, cinematic lighting, soft focus, high contrast, bedroom scene, natural light, realistic"
+}
+```

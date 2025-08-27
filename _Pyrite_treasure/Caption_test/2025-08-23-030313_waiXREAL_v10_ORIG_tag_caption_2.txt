@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, cinematic_lighting, realism, soft_focus, alluring, intimate",
+  "pyrite_content_tags": "1girl, nude, solo, on bed, black hair with white highlights, yellow eyes, pale skin, small breasts, prominent ribs, spread legs, pussy, nipples, yellow nail polish, freckles, barefoot, indoors, bed, white bedsheet, decorative pillow, lamp on nightstand, window with white curtains, hanging light bulbs, looking at viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands, slightly_wonky_eyes",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, solo, on bed, black hair with white highlights, yellow eyes, pale skin, small breasts, prominent ribs, spread legs, pussy, nipples, yellow nail polish, freckles, barefoot, indoors, bed, white bedsheet, decorative pillow, lamp on nightstand, window with white curtains, hanging light bulbs, looking at viewer, cinematic lighting, soft focus, masterpiece, perfect hands, perfect eyes, detailed skin"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "ethereal, soft lighting, sensual, dreamy, delicate, minimalist, painterly",
+  "pyrite_content_tags": "1girl, solo, lying on back, nude, completely nude, black hair, two-tone hair, white streak, yellow eyes, pointy ears, bare feet, bed, draped fabric, white sheets, hand on stomach, nipples, small breasts",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies, background details lack definition",
+  "pyrite_subjective_quality": "good quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of an elven woman, lying on a bed of white silk sheets, soft lighting, delicate features, black hair with white streak, yellow eyes, (by artgerm, greg rutkowski:1.2), (masterpiece, best quality, highres)"
+}
+```

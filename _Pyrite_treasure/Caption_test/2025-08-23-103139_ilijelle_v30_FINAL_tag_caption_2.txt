@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, soft lighting, detailed, hyperrealistic, anime, sensual, boudoir, bedroom",
+  "pyrite_content_tags": "1girl, nude, on bed, lying on back, spread legs, black and white hair, long hair, yellow highlights in hair, yellow eyes, looking at viewer, smiling, small breasts, nipples, navel, yellow nail polish, white bedsheets, pillows, wooden bed frame, lamp, indoor, feet, abs, collarbone, teeth, clitoris",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, on bed, lying on back, spread legs, black and white hair, long hair, yellow highlights in hair, yellow eyes, looking at viewer, smiling, small breasts, nipples, detailed, soft lighting, boudoir setting, realistic"
+}
+```

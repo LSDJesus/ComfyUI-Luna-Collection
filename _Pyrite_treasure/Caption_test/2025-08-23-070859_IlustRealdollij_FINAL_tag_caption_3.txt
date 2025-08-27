@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, suggestive, soft lighting, bedroom, slightly disturbing",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, pussy, spread legs, multicolored hair, two-tone hair, long hair, yellow eyes, looking at viewer, lying on bed, silk bedsheets, yellow nail polish, wooden bed frame, pillow, grin, open mouth, completely nude",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies, oil painting effect on skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a beautiful woman with long black and yellow hair, yellow eyes, lying on a silk bed, nude, open legs, looking at viewer, soft lighting, masterpiece, (artgerm, greg rutkowski:1.2)"
+}
+```

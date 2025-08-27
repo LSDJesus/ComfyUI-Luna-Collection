@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, suggestive, erotic, soft lighting, vibrant, clean lines, digital painting, suggestive, dreamy",
+  "pyrite_content_tags": "1girl, blonde_hair, long_hair, blue_eyes, lying on bed, white bra, white underwear, white thighhighs, spread legs, breasts, large breasts, navel, pillow, on back, closed mouth, looking at viewer, drill hair, blush, convenient censoring, sweat, light censor, bottomless, thighs",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "artifacts, distorted anatomy, unnatural skin textures, weird light",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece anime art of a beautiful woman with blonde hair and blue eyes, lying in a bed, wearing a white bra and white thighhighs, spread legs, cinematic lighting, detailed skin, (artgerm, ruan jia:1.2)"
+}
+```

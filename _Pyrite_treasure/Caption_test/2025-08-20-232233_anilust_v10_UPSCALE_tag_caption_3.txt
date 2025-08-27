@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "surreal, ethereal, digital_painting, soft lighting, hyperrealism, sensual, stylized",
+  "pyrite_content_tags": "1girl, 2boys, threesome, nude, breasts, nipples, white hair, long hair, bald, blue eyes, outdoors, day, sky, medium breasts, arms behind back, looking at viewer, hair ribbon, standing, abs, ribbon, navel, pussy, fingering, mole under eye, bald head",
+  "pyrite_sexual_tags": "nudity, suggestive, fingering, group sex",
+  "pyrite_flaw_tags": "anatomical_issues, disproportionate_anatomy, weird_skin_texture, inconsistent_details",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece digital painting of a 1girl, 2boys threesome, nude, ethereal lighting, detailed anatomy, realistic skin texture, blue sky, (by artgerm, greg rutkowski:1.2) --ar 2:3"
+}
+```

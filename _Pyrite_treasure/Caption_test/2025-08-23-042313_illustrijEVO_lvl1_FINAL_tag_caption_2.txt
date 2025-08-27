@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, cinematic_lighting, high-contrast, realistic, soft focus, intimate, suggestive, dramatic_lighting",
+  "pyrite_content_tags": "1girl, nude, breasts, small breasts, black hair with white streaks, long hair, yellow eyes, looking at viewer, pale skin, sitting on bed, white bedsheets, pillows, wooden bed frame, wooden nightstand, golden lamp, yellow wall, open legs, pussy, navel, abs, nipples, sheet grab",
+  "pyrite_sexual_tags": "nudity, pussy",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, sitting on bed, white bedsheets, black hair with white streaks, yellow eyes, looking at viewer, cinematic lighting, high contrast, soft focus, realistic, breasts, small breasts, open legs, pussy, sheet grab, golden lamp, wooden bed frame, dramatic lighting, sensual"
+}
+```

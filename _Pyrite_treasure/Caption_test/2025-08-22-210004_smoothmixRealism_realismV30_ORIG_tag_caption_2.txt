@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, high-contrast, hyperrealism, sensual, cinematic_lighting, seductive",
+  "pyrite_content_tags": "1girl, nude, lying on bed, on back, spread legs, brown hair, long hair, orange eyes, medium breasts, nipples, abs, toned body, navel, lips, smiling, pillow, bedsheets, hands, open vulva, anus, realistic skin texture",
+  "pyrite_sexual_tags": "nudity, solo",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.00), nude, lying on bed, on back, spread legs, brown hair, long hair, orange eyes, medium breasts, nipples, abs, toned body, navel, lips, smiling, cinematic lighting, high contrast, hyperrealistic, detailed skin texture"
+}
+```

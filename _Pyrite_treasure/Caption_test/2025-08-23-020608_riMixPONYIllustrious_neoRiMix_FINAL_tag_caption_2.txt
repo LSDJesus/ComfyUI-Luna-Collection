@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, painterly, soft_lighting, sensual, digital_art, anime_style, realism, inviting",
+  "pyrite_content_tags": "1girl, nude, two-tone hair (black and white), long hair, animal ears (cat ears, white fur with black tips), yellow eyes, small breasts, visible nipples, pussy, spread legs, lying on back, on bed, white bedsheets, white pillow, barefoot, feet, toes, visible navel, visible abs, smiling, looking at viewer, open lips, gold-yellow wall, soft shadows",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece), 1girl, nude, two-tone black and white hair, long hair, cat ears, yellow eyes, small breasts, pussy, spread legs, lying on a bed with white sheets, soft shadows, painterly, digital art, realism"
+}
+```

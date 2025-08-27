@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sunlit, hyperrealism, sensual, soft_focus, classical_beauty, dramatic_lighting, photorealistic, warm_tones",
+  "pyrite_content_tags": "nude_female, white_sheets, dark_hair_with_white_streaks, yellow_eyes, golden skin, wooden_bed_frame, white pillows, yellow wall, wood bedside table, teal bedside lamp, glass of water, natural_light, sunlight through window, open legs",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "anatomy_issues, unrealistic_skin, oil_render",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic nude woman, lying in bed, sunlight, hyperrealistic skin, dramatic lighting, yellow eyes, dark hair with white streaks, oil render, sensual, open legs, detailed anatomy, wooden bed frame, white sheets, yellow wall, high detail"
+}
+```

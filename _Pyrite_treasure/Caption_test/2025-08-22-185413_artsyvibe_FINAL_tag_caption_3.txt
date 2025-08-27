@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, neon, futuristic, sleek, high-tech, cinematic lighting, vibrant, detailed, digital art",
+  "pyrite_content_tags": "1girl, solo, black hair, ponytail, blunt bangs, circuit pattern bodysuit, medium breasts, standing, leaning on desk, server room, computer monitors, neon lighting, skin tight, boots, leg up, blurry background, cables, indoors",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies, slight blurring",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, cyberpunk, server room, futuristic bodysuit with glowing circuit pattern, black hair, blunt bangs, ponytail, leaning on desk, cinematic lighting, high detail, digital art, (artgerm, greg rutkowski:1.2)"
+}
+```

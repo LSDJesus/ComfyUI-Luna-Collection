@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "romantic, sensual, golden_hour, cinematic_lighting, hyperrealism, dreamlike, soft_focus, bedroom_vibe, nude_art",
+  "pyrite_content_tags": "nude_woman, long black hair, golden eyes, white bedsheets, pillows, antique gilded bed frame, bedroom interior, large window, light beige curtains, nude skin, prominent abdominal muscles, breasts, pubic area, white nail polish, soft skin, sunlight, smooth skin texture, natural expression, looking at viewer, high angle shot",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry_areas, unnatural skin texture, minor anatomical inconsistencies",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with long black hair and golden eyes, lying on white bedsheets. The bedroom is bathed in golden hour sunlight, with a large window and light beige curtains. Hyperrealistic, cinematic lighting, sensuality, soft focus."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dark academia, elegant, sensual, dramatic lighting, photorealistic, gothic, cinematic, alluring",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, open book, writing, pen, holding pen, red lipstick, jewelry, earrings, choker, black choker, large breasts, cleavage, no bra, mole on breast, bookshelf, books, sitting, leather chair, looking at viewer, breasts, mole, sensitive, questionable",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slightly unnatural skin texture, slight blurring in the background, slight anatomy issues",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, portrait of a beautiful woman with long black hair, wearing a low-cut black top, writing in an open book, library background, dramatic lighting, detailed face, perfect anatomy, (by artgerm, greg rutkowski:1.3)"
+}
+```

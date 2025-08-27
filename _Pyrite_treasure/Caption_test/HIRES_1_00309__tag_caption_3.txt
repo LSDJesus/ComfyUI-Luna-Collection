@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, wet, glossy, ethereal, dreamlike, suggestive, digital painting",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, long white hair, blunt bangs, blue eyes, looking at viewer, arms up, wet skin, navel, visible ribs, pool, pool ladder, black ribbon, standing, implied pussy",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, weird water effects",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, wet skin, long white hair, blunt bangs, blue eyes, arms up, dreamy background, pool, by artgerm, (perfect anatomy:1.2)"
+}
+```

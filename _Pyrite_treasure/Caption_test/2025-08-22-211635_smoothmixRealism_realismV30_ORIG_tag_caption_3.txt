@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, natural, serene, nude, glamour",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, spread legs, black hair, long hair, highlighted hair, small breasts, nipples, navel, bed, pillow, smiling, looking at viewer, amber eyes",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies, slight distortions in proportions, overly smooth skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a sensual woman with long black hair and highlights, nude, lying on her back on a bed, spread legs, soft lighting, realistic skin texture, amber eyes, looking at the viewer, (by artgerm, greg rutkowski:1.2)"
+}
+```

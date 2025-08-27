@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, soft lighting, seductive, fantasy_portrait, digital_art, gothic_vibe, high-detail",
+  "pyrite_content_tags": "1girl, sitting in a brown leather armchair, looking at viewer, crossed legs, long black hair with white streaks, black lace bra, black lace panties, navel exposed, yellow glowing eyes, indoor setting, library backdrop with books, window in background, fireplace with warm glow, black lace garter, medium breasts, black lace lingerie, delicate skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.00), black hair with white highlights, yellow glowing eyes, sitting in a leather armchair, black lace lingerie, navel exposed, looking at viewer, sensual pose, indoor library setting, soft lighting, digital art, detailed, cinematic"
+}
+```

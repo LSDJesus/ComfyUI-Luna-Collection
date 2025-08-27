@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, hyperrealism, soft lighting, anime-inspired, suggestive, erotic, sunny, inviting, bedroom",
+  "pyrite_content_tags": "1girl, solo, nude, long black and white hair, yellow eyes, spread legs, barefoot, small breasts, nipples, pussy, lying on bed, white bedsheets, pillow, wooden bed frame, navel, yellow nail polish, toes, looking at viewer, smiling, collarbone",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues (elongated torso), some artifacts in the rendering",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic nude woman, anime style, with black and white hair, yellow eyes, spread legs, on a bed, sunlit, (artgerm, greg rutkowski:1.2) --quality 2 --ar 2:3"
+}
+```

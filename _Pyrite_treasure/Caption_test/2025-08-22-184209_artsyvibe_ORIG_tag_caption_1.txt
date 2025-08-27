@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, gothic, seductive, library, cinematic_lighting, detailed_rendering, high_contrast, suggestive, sensual",
+  "pyrite_content_tags": "young woman, black hair, amber eyes, black choker, black blazer, black lace bodysuit, black leather belt with silver buckle, pen, paper, wooden desk, open book, library, bookshelves, arched ceiling, warm lighting, shadows, pale skin, red lipstick",
+  "pyrite_sexual_tags": "nudity, suggestive, sensual",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, young woman with black hair and amber eyes, wearing a black blazer, a black lace bodysuit revealing cleavage, black choker, writing at a desk in a gothic library with cinematic lighting, suggestive, high detail."
+}
+```

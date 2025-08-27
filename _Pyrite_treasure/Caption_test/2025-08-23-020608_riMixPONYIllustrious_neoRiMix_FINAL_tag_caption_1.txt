@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "digital_painting, anime, sensual, soft_lighting, bedroom, high_detail, photorealistic, alluring",
+  "pyrite_content_tags": "female, nude, lying on bed, white bedsheets, yellow wall, black and white hair, anime_ears, yellow eyes, white pillow, hand on genitals, exposed breasts, slender body, small breasts",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Create a photorealistic digital painting of a young anime woman with black and white hair and cat ears, lying nude on a white bed with yellow walls, sensual and inviting."
+}
+```

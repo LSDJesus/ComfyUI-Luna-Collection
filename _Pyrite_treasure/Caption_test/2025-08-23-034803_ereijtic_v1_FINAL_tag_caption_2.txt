@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, hyperrealism, soft lighting, natural, intimate, inviting, erotic, focused, detailed",
+  "pyrite_content_tags": "1girl, nude, completely nude, black and white streaked hair, long hair, bangs, yellow eyes, lying on bed, white bedsheets, bed, wooden headboard, pillows, nipples, flat chest, exposed abdomen, visible navel, hands near genitals, spread legs, visible pussy, anus, skin, indoors, natural skin tone, realistic lighting",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, black and white streaked hair, yellow eyes, lying on bed, white bedsheets, hands near genitals, spread legs, visible pussy, realistic lighting, high detail, hyperrealism, soft focus, inviting, erotic"
+}
+```

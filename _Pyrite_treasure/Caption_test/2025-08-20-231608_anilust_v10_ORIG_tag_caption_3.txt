@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, sunset, photorealistic, surreal, vibrant, roadside, atmospheric, idyllic",
+  "pyrite_content_tags": "1girl, solo, topless, nudity, pink hair, short hair, pink eyes, frilled hairband, cherry on head, fruit, food on head, black skirt, skirt with slit, navel, abs, toned body, small breasts, nipples, looking at viewer, closed mouth, arms at sides, standing, outdoor, road, power lines, utility poles, sunset sky, atmospheric",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical distortions, overly thin, low artistic quality",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, solo female, topless, pink hair, cherry on head, anime style, photorealistic, atmospheric sunset, perfect anatomy, detailed face, (artgerm, greg rutkowski:1.2)"
+}
+```

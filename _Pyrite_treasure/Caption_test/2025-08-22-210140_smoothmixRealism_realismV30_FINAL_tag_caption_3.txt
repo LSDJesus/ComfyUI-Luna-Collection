@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, sensual, intimate, natural, warm tones",
+  "pyrite_content_tags": "1girl, solo, nude, explicit, long black hair, lying on bed, looking at viewer, spread legs, lips, nipples, visible pubic hair, flat chest, pillow, navel, brown eyes, smile",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies in hands and abdomen, slightly generic",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a woman with long black hair, lying on a bed, looking at the viewer, realistic, soft lighting, detailed, (by artgerm:1.2), (detailed eyes:1.3)"
+}
+```

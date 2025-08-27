@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, sensual, anime, ethereal, detailed, high contrast, elegant, suggestive",
+  "pyrite_content_tags": "1girl, nude, multicolor hair (black, white, yellow), long hair, blunt bangs, yellow eyes, yellow nail polish, barefoot, sitting on bed, open legs, pussy visible, hands on pussy, smile, lips, small breasts, nipples, toenails, bed, pillows, lamp, window, sunlight, indoor, realistic skin, navel, toes, two-tone hair, uncensored",
+  "pyrite_sexual_tags": "nudity, loli",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, detailed, photorealistic), 1girl, nude, black and white split hair with yellow highlights, yellow eyes, sitting on bed with open legs, hands on pussy, sunlight through window, soft skin, perfect anatomy, (highly detailed face), realistic lighting, beautiful, uncensored, looking at viewer"
+}
+```

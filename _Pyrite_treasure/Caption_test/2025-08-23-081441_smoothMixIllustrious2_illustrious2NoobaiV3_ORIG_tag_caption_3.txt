@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft lighting, sensual, provocative, photorealistic, bedroom, morning light",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, looking at viewer, yellow eyes, black and white hair, streaked hair, bare feet, small breasts, navel, hand on stomach, on back, indoors, wooden window, bed sheets, nipples",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies, slightly distorted perspective, could benefit from more detailed rendering",
+  "pyrite_subjective_quality": "good quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a nude anime woman with black and white streaked hair, yellow eyes, lying provocatively on a bed, soft lighting, looking at the viewer, realistic skin texture, detailed anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

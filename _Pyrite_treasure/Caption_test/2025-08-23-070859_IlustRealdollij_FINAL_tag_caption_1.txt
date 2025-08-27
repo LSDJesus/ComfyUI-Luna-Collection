@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, cinematic_lighting, erotic, sensual, dramatic, soft_focus, hyperrealism, oily_skin",
+  "pyrite_content_tags": "nude_female, lying on bed, blonde highlights, black hair, yellow eyes, open legs, pale skin, yellow nail polish, wooden bed frame, white satin sheets, pillows, golden bedroom,  visible pubic hair, defined muscles, oily body, direct gaze, smiling, bed lamp",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "anatomical_inconsistencies, hyper-realistic, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic image of a nude female with black hair and yellow highlights, lying on a bed with white satin sheets, open legs, smiling, direct gaze, defined muscles, oily skin, cinematic lighting, erotic. "
+}
+```

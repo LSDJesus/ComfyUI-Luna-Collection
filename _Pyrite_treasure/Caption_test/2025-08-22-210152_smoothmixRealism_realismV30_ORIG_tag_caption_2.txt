@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, high_contrast, soft lighting, hyperrealistic, detailed, seductive",
+  "pyrite_content_tags": "1girl, nude, black hair, long hair, yellow eyes, small breasts, toned abs, open legs, hand covering crotch, lying on bed, white bedsheets, beige pillow, wooden nightstand, golden lamp, smiling, on back, navel visible",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, black hair, long hair, yellow eyes, small breasts, toned abs, open legs, hand covering crotch, lying on bed, white bedsheets, beige pillow, wooden nightstand, golden lamp, smiling, sensual lighting, high detail, hyperrealistic"
+}
+```

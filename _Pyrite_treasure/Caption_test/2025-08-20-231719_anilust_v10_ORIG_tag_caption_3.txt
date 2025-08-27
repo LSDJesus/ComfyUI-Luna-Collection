@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, digital art, erotic, suggestive, cum-splattered, outdoors",
+  "pyrite_content_tags": "1girl, solo, blue hair, braid, brown eyes, open mouth, cum in mouth, cum on face, cum on breasts, large breasts, nipples, navel, bare shoulders, elbow gloves, blue bodysuit, earrings, jewelry, looking at viewer, outdoors, sky",
+  "pyrite_sexual_tags": "nudity, cum on body, oral sex",
+  "pyrite_flaw_tags": "anatomy issues, unnatural skin texture",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece anime style artwork of a woman with blue hair and brown eyes, wearing a blue bodysuit, large breasts, covered in cum, looking at the viewer, outdoors, detailed background, (artgerm, greg rutkowski:1.2)"
+}
+```

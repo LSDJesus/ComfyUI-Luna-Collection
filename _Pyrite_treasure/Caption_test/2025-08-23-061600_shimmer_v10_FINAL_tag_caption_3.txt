@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, soft lighting, hyperrealism, photorealistic, detailed, high contrast, angelic, vibrant",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, on back, spread legs, breasts, nipples, pussy, multicolored hair, black hair, white streak, yellow eyes, smile, bare feet, toes, pillow, bed, small breasts, navel, looking at viewer, nose, lips, vampire, fangs",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies, potential slight distortion in proportions",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a nude woman with black and white streaked hair and yellow eyes, smiling, lying on a bed, high detail, soft lighting, photorealistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

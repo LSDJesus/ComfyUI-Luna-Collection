@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, photorealistic, detailed, soft lighting, suggestive, inviting",
+  "pyrite_content_tags": "1girl, solo, white hair, twintails, low twintails, blue eyes, ahoge, hair ornament, crop top, collared shirt, short sleeves, large breasts, navel, high-leg panties, underwear, library, bookshelf, looking at viewer, covered nipples",
+  "pyrite_sexual_tags": "suggestive, nudity",
+  "pyrite_flaw_tags": "anatomy issues, distorted proportions, some artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic, detailed rendering of an anime girl with white twintails, blue eyes, and an ahoge, wearing a teal crop top and high-leg panties, standing in a library, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

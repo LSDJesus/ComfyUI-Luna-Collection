@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "realistic, high-detail, soft lighting, sensual, evocative, cinematic_lighting, glamorous, hyperrealism",
+  "pyrite_content_tags": "1girl, nude, long black hair, pale skin, red eyes, prominent breasts, visible nipples, lying on back, open legs, visible genitalia, white pillows, gray bedsheet, wooden floor, messy bedroom, white chair, wooden desk, sunlight from window, indoor setting",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, realistic, long black hair, red eyes, breasts, lying on bed, sensual, open legs, visible genitalia, soft lighting, detailed environment, hyperrealism"
+}
+```

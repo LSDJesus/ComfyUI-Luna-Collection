@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, digital_art, cinematic_lighting, high_detail, hyperrealism, erotic_art, glossy_finish, detailed_environment",
+  "pyrite_content_tags": "1girl, blue hair, long braided hair, ahoge, brown eyes, open mouth, facial cum, cum on chest, cum on face, blue latex bodysuit, blue latex gloves, blue latex legwear, bare shoulders, navel, earrings, red heart shaped earrings, mountains, sky, outdoors, nipples, large breasts",
+  "pyrite_sexual_tags": "nudity, oral, cum",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, ultra-detailed:1.2) 1girl, blue hair with long braided hair, brown eyes, open mouth, facial cum, cum on chest, cum on face, erotic, wearing a blue latex bodysuit, latex gloves and legwear, bare shoulders, red heart-shaped earrings, looking at the viewer, detailed mountain landscape, cloudy sky, outdoor setting, large breasts, nipples, close up, high detail."
+}
+```

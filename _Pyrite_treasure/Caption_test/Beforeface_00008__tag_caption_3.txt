@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft lighting, suggestive, sensual, digital art, glowing, idealized",
+  "pyrite_content_tags": "1girl, blonde hair, long hair, blue eyes, white thighhighs, underwear, bra, large breasts, lying on bed, pillow, spread legs, navel, looking at viewer, blush, sweat, drill hair, white bra, convenient censoring, bottomless, on back, indoors",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "poor anatomy, unnatural lighting, overly smooth rendering, digital artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, blonde hair, blue eyes, detailed anatomy, laying in bed, wearing white lingerie, thigh highs, sweat, soft lighting, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

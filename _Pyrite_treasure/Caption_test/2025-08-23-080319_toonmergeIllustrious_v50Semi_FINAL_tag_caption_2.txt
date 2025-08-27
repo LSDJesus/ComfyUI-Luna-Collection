@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, high-contrast, realistic, soft_lighting, clean, detailed, anime_inspired",
+  "pyrite_content_tags": "1girl, nude, black and white streaked hair, yellow eyes, animal ears, cat ears, long hair, small breasts, visible navel, realistic skin, lips, exposed vulva, spread legs, fingers touching vulva, white bedsheets, wooden headboard, yellow wall, white pillows, natural light, clear skin, abs",
+  "pyrite_sexual_tags": "nudity, solo",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, black and white streaked hair, yellow eyes, cat ears, realistic skin, exposed vulva, spread legs, fingers touching vulva, white bedsheets, soft lighting, detailed, anime inspired"
+}
+```

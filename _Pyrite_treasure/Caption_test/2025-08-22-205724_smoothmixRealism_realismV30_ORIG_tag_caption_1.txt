@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_focus, sensual, natural_light, idealized_beauty, inviting, intimate",
+  "pyrite_content_tags": "nude_female, long_dark_brown_hair, brown eyes, light skin, slim_body, open_legs, hands_on_vulva, lying_on_bed, beige_bed_sheets, beige_pillow, wooden_nightstand, focused_expression, smiling",
+  "pyrite_sexual_tags": "nudity, self_pleasure",
+  "pyrite_flaw_tags": "slightly_unnatural_skin, slight_digital_artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual portrait of a nude woman with long dark brown hair and brown eyes, lying in bed, self-pleasuring, natural light, soft focus, high detail."
+}
+```

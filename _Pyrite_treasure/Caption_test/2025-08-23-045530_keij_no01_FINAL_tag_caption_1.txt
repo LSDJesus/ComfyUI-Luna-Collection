@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dreamlike, cinematic_lighting, soft_focus, hyperrealism, sensual, elegant, satin_sheets, bedroom_scene, morning_light",
+  "pyrite_content_tags": "nude_woman, lying on bed, white satin sheets, black and white hair with yellow highlights, yellow eyes, smiling, golden fingernails, light skin, bare breasts, pubic hair, wooden bed frame, bedside table, black lamp, glass candle holder, window, beige curtains, sunlit room, body oil",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "jpeg_artifacts, slightly_unnatural_anatomy",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman, lying on a bed with white satin sheets, black and white hair with yellow highlights, glowing yellow eyes, golden fingernails, soft lighting, sunlit bedroom, hyperrealism, cinematic, elegant"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, macro, glistening, wet, ethereal, detailed, cinematic lighting, high contrast",
+  "pyrite_content_tags": "close-up, solo female, one girl, hazel eye with green and gold tones, long black eyelashes, defined eyebrows, auburn hair strands, skin with freckles, glistening droplets of water, pearly white droplets, water drops on the face, looking at viewer, dark background",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Hyperrealistic close-up of a female eye, hazel eye with green and gold tones, glistening water droplets, wet auburn hair strands, skin with freckles, cinematic lighting, looking at the viewer, dark background."
+}
+```

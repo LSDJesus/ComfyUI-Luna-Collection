@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, cinematic_lighting, high-contrast, detailed, library, alluring, seductive, professional_aesthetic, fantasy",
+  "pyrite_content_tags": "1girl, solo, indoors, sitting in a black leather chair, black blazer, open black lace bra, black underwear, navel, black belt with silver buckle, black choker with gold emblem, black hair with white highlights, long hair, looking at viewer, smiling, light brown eyes, library in background, bookshelves filled with antique books, desk, pen holder, stack of books on desk",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl) in a library, sitting at a desk wearing a black blazer, open black lace bra, black underwear, black hair with white streaks, cinematic lighting, looking at the viewer, detailed, professional aesthetic, high detail, best quality, realistic, <lora:add_detail:1>",
+}
+```

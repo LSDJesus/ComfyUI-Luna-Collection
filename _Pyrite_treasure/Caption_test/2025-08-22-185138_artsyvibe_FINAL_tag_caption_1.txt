@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dark_academia, gothic_lolita, soft_lighting, sensual, anime_style, detailed_rendering, fantasy_art",
+  "pyrite_content_tags": "woman, black hair, yellow eyes, black lace bra, black lace panties, white sheer skirt, black choker necklace, silver pendant, leather armchair, library, bookshelf, books, window, fireplace, candles, round table, decorative object, patterned rug, indoor, natural light, skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "An anime style woman with black hair, yellow eyes, wearing a black lace bra and panties with a sheer white skirt, sitting in a leather armchair in a gothic library, soft lighting, detailed rendering, blurry background, bad hands"
+}
+```

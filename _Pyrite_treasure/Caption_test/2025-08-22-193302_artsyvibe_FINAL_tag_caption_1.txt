@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "F",
+  "pyrite_aesthetic_tags": "uncanny_valley, plastic, artificial, soft_lighting, sterile, smooth, glossy, hyperrealism",
+  "pyrite_content_tags": "nude_female, human_female, long_black_hair, silver_streaked_hair, yellow_eyes, red_lips, smooth_skin, large breasts, navel_piercing, open_legs, lying_on_bed, white_silk_sheets, room_interior, window_light, wooden_table, white_robe",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "uncanny_valley, unrealistic_skin, bad_anatomy, plastic_texture",
+  "pyrite_subjective_quality": "worst quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic nude female, lying on white silk sheets, black hair with silver streaks, big breasts, open legs, smooth plastic skin, hyperrealistic lighting, uncanniness."
+}
+```

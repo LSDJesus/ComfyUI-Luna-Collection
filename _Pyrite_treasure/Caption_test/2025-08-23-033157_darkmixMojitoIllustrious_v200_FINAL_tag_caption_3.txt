@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, intimate, bedroom, suggestive, hyperrealistic",
+  "pyrite_content_tags": "1girl, solo, nude, pussy, spread legs, looking at viewer, yellow eyes, black hair, two-tone hair, on bed, bed, barefoot, lamp, small breasts, breasts, feet, smile, pillow, indoors, sitting, toes, nipples, tan lines, gold bed frame, white sheets",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "visible artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic portrait of a slender woman with black and white hair, yellow eyes, nude, sitting on a bed, spread legs, sunlight, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

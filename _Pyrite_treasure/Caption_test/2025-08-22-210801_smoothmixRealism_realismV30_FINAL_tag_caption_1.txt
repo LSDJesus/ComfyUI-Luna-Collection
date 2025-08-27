@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, bedroom, sensual, dreamy, smooth, golden_hour, detailed_skin",
+  "pyrite_content_tags": "nude female, fair skin, black hair, bangs, glowing orange eyes, open mouth, relaxed facial expression, hands, bed sheets, white pillows, bed, bedroom, table, table lamp, sunlight, perfect body, manicured nails",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, blurry",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, nude woman lying on bed, perfect body, soft skin, golden eyes, black hair, soft lighting, detailed background, realistic rendering, cinematic lighting,  improve anatomy"
+}
+```

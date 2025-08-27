@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, anime, vibrant, surreal, suggestive, high-detail, detailed, provocative, unsettling",
+  "pyrite_content_tags": "1girl, pink hair, short bob cut, blunt bangs, pink eyes, glowing eyes, open mouth, fangs, saliva, pink athletic wear, full-length zipper, open bodysuit, revealed breasts, nipples, pale skin, toned abs, navel, exposed pussy, pink penis, feet, bare feet, toenails, pink nail polish, fingernails, pink nails, box, grass, cloudy sky, metal structure, outdoors, looking at viewer, sitting, spread legs, day, sweat, veins, collarbone, ribs, linea alba",
+  "pyrite_sexual_tags": "nudity, oral, footjob, pussy juice, explicit, ahegao",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), pink hair, short bob cut, blunt bangs, pink eyes, glowing eyes, open mouth, fangs, saliva, pink athletic wear, full-length zipper, open bodysuit, revealed breasts, nipples, pale skin, toned abs, navel, exposed pussy, pink penis, sitting, spread legs, provocative pose, detailed background, detailed skin, vibrant, surreal, outdoors, cloudy sky, best quality, masterpiece"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, intimate_lighting, soft_focus, sensual, erotic, natural_skin, high_detail, cinematic_lighting",
+  "pyrite_content_tags": "1girl, nude, long black hair, brown eyes, small breasts, visible nipples, navel, spread legs, hand near pussy, sitting on bed, cream colored bedding, carved wooden headboard, wooden bedside table, direct gaze, realistic skin texture",
+  "pyrite_sexual_tags": "nudity, pussy, solo, explicit, uncensored",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, long black hair, brown eyes, small breasts, visible nipples, navel, spread legs, hand near pussy, sitting on bed, cream colored bedding, carved wooden headboard, wooden bedside table, soft lighting, photorealistic, cinematic lighting, high detail"
+}
+```

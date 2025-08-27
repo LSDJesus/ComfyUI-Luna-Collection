@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "D",
+  "pyrite_aesthetic_tags": "uncanny valley, anatomical distortion, unsettling, surreal, street scene, digital art, high-saturation, cold colors, hyperrealism",
+  "pyrite_content_tags": "1girl, solo, nude, standing, outdoors, white hair, orange eyes, pale skin, small breasts, visible ribs, toned body, abs, holding panties, panty pull, liquid, leaking, street, buildings, cobblestone, day, suggestive, exposed genitals, public nudity",
+  "pyrite_sexual_tags": "nudity, exhibitionism, suggestive",
+  "pyrite_flaw_tags": "anatomical distortions, uncanny valley effect, strange liquid, unnatural lighting, poorly defined hands",
+  "pyrite_subjective_quality": "bad quality",
+  "pyrite_direct_prompt_suggestion": "A slender woman with white hair and orange eyes, standing nude on a cobblestone street, pulling down her white panties, visible ribs, toned physique, high-detail, hyperrealistic, (by artgerm, greg rutkowski:1.2), avoid anatomical deformities, fix the liquid."
+}
+```

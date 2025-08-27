@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, natural lighting, serene, portrait, sensual, soft focus",
+  "pyrite_content_tags": "1girl, solo, looking at viewer, long brown hair, blue eyes, parted lips, medium breasts, breasts, blue leotard, lace leotard, highleg, tattoo, arm tattoo, outdoors, daytime, pathway, gazebo, garden",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "slightly unnatural pose, minor facial imperfections",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a beautiful woman with long brown hair, blue eyes, wearing a turquoise lace leotard, highleg, with a tattoo on her arm, standing outdoors in a garden, natural lighting, (by artgerm:1.2)"
+}
+```

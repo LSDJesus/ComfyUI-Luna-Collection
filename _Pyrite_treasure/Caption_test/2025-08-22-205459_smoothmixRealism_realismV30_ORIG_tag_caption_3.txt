@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, bedroom, intimate, sensual, warm tones, detailed",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, pussy, on back, lying on bed, spread legs, black hair, blunt bangs, brown eyes, looking at viewer, small breasts, pillow, bedsheets, jewelry, earrings, navel",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive",
+  "pyrite_flaw_tags": "anatomy flaws, slightly off proportions, uncanny valley appearance",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful young woman with black hair and blunt bangs, brown eyes, lying nude on a bed, realistic skin texture, soft lighting, highly detailed, (artgerm, greg rutkowski:1.2)"
+}
+```

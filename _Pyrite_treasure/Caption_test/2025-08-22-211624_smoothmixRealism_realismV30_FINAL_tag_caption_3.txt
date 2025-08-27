@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, soft_lighting, sensual, intimate, glamorous, studio_lighting, detailed",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, bed, pillow, black hair, long hair, brown eyes, nipples, small breasts, abs, spread legs, hand in crotch, navel, looking at viewer, silk sheets, natural skin texture",
+  "pyrite_sexual_tags": "nudity, suggestive, self-pleasure",
+  "pyrite_flaw_tags": "slightly distorted anatomy, some artifacting on skin texture",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic nude woman lying on a bed, black long hair, brown eyes, looking directly at the viewer, hand in crotch, silk sheets, intimate lighting, (by artgerm, ross tran:1.2)"
+}
+```

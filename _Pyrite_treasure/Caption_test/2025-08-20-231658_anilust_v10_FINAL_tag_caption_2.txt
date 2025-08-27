@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, wet, sensual, erotic, glossy, suggestive, anime, digital painting, high detail",
+  "pyrite_content_tags": "1girl, white hair, long hair, blue eyes, large breasts, inverted nipples, nipples, abs, parted lips, looking at viewer, white panties, panties pulled down to ankle, hair ribbon (black), hair ornament (black flower), underwear, nude, exposed pussy, anal, visible anal, shower head, sitting, ceramic tile, wet skin, water droplets, mole under eye, mole, ahoge, navel, collarbone, sex toy, purple sex toy, bathroom setting, white background, light source from window, curtain",
+  "pyrite_sexual_tags": "nudity, anal, sex toy",
+  "pyrite_flaw_tags": "blurry, unnatural proportions, slightly deformed hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, white hair, long flowing hair, blue eyes, large breasts, inverted nipples, wet skin, water droplets, abs, erotic, exposed pussy, anal, visible anal, purple sex toy, shower scene, ceramic tile background, digital painting, hyperrealism"
+}
+```

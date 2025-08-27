@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, erotic_art, sensual, inviting, creamy, bright_room, cinematic_lighting",
+  "pyrite_content_tags": "nude_female_figure, bed, white_sheets, wooden_headboard, black_and_white_hair, yellow_eyes, tan skin, hand_on_pussy, side_table, lamp, sheer_white_curtains, small_nipples, light_and_shadow",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime girl, lying on white sheets, sunny room, black and white hair, yellow eyes, sensual pose, soft lighting, erotic art."
+}
+```

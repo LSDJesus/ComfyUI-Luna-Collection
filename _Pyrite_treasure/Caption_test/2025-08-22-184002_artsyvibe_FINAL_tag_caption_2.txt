@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark academia, gothic, cinematic lighting, high contrast, ethereal, sensual, detailed, digital art, photorealistic",
+  "pyrite_content_tags": "1girl, sitting, indoors, library, bookshelf filled with books, long black hair with white streaks, blunt bangs, yellow eyes, fair skin, red lipstick, black lace bra, black blazer, black choker with silver clasp, holding a pen, pen on a table, writing on paper, leather chair, looking at viewer, two-tone hair, lace trim",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, bad hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((1girl))), sitting in a library, wearing a black blazer and black lace bra, black hair with white streaks and blunt bangs, yellow eyes, holding a pen, looking at the viewer, cinematic lighting, photorealistic, intricate details, high contrast, (((masterpiece)))"
+}
+```

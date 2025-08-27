@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, sun-kissed, natural_light, intimate, soft_focus, portrait, realism",
+  "pyrite_content_tags": "young_woman, brunette_hair, green_eyes, nude, tanned_skin, white_bed_sheets, tan_lines, open_mouth, pink_lips, bare_breasts, light_skin, wooden_bed_frame, resting_pose, daytime",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a young woman with brunette hair and green eyes, lying on white bed sheets, nude with tan lines, sun-kissed skin, natural light, soft focus, intimate, open mouth, resting pose."
+}
+```

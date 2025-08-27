@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft_lighting, outdoor, idyllic, elegant, natural, inviting",
+  "pyrite_content_tags": "1girl, solo, standing, looking at viewer, long brown hair, blue eyes, full lips, parted lips, teal lace leotard, high-leg cut, cleavage, medium breasts, arm tattoo, detailed tattoo, stone path, lush greenery, gazebo in background, daytime, realistic skin texture",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), detailed tattoo, blue eyes, long brown hair, Teal lace leotard, high-leg, cleavage, outdoors, soft lighting, photorealistic, realistic skin texture, elegant, looking at the viewer"
+}
+```

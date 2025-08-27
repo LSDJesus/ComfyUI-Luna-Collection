@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, photorealistic, sensual, bedroom, natural_light, intimate, smooth skin, focused_expression",
+  "pyrite_content_tags": "young woman, nudity, fair skin, dark brown hair, bangs, brown eyes, bed, white pillow, white sheets, wooden bed frame, bedside table, lamp, earrings, open legs, hands on body, soft nipples, nude, no clothing, natural pose",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "wonky_eyes, imperfect_anatomy",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic young woman with dark brown hair and bangs, nude, reclining on a bed with white sheets, soft natural lighting, intimate pose, open legs, focused expression, slightly wonky eyes, perfect anatomy."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic_lighting, elegant, detailed, photorealistic, erotic, library, warm_lighting, soft_focus, alluring, seductive",
+  "pyrite_content_tags": "1girl, sitting, indoors, library, bookshelf, black hair with white streak, long hair, hazel eyes, pale skin, black choker, black open jacket, no bra, breasts, medium breasts, red lips, black pen with fire-like design, white paper, wooden desk, leather-bound books, wooden chair, window, daylight, sensual expression",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece:1.2), 1girl, sitting at a wooden desk in a library, writing with a detailed pen that has a fire-like design, wearing a black open jacket and black choker, no bra, soft lighting, cinematic lighting, detailed, photorealistic, black hair with white streak, hazel eyes, focus on breasts and sensual expression, perfect face, (intricate details:1.1), (highly detailed skin:1.1)"
+}
+```

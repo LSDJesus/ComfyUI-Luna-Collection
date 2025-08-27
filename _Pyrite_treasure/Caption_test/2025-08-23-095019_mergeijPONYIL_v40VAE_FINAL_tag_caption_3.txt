@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, sensual, soft lighting, photorealistic, provocative, high contrast, skin texture, seductive",
+  "pyrite_content_tags": "1girl, nude, solo, spread legs, on bed, bed sheets, white sheets, two-tone hair, black hair with white and yellow highlights, yellow eyes, looking at viewer, breasts, small breasts, nipples, pussy, lips, anus, navel, lying, pillow, smiling, bed, long hair, explicit, uncensored, open legs, wet skin",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive, pussy",
+  "pyrite_flaw_tags": "anatomy issues, slightly distorted facial features, possibly AI artifacting, hands",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece photograph of a beautiful woman with black hair, white and yellow highlights, glowing yellow eyes, lying on a bed, spread legs, soft lighting, wet skin, (artgerm:1.2), (greg rutkowski:1.2)"
+}
+```

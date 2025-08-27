@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, cinematic_lighting, sunlit, dreamy, intimate, sensuous, realistic, portrait",
+  "pyrite_content_tags": "woman, laying on bed, long black hair, dark eyes, fair skin, white bikini top, white shorts, exposed midriff, toned stomach, white sheets, wooden bed frame, red wooden chair, green houseplant, window with white blinds, sunlight, small bedside table, items on table, open arms, white residue on skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful woman with long black hair and dark eyes lays on a bed, wearing a white bikini top and shorts, sunlit skin, sunlight through a window, soft focus, realistic."
+}
+```

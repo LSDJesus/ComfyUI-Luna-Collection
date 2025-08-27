@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, sensual, high-detail, soft_lighting, provocative, athletic, hyperrealism, digital_art",
+  "pyrite_content_tags": "1girl, white hair, purple eyes, pink bow, teal streaks in hair, small black flower hair accessory, white crop top with pink trim, visible nipples, defined abs, pink shorts with white stripe on sides, latex material, visible vaginal area, indoors, patterned sofa, framed artwork on wall, wooden door, side table with lamp",
+  "pyrite_sexual_tags": "nudity, cowgirl position",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "((masterpiece)), 1girl, white hair with teal accents, purple eyes, pink bow, wearing a white crop top with pink trim, latex pink shorts, visible nipples, defined abs, indoor, patterned sofa, cowgirl position, soft lighting, high-detail, digital art"
+}
+```

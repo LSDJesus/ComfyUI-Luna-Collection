@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, divine_light, golden_aesthetic, art_nouveau_inspired, high_detail, sensual, dreamlike",
+  "pyrite_content_tags": "nude_female, golden_skin, long_blonde_and_black_hair, amber_eyes, kneeling_position, hands_on_thigh, open_mouth, bed, white_bedsheets, golden_candleholders, lit_candles, ornate_gold_wallpaper, headboard, bedroom_interior",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "An ethereal golden goddess, kneeling on a bed, long blonde and black hair, amber eyes, high detail, ornate golden wallpaper, soft lighting, art nouveau style."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, intimate, soft lighting, modern, erotic",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, pussy, spread legs, black hair, long hair, blunt bangs, two-tone hair, streaked hair, yellow eyes, looking at viewer, bed, on bed, indoors, barefoot, feet, toes, pillow, lamp, navel, skinny, ribs",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive",
+  "pyrite_flaw_tags": "anatomical distortions (ribs, arms), slight digital artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman with black hair and a white streak, yellow eyes, sitting on a bed, nude, detailed anatomy, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

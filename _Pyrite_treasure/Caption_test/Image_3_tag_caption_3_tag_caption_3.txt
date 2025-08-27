@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, photorealistic, seductive, intimate, innocent, bedroom",
+  "pyrite_content_tags": "1girl, solo, nudity, nude, pussy, spread legs, flat chest, nipples, navel, brown eyes, black hair, short hair, sitting, bed, pillow, on bed, looking at viewer, bedroom",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, slightly unnatural proportions, the face looks a bit uncanny.",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, highres), a young woman sitting on a bed, nude, spread legs, realistic skin texture, brown eyes, black hair, short hair, soft lighting, natural pose, (by artgerm, greg rutkowski:1.2)"
+}
+```

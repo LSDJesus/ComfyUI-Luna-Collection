@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, seductive, high-detail, vibrant_colors, dramatic_lighting, sensual, soft_focus, voyeuristic",
+  "pyrite_content_tags": "1girl, orange hair, purple eyes, short twintails, bandaid on nose, bandaid on face, orange crop top with cleavage cutout, black trim, gold closure, red skirt, bare shoulders, white bandages on arms, bound wrists, rope, exposed navel, covered nipples, sitting on a bed, sunlight, sunset in background, wooden framed window, bedroom",
+  "pyrite_sexual_tags": "nudity, bondage, breasts",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), anime, orange hair, short twintails, purple eyes, bandaid on nose, bandaid on face, orange crop top with cleavage cutout, black trim, gold closure, red skirt, bare shoulders, white bandages on arms, bound wrists, rope, exposed navel, covered nipples, sitting on a bed, sunlight, sunset in background, wooden framed window, bedroom, dramatic lighting, soft focus, seductive pose"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, natural_light, serene, sensual, minimalist, intimate, realistic, clean",
+  "pyrite_content_tags": "nude_female, long black hair, closed eyes, fair skin, natural breasts, seated on a bed, white sheets, neutral wall color, wooden floor, black garment in the background, black socks, window, natural daylight, light pink lips",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful woman with long black hair and fair skin, nude, serene expression, seated on a white-sheeted bed, natural light, soft focus, minimalist background."
+}
+```

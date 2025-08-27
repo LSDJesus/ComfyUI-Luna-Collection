@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, seductive, soft_lighting, photorealistic, cinematic_lighting, clean_lines, body_positivity, natural_skin",
+  "pyrite_content_tags": "nude_female, fair_skin, long_black_and_white_hair, yellow_eyes, resting on white_bedding, white pillows, wooden headboard, toned_body, hands_close_to_vagina, bare_breasts, open_legs, natural_light, bedroom_setting, sheets_in_focus",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude female with long black and white hair and yellow eyes laying on white sheets, natural skin, hands near vagina, soft lighting, cinematic lighting, photorealistic."
+}
+```

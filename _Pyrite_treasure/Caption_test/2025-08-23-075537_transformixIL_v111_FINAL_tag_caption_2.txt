@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, soft lighting, photorealistic, elegant, high contrast, luxurious, morning light",
+  "pyrite_content_tags": "1girl, nude, lying on bed, black hair with white streaks, green eyes, small breasts, visible nipples, pussy, armpits visible, navel, ribs, smile, lips, white bed sheets, pillow, indoors, morning light, uncensored, completely nude, skin texture, slight tan",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on a white bed, black hair with white streaks, green eyes, small breasts, visible pussy, soft morning light, photorealistic, intimate, sensual"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, cinematic_lighting, high_contrast, soft_focus, detailed, photorealistic, fantasy, intimate",
+  "pyrite_content_tags": "nude woman, tanned skin, long black and white hair, yellow eyes, yellow nail polish, small breasts, open legs, visible pubic hair, wooden bed frame, white satin sheets, sunlight, scar on face, looking at viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, jpg_artifacts, bad_anatomy",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic, seductive woman, long black hair with white and yellow highlights, yellow eyes, laying in a bed, sunlight, high-contrast, nude, visible pubic hair, open legs, scar on face"
+}
+```

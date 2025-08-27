@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "surreal, ethereal, high-contrast, golden_skin, erotic, dreamlike, smooth_texture, shiny",
+  "pyrite_content_tags": "1girl, two-tone hair (black and white), long hair, yellow eyes, cat ears (black and gold), golden skin, bare breasts, hand covering genitalia, lying on bed, white satin sheets, white pillow, ornate headboard (cream), sunlight, barefoot, medium breasts, latex suit",
+  "pyrite_sexual_tags": "nudity, masturbation",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, absurdres, highres), 1girl, golden skin, two-tone hair (black and white), long hair, yellow eyes, cat ears (black and gold), barefoot, bare breasts, hand covering genitalia, laying on satin white sheets, white pillow, ornate headboard, sunlight, smooth skin, erotic, dreamlike, surreal"
+}
+```

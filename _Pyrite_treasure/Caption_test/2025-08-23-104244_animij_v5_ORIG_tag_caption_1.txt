@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, digital_art, suggestive, sensual, soft_lighting, clean_lines, detailed, hyperrealistic",
+  "pyrite_content_tags": "nude_female, black and white hair, yellow eyes, pale skin, slight abs, yellow nail polish, white bedsheets, wooden headboard, two white pillows, blonde and yellow hair strand, daylight, bed, relaxed_pose, open_legs, looking_at_viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, wonky_eyes, jpg_artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Anime girl, black and white hair, yellow eyes, nude, on a bed, detailed anatomy, realistic lighting, highly detailed, clean lines, looking at the viewer, bedsheets, headboard"
+}
+```

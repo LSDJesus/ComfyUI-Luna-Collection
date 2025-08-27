@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, realistic, cinematic_lighting, intimate, sensual, serene, dreamy, natural",
+  "pyrite_content_tags": "1girl, breasts, nipples, topless, black hair, long hair, silver highlights, closed eyes, pale skin, gray sweatpants, white bedsheets, lying on back, own hands together, messy bedroom, window, wooden floor, morning light",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, topless, black hair with silver highlights, closed eyes, lying on bed, holding hands, morning light, soft lighting, realistic, messy bedroom, cinematic lighting"
+}
+```

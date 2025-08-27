@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, high contrast, intimate, natural, clean, focused",
+  "pyrite_content_tags": "1girl, nude, black hair, long hair, asian woman, medium breasts, nipples, visible pubic hair, female pubic hair, closed eyes, lying on bed, grey sheets, grey pillows, arm behind head, armpits, navel, smooth skin, small earrings, detailed facial features",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl) nude, photorealistic, asian woman, black hair, long hair, medium breasts, nipples, pubic hair, lying on bed, arm behind head, closed eyes, soft lighting, high contrast, intimate, focus on details"
+}
+```

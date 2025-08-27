@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, provocative, detailed, soft_lighting, bedroom, art_nouveau, high_contrast, realistic",
+  "pyrite_content_tags": "nude_female, black_hair, white_streaks, pale_skin, green_eyes, tan_lines, open_legs, hands_on_genitalia, white_bedding, wooden_headboard, bedside_tables, bedside_lamps, wall_art, bedroom_setting, sunlight_streaming",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Realistic nude female, black hair with white streaks, green eyes, tan lines, open legs, hands on genitalia, soft lighting, detailed bedroom setting, high contrast."
+}
+```

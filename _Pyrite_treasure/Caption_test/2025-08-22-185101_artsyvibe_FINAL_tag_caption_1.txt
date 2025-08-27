@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_academia, gothic, cinematic_lighting, sensual, victorian, fantasy, dramatic_lighting, soft_focus, detailed",
+  "pyrite_content_tags": "female, black hair, bangs, green eyes, pale skin, black lace lingerie, black panties, black bra, black lace gloves, pierced navel, leather armchair, round window, bookshelf, fireplace, wooden desk, books, candles, gothic atmosphere, warm lighting, cool lighting, bedroom interior, sitting, pensive expression, looking at viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A stunning young woman with long black hair, bangs, and green eyes, dressed in black lace lingerie, pierced navel, sitting in a leather armchair, gothic interior with a fireplace and bookshelf, cinematic lighting, soft focus, victorian, detailed"
+}
+```

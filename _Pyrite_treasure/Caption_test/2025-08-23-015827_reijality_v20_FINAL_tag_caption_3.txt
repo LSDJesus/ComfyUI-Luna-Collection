@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, intimate, soft lighting, natural, suggestive",
+  "pyrite_content_tags": "1girl, solo, black hair, white streak, nude, lying on bed, on back, legs spread, looking at viewer, navel, blunt bangs, pillow, bed, nipples, flat chest, painted body, yellow paint, indoors, realistic",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies, paint texture is unnatural",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a nude woman with black hair and a white streak, lying on a bed with legs spread, partially painted with yellow paint, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

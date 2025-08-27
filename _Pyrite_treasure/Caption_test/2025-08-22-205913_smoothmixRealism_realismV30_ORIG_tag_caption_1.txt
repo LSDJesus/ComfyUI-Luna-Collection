@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, natural_light, sensual, portrait, realistic, bed_setting, dreamy, clean_lines",
+  "pyrite_content_tags": "nude woman, long dark brown hair, brown eyes, fair skin, lying on a bed, white comforter, beige pillow, wooden headboard, table lamp, white substance in right hand, hand on genitals, exposed breasts, smooth skin, smile",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual portrait of a nude woman with long dark brown hair and fair skin, lying on a bed with white comforter and beige pillows. Soft natural light illuminates her, creating a dreamy and realistic atmosphere. She has brown eyes and is smiling. Hand on genitals, and right hand holding white substance."
+}
+```

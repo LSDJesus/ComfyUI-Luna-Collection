@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, sensual, seductive, high-detail, photorealistic, soft lighting, vibrant colors, cinematic lighting",
+  "pyrite_content_tags": "1girl, red and blonde short hair, yellow eyes, open mouth, black choker with gold cross pendant, large breasts, exposed nipples, nude torso, bound wrists with black leather cuffs, bound legs with rope, navel visible, sitting, spread legs, wet skin, blue swimming pool, white poolside, blurry background, outdoor setting, day, sky, water, trees, blurry background",
+  "pyrite_sexual_tags": "nudity, bondage, explicit",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.2), sensual, seductive, realistic, anime, perfect anatomy, red and blonde short hair, yellow eyes, open mouth, black choker with gold cross pendant, large breasts, exposed nipples, bound wrists with black leather cuffs, bound legs with rope, sitting poolside, spread legs, wet skin, blue swimming pool, cinematic lighting, detailed background, day, sky, trees, high detail, perfect proportions, high quality, masterpiece"
+}
+```

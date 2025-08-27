@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic_art, sensual, photorealistic, soft_lighting, detailed, provocative, suggestive, intimate",
+  "pyrite_content_tags": "1girl, solo, nude, on bed, spread legs, pussy, nipples, breasts, small breasts, long black hair, white streak, yellow eyes, barefoot, feet, toes, navel, smile, looking at viewer, pillow, bed, satin sheets, reclining, close-up",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "Anatomy distortions (thin torso, inconsistent muscularity), slightly off-model facial structure, some artifacts in the bedsheets",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a nude woman with long black hair and a white streak, yellow eyes, smiling, reclining on a bed with white satin sheets, highly detailed anatomy, perfect skin, soft lighting, by artgerm, greg rutkowski:1.2"
+}
+```

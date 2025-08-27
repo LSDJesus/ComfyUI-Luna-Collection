@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, digital art, polished, sterile, anime, suggestive, sensual, clean",
+  "pyrite_content_tags": "1girl, 1boy, nude, ass, red hair, short hair, yellow eyes, open mouth, looking at viewer, doggystyle, abs, heterosexuality, sex from behind, stylized, tattoos",
+  "pyrite_sexual_tags": "nudity, sex, doggystyle",
+  "pyrite_flaw_tags": "anatomical distortions (male torso), uncanny valley",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece illustration of a nude couple, doggystyle, anime style, red-haired anime girl, yellow eyes, muscular male, detailed abs, erotic, sensual lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

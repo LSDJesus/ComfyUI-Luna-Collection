@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft lighting, realistic, high-detail, natural_skin_tones, intimate, artistic_composition, studio_lighting",
+  "pyrite_content_tags": "1girl, nude, on bed, lying on back, looking at viewer, black hair with white and yellow streaks, brown eyes, pale skin with tan lines, visible nipples, spread legs, open vulva, hand on pubic area, white floral pattern bedsheets, yellow velvet pillows, exposed navel, thin figure, visible ribs, smooth skin, natural lips",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((1girl))), nude, on bed, lying on back, looking at viewer, black hair with white and yellow streaks, brown eyes, tan lines, spread legs, open vulva, hand on pubic area, soft lighting, studio lighting, high-detail, realistic, natural skin tones, intimate composition, perfect anatomy"
+}
+```

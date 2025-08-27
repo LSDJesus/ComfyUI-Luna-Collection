@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, dark_forest, soft_lighting, sensual, anime_style, realistic_rendering, high_contrast",
+  "pyrite_content_tags": "1girl, nude, white skin, long white hair, green eyes, flower hair ornament, pink flower, black ball gag, black gag, exposed breasts, nipples, white thigh-high stockings with lace trim, sitting in a forest, white wildflowers, exposed navel, toned abdomen, long hair, collarbone, outdoors, forest background, saliva detail",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, nude, white skin, long white hair, green eyes, flower hair ornament, pink flower, black ball gag, white thigh-high stockings with lace trim, sitting in a misty forest, soft lighting, highly detailed, realistic rendering, sensual, explicit"
+}
+```

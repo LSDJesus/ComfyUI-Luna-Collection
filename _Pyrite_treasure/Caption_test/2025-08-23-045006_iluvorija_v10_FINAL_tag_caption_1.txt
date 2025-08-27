@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, anime_style, soft_lighting, high_detail, surreal, fantasy, seductive, sensual",
+  "pyrite_content_tags": "nude female, sitting on bed, black and white hair with yellow highlights, yellow eyes, cat ears, pale skin, muscular build, yellow nail polish, open legs, floral pattern on bedsheets, pillows with floral pattern, wooden headboard, golden light, small nightstand, blonde eyebrows",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "unrealistic anatomy, bad_hands, blurry_face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "highly detailed digital art of a seductive anime-styled woman with cat ears, black and white hair with yellow highlights, yellow eyes, muscular physique, sitting nude in bed, floral pattern on the bedsheets and pillows, golden lighting, masterpiece, photorealistic, 8k"
+}
+```

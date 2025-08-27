@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, sensual, bedroom, elegant, serene, porcelain_skin, high_detail",
+  "pyrite_content_tags": "woman, pale skin, black and white hair, yellow eyes, nude, lying on white bed sheets, brass bed frame, white pillows, white curtain, brown nightstand, black lamp base, soft lighting, intimate pose, open legs, hands on stomach, suggestive expression",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, blurry_face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with black and white hair, yellow eyes, lying on white sheets, soft lighting, intimate pose, open legs, hands on stomach, suggestive expression, high detail, elegant bedroom setting."
+}
+```

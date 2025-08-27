@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, sensual, hyperrealism, soft lighting, fantasy, suggestive, high detail, clean",
+  "pyrite_content_tags": "1girl, nude, animal ears, cat ears, black hair, white streak, yellow eyes, realistic, on bed, spread legs, solo, pussy, nipples, smiling, yellow nails, abs, small breasts, barefoot, bed, pillows, floral pattern, toenails",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive",
+  "pyrite_flaw_tags": "unnatural body proportions, unrealistic skin texture, slightly off-center composition, slight anatomical errors",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, photorealistic:1.3) a beautiful woman with cat ears, black hair with a white streak and yellow highlights, yellow eyes, nude, sitting on a bed, spread legs, smiling, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, high_detail, sensual, cinematic_lighting, suggestive, soft_focus, wet_effect, bondage_aesthetic",
+  "pyrite_content_tags": "1girl, red and yellow short hair, yellow eyes, open mouth, black choker with gold cross pendant, visible nipples, large breasts, bare shoulders, visible collarbone, bound wrists with black leather restraints, bound thighs with brown rope, visible navel, seated position, blurred background, pool of blue water, clear sky, trees, poolside environment, day, wet skin",
+  "pyrite_sexual_tags": "nudity, bondage",
+  "pyrite_flaw_tags": "blurry, minor anatomical inconsistencies, possible jpg_artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), red and yellow short hair, yellow eyes, open mouth, wearing a black choker with a gold cross pendant, large breasts, visible nipples, bound wrists with black leather restraints, bound thighs with brown rope, poolside, wet skin, cinematic lighting, soft focus, depth of field, high detail, blurred background, sky, trees, day, bondage --style anime --quality high"
+}
+```

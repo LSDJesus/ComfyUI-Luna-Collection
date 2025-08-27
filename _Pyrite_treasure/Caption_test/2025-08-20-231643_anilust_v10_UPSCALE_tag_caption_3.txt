@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "D",
+  "pyrite_aesthetic_tags": "anime, sensual, hyperrealism, soft lighting, clinical, digital art, erotic",
+  "pyrite_content_tags": "1girl, solo, white hair, long hair, hair ornaments, pink eyes, looking at viewer, nude, breasts, nipples, huge breasts, inverted nipples, pussy, spread legs, white panties, underwear, panties around one leg, navel, abs, sex toy, anal object insertion, object insertion, wet skin, bathroom, shower, water droplets, blush",
+  "pyrite_sexual_tags": "nudity, anal object insertion, sex toy, explicit",
+  "pyrite_flaw_tags": "anatomical distortions, unnatural skin texture, distorted musculature, poor shading, unnatural pose, uncanny valley",
+  "pyrite_subjective_quality": "bad quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic, sensual nude anime girl in a bathroom, spread legs, wet skin, detailed anatomy, (by artgerm, greg rutkowski:1.2), (perfect anatomy:1.4), highly detailed skin, (water droplets:1.2), (intricate details:1.2), (masterpiece, best quality, 8k)"
+}
+```

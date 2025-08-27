@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, sensual, photorealistic, anime, silk, inviting, bedroom",
+  "pyrite_content_tags": "1girl, solo, nude, on_back, lying, bed, white_silk_sheets, two-tone_hair, black_hair, white_streak, long_hair, yellow_eyes, glowing_eyes, looking_at_viewer, small_breasts, nipples, navel, barefoot, pillow, bed, shadow_play, smile",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomical issues, generic face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece photorealistic portrait of a beautiful anime girl with two-tone hair (black and white) with yellow glowing eyes, nude, lying on white silk sheets in a bedroom with soft lighting, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

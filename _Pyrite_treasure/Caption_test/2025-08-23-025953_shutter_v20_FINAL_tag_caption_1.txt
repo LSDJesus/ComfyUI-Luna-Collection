@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, high-contrast, natural_lighting, modern, hyperrealism, erotic, detailed_texture, cinematic_lighting",
+  "pyrite_content_tags": "nude_female, green eyes, black hair with yellow highlights, bed sheets, yellow pillows, wooden bedside tables, metal bed frame, white cum, pale skin, muscular physique, fair skin, female genitalia, pink lips, droplets of water",
+  "pyrite_sexual_tags": "nudity, cum",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual, high-contrast photograph of a nude female, lying on a bed. Her skin is pale and glistening with droplets of water. Her hair is black with yellow highlights, and she has green eyes. The image is lit by natural light. The scene is intimate and erotic, with great detail. The female's genitalia is exposed and covered in cum."
+}
+```

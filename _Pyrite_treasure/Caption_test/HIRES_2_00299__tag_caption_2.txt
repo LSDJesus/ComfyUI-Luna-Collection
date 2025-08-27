@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, digital_art, seductive, hyperrealism, soft_lighting, sensual, detailed_rendering, high-quality",
+  "pyrite_content_tags": "1girl, white hair, purple eyes, long hair, ahoge, pigtails with turquoise strands, white headband with pink accents, pink bow, white crop top with pink trim, see-through top, exposed nipples, athletic build, visible abs, pink bike shorts with white stripes, wet skin, navel, parted lips, couch, indoor setting, painting on wall, lamp, window with blinds",
+  "pyrite_sexual_tags": "nudity, cowgirl position",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), anime, detailed rendering, seductive, white hair, purple eyes, long hair, ahoge, pigtails with turquoise strands, white headband with pink accents, white crop top with pink trim, exposed nipples, athletic build, visible abs, pink bike shorts, indoor setting, soft-lighting, cowgirl position"
+}
+```

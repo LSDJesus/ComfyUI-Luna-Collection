@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, natural_lighting, sensual, ethereal, delicate, messy, golden_hour, intimate",
+  "pyrite_content_tags": "nude_woman, fair skin, black and silver hair, light eyes, small breasts, lying down, messy bed, white bedding, light wooden floor, window, shadows, white curtains, scattered white and pink clothes, wooden chair, gold ring on finger, pink nail polish, blood-like marks on skin, soft sunlight",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual woman with black and silver hair lying nude on a messy white bed, soft golden hour lighting, sunlight through a window, delicate skin, blood-like marks on skin, ethereal, intimate shot"
+}
+```

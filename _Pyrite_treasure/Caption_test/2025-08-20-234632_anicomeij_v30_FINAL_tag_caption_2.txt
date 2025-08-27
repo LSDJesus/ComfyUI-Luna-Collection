@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, wet, clean_lines, high_contrast, cinematic_lighting, ethereal, soft_focus, atmospheric, suggestive",
+  "pyrite_content_tags": "1girl, nude, white hair, long hair, blunt bangs, ponytail, blue eyes, parted lips, medium breasts, nipples, solo, arms up, looking at viewer, shiny skin, defined ribs, exposed navel, bare armpits, tile floor, pool environment, pool ladder, abstract background, wet skin, droplets, implied pussy, fair skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, anime style, 1girl, nude, white long hair, blue eyes, wet skin, droplets, atmospheric, pool environment, arms up, looking at viewer, high-contrast lighting, soft focus, implied pussy"
+}
+```

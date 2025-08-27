@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "gothic_fantasy, cinematic_lighting, warm_lighting, detailed_textures, seductive, elegant, sensual",
+  "pyrite_content_tags": "woman, fair skin, black hair with white streak, long bangs, orange eyes, black lace lingerie, black bra, black lace panties, silver bracelets, leather armchair, fireplace, glowing fire, bookshelf, wooden paneling, window, books, warm color palette",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Detailed portrait of a seductive gothic woman with black hair and a white streak, wearing black lace lingerie, sitting in a leather armchair in front of a fireplace with glowing fire, warm lighting, detailed textures, cinematic lighting."
+}
+```

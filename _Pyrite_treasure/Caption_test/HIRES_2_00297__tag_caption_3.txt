@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "surreal, erotic, hyperrealism, digital art, sensual, dreamlike, vibrant, dramatic lighting",
+  "pyrite_content_tags": "1girl, 2boys, threesome, nudity, multiple people, bald men, white hair, twintails, blunt bangs, red eyes, earrings, hair ribbon, breasts, nipples, navel, arms behind back, fingering, pussy, touching genitals, explicit, outdoors, standing, blue sky, clouds, grass, day, medium breasts, jewelry",
+  "pyrite_sexual_tags": "nudity, fingering, group sex, suggestive, mmx, pussy",
+  "pyrite_flaw_tags": "Anatomy is slightly off on the boy's arm. The rendering lacks a cohesive feel.",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece digital art, three figures, a woman with white twintails and red eyes, two bald men, nude, outdoors, blue sky with clouds, highly detailed, hyperrealism, dramatic lighting, erotic scene, (artgerm, greg rutkowski:1.2), perfect anatomy"
+}
+```

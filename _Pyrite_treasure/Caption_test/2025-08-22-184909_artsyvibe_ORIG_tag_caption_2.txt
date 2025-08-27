@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_fantasy, gothic, boudoir, cinematic_lighting, warm_lighting, seductive, detailed, atmospheric, sensual",
+  "pyrite_content_tags": "1girl, solo, sitting, indoors, long black hair with white streaks, blunt bangs, yellow glowing eyes, black choker, smiling, navel, black lace bra, medium breasts, black lace panties, lingerie, black bracelet, leather armchair, bookshelf, books, window, blurry background, warm lighting, soft skin, realistic lighting, delicate features",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((1girl))), solo, sitting in a leather armchair, indoors, gothic boudoir, long black hair with white streaks, blunt bangs, yellow glowing eyes, black lace lingerie, medium breasts, smiling, cinematic lighting, warm light, detailed, sharp focus, seductive, sensual, masterpiece"
+}
+```

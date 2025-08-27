@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, sensual, soft_lighting, ethereal, detailed_skin, suggestive, provocative, bedroom_setting, smooth_texture",
+  "pyrite_content_tags": "nude_female, lying_on_bed, white_bedding, black_and_white_hair, long_hair, yellow_eyes, muscular_build, hand_on_stomach, small_breasts, visible_nipples, light_skin, indoor_setting, bedroom_furniture, wooden_nightstand",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "unrealistic_anatomy, blurry_details, bad_hands",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Create a highly detailed anime-style rendering of a nude female with black and white long hair and yellow eyes, lying on white bedding in a bedroom, emphasizing soft lighting, sensual pose, and anatomical accuracy, focusing on a muscular build and detailed skin, while correcting bad hand rendering."
+}
+```

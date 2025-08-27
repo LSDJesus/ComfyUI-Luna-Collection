@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dreamy, cinematic lighting, golden hour, ethereal, romantic, atmospheric",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, sitting on bed, black bra, beige pants, closed eyes, breasts, underwear, pillows, sunlight, window, interior, room, chair, plant, dreamy particles, gold bokeh, soft focus, leather bra",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomy issues, slightly distorted background, artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a beautiful woman with long black hair, sitting on a bed in a sunlit room, wearing a black leather bra and beige pants, soft focus, golden hour, dreamy atmosphere, cinematic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

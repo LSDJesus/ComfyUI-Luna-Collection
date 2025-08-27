@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, realistic, bedroom, soft lighting, inviting, intimate, semi-erotic, implied narrative",
+  "pyrite_content_tags": "1girl, solo, nude, on bed, lying on back, looking at viewer, two-tone hair, black hair, white streak, yellow eyes, smile, barefoot, pillow, white bedsheets, exposed nipples, skinny body, long hair, realistic",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "anatomy issues, slightly underweight, lighting could be improved",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a beautiful woman with long black hair and a white streak, yellow eyes, smiling, lying nude on white bedsheets, soft lighting, intimate bedroom setting, (detailed anatomy:1.1)"
+}
+```

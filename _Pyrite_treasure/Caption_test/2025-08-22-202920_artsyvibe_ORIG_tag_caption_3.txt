@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "realistic, soft lighting, sensual, intimate, bedroom, photorealistic",
+  "pyrite_content_tags": "1girl, solo, nude, sitting, on bed, medium breasts, black hair, long hair, closed eyes, navel, lips, female pubic hair, bedsheets, indoors, natural skin, nipples, underwear",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "slight facial asymmetry, generic pose",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a beautiful woman, nude, sitting on a bed, closed eyes, soft natural light, long black hair, sensual expression, (artgerm, greg rutkowski:1.2)"
+}
+```

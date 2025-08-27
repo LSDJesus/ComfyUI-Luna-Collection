@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, cinematic_lighting, natural_beauty, serene, soft_focus, atmospheric, moody, evocative",
+  "pyrite_content_tags": "1girl, solo, brown hair, long hair, blue eyes, white sports bra, covered nipples, blue patterned shorts, navel, arms up, armpits visible, medium breasts, outdoors, lake, trees, blurry background, overcast sky, fair skin, looking at viewer",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), realistic, natural beauty, serene lake setting, overcast sky, long brown hair, blue eyes, soft white sports bra, blue patterned shorts, arms raised above head, armpits, natural pose, cinematic lighting --ar 3:2 --style photorealistic"
+}
+```

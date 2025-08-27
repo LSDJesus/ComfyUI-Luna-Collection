@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, high-contrast, digital_painting, anime_style, dramatic_lighting, sensual, polished, hyperrealism",
+  "pyrite_content_tags": "1boy, completely nude male, muscular physique, standing above, 1girl, nude female, red hair, yellow eyes, smiling face, stitches detail on face, tattoos on face, prone position, doggystyle pose, visible buttocks, black floor, decorative floor tile, direct eye contact, male hands touching female, pale skin, detailed musculature, implied sexual act",
+  "pyrite_sexual_tags": "nudity, doggystyle, sex from behind, penetration (implied)",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:0.99), (explicit:0.98), (1boy:0.98), (hetero:0.95), (sex:0.95), (nude:0.94), red hair, yellow eyes, smiling face, stitches on face, tattoos on face, doggystyle pose, black floor, decorative floor tile, dramatic lighting, hyperrealism, high detail, sensual, erotic"
+}
+```

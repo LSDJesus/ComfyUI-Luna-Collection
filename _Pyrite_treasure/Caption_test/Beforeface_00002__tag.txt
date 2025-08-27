@@ -1,0 +1,1 @@
+(1girl:0.99), (solo:0.96), (freckles:0.95), (realistic:0.91), (looking at viewer:0.90), (braid:0.78), (blue eyes:0.74), (sensitive:0.74), (brown hair:0.70), (on bed:0.69), (indoors:0.67), (smile:0.65), (all fours:0.64), (bed:0.63), (lips:0.62)

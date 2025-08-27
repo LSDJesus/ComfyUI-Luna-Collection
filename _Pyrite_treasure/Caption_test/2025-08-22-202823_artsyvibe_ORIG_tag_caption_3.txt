@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, soft lighting, intimate, minimalist, natural, elegant, ethereal",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, black hair, long hair, looking at viewer, breasts, nipples, navel, white sheets, pillow, on back, natural skin, open legs",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic image of a nude woman with long black hair, lying on a bed with white sheets, looking directly at the viewer, soft lighting, intimate, elegant, (by artgerm:1.3)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, provocative, photorealistic, soft lighting, intimate, suggestive",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, spread legs, black hair, long hair, yellow eyes, small breasts, nipples, toned abs, navel, hand covering genitals, on back, smile, pillow, looking at viewer, bed, armpits",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "Unrealistic muscle definition, possible artifacting on bedsheets.",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a woman with long black hair and yellow eyes, lying nude on a bed, spread legs, hand covering genitals, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

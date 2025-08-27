@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sensual, soft_lighting, high_detail, glossy, realistic_skin, bed, morning_sun, intimate, digital_art",
+  "pyrite_content_tags": "nude female, pale skin, black hair, golden eyes, long hair, bed, white satin sheets, wooden headboard, wooden nightstand, lamp with white lampshade, open posture, slender figure, smooth skin, arm raised above head, small breasts, exposed vulva outline, sunlight",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "anime woman, nude, laying on white satin sheets, morning light, glossy skin, black hair, golden eyes, sensual expression, high detail"
+}
+```

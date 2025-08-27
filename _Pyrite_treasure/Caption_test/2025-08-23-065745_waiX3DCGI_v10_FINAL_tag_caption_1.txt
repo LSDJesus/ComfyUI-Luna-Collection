@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, cinematic_lighting, soft_focus, anime, sensual, detailed_textures, morning_light, photorealistic, high-contrast",
+  "pyrite_content_tags": "nude female figure, white skin, black hair with white streaks, yellow eyes, white cloth headwrap, white bed sheets, wood bed frame, transparent white curtains, wooden side table, glass lamp, books, picture frame, shadows, sunlight, indoor, serene, window",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic anime woman, nude, lying on a bed, white sheets, morning light through window, black and white hair, yellow eyes, soft focus, sensual"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dreamy, erotic, soft_focus, cinematic_lighting, ethereal, sensual, intimate, golden_light, anime_style",
+  "pyrite_content_tags": "nude_female, fair_skin, black_hair, bangs, yellow_eyes, blush, full_lips, right_hand_on_stomach, pillows, white_bedding, wooden_floor, vintage_chair, closed_wooden_blinds, white_walls, scattered_papers, wooden_nightstand, books, side_lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude anime girl lying on a bed, soft lighting, cinematic, ethereal, golden eyes, black hair with bangs, dreamy, intimate setting, a room bathed in sunlight, side view"
+}
+```

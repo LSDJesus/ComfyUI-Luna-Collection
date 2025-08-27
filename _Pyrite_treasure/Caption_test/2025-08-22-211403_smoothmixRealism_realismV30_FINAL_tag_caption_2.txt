@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, natural_light, high_contrast, photorealistic, soft_focus, intimate, skin_texture",
+  "pyrite_content_tags": "1girl, solo, nude, tan, tanlines, black hair, long hair, green eyes, parted lips, nipples, small breasts, pussy, navel, hand on own stomach, lying on bed, white bedsheets, wooden headboard, soft pillows, natural light, unadorned skin, visible collarbone, visible areolas, fair skin, defined facial features",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl, nude), lying on white bedsheets, tan skin with visible tanlines, long black hair, green eyes, parted lips, soft focus, natural light, photorealistic, intimate portrait, hand on stomach, visible nipples, small breasts, pussy, highly detailed, perfect skin texture, (masterpiece, best quality:1.2)"
+}
+```

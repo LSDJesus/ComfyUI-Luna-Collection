@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dreamy, soft_focus, studio_lighting, sensual, smooth_skin, minimalist, angelic, ethereal, serene",
+  "pyrite_content_tags": "nude woman, pale skin, black and white hair, heterochromatic eyes, yellow and green eyes, pale pink nipples, long limbs, reclining on a white satin sheet, white curtains in the background, artificial lighting, bedroom setting, human figure, pale flesh",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry_details, unnatural_skin_texture",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Highly detailed art of a nude woman with black and white hair and heterochromatic eyes, reclining on a white satin sheet. Soft studio lighting, dreamlike atmosphere. Focus on skin texture.  8k, cinematic lighting."
+}
+```

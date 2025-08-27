@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, suggestive, sensual, detailed_skin, room_interior, intimate, smooth_texture, dreamy",
+  "pyrite_content_tags": "nude_female, black_and_white_hair, yellow_eyes, smiling, bed, white_bedding, beige_bedsheets, wooden_nightstand, glass_lamp_with_red_base, gold_framed_paintings, vase_with_pink_flowers, black_wine_bottle, beige_wall, other female figure visible, yellow_hair",
+  "pyrite_sexual_tags": "nudity, loli",
+  "pyrite_flaw_tags": "bad_hands, blurry, artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Create an anime-style image of a young woman with black and white hair and yellow eyes, smiling suggestively while nude on a bed with white bedding and a wooden nightstand in a room with soft lighting and detailed skin, enhancing the realism of the hands and skin, minimizing artifacts and improving overall image clarity."
+}
+```

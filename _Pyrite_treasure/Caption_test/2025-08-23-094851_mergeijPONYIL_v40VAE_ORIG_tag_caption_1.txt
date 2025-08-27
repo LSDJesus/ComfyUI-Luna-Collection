@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, seductive, fantasy, high detail, cinematic lighting, soft focus, oil painting, nymph, ethereal",
+  "pyrite_content_tags": "nude woman, pale skin, black and white hair, yellow highlights, yellow eyes, open legs, tan bedsheets, satin pillows, wooden headboard, slender physique, light skin, hands on body, natural lighting, sensual expression, full frontal nudity",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, unnatural_proportions, blurry, jpeg_artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with black and white hair, yellow highlights, and yellow eyes is lying on a bed with satin pillows and bedsheets. She is in a sensual pose, with cinematic lighting and a soft focus."
+}
+```

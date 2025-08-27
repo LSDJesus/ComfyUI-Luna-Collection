@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, polished, digital_art, high_detail, smooth_lighting, clean_lines",
+  "pyrite_content_tags": "1girl, teal hair, long hair, bangs, brown eyes, pale skin, pink blush, black latex top with short sleeves, black latex pants, black latex headband, navel, medium breasts, nipples, looking at viewer, indoor, wooden door, clean background, selfie",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "anatomical_inconsistencies, distorted_anatomy, slightly unrealistic skin",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, ultra detailed), 1girl, teal anime hair, long hair, bangs, brown eyes, pale skin, pink blush, black latex top with short sleeves, black latex pants, black latex headband, navel, medium breasts, nipples, looking at viewer, indoor, wooden door, clean background, selfie, perfect anatomy, smooth skin, photorealistic"
+}
+```

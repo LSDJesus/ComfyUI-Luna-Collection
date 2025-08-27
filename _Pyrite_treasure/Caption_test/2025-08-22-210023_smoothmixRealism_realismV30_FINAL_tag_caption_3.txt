@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, warm tones, intimate, inviting, natural",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, spread legs, hands near genitals, pussy, nipples, medium breasts, long brown hair, brown eyes, looking at viewer, smile, toned abs, navel, on bed, pillow, bed, smooth skin, oil",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece nude portrait of a beautiful woman with long brown hair, brown eyes, smiling, lying on a bed, spread legs, hands near genitals, soft lighting, photorealistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

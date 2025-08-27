@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, high-detail, realistic, soft lighting, sensual, intimate, top-down view, suggestive",
+  "pyrite_content_tags": "1girl, 1boy, nude, brown hair, short hair, brown eyes, small breasts, nipples, navel piercing, navel, bed, cream-colored pillow, cream-colored bedsheets, penis, exposed vagina, outstretched arms, skin texture, veins visible, looking at the viewer, spread legs",
+  "pyrite_sexual_tags": "nudity, oral, penetration",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), realistic, intimate scene, nude, brown hair, brown eyes, small breasts, nipples, on a bed with cream colored sheets, top-down view, penis penetrating vagina, spread legs, soft lighting, detailed skin texture, veins visible, looking at the viewer, focus on the bodies"
+}
+```

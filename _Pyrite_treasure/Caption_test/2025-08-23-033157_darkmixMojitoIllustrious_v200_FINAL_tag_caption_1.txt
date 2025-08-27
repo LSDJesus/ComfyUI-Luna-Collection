@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, high_contrast, cinematic_lighting, sensual, smooth_skin, seductive_pose, soft_focus, luxurious_setting",
+  "pyrite_content_tags": "nude_female, Caucasian, black_and_white_hair, yellow_eyes, tanned skin, sun_tan_lines, open_legs, hand_on_pubic_area, white_bedding, golden_headboard, white_nightstand, golden_lamp, floral_pattern_sheets, bedroom, natural_light, window_shadows",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Create a hyperrealistic image of a nude female with contrasting black and white hair, golden eyes, and a sun-kissed complexion, reclining on a luxurious white bed. Focus on cinematic lighting to accentuate her sensuality. Include a golden bed frame and a nightstand with a lamp. The scene should be lit by natural sunlight with shadows from the window."
+}
+```

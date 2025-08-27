@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, high_contrast, soft_lighting, sensual, clean_lines, seductive, realistic_rendering, smooth_skin",
+  "pyrite_content_tags": "1girl, nude, lying on back, white bedsheets, wooden headboard, two-tone hair (black and white), long hair, yellow eyes, smiling, open mouth, barefeet, spread legs, hand touching genitals, small breasts, visible nipples, clean-shaven pubic area, toes, pillow, sunlight, visible navel, clean skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on a white bed, spread legs, hand touching genitals, black and white long hair, yellow eyes, smiling, open mouth, realistic rendering, high-contrast, soft lighting, anime style, sensual --ar 3:2 --style expressive"
+}
+```

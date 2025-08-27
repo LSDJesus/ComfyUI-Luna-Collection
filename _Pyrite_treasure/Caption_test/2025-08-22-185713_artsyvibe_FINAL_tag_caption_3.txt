@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, sensual, photorealistic, natural_light, intimate, serene",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, long black hair, parted lips, closed eyes, breasts, nipples, pussy, mole on thigh, mole on breast, navel, bedsheets, pillow, bedroom, indoors, natural light, freckles",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor_anatomical_inconsistencies, slight artifacts on skin",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a beautiful woman, nude, lying on a bed, long black hair, parted lips, soft lighting, natural skin texture, (realistic:1.2) (by artgerm:1.3), (Greg Rutkowski:1.1)"
+}
+```

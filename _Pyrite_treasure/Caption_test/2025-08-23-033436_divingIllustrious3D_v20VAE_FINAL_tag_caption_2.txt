@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, alluring, soft lighting, realistic, intimate, modern, high-key, ethereal, seductive",
+  "pyrite_content_tags": "1girl, nude, solo, multicolor hair (black and white), long hair, yellow eyes, looking at viewer, smiling, lying on bed, white bedsheets, pillows, barefoot, visible nipples, flat chest, skinny physique, navel, open lips, small nose, detailed skin texture, indoor setting, wooden nightstand, black leather headboard, sunlight",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, laying on a bed, black and white streaked hair, yellow eyes, looking at viewer, realistic, soft lighting, detailed skin, high-key, seductive, indoor, wooden nightstand, leather headboard"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, high_contrast, cinematic_lighting, alluring, gothic, fantasy_setting, detailed_face",
+  "pyrite_content_tags": "young_woman, black hair, white highlights, golden eyes, black blazer, black lace bra, choker with a decorative silver buckle, sitting at a desk, pen in hand, writing, open paperwork, library setting, bookshelves, tall arched windows, warm lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, slightly distorted facial features",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Anime girl, black hair with white highlights, golden eyes, black blazer, black lace bra, detailed library, pen in hand, cinematic lighting, alluring pose, perfect face, 8k"
+}
+```

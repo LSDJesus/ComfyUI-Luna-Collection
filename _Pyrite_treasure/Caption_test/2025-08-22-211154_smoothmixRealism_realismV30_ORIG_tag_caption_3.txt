@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, alluring, sensual, soft lighting, photorealistic, clean",
+  "pyrite_content_tags": "1girl, solo, nude, long black hair, looking at viewer, smiling, yellow glowing eyes, small breasts, abs, toned body, spread legs, pussy, nipples, bed, pillow, tan, indoors, window, sitting, uncensored",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy distortions, unnatural musculature",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, portrait of a beautiful woman, long black hair, yellow glowing eyes, smiling, sitting on a bed, nude, photorealistic, soft lighting, (by artgerm, greg rutkowski:1.2), accurate anatomy, realistic musculature"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, sensual, intimate, detailed_skin, photorealistic, suggestive_pose, bedroom_setting",
+  "pyrite_content_tags": "1girl, nude, lying on a white bed, barefoot, black and white two-tone hair, long hair, yellow eyes, small breasts, visible nipples, slender physique, hand on stomach, smiling, visible ribs, visible navel, white bedsheets, white pillow, curtains in background, wooden headboard, gold chain accessory, indoors, looking at the viewer, fair skin",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "blurry, wonky_eyes, bad_anatomy",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality:1.2), 1girl, nude, lying on a white bed, black and white long hair, yellow eyes, small breasts, hand on stomach, smiling, realistic skin, soft lighting, suggestive pose, bedroom setting, detailed face, detailed skin, perfect anatomy, looking at viewer"
+}
+```

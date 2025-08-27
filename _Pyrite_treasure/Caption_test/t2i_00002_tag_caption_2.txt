@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, kawaii, soft lighting, romantic, vibrant, digital art, cute, clean lines",
+  "pyrite_content_tags": "1girl, solo, blonde hair, long hair, twintails, blue eyes, blush, looking at viewer, crossed arms, white sleeveless dress, black choker, gold heart pendant necklace, jewelry, heart background, pink background, medium breasts, bare shoulders, fair skin, visible cleavage, red lips",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((masterpiece))), ((best quality)), 1girl, solo, blonde hair, twintails, blue eyes, blush, looking at viewer, white sleeveless dress, black choker, gold heart pendant necklace, crossed arms, heart background, romantic, soft lighting, anime style"
+}
+```

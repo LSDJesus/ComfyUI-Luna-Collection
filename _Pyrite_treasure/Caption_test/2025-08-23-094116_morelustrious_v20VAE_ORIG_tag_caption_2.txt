@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, soft lighting, cinematic, realistic, intimate, anime-inspired, alluring",
+  "pyrite_content_tags": "1girl, nude, lying on back on bed, white bedsheets, white pillows, multicolored hair, split-color hair (black and white), long hair, yellow eyes, looking at viewer, smile, small breasts, nipples, pussy, spread legs, bare skin, indoors, wooden bedframe, wooden bedside table, lamp with lampshade, navel, lips, skinny, completely nude",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, nude, lying on a bed with white sheets, white pillows, split-color black and white long hair, yellow eyes, looking at viewer, sensual smile, small breasts, nipples, pussy, spread legs, realistic skin, soft lighting, indoors, wooden bedframe, wooden bedside table, lamp, (masterpiece:1.2), (detailed face, detailed body, perfect anatomy:1.3)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, detailed, cinematic_lighting, high_contrast, wet, erotic, digital_painting, vibrant_colors, fantasy, outdoor",
+  "pyrite_content_tags": "1girl, solo, outdoors, large breasts, nipples, blue hair, braid, ahoge, brown eyes, open mouth, cum, cum on body, cum on breasts, cum in mouth, looking at viewer, jewelry, earrings, heart-shaped earrings, latex clothing, blue latex top with mandarin collar, blue latex arm sleeves, blue latex pants, exposed navel, sky, mountains, grass, cum on tongue, gloves, elbow gloves, detailed face, white cum",
+  "pyrite_sexual_tags": "nudity, oral",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, large breasts, cum, outdoor, cum on body and in mouth, blue hair braid and ahoge, brown eyes, looking at viewer, blue latex outfit with mandarin collar and elbow gloves, detailed face, earrings, mountains and sky in the background, high contrast, digital painting, anime style."
+}
+```

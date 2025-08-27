@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, erotic, realistic, cinematic_lighting, golden_hour, soft_focus, elegant, glamorous, high-detail",
+  "pyrite_content_tags": "1girl, nude, lying on back, bed, white pillow, floral bedsheets, two-tone hair (black and white with yellow streaks), yellow eyes, small breasts, visible nipples, barefoot, open legs, visible pubic hair, exposed vagina, tan lines, indoor setting, red leather headboard, wooden nightstand, black vase, window, sheer curtains, smiling, bare chest, thin, long hair, fair skin, exposed ribs",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, photorealistic), a nude young woman with black and white hair with yellow streaks, yellow eyes, smiling on a bed with floral sheets, cinematic lighting, golden hour, soft focus, open legs, visible pubic hair, (bare chest:1.2), (small breasts:1.1), intricate details"
+}
+```

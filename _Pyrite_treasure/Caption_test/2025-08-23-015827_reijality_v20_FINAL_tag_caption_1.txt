@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, erotic, portrait, high_contrast, cinematic_lighting, elegant, painterly, golden_hour, ethereal",
+  "pyrite_content_tags": "nude_woman, black hair with white streaks, green eyes, young woman, lying on bed, white bedding, yellow paint body art, hand on genitals, arm raised, open legs, visible pubic area, small breasts, wooden headboard, bedside table, lamp, soft light, indoor, bedroom",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with black hair and white streaks lying on a bed, cinematic lighting, yellow paint art on the body, green eyes, erotic, open legs, soft light, elegant, painterly"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft_lighting, cinematic_lighting, erotic, photorealistic, detailed, glossy, inviting",
+  "pyrite_content_tags": "nude_woman, light_brown_hair, brown highlights, golden eyes, fair skin, muscular_build, lying_on_bed, beige satin bedsheets, white pillows, hands covering genitals, small breasts, bed frame, wooden headboard, shiny skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry_hands, slightly_wonky_eyes",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a nude woman, light brown hair with golden highlights, golden eyes, lying on a beige satin bed, soft and cinematic lighting, detailed skin texture, blurry hands."
+}
+```

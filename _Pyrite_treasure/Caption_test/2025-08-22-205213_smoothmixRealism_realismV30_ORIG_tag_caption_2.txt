@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, soft_lighting, natural_beauty, intimate, seductive",
+  "pyrite_content_tags": "1girl, nude, breasts, nipples, pussy, brown eyes, black hair, looking at viewer, navel piercing, navel, lips, small breasts, sitting on a bed, spread legs, female pubic hair, bed with white bedding, white pillow, headboard, toned physique, wet hair, solo, explicit, arm support",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, breasts, nipples, pussy, brown eyes, black hair, looking at viewer, navel piercing, sitting on a bed, spread legs, female pubic hair, bed with white bedding, soft lighting, realistic, photorealistic, sensual"
+}
+```

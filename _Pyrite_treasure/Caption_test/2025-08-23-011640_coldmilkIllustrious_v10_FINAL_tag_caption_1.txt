@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dreamy, sensual, soft_lighting, shiny_skin, photorealistic, anime_style, warm_tones, hyperrealism, detailed, bedroom",
+  "pyrite_content_tags": "nude female, white and black hair, yellow eyes, white bedsheet, wooden bed frame, wooden nightstand, white pillow, table lamp, sunlight, body_oil, smooth skin, pink nipples, open legs, slightly opened mouth, smiling",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A photorealistic nude anime girl with white and black hair, smooth skin, yellow eyes, lying in a bed covered by white bedsheets and illuminated by sunlight, body oil, open legs, smiling"
+}
+```

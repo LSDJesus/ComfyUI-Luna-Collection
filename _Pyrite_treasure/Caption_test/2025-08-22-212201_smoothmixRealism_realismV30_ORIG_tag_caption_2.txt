@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "realistic, high_contrast, soft_lighting, detailed, sensual, cinematic, digital_art",
+  "pyrite_content_tags": "1girl, nude, lying on back, small breasts, visible nipples, multicolored hair (black, blonde, and yellow highlights), long hair, hazel eyes, smiling, full lips, fair skin, visible ribs, no clothing, beige silk bedding, upper body shot, looking at the viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "anatomical_inconsistencies, unnatural_skin_texture",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on a bed of silk, small breasts, visible nipples, realistic skin texture, multicolored hair (black, blonde, and yellow highlights), hazel eyes, smiling, full lips, soft lighting, cinematic lighting, high detail, anatomical accuracy"
+}
+```

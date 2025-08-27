@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, sun-kissed, soft_focus, golden_hour, realistic, natural_light, erotic, intimate, evocative",
+  "pyrite_content_tags": "nude_woman, tan lines, dark_hair, green_eyes, fair_skin, smiling, sitting on bed, white sheets, wooden bed frame, pillow, indoor_setting, soft_lighting, exposed nipples",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A realistic nude woman with long dark hair and green eyes, sun-kissed skin, sitting on a bed with white sheets. Golden hour lighting, intimate setting, detailed tan lines, smiling, and natural skin tones."
+}
+```

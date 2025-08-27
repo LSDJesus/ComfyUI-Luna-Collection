@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "gothic_lolita, anime, high_contrast, cinematic_lighting, detailed, alluring, seductive, library, fantasy, digital_art",
+  "pyrite_content_tags": "female, busty, black hair, white streak in hair, golden eyes, pale skin, black lace bra with silver buckle, black choker with gold emblem, black blazer, gold earrings, black pen, white paper, library, wooden bookshelf, leather chair, desk, soft lighting, realistic_drawing",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A busty anime woman in a black blazer, black lace bra, and black choker, writing in a library with detailed bookshelves, golden eyes, black hair with a white streak, cinematic lighting, digital art, gothic lolita, alluring."
+}
+```

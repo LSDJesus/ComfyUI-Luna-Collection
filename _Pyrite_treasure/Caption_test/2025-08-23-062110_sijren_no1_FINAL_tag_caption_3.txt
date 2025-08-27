@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, suggestive, soft lighting, high detail, sensual, beauty, provocative, glamorous",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, spread legs, pussy, explicit, nipples, bare breasts, two-tone hair, multicolored hair, long hair, yellow eyes, looking at viewer, smile, bare feet, realistic, navel",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, rendering artifacts, oil paint look",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, highly detailed nude woman with long two-tone hair, yellow eyes, lying on a white bed, soft lighting, focused on her sensuality, (by artgerm, greg rutkowski:1.2)"
+}
+```

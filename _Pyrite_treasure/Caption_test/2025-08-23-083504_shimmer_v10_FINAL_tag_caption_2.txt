@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, soft_lighting, hyperrealism, sensual, inviting, detailed, elegant, satin",
+  "pyrite_content_tags": "1girl, nude, uncensored, solo, lying on a bed, white bed sheets, bed with ornate gold headboard, long black hair with white streak, yellow eyes, exposed breasts, nipples, open legs, pussy, navel, hand on pubic area, bare feet, indoor, smiling, pillow",
+  "pyrite_sexual_tags": "nudity, explicit, sexual, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((masterpiece))), (1girl), nude, black hair with white streak, yellow eyes, lying on bed, white bed sheets, soft lighting, detailed skin, hand on pubic area, (((erotic))), (hyperrealism)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, realistic, soft_lighting, intimate, bedroom, serene, suggestive, ethereal, high-detail",
+  "pyrite_content_tags": "1girl, lying on bed, black hair, long hair, pale skin, white bra, white shorts, outstretched arms, closed eyes, medium breasts, visible navel, pillows, bedsheets, indoor, wooden bed frame, red chair, window, potted plant, small lamp, photo frame on nightstand, white streaks on legs, droplets on skin, light brown wooden floor",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual, realistic photograph of a woman with long, flowing black hair lying on a bed, wearing a white bra and shorts, with outstretched arms and closed eyes, showcasing a soft, intimate setting with high-detail lighting and white streaks on the skin. Include the use of realistic, photorealistic, soft lighting, indoor, bed."
+}
+```

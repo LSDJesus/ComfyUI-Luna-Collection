@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, realistic, bedroom, natural light, sensual, dreamy, clean",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, lying on back, nude, breasts, nipples, navel, bed, pillow, sheets, white sheets, indoors, window, messy room, classical armchair, clothes on floor",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies, slightly off hands",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, beautiful woman with long black hair, nude, lying on a bed with white sheets, natural light from a window, realistic, (artgerm:1.2)"
+}
+```

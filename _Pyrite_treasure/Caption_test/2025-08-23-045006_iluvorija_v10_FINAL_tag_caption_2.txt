@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, erotic, anime-inspired, high-contrast, soft lighting, detailed, playful, suggestive",
+  "pyrite_content_tags": "1girl, nude, spread legs, on bed, black and white two-tone hair, yellow highlights in hair, yellow eyes, animal ears (cat ears), small breasts, slender physique, visible abs, navel, yellow nail polish, open pussy, barefoot, toes, bed with white sheets and floral pattern, wooden headboard, white pillows with gold floral pattern, yellow wall, smile, fangs, looking at viewer, nose, lips, small breasts, realistic skin texture",
+  "pyrite_sexual_tags": "nudity, loli",
+  "pyrite_flaw_tags": "blurry, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, nude, spread legs, on bed, black and white two-tone hair, yellow highlights, yellow eyes, cat ears, small breasts, slender, visible abs, detailed pussy, yellow nail polish, barefoot, intricate bedsheets with floral pattern, dramatic lighting, soft focus, dynamic pose, perfect anatomy, ultrarealistic, 8k, detailed face"
+}
+```

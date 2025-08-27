@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, erotic, sensuous, dreamy, detailed, intimate, vibrant, clean_lines",
+  "pyrite_content_tags": "nude_female, white_bedsheets, black_and_white_hair, yellow_eye_color, long_hair, visible_pubic_hair, muscular_legs, tan skin, wooden_bedframe, wooden_nightstand, lamp, picture_frames, bed_in_bedroom, room_interior, no_clothing",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, bad_anatomy, unnatural_lighting, uneven_skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "highly detailed anime girl, nude, sitting on white bedsheets, visible pubic hair, muscular legs, black and white hair with yellow highlights, yellow eyes, soft lighting, room interior, high quality, cinematic lighting"
+}
+```

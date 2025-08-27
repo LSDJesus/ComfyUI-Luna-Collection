@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dreamy, sensual, soft lighting, boudoir, realistic, intimate, classic, delicate",
+  "pyrite_content_tags": "1girl, nude, long black hair, pale skin, medium breasts, pink nipples, closed eyes, lying on white bed, white sheets, white pillow, hands on stomach, messy bedroom, hardwood floor, beige curtains, white window blinds, wooden furniture, blue clothing draped over chair, white chair, scattered clothing, room interior",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, long black hair, lying on white bed, soft lighting, realistic, dreamy, intimate, boudoir, medium breasts, pale skin, pink nipples, messy bedroom, scattered clothing, hardwood floor, beige curtains, white window blinds --ar 3:4 --style expressive"
+}
+```

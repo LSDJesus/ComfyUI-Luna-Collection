@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, cinematic_lighting, sensual, erotic, glossy, smooth, polished, golden hour, inviting",
+  "pyrite_content_tags": "one girl, nude, long black hair, orange eyes, small breasts, nipples, shiny skin, lying on bed, beige satin pillow, beige satin sheets, wooden headboard, wooden nightstand, indoors, navel, slightly parted lips, realistic rendering",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on bed, orange eyes, long black hair, shiny skin, small breasts, cinematic lighting, hyperrealistic, highly detailed, smooth skin, golden hour, sensual"
+}
+```

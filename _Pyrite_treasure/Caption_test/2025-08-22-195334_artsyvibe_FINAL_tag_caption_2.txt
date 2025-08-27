@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, realistic, cinematic_lighting, sensual, intimate, melancholic, dreamlike",
+  "pyrite_content_tags": "1girl, lying on back, topless, white cotton panties, black hair with silver streaks, medium breasts, hand on own stomach, navel, nipples, slight nipple piercing, fair skin, closed eyes, white pillow, white sheets, wooden floor, messy papers on the floor, curtains, window with shutters, wooden chair with red cushion, bedroom, indoor, soft light",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A realistic photograph of a woman with black hair, lying topless on a bed, wearing white panties, with soft, cinematic lighting. The scene is intimate and sensual. The environment includes a messy bedroom, curtains, and window."
+}
+```

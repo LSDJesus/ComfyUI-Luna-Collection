@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sexy, suggestive, glossy, erotic, photorealistic, high-detail, dynamic pose",
+  "pyrite_content_tags": "1girl, white hair, pigtails, pink hair tie, purple eyes, looking at viewer, crop top, white shirt, pink trim, shorts, pink shorts, white stripe, bike shorts, visible nipples, bare midriff, abs, toned, sitting on couch, suggestive pose, indoor, medium breasts, covered nipples",
+  "pyrite_sexual_tags": "nudity, suggestive, explicit",
+  "pyrite_flaw_tags": "slightly distorted anatomy, unrealistic sheen on clothing",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, sexy anime girl, white hair with blue accents, purple eyes, wearing a white crop top with pink trim, pink shorts, perfect abs, visible nipples, sitting on a couch, dynamic pose, detailed background, photorealistic, by artgerm"
+}
+```

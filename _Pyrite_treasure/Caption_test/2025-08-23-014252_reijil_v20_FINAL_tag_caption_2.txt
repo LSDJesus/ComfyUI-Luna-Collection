@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, high-key, soft_lighting, hyperrealistic, ethereal, anime_style, anime_eyes, detailed_textures",
+  "pyrite_content_tags": "1girl, nude, lying on bed, white bedsheets, two-tone hair (black and white with yellow highlights), long hair, yellow eyes, barefoot, looking at viewer, small breasts, nipples, open mouth, smiling, teeth, spread legs, pussy, bare navel, wooden bedside table, brass lamp, beige wall, window with sunlight, soft skin, detailed hands, pillow, gold trim, gold frame on wall, insect",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, lying on a white bed, soft lighting, two-tone black and white hair, yellow eyes, smiling, spread legs, pussy, hyperrealistic, photorealistic, sunlight through window, soft skin, detailed hands and feet, anime_style"
+}
+```

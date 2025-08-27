@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, ethereal, hyperrealism, soft_lighting, bedroom_scene, golden_eyes, intimate, dreamlike",
+  "pyrite_content_tags": "nude_woman, long black hair, golden eyes, fair skin, athletic body, detailed abs, beige bedsheets, tufted headboard, wooden nightstand, brown wooden bed frame, oil-slicked skin, hands near genitalia, direct gaze, bedroom setting, no clothing",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Create a hyperrealistic, ethereal image of a nude woman with long black hair and golden eyes, athletic body glistening with oil, lying on a beige bedsheet in a bedroom, soft lighting, intimate gaze, hands near genitalia, tufted headboard, wooden nightstand, bedroom scene."
+}
+```

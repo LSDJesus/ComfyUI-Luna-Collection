@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "natural_light, soft_focus, intimate, romantic, golden_hour, smooth_skin, sensual, portrait",
+  "pyrite_content_tags": "nude woman, tan lines, long dark hair, green eyes, bed, white bedding, wooden headboard, natural light, hand on abdomen, open legs, small breasts, delicate features",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with long dark hair and green eyes, lying in a bed with white bedding. Soft natural light. Golden hour. Focus on tan lines. Intimate portrait."
+}
+```

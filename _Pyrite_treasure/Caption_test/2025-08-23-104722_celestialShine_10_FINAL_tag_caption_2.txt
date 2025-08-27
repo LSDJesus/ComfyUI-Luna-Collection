@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, cinematic_lighting, glamour, fantasy, seductive, high_detail, chiaroscuro, hyperrealism, sultry",
+  "pyrite_content_tags": "1girl, nude, small breasts, nipples, white bedsheets, lying on bed, yellow eyes, black and white two-tone hair, pale skin, muscular physique, small grin, bed, headboard, wooden nightstand, lamp, ornate golden wall paneling, solo, looking at viewer, visible abs, hand on stomach",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, small breasts, nipples, white bedsheets, lying on bed, glowing yellow eyes, black and white two-tone hair, pale skin, muscular physique, small grin, cinematic lighting, ornate golden wall paneling, hyperrealism, high detail, seductive pose, looking at viewer"
+}
+```

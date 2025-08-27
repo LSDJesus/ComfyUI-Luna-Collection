@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "cinematic lighting, soft focus, romantic, sensual, glamorous, portrait, dramatic lighting, detailed, high contrast",
+  "pyrite_content_tags": "woman, Asian, dark hair, black blazer, no shirt, partial nudity, red lipstick, brown eyes, gold pendant necklace, gold earrings, pen, notebook, wooden desk, bookshelves, books, sunlight, library, soft skin, fair skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, low quality, artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "An attractive Asian woman with dark hair, wearing a black blazer, no shirt, and red lipstick, is writing in a notebook at a wooden desk in a sunlit library. Cinematic lighting, high contrast, soft focus."
+}
+```

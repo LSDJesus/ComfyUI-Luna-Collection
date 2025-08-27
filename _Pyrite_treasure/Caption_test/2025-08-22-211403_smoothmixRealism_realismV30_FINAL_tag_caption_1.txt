@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, intimate, portrait, natural_light, sensual, tan_lines, realistic, photorealistic, high_detail",
+  "pyrite_content_tags": "woman, brunette hair, green eyes, nude body, tan lines, white bed sheets, white pillow, wooden headboard, hand on chest, hand on bed, natural skin, relaxed expression, open mouth, neutral background, looking away, small breasts, pale skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a woman with brunette hair, green eyes, and tan lines, nude on a white bed with soft lighting, intimate, natural skin texture, highly detailed, focus on face and body."
+}
+```

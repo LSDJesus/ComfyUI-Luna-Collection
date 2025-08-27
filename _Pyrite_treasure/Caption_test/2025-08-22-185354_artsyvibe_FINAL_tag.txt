@@ -1,0 +1,1 @@
+(1girl:0.98), (sensitive:0.95), (breasts:0.91), (black hair:0.91), (long hair:0.88), (yellow eyes:0.87), (ponytail:0.86), (glowing:0.84), (standing:0.78), (bodysuit:0.78), (glowing eyes:0.78), (standing on one leg:0.76), (looking at viewer:0.74), (medium breasts:0.67), (indoors:0.67), (full body:0.62), (solo:0.59), (skin tight:0.57), (monitor:0.55), (blurry:0.54), (latex:0.54)

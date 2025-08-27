@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, anime, soft lighting, sensual, detailed, smooth, porcelain_skin, dreamlike, elegant, serene",
+  "pyrite_content_tags": "1girl, blue-skinned woman, nude, white hair, blunt bangs, low twintails, black ribbons in hair, red eyes, tattoo on left and right arm, medium breasts, nipples, sitting on bed, white bed sheet, white pillow, gold bed frame, looking at viewer, indoors, navel, v arms, closed mouth, serene expression, sunlight casting shadows on the wall",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, blue skin, nude, white hair, black ribbon twintails, red eyes, tattoo arms, on bed, sunlight, ethereal, anime, detailed, smooth skin"
+}
+```

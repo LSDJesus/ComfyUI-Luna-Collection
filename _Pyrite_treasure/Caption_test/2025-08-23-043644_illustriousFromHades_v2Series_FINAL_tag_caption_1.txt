@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, soft lighting, detailed, realistic, portrait, studio_lighting, elegant, feminine, seductive",
+  "pyrite_content_tags": "nude woman, caucasian, slender, pale skin, long black hair with white and yellow highlights, yellow eyes, open legs, lying on bed, white satin bedsheets, floral bedsheet design, gold bed frame, wooden nightstand, dark wood, relaxed pose, hand near genitalia, looking at camera, suggestive, natural skin tone, full body, soft focus",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Realistic portrait of a nude caucasian woman with black, white and yellow highlights hair and yellow eyes lying on a bed with white satin sheets, soft lighting, studio lighting, detailed, sensual pose, feminine, elegant."
+}
+```

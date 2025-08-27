@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, futuristic, high-tech, neon, sleek, digital art, detailed, sexy, high contrast",
+  "pyrite_content_tags": "1girl, solo, standing, indoors, black hair, blunt bangs, long ponytail with white highlights, blue eyes, medium breasts, red lips, black skin-tight bodysuit with glowing orange circuit patterns, gloves, black high-heeled boots, ass, leg up, standing on one leg, computers, monitors with code, orange cables, server racks, bright lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), cyberpunk, futuristic, high-tech server room, black skin-tight bodysuit with glowing orange circuit patterns, black gloves and boots, long black ponytail with white highlights, blue eyes, ass, standing on one leg, sharp focus, dramatic lighting, masterpiece"
+}
+```

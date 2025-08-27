@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, ethereal, anime, digital_art, high_detail, soft_lighting, bioluminescence, sci-fi, serene",
+  "pyrite_content_tags": "1girl, nude, medium breasts, navel, parted lips, blue hair, blue eyes, looking at viewer, hair ornament, skull hair ornament, earrings, jewelry, glowing blue lines on body, meadow, white flowers, outdoors, blue glowing collar, blue hair styled in pigtails, light skin, visible nipples, soft skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, medium breasts, navel, parted lips, blue hair, blue eyes, looking at viewer, glowing blue lines on body, meadow, white flowers, cybernetic collar, skull hair ornaments, soft lighting, ethereal, digital art, sci-fi"
+}
+```

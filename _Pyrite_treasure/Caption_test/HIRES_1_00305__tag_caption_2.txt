@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, sensual, high-detail, soft lighting, glossy, erotic, realistic, provocative",
+  "pyrite_content_tags": "1girl, white hair, long hair, low twintails with black decorative clips and aqua strands, purple eyes, pink headband, small pink ribbon, white crop top with pink trim and short sleeves, covered nipples, pink shorts with white stripe, navel, toned abs, medium breasts, indoors, looking at viewer, on a couch, vaginal, partial nudity, sex, explicit, bike shorts, shirt, shorts",
+  "pyrite_sexual_tags": "nudity, vaginal",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, highres), 1girl, white hair, purple eyes, pink headband and ribbons, white crop top with pink trim, pink shorts with white stripe, on couch, looking at viewer, covered nipples, toned abs, soft lighting, erotic, sensual, detailed, anime"
+}
+```

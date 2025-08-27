@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, hyperrealism, soft_lighting, erotic, dreamlike, serene, oil_paint, cinematic_lighting",
+  "pyrite_content_tags": "1girl, nude, lying on bed, white satin sheets, two-tone black and white long hair, yellow eyes, yellow nails, barefoot, open legs, spread pussy, small breasts, nipples, bare chest, exposed navel, smiling, looking at viewer, sunlight, window, mountain range in background, yellow flowers outside, brick wall, cream-colored curtains, pillow, gold bed frame, pale skin, shiny skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality:1.2) 1girl, nude, lying on bed, white satin sheets, two-tone black and white long hair, yellow eyes, yellow nails, sunlight, serene environment, mountain range in background, detailed skin, hyperrealism, oil paint, cinematic lighting"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high-contrast, soft_focus, cinematic_lighting, hyperrealism, elegant, natural_lighting, seductive",
+  "pyrite_content_tags": "1girl, nude, looking at viewer, lying on back, spread legs, small breasts, nipples, long hair, multicolored hair, two-tone hair (brown and blonde highlights), brown eyes, full lips, defined abs, visible ribs, hands in a relaxed position, beige satin bedsheets, pillows, golden headboard, on bed, indoor, natural lighting, navel",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, looking at viewer, lying on back, spread legs, small breasts, nipples, long hair, multicolored hair (brown and blonde highlights), brown eyes, full lips, defined abs, visible ribs, hands in a relaxed position, beige satin bedsheets, pillows, golden headboard, soft lighting, cinematic lighting, hyperrealism"
+}
+```

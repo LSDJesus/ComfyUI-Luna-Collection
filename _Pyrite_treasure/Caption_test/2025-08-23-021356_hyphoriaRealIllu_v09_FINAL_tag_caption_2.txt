@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, natural_light, soft_focus, studio_lighting, intimate, realistic, detailed, subtle_eroticism",
+  "pyrite_content_tags": "1girl, nude, lying on bed, white bedsheets, spread legs, facing the viewer, two-tone hair (black and platinum blonde), long hair, tan lines, small breasts, visible nipples, barefoot, exposed navel, brown eyes, thin lips, pussy, hands on the vulva, wooden nightstand, glass bottle, small candle, gold bed frame, pillows, natural skin tone",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.0) nude, lying on a white bed, spread legs, facing the viewer, two-tone hair (black and platinum blonde), long hair, tan lines, small breasts, visible nipples, barefoot, wooden nightstand, glass bottle, soft focus, natural light, realistic, studio lighting, detailed, intimate"
+}
+```

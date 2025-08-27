@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, realistic, high-contrast, cinematic_lighting, luxurious, golden_tones, suggestive, intimate, polished, hyperrealistic",
+  "pyrite_content_tags": "1girl, nude, black hair with white highlights, long hair, brown eyes, looking at viewer, full frontal nudity, small breasts, exposed nipples, open vulva, hands touching self, navel, toned abs, bed, white sheets, pillows, luxurious bedroom, wooden headboard, crystal chandelier, shiny skin, tan skin, visible lips, realistic skin texture",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, full frontal nudity, black hair with white highlights, brown eyes, looking at viewer, open vulva, hands touching self, on luxurious bed, white sheets and pillows, wooden headboard, crystal chandelier, realistic skin texture, cinematic lighting, shiny skin, sensual, hyperrealistic"
+}
+```

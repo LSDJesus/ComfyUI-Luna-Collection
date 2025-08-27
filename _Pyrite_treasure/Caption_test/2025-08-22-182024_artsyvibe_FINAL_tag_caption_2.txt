@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "romantic_lighting, cinematic_lighting, sensual, realistic, elegant, soft_focus, high_detail, artful, dreamlike",
+  "pyrite_content_tags": "one girl, Asian woman, long black hair, dark eyes, red lipstick, gold earrings, gold necklace with a flower pendant, black unbuttoned blazer, bare chest, writing in a notebook, silver pen, open book, wooden desk, bookshelf, books, library setting, soft sunlight, indoors, looking at viewer",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful Asian woman in a library, writing in a notebook with a silver pen, wearing a black unbuttoned blazer with bare breasts, soft sunlight illuminating her face, cinematic lighting, realistic, long black hair, red lipstick, high detail, looking at the viewer."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "ethereal, suggestive, forest, soft lighting, photorealistic, anime, serene, sensual",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, gagged, ball gag, white hair, long hair, green eyes, hair flower, flower, thigh highs, white thigh highs, navel, abs, toned, forest background, sitting, outdoors, looking at viewer",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, face is somewhat generic",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a pale-skinned woman with white hair and green eyes, gagged with a black ball gag, wearing white thigh highs, sitting in a forest clearing, soft lighting, cinematic, (by artgerm, greg rutkowski:1.2)"
+}
+```

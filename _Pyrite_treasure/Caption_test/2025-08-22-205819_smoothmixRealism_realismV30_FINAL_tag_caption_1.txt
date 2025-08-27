@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, soft_lighting, natural_beauty, warm_tones, photo-realistic, detailed_skin, boudoir, golden_hour",
+  "pyrite_content_tags": "nude woman, lying on bed, light brown hair, bangs, hazel eyes, fair skin, muscular abdomen, thin body, white bedsheets, beige pillow, wooden headboard, wooden nightstand, black object on nightstand, white substance on skin, natural light, sensual expression, slightly opened mouth, small breasts",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful woman, nude, lying on a bed, soft lighting, warm tones, photo-realistic, detailed skin, thin body, light brown hair, hazel eyes, sensual expression, intimate, boudoir photography, golden hour lighting."
+}
+```

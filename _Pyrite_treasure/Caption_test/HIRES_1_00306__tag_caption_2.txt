@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic lighting, high contrast, hyperrealistic, sensual, suggestive, anime, dark, detailed",
+  "pyrite_content_tags": "nude male, nude female, red hair, yellow eyes, open mouth, smiling, visible teeth, markings on face, black floor, dark background, doggystyle position, muscular male physique, smooth skin, detailed anatomy",
+  "pyrite_sexual_tags": "nudity, sex from behind, doggystyle, penetration, hetero",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((masterpiece))), (1girl), (1boy), doggystyle, nude, red hair, yellow eyes, open mouth, smiling, suggestive, detailed anatomy, hyperrealistic, cinematic lighting, high contrast, dark background, markings on face"
+}
+```

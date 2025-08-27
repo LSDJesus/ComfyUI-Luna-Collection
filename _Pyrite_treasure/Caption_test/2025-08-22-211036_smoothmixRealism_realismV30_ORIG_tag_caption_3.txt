@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, sensual, glamorous, idealized, golden hues",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, black hair, long hair, tan lines, looking at viewer, lying on back, spread legs, arms up, navel, abs, yellow eyes, smile, bed, silk sheets",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "Unnatural tan lines, distorted anatomy in torso, slightly off-model hands, slightly unnatural skin texture",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman, nude, lying on a silk bed, arms above head, looking at the viewer, realistic skin texture, soft lighting, tan lines, perfect anatomy, (artgerm:1.2), (greg rutkowski:1.1)"
+}
+```

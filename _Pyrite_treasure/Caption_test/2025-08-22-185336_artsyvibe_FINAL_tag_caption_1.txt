@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "cyberpunk, futuristic, neon, high-tech, seductive, digital_art, polished, cinematic_lighting, detailed",
+  "pyrite_content_tags": "woman, black hair with white highlights in a high ponytail, bangs, pale skin, green eyes, black cyberpunk armor, orange glowing circuitry patterns, open crotch, black heels, wrist bracelet, robotic arm, weapon holster, data center, computer servers, multiple monitors, blue lighting, reflective floor, cables, wires, artificial lighting, sterile environment",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, blurry, artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Cyberpunk female, wearing black body armor with orange neon circuitry, high ponytail, green eyes, data center background, cinematic lighting, detailed, high resolution."
+}
+```

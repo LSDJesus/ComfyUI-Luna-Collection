@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high_contrast, soft lighting, hyperrealism, provocative, intimate, detailed, realistic, bedroom",
+  "pyrite_content_tags": "1girl, solo, nude, fair skin, exposed breasts, nipples, pussy, spread legs, lying on bed, on back, long black hair with white and yellow highlights, yellow eyes, navel, small breasts, thin body, ribs visible, white bed sheets with floral pattern, white pillow, wooden bedside table, gold headboard frame, looking at viewer, open lips, natural skin tone",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, fair skin, exposed breasts, nipples, pussy, spread legs, lying on a bed, on back, long black hair with white and yellow highlights, yellow eyes, looking at viewer, soft lighting, hyperrealism, detailed"
+}
+```

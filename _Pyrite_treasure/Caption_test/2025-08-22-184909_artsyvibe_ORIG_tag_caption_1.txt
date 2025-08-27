@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_fantasy, dramatic_lighting, sensual, gothic, luxurious, cinematic, detailed, alluring, evocative, soft_focus",
+  "pyrite_content_tags": "woman, anime-style, fair skin, black hair with white highlights, yellow eyes, small black choker, black lace bra, black lace panties, black garter belt, brown leather armchair, library background, bookshelves, window, warm lighting, shadows, books, golden light, black bracelet, small golden frame",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual, anime-style woman with long black hair with white highlights, yellow glowing eyes, and wearing a black lace lingerie set, seated in a brown leather armchair, library background, dramatic lighting, cinematic, masterpiece."
+}
+```

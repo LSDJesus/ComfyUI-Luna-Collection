@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, smooth_skin, sensual, minimalist, bedroom, warm_colors, dreamy",
+  "pyrite_content_tags": "young woman, nude, black and white hair, yellow eyes, lying on bed, white satin sheets, white pillow, sunlight, visible skin, bedroom interior, hand on body, delicate physique, open pose, no clothing",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "anatomy_issues, unrealistic_lighting, blurry_details, unrealistic_skin_texture",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(((anime style))), sensual young woman, nude, lying on white satin sheets, black and white hair, yellow eyes, soft lighting, warm colors, intricate details, (((detailed anatomy)))"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, high-detail, realistic, sensual, soft lighting, intimate, alluring",
+  "pyrite_content_tags": "1girl, nude, multicolored hair, black hair with white streaks, yellow eyes, smiling, medium breasts, nipples, lying on bed, white bedsheets, barefoot, pussy, navel, on back, pillows, wooden bedside table, two toned hair",
+  "pyrite_sexual_tags": "nudity, explicit, uncensored",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, black hair with white streaks, yellow eyes, medium breasts, lying on bed, white bedsheets, soft lighting, realistic, anime style, looking at viewer, smiling, detailed pussy"
+}
+```

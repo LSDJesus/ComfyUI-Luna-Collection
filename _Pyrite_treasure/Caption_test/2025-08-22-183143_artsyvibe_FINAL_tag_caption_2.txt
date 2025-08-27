@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark academia, gothic, seductive, high contrast, cinematic lighting, detailed, polished, alluring",
+  "pyrite_content_tags": "1girl, sitting, indoors, library, bookshelf, black hair with white streak, blunt bangs, yellow eyes, red lips, closed mouth, medium breasts, black lace bra with silver clasp, open black jacket, black choker with gold emblem, gold earrings, pen, black pen, holding pen, writing, white paper, black office chair, leather chair, blurry background, books, long sleeves, lace trim, jewelry",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, sitting in a library, wearing an open black jacket, a black lace bra, and a black choker, black hair with a white streak and blunt bangs, yellow eyes, holding a pen and writing, cinematic lighting, detailed, dark academia aesthetic, gothic."
+}
+```

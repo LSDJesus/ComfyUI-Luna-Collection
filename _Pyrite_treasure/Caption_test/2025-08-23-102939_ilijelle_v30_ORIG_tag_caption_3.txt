@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, realistic, soft lighting, sensual, seductive, suggestive, bedroom, digital art",
+  "pyrite_content_tags": "1girl, nude, solo, pussy, breasts, nipples, spread legs, lying on bed, long two-tone hair (black and yellow), looking at viewer, smiling, yellow eyes, yellow nails, white bedsheets, pillow, lamp, barefoot, navel, collarbone, toned, fingers on stomach, realistic skin",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive",
+  "pyrite_flaw_tags": "unnatural anatomy, slight facial issues, overall generic pose",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece nude portrait of a beautiful woman with black and yellow hair, yellow eyes, lying on a bed, looking at the viewer, spread legs, soft lighting, realistic skin, (by artgerm, greg rutkowski:1.2)"
+}
+```

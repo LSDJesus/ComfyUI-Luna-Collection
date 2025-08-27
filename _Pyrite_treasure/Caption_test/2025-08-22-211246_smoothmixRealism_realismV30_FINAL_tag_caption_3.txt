@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, soft lighting, warm, intimate, suggestive, inviting",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, spread legs, black hair, long hair, looking at viewer, smiling, brown eyes, small breasts, nipples, pussy, navel, toned body, abs, tan skin, pillow, bed, indoors, realistic, collarbone, hand on crotch, partially covered",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive",
+  "pyrite_flaw_tags": "unnatural specular highlights on skin, minor anatomical inconsistencies",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece photograph of a beautiful woman, nude, lying on a bed, looking at the viewer, long black hair, brown eyes, soft lighting, realistic skin, detailed anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

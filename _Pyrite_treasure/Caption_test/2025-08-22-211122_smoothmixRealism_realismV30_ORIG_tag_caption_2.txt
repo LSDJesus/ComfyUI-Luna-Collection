@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "realistic, high_detail, sensual, soft lighting, boudoir, glamorous, suggestive, ethereal",
+  "pyrite_content_tags": "1girl, nude, black hair with white highlights, brown eyes, small breasts, visible nipples, parted lips, navel, toned abs, tan skin, tan lines, hands touching herself, spread legs, pussy visible, white bedsheets, white pillow, wooden bed frame, chandelier, looking at viewer, on bed",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, black hair with white highlights, brown eyes, small breasts, nipples visible, parted lips, toned abs, tan skin, tan lines, hands touching herself, spread legs, pussy visible, white bedsheets, white pillow, wooden bed frame, chandelier, looking at viewer, on bed, realistic, soft lighting, high detail, sensual, boudoir, glamorous"
+}
+```

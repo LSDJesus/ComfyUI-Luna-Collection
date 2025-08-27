@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sci-fi, ethereal, dreamy, anime-style, soft lighting, vibrant colors, delicate",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, medium breasts, nipples, looking at viewer, navel, blue hair, blue eyes, hair ornament, skull hair ornament, jewelry, glowing patterns, outdoors, parted lips, earrings, long hair, pigtails, field of flowers, upper body",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, slightly off-putting skin texture, hands are missing",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic, beautiful cyborg woman with blue hair and pigtails, glowing body patterns, nude, standing in a field of flowers at sunset, blue eyes, detailed face, (by artgerm, greg rutkowski:1.2)"
+}
+```

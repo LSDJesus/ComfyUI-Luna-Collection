@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime-inspired, seductive, shiny, photorealistic, detailed, suggestive, sensual, high-contrast, boudoir",
+  "pyrite_content_tags": "1girl, solo, looking at viewer, selfie, latex bodysuit, latex, breasts, nipples, navel, hairband, long hair, blue hair, medium breasts, indoors, skin tight, brown eyes, sidelocks, doorway, glossy skin, open zipper, pale skin",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical issues, slightly distorted face, odd proportions, unnatural lighting",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, highly detailed portrait of a beautiful anime girl with turquoise hair and a black hairband, selfie, wearing a tight black latex bodysuit, holding the camera, looking directly at the viewer, detailed eyes, realistic skin, cinematic lighting, by artgerm, (perfect face:1.2)"
+}
+```

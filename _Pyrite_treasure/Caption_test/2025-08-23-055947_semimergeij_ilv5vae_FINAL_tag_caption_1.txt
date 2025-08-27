@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_focus, golden_hour, photorealistic, sensual, art_nouveau_inspired, bed_scene, high_detail, glossy",
+  "pyrite_content_tags": "nude_woman, Caucasian, light_brown skin, long black and white hair, green eyes, bed, white floral bedding, pillows, wooden bed frame, ornate, sunlight, sheer curtains, wooden bedside table, gold lamp, woman lying on back, arms outstretched, hand on pubic area, oiled body, wet skin",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "blurry, bad_anatomy, unrealistic_skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman, photorealistic, lying on a bed, wet skin, golden hour lighting, soft focus, long black and white hair, green eyes, high detail, realistic anatomy"
+}
+```

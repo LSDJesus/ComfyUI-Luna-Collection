@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, natural light, wet, high contrast, realistic, detailed, portrait, intimate, artistic",
+  "pyrite_content_tags": "nude woman, athletic build, dark hair, yellow and green highlights, green eyes, bed, white satin sheets, weathered metal bed frame, antique wooden nightstand, bedside lamp, soft focus, wet skin, open legs, hand near genitals, slightly smiling, freckles, vaginal lips, bed, wet, droplets, sunlit bedroom, soft focus, pale skin tone, tanned skin",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A detailed, wet, nude portrait of an athletic woman with green eyes and yellow and green highlights in her hair, in bed, with soft lighting and a natural aesthetic."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, anime, digital painting, high contrast, golden hour lighting, soft lighting, hyperrealism, glossy, seductive",
+  "pyrite_content_tags": "1girl, nude, black hair, long hair, shiny skin, brown eyes, small breasts, nipples, abs, navel, looking at viewer, lying on bed, pillow, white bed sheet, indoor, bed, dark-skinned female, toned, collarbone, lips, golden eyes",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece anime style, 1girl, nude, black long hair, brown eyes, small breasts, shiny skin, golden hour lighting, lying on white bed sheets, looking at viewer, high contrast, hyperrealism, indoors."
+}
+```

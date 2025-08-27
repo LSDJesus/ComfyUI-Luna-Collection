@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, intimate, natural light, photorealistic, soft, warm, idyllic",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, bed, white sheets, pillow, black hair, long hair, tan, tanlines, small breasts, nipples, parted lips, yellow eyes, navel, hand on stomach, uncensored, realistic, fair skin",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomical issues, lighting could be more dramatic",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic image of a nude woman lying on a bed, natural light, warm tones, soft focus, tan with tanlines, black hair, yellow eyes, (by artgerm:1.2)"
+}
+```

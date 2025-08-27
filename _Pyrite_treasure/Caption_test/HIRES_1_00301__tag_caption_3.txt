@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "ethereal, forest, anime, sensual, soft lighting, delicate, slightly melancholic",
+  "pyrite_content_tags": "1girl, solo, white hair, long hair, green eyes, flower hair ornament, gagged, ball gag, nude, large breasts, nipples, white thigh-highs, sitting, forest, outdoors, abs, toned, navel, pussy, saliva",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inaccuracies (shoulders and neck), slightly unnatural skin texture, over-rendered",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, anime style, white hair, green eyes, gagged with a ball gag, large breasts, nipples, white thigh-highs, sitting in a forest clearing with white flowers, soft lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

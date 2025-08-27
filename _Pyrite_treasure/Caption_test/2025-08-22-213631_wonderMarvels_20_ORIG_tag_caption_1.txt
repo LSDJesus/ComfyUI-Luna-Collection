@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, divine_feminine, high_contrast, cinematic_lighting, fantasy, detailed_textures, sensual",
+  "pyrite_content_tags": "female, nude, fair skin, athletic_build, long black and white hair, yellow eyes, open legs, hand on stomach, yellow bedsheets, wooden frame, patterned wall, focused gaze, realistic skin texture",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A divine female nude, lying on yellow silk sheets, athletic build, long black and white hair, yellow eyes, cinematic lighting, hyper-realistic skin texture, detailed background"
+}
+```

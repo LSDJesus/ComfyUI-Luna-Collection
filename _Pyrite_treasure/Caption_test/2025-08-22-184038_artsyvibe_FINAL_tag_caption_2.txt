@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "cinematic_lighting, anime, detailed, sensual, elegant, library, soft_focus, professional",
+  "pyrite_content_tags": "1girl, solo, sitting, indoors, library, black hair with white highlights, yellow eyes, open book on wooden desk, black blazer jacket, black lace lingerie, black leather chair, black choker necklace, bookshelf filled with books, glass on desk, red blush on cheeks",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, low_detail",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece), 1girl, sensual, library, detailed, cinematic lighting, black hair with white highlights, yellow eyes, black lace lingerie, black blazer jacket, sitting at a desk with an open book, soft focus, professional anime art style"
+}
+```

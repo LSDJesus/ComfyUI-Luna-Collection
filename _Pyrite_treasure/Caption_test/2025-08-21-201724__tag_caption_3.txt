@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, vibrant, underwater, surreal, stylized, detailed eyes, glossy, ethereal",
+  "pyrite_content_tags": "1girl, solo, green hair, double bun, braided bun, wet hair, wet clothes, white shirt, collared shirt, looking at viewer, hands on face, hands on cheeks, open mouth, coral, underwater environment, blush, portrait, water droplets",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "Inconsistent rendering of water/wetness, slight asymmetry in eyes, some areas look overly glossy, potential for improved hand detail.",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(((masterpiece))), (detailed anime art), (1girl), green hair, double braided buns, wet white shirt, looking at viewer, hands on cheeks, shocked expression, coral reef background, underwater, water droplets, dramatic lighting, high detail, best quality, (by artgerm, greg rutkowski:1.2)"
+}
+```

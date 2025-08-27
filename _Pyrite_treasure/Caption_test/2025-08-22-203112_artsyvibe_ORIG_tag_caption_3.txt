@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, intimate, natural lighting, soft focus, serene",
+  "pyrite_content_tags": "1girl, solo, nude, long black hair, ass, sitting on bed, closed eyes, breasts, mole on ass, mole, on bed, from behind, indoors, relaxed pose, neutral background, daylight, female",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "lighting is a bit flat",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a nude woman, sitting on a bed with long black hair, closed eyes, soft focus, natural lighting, mole on ass, from behind, serene, (by Peter Lindbergh:1.3)"
+}
+```

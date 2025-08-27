@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, soft lighting, otherworldly, ethereal, polished, dreamlike, hyperrealism",
+  "pyrite_content_tags": "female, lying on bed, fair skin, long black and white hair, yellow eyes, nude, white bedsheets, wooden bed frame, white pillows, framed painting on wall, wooden headboard, window, curtains, sunlight, oil sheen on skin, hands clasped, small breasts, light skin tone",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic female with black and white hair, yellow eyes, nude, lying on bed with white bedsheets, soft lighting, oil sheen on skin, sunlight from window, sensual pose"
+}
+```

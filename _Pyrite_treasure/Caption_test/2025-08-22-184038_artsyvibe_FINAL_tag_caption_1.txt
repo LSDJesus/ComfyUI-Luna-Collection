@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, seductive, soft lighting, bookish, realistic, high detail, romantic, elegant",
+  "pyrite_content_tags": "young woman, black hair, blonde streaks, yellow eyes, black blazer, black lace lingerie, black choker, library, bookshelves, books, wooden desk, open book, gold colored lamp, round glass",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime, seductive young woman, long black hair with blonde streaks, yellow eyes, wearing a black blazer and black lace lingerie, in a library with bookshelves, soft lighting, detailed, romantic, elegant."
+}
+```

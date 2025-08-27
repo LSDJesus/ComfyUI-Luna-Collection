@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, high-contrast, soft_lighting, anime_style, ethereal, alluring, sunbeams, intimate",
+  "pyrite_content_tags": "1girl, nude, lying on bed, barefoot, black and white hair, yellow eyes, medium breasts, nipples, hand on own stomach, white satin sheets, sunlight, window, interior, pillow, long hair, ribs, navel, smiling, looking at viewer, tan skin, open lips, female",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, lying on a bed with satin sheets, sunlight through a window, black and white hair, yellow eyes, medium breasts, smiling, looking at the viewer, hand on stomach, sensual pose, cinematic lighting, ethereal"
+}
+```

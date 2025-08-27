@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "stylized, ethereal, hyperrealism, digital_art, soft_lighting, wet_effect, clean_lines, minimalist_background, sensual",
+  "pyrite_content_tags": "1girl, dark-skinned female, black afro, brown eyes, tan skin, wet skin, kneeling in shower, completely nude, hands covering crotch, navel, bare feet, tan lines, shower stall, tiled walls, silver shower fixtures, blue forehead marking, parted lips, visible collarbone, toned physique, nipples, minimalist background, indoor, bathroom environment",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, kneeling in shower, afro, wet skin, tan lines, completely nude, hands covering crotch, brown eyes, soft lighting, hyperrealism, digital art, clean lines, ethereal, detailed background, perfect hands"
+}
+```

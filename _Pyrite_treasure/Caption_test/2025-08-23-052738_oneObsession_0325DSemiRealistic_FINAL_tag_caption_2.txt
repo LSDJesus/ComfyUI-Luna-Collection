@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dreamy, ethereal, high-contrast, cinematic lighting, sensual, anime_style, realistic_lighting, soft_focus",
+  "pyrite_content_tags": "1girl, nude, black and white split hair, yellow eyes, long hair, small breasts, visible nipples, sitting on white bed, white pillows, sunlight, indoors, barefoot, looking at viewer, smiling, pale skin, smooth skin, visible navel, open legs, hands touching crotch, closed mouth, white bedsheets",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.00), nude, anime style, black and white split hair, yellow eyes, long hair, small breasts, visible nipples, sitting on white bed, white pillows, sunlight, indoors, barefoot, looking at viewer, smiling, pale skin, smooth skin, visible navel, open legs, hands touching crotch, cinematic lighting, ethereal, realistic_lighting, soft_focus"
+}
+```

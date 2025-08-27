@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, natural_lighting, photorealistic, intimate, soft_focus, inviting, modern, clean",
+  "pyrite_content_tags": "1girl, nude, breasts, nipples, solo, brown hair, long hair, brown eyes, sitting, spread legs, hand on privates, navel, full frontal nudity, bed, white pillow, wooden headboard, beige bedsheets, lamp, nightstand, indoors",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl) sitting on a bed, nude, brown hair, brown eyes, long hair, hand on privates, soft natural lighting, photorealistic, sensual, high detail"
+}
+```

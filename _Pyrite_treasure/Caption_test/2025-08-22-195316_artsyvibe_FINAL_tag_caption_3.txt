@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, sensual, photorealistic, intimate, elegant, natural_light, serene, vulnerable",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, long black hair, closed eyes, medium breasts, nipples, barefoot, white sheets, pillow, indoors, window, chair, messy room, natural light, mole on breast, mole on thigh",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomy imperfections, some visible artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a nude woman with long black hair, lying on a bed in soft natural light, closed eyes, medium breasts, photorealistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

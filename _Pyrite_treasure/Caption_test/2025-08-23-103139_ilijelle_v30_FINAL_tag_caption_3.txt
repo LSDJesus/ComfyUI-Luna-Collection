@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, sensual, realistic, soft lighting, inviting, suggestive, bedroom, polished",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, spread legs, black hair, white streak, yellow eyes, smile, on back, yellow nails, bare feet, small breasts, nipples, navel, lips, fingers, two-tone hair, bedroom, lamp, pillows, white bedsheets, toned abdomen, clitoris",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "Unnatural skin highlights and texture. Distorted muscular definition. Unrealistic body proportions.",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a woman with black and white hair, yellow eyes, smiling on a bed, soft lighting, highly detailed, (by artgerm, greg rutkowski:1.2), perfect anatomy, realistic skin texture, no artifacts, (nsfw:1.4)"
+}
+```

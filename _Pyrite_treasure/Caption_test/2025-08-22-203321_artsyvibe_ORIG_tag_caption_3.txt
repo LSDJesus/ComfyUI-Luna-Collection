@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, natural lighting, soft focus, sensual, realistic skin, intimate, dreamy, portrait",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, on bed, long black hair, smiling, natural pose, pussy, navel, realistic skin, fair skin, asian",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece photorealistic portrait of a beautiful asian woman with long black hair smiling in bed, soft natural lighting, nude, breasts, nipples, realistic skin, intimate, (by artgerm, greg rutkowski:1.2)"
+}
+```

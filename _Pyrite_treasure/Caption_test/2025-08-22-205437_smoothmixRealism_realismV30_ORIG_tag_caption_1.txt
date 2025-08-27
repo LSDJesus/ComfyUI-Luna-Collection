@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft_lighting, realistic, intimate, detailed_skin, high_resolution, smooth, luxurious",
+  "pyrite_content_tags": "nude_woman, dark_hair, brown_eyes, fair_skin, tan_lines, hand_on_vagina, open_legs, lying_on_bed, white_pillows, cream_colored_bedding, wooden_headboard, yellow_drapes, natural_light, muscular_abs",
+  "pyrite_sexual_tags": "nudity, self_pleasure",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A realistic photo of a nude woman with dark hair and brown eyes, lying on a bed with white pillows and cream-colored bedding. Soft lighting, intimate composition, hand on vagina, open legs. Muscular abs. High detail, perfect skin, tan lines, natural light, soft lighting."
+}
+```

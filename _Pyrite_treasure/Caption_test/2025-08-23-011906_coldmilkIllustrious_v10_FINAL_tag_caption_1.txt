@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, detailed_shadows, sensual, ethereal, morning_light, glossy, wet, nude_art",
+  "pyrite_content_tags": "female, anime_character, black_and_white_hair, yellow_eyes, bare_breasts, laying on bed, white bedsheets, wooden bedside table, lamp, beige wall, natural_light, exposed_vulva, visible skin, glossy skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime girl with black and white hair, yellow eyes, nude, laying on a white bed, soft lighting, glossy skin, sensual, morning light, highly detailed, photorealistic."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, manga, hyperrealism, soft_lighting, realistic, sensual, clean",
+  "pyrite_content_tags": "nude woman, bed, white sheets, black and white hair, yellow eyes, smiling, muscular physique, light skin, small breasts, open legs, vulva, natural light, window, curtains, fingers, hand, skin texture",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "wonky_eyes, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "anime style nude woman in bed, black and white hair with yellow eyes, detailed face, sensual pose, soft lighting, muscular physique, hyperrealistic, detailed skin texture"
+}
+```

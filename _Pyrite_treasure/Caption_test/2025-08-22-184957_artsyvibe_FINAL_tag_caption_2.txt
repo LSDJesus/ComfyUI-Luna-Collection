@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_fantasy, cinematic_lighting, seductive, high_contrast, detailed_textures, warm_lighting, alluring",
+  "pyrite_content_tags": "1girl, young_adult, black hair, blunt bangs, long hair, orange glowing eyes, pale skin, black lace bra, black lace panties, black garter belt, pierced navel, choker, leather armchair, indoor setting, window with blurred outside view, bookshelves with books, fire place, fingers pointing up",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.00), seductive, long black hair with blunt bangs, orange glowing eyes, wearing black lace lingerie, sitting in a leather armchair, indoors, fireplace in the background, cinematic lighting, high detail, masterpiece"
+}
+```

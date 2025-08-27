@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, photorealistic, sensual, vibrant, poolside, sunny, detailed",
+  "pyrite_content_tags": "1girl, solo, outdoors, nude, red hair, short hair, yellow eyes, choker, cross pendant, bound wrists, bound legs, rope bondage, open mouth, large breasts, nipples, pool, water, sunny day, looking at viewer, poolside",
+  "pyrite_sexual_tags": "nudity, bdsm, explicit",
+  "pyrite_flaw_tags": "anatomy issues, hands unseen, slight skindentation",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic anime girl with red short hair and yellow eyes, nude, bound wrists, bound legs, bondage, large breasts, choker, cross pendant, open mouth, sitting poolside, water, sunny day, looking at viewer, (by artgerm:1.2), depth of field, detailed"
+}
+```

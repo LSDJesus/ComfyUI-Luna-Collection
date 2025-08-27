@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, natural, intimate, elegant, detailed, suggestive",
+  "pyrite_content_tags": "1girl, solo, nude, completely nude, long black hair, brown eyes, looking at viewer, nipples, breasts, pussy, spread legs, sitting, hands on pubic area, navel, realistic, bedroom, bed, soft background, uncensored",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece photo of a nude woman with long black hair and brown eyes looking directly at the viewer, sitting on a bed with spread legs, hands on pubic area, soft lighting, photorealistic, detailed skin, (by artgerm, greg rutkowski:1.2), (explicit)"
+}
+```

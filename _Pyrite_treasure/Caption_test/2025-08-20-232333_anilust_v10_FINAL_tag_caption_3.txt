@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, dramatic lighting, cinematic, photorealistic, night, dusk, detailed",
+  "pyrite_content_tags": "1girl, red hair, yellow eyes, abs, toned body, black sports bra, shiny latex pants, outdoors, railway tracks, man beneath, straddling, vaginal, explicit, breasts, collarbone, navel, looking at viewer, ringed eyes, lips",
+  "pyrite_sexual_tags": "nudity, sex, explicit sex, cowgirl, hetero",
+  "pyrite_flaw_tags": "anatomy issues, some details are overdone",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece of a woman with red hair, yellow eyes, in a shiny black sports bra and pants, straddling a man on a railway track, cinematic lighting, highly detailed, (by artgerm, greg rutkowski:1.2)"
+}
+```

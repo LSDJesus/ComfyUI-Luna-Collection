@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, erotic, photorealistic, soft lighting, intimate, provocative, dreamy",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, white sheets, two-tone hair, black hair with white streak and yellow highlights, yellow eyes, looking at viewer, parted lips, spread legs, visible pubic area, navel, tan lines, muscular physique, abs, pillows, bed",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies (hand/arm), somewhat generic face",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece photorealistic portrait of a woman with black hair and white streak with yellow highlights, yellow eyes, muscular physique, laying on bed, white sheets, spread legs, suggestive pose, tan lines, soft lighting, (artgerm, greg rutkowski:1.2)"
+}
+```

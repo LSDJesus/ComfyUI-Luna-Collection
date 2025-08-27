@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, natural lighting, soft focus, sensual, intimate, disheveled, bedroom",
+  "pyrite_content_tags": "1girl, solo, nude, lying on back, long black hair, silver streak, breasts, nipples, navel, injury, blood, bed, white sheets, messy room, jewelry, ring",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies, slight artifacting on skin, composition could be improved",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, realistic portrait of a woman with long black hair and a silver streak, lying nude on a bed, natural light, soft focus, minor injuries and blood, (by artgerm, greg rutkowski:1.2)"
+}
+```

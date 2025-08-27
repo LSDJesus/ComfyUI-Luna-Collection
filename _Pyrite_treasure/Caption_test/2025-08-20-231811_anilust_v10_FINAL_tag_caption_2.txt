@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, digital_art, glossy, shiny, erotic_anime, high_detail, soft_lighting, wet",
+  "pyrite_content_tags": "two anime girls, blue hair, pink eyes, pale skin, short blunt bangs, white and blue one-piece swimsuits, high-leg swimwear, see-through swimsuit, covered nipples, exposed genitals, x-ray effect, parted lips, bare shoulders, bed, wooden door, window, blinds, background painting, water droplets, muscular bodies, perfect bodies, looking at viewer, competition swimsuit",
+  "pyrite_sexual_tags": "nudity, explicit, loli",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, two anime girls, blue hair, pink eyes, see-through wet white and blue one-piece swimsuits, high-leg, x-ray effect, exposed genitals, water droplets, soft lighting, detailed skin, perfect bodies, looking at viewer"
+}
+```

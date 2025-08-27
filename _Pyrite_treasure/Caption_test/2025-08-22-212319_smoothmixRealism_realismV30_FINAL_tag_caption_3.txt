@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, soft lighting, sensual, glamorous, ethereal, hyperrealism, dreamlike",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, long hair, brown eyes, lying on bed, on back, looking at viewer, navel, pillow, bedsheets, hair highlights, thin, ribs, open mouth, slight smile",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, liquid detail too simplistic",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic, nude woman lying on a bed, soft lighting, long wavy brown and black hair, brown eyes, looking at viewer, detailed breasts, nipples, thin body, slight smile, hyperrealistic details (by artgerm, greg rutkowski:1.2)"
+}
+```

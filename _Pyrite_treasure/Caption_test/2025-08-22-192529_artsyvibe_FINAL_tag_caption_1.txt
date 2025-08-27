@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, soft_lighting, ethereal, high_contrast, cinematic, oiled_skin, beauty",
+  "pyrite_content_tags": "woman, long black hair, pale skin, red eyes, lying on bed, nude, pillows, white bedsheet, wooden floor, white chair, wooden desk, open window, scattered papers, blurred background, visible breast, visible vulva, oily skin, small scars",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic image of a woman with long black hair, pale skin, red eyes, lying nude on a bed, soft lighting, oily skin, cinematic lighting, high contrast."
+}
+```

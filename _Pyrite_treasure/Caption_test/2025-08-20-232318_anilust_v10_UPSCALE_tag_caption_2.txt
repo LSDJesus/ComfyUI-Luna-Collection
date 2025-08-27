@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, cinematic_lighting, detailed, high-contrast, dramatic, hyperrealistic, sensual, evening",
+  "pyrite_content_tags": "1girl, 1boy, red hair, yellow eyes, black latex sports bra, black latex leggings with red and blue stripe accents, pale skin, toned physique, well-defined abs, outdoor setting, railway tracks, utility poles, evening sky, open mouth, parted lips, looking at the viewer, penis, uncensored pussy, man wearing white shirt, cowgirl position, shiny clothing",
+  "pyrite_sexual_tags": "nudity, oral, penetration, hetero",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), highly detailed, anime style, perfect face, red hair, yellow eyes, black latex sports bra, black latex leggings, toned body, abs, outdoor railway setting, evening sky, oral sex, POV, perfect anatomy, hyperrealistic"
+}
+```

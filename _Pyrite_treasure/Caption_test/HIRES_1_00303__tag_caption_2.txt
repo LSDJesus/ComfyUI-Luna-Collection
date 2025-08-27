@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, fantasy, ethereal, soft lighting, high contrast, sensual, idyllic",
+  "pyrite_content_tags": "1girl, multiple boys, mmF threesome, nudity, white hair, long hair, blue eyes, bald heads, skin-tone torsos, arms around waist, black hair ribbons, small black earrings, blue sky, green grass, standing outdoors, breasts, nipples, hands touching, navel, cloud, mole under eye, skin-colored skin, lips, defined abs, day",
+  "pyrite_sexual_tags": "nudity, fingering, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "((mmf threesome)), 1girl, 2boys, nude, white hair, long hair, blue eyes, bald heads, outdoors, ethereal lighting, hyperrealism, soft lighting, sensual, fingering"
+}
+```

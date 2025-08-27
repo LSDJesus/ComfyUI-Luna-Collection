@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, erotic, photorealistic, soft lighting, boudoir, intimate, sunlit",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, breasts, small breasts, nipples, pussy, pubic hair, female pubic hair, black hair, two-tone hair, yellow highlights, yellow eyes, realistic skin, barefoot, pillow, sheets, looking at viewer, smile, indoors, window, curtains, bed",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "poor anatomy (hand), slight artifacts in skin texture, lighting inconsistency on breasts and thighs",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, realistic, detailed portrait of a beautiful woman with black hair, yellow highlights and yellow eyes, lying naked on a silk bed, soft, intimate lighting, looking at viewer, (by artgerm, greg rutkowski:1.2)"
+}
+```

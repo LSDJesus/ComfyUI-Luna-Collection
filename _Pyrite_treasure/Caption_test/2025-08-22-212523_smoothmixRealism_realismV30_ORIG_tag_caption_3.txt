@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "ethereal, golden, fantasy, sensual, soft lighting, polished",
+  "pyrite_content_tags": "1girl, solo, nude, sitting on bed, spread legs, black hair, two-tone hair, long hair, yellow eyes, glowing eyes, small breasts, nipples, navel, flower, looking at viewer, toned, abs, dark skin, golden light effects",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical inconsistencies (hands), uncanny valley face, liquid-like skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a dark-skinned woman with black and blonde hair, glowing yellow eyes, sitting naked on a luxurious bed, soft lighting, intricate golden energy effects on her body, perfect anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, soft lighting, hyperrealistic, fantasy, painterly, bedroom_scene, golden-hour, luxurious",
+  "pyrite_content_tags": "1girl, nude, solo, on bed, barefoot, long black and white hair, yellow eyes, small breasts, nipples, open legs, visible pussy, smiling, looking at viewer, cream on skin, white satin sheets with floral pattern, gold bed frame, yellow walls, wooden nightstand, lamp, painting on wall, picture frame, vase with pink flowers, bottle, toes, navel, lips, clitoris, feet, pillow with floral pattern",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl, nude), on a luxurious bed with satin sheets, (black and white long hair:1.3), yellow eyes, smiling, looking at the viewer, creamy skin, soft lighting, (explicit, detailed pussy:1.2), small breasts, nipples, open legs, close-up, sensual, masterpiece, painterly, golden hour lighting --blurry"
+}
+```

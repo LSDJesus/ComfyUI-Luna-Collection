@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, sensual, golden_lighting, photorealistic, hyperrealism, smooth_skin, dreamy, cinematic_lighting",
+  "pyrite_content_tags": "1girl, nude, lying on back, on bed, black hair, long hair, yellow eyes, small breasts, visible nipples, navel, toned abs, visible ribs, covering crotch with hand, hand touching genitals, white satin sheets, white pillows, wooden bedside table, bright sunlight, looking at viewer, smiling",
+  "pyrite_sexual_tags": "nudity, covering crotch, touching genitals",
+  "pyrite_flaw_tags": "bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "((1girl)), nude, lying on bed, black long hair, yellow eyes, small breasts, smiling, covering crotch with hand, touching genitals, golden sunlight, high-quality, photorealistic, hyperrealism, smooth skin, masterpiece, cinematic lighting --bad-hands"
+}
+```

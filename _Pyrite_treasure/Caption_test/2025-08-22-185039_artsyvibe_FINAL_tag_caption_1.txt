@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dark_academia, sensual, anime_style, cinematic_lighting, warm_lighting, boudoir, fantasy, detailed_rendering",
+  "pyrite_content_tags": "young_woman, anime_girl, black_hair, long_hair, yellow eyes, choker, black_lace_bra, black_lace_underwear, navel piercing, leather_chair, cozy_room, bookshelf, window, books, dim_lighting, fireplace",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Anime girl, black hair, yellow eyes, black lace lingerie, sitting on a leather armchair in a cozy room, bookshelf, warm lighting, cinematic lighting, detailed rendering, blurry"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, sensual, photorealistic, suggestive, intimate, naturalistic, serene, dreamy",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, looking at viewer, yellow eyes, long hair, two-tone hair, streaked hair, black hair, spread legs, breasts, small breasts, nipple, pussy, clitoris, navel, hand on stomach, bed, pillow, window, sunlight, barefoot, smile, ribs, skinny, indoors",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive",
+  "pyrite_flaw_tags": "anatomy issues (slight rib distortion), slight artifacting around the hairline",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, detailed painting of a beautiful woman with black and white hair, golden eyes, lying on a bed, open legs, soft lighting, cinematic, (by artgerm, greg rutkowski:1.2)"
+}
+```

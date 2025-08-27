@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, golden_light, bedroom_setting, high_contrast, cinematic_lighting, intimate, ethereal, modern_art",
+  "pyrite_content_tags": "1girl, nude, black hair, white streaks in hair, blunt bangs, green eyes, lying on bed, spread legs, pussy, nipples, navel, on back, white bedsheets, ornate headboard, white pillows, yellow body paint, bare chest, bare arms, bare legs, indoors, soft focus, realistic",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "((1girl)), nude, black hair with white streaks, blunt bangs, green eyes, lying on bed, spread legs, pussy, nipples, navel, on back, white bedsheets, ornate headboard, yellow body paint, soft focus, cinematic lighting, high contrast, modern art."
+}
+```

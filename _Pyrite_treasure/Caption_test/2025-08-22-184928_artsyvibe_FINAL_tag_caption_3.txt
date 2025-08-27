@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_fantasy, cinematic_lighting, seductive, sensual, ethereal, photorealistic, inviting",
+  "pyrite_content_tags": "1girl, solo, black hair, white streak, glowing amber eyes, sitting, leather armchair, library, fireplace, lingerie, black lace lingerie, bra, panties, navel, crossed legs, medium breasts, long hair, looking at viewer, indoors, window, black bra, black panties, underwear",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight face artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a beautiful woman with black hair and a white streak, glowing amber eyes, sitting in a leather armchair in a dark library, wearing black lace lingerie, cinematic lighting, (by artgerm, greg rutkowski:1.2), highly detailed, perfect face, perfect anatomy"
+}
+```

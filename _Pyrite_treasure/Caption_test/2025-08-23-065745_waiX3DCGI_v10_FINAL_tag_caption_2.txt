@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealistic, soft lighting, sensual, inviting, detailed, anime-inspired, cinematic lighting, ethereal, glamorous",
+  "pyrite_content_tags": "1girl, nude, lying on back, black hair, white headband, yellow eyes, small breasts, bare nipples, white bed sheets, indoor, on bed, window, white curtains, barefoot, looking at viewer, open mouth, navel, sunlight, wooden side table, glass lamp, art frame on wall, books on table",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:1.2), nude, lying on white bed sheets, black and white hair with headband, yellow eyes, small breasts, looking at viewer, window with sunlight, cinematic lighting, highly detailed, hyperrealistic"
+}
+```

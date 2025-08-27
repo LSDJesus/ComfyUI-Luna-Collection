@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft lighting, natural, intimate, realistic, serene, high-resolution, subtle_expression",
+  "pyrite_content_tags": "1girl, nude, long black hair, medium breasts, closed eyes, resting on a white bed, white pillows, blue sheet, female pubic hair, visible navel, pale skin, indoors, natural lighting, window blinds, bookshelf in background, orange-colored object on table.",
+  "pyrite_sexual_tags": "nudity, pussy",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A realistic image of a nude woman with long black hair, resting on a white bed with blue sheets, natural lighting, medium breasts, visible navel, and female pubic hair, soft lighting, intimate atmosphere."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "intimate, warm_lighting, realistic, soft_focus, sensual, close-up, natural_beauty",
+  "pyrite_content_tags": "woman, brown hair, light brown eyes, nude, pierced belly button, sitting on bed, cream colored bed sheets, beige headboard, man's arm, penis, penetration, focused expression, direct gaze",
+  "pyrite_sexual_tags": "nudity, penetration",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Realistic photo of a woman, brown hair, light brown eyes, nude, pierced belly button, sitting on a bed, cream colored bed sheets, penetration, focused expression, direct gaze, warm lighting, soft focus."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "cute, anime-style, soft lighting, pastel colors, simple background, sweet, portrait",
+  "pyrite_content_tags": "1girl, solo, blonde hair, twintails, long hair, blue eyes, red lips, makeup, white dress, medium breasts, cleavage, looking at viewer, choker, heart necklace, bracelet, pink background, heart pattern",
+  "pyrite_sexual_tags": "suggestive, none",
+  "pyrite_flaw_tags": "slightly inconsistent anatomy, generic art style",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, cute blonde with blue eyes, twintails, wearing a white sundress, heart choker, looking at the viewer, soft lighting, pastel pink background with hearts, anime style, (by artgerm, pixiv:1.2)"
+}
+```

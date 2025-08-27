@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, sensual, photorealistic, domestic, relaxed, golden hour",
+  "pyrite_content_tags": "1girl, solo, long black hair, lying in bed, on her back, topless, white panties, underwear, closed eyes, breasts, nipples, hands on chest, bedsheets, pillow, potted plants, window blinds, natural light, indoor, room, navel",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies (hand), slight softness",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece photorealistic image of a beautiful woman, topless, with long black hair lying in a bed, golden hour lighting, sensual pose, (by artgerm:1.2) (detailed face:1.1) (realistic skin:1.1)"
+}
+```

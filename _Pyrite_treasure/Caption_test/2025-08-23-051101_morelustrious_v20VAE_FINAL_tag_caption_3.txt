@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, sensual, anime, photorealistic, delicate, bedroom, inviting",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, two-tone hair, black hair, yellow eyes, looking at viewer, smiling, pussy visible, breasts, small breasts, bare feet, toes, soles, spread legs, hands on stomach, ribs, skinny, indoors, bed, pillow, window, lamp, bedroom, sunlight",
+  "pyrite_sexual_tags": "nudity, explicit, uncensored",
+  "pyrite_flaw_tags": "anatomical inconsistencies, slightly distorted proportions, possible AI artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, realistic render of an alluring anime woman, lying on a bed, with black and white hair, striking yellow eyes, full nudity, soft lighting, bedroom scene, (by artgerm, greg rutkowski:1.2)"
+}
+```

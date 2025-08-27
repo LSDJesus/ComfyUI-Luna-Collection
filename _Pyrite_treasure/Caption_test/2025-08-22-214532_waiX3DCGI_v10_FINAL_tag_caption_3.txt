@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, soft lighting, photorealistic, detailed, inviting, ethereal, suggestive, anime-inspired",
+  "pyrite_content_tags": "1girl, solo, multicolored hair, two-tone hair, white hair, black hair, lying on bed, on back, looking at viewer, yellow eyes, medium breasts, nipples, nudity, white underwear, white panties, navel, abs, bra, unworn bra, pillow, bedsheets, white bedsheets, bra lying next to her",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "minor anatomical distortions",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman with two-tone hair (black and white), yellow eyes, lying on a bed, sensual pose, soft lighting, photorealistic, detailed, (by artgerm, greg rutkowski:1.2), nipples, nudity"
+}
+```

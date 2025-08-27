@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "surreal, soft_focus, vibrant, illustrative, sensual, digital_art, dreamlike, art_nouveau",
+  "pyrite_content_tags": "nude_woman, yellow_skin, black hair with white and yellow highlights, yellow eyes, yellow fingernails, lying on bed, beige satin sheets and pillows, yellow flowers, gold bed frame, dark background, light leak, open legs, pubic hair, nipples, skin texture, small flowers",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_hands, blurry, jpg_artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A surreal digital art piece of a nude woman with yellow skin, black hair with white and yellow highlights, and yellow eyes, lying on a bed with beige satin sheets, surrounded by yellow flowers, soft focus, sensual, illustrative, art_nouveau"
+}
+```

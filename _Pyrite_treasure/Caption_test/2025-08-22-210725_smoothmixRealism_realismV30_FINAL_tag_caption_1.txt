@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft_lighting, sensual, hyperrealism, dreamlike, satin_texture, smooth_skin",
+  "pyrite_content_tags": "nude woman, lying on bed, white satin sheets, black hair, yellow eyes, light skin, small breasts, long hair, fingers touching genitals, bedroom setting, wooden nightstand, sunlit room",
+  "pyrite_sexual_tags": "nudity, self_stimulation",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A photorealistic image of a nude woman with long black hair and yellow eyes, lying on a bed with white satin sheets, self-stimulating. Sensual soft lighting and hyperrealism."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, soft lighting, high contrast, sensual, inviting, smooth, realistic, suggestive",
+  "pyrite_content_tags": "1girl, solo, lying on a bed, nude, two-tone hair (black and white with yellow highlights), long hair, yellow eyes, visible nipples, pale skin, on back, pillow, white satin sheets, ornate golden headboard, hand on stomach, bare breasts, navel, open legs, light source from above, reflective highlights, soft shadows, detailed face, suggestive pose",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, solo, nude, lying on a bed, black and white hair with yellow highlights, long hair, yellow eyes, hand on stomach, soft lighting, realistic, suggestive pose, white satin sheets, detailed headboard, reflective highlights, soft shadows, anime style, (looking at the viewer:1.3)"
+}
+```

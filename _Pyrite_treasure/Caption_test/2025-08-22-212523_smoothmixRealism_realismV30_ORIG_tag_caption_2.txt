@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, golden_light, sensual, digital_art, detailed, hyperrealism, seductive, fantasy",
+  "pyrite_content_tags": "1girl, nude, black and blonde two-tone hair, long hair, yellow glowing eyes, small breasts, nipples, dark skin, toned body, abs, navel, sitting on a bed, spread legs, visible pussy, pale gold satin bedsheets, golden ornate headboard, off-white pillows, pink flowers scattered, glowing golden liquid on chest and abdomen, looking at viewer, freckles on face, full lips",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, black and blonde two-tone hair, long hair, yellow glowing eyes, small breasts, dark skin, toned body, abs, sitting on a bed, spread legs, visible pussy, pale gold satin bedsheets, golden ornate headboard, pink flowers scattered, glowing golden liquid on chest and abdomen, hyperrealism, ethereal, sensual, detailed, golden lighting, masterpiece"
+}
+```

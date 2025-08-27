@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "ethereal, soft_lighting, sensual, photorealistic, high_contrast, dramatic_lighting, elegant, intimate",
+  "pyrite_content_tags": "1girl, nude, lying on stomach, on a white bed, indoors, black and white split hair, long hair, yellow eyes, small breasts, nipples, smiling, fair skin, looking at viewer, framed artwork on wall, light tan bedding, wooden headboard, sunlight, open window, bare arms and legs, crossed hands, nude shoulders",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, photorealistic), a nude woman with black and white split long hair, yellow eyes, laying on a white bed, looking at the viewer, sunlight from window, soft lighting, small breasts, nipples, elegant pose, realistic skin texture"
+}
+```

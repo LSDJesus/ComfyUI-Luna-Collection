@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "cyberpunk, sci-fi, neon, sleek, technological, dynamic pose, photorealistic",
+  "pyrite_content_tags": "1girl, solo, black hair, white streak, ponytail, glowing yellow eyes, bodysuit, skintight, standing on one leg, high heels, data center, server racks, monitors, cables, indoor",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "anatomy issues, awkward pose",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, detailed cyberpunk portrait of a beautiful woman with black hair and a white streak in a ponytail, glowing yellow eyes, wearing a black skintight bodysuit with neon circuitry patterns, standing confidently in a data center, cinematic lighting, (artgerm, greg rutkowski:1.2)"
+}
+```

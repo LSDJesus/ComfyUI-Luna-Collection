@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "natural_lighting, soft_focus, sensual, delicate, intimate, bedroom, warm_tones, smooth skin",
+  "pyrite_content_tags": "nude_woman, brunette_hair, brown eyes, tanned skin, lying on bed, cream-colored bedding, cream-colored pillows, hand near vulva, visible pubic hair, small breasts, wooden bedside table, natural light, smiling, open legs",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with brunette hair and brown eyes, lying on a bed with cream-colored bedding, soft focus, intimate bedroom scene, natural light."
+}
+```

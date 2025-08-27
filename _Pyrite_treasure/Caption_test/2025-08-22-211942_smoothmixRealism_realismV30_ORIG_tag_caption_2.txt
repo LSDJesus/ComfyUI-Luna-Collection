@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, hyperrealism, warm lighting, soft focus, intimate, seductive, detailed skin, dramatic lighting",
+  "pyrite_content_tags": "1girl, nude, long multicolored hair (black and blonde), tan skin, light brown eyes, small breasts, prominent nipples, visible navel, well-defined abs, hands near pubis, spread legs, lying on a cream-colored satin bedsheet, pillow, golden ornate headboard, shiny skin",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(((1girl))), nude, long multicolored hair (black and blonde), tan skin, light brown eyes, small breasts, prominent nipples, visible navel, well-defined abs, hands near pubis, spread legs, lying on a cream-colored satin bedsheet, pillow, golden ornate headboard, shiny skin, soft focus, sensual lighting, hyperrealism, masterpiece"
+}
+```

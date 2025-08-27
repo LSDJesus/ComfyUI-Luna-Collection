@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic_lighting, soft_focus, anime, librarian, sensual, elegant, detailed, warm_colors, bokeh",
+  "pyrite_content_tags": "young woman, fair skin, black hair with white highlights, long hair, orange eyes, blush, black choker with gold embellishment, black lace bra, black blazer, gold pen, white paper, open book, dark wood table, wooden bookshelf, books, library, sunlight, ornate chair, black underwear",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A young woman with black hair and white highlights, wearing a black lace bra and black blazer, writing in a book in a library, cinematic lighting, soft focus, detailed, sensual, anime, orange eyes"
+}
+```

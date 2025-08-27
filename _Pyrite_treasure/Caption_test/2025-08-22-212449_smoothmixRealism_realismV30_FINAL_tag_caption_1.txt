@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "hyperrealism, soft_lighting, romantic, sensual, ethereal, golden_hour, luxurious_bedroom",
+  "pyrite_content_tags": "nude_woman, fair_skin, long_two_tone_hair, black and blonde hair, yellow eyes, hand_in_hair, hand_on_pubis, golden_bedframe, satin_sheets, pillows, bed, luxurious_bedroom, open-eyed, pale skin, full_lips",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, digital_artifacts, unrealistic_skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "hyperrealistic portrait of nude woman with fair skin, two-tone black and blonde hair, golden yellow eyes, hand in hair, lying on a bed with satin sheets and golden bedframe, soft lighting, sensual, ethereal"
+}
+```

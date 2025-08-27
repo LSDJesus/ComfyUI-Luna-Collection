@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high-contrast, cinematic_lighting, golden_hour, intimate, soft_focus, photorealistic",
+  "pyrite_content_tags": "nude_female, brown hair with blonde highlights, green eyes, pale skin, lying on a beige satin bed, beige pillow, detailed wooden headboard, open legs, hand near genitals, nipples, visible abs, thin physique, natural makeup, direct eye contact",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a nude woman with brown and blonde hair, green eyes, lying on a satin bed, cinematic lighting, soft focus, golden hour, direct eye contact, sensual."
+}
+```

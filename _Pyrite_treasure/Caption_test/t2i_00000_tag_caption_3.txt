@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, hyperrealistic, close-up, detailed, ethereal, dramatic lighting, wet, emotional, iridescent",
+  "pyrite_content_tags": "1girl, solo, close-up, eye, eyelashes, blue eyes, green eyes, eye reflection, water droplets, dripping, wet skin, amber liquid, face, looking at viewer, blurred background, skin pores, freckles",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Close-up, highly detailed, photorealistic portrait of a beautiful woman's eye, iridescent blue and green color, water droplets, amber liquid dripping from eye, wet skin, dramatic lighting, (by artgerm, greg rutkowski:1.2)"
+}
+```

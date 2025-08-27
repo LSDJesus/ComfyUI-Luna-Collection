@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_focus, photorealistic, sensual, dreamy, warm_lighting, skin_texture, romantic",
+  "pyrite_content_tags": "1girl, solo, black hair, long hair, lying in bed, nudity, nipples, medium breasts, on back, pillow, white sheets, blush, closed eyes, sweaty skin, dreamy expression, bedroom",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "artifacts, slightly unnatural skin texture",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic portrait of a beautiful woman with long black hair, lying in bed, nude, soft lighting, sweaty skin, closed eyes, blush, (by artgerm, greg rutkowski:1.2)"
+}
+```

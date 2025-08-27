@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, futuristic, neon_glow, high_tech, detailed_lighting, digital_art, glossy_textures, anime_style",
+  "pyrite_content_tags": "female, young woman, black hair with white streaks, high ponytail, amber eyes, black skin-tight bodysuit with orange glowing circuitry patterns, black leather gloves, black ankle boots, holding a small black device, servers, computer screens, server room, computer cables, industrial environment, cool-toned lighting, window",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "cyberpunk anime girl with black and white hair, amber eyes, wearing a black bodysuit with orange glowing circuitry, standing in a high-tech server room, detailed lighting, glossy textures, digital art"
+}
+```

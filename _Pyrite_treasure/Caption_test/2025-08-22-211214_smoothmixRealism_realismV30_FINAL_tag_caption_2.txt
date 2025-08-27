@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, realistic, high-contrast, soft_lighting, hyperrealism, bedroom_setting, sunlit_interior, ethereal, golden_hour",
+  "pyrite_content_tags": "1girl, nude, black_hair, long_hair, spread legs, looking at viewer, lips, bed, abs, toned, small breasts, navel, sitting, on bed, indoors, nose, pillow, window, shiny skin, breasts, nipples, pussy, explicit, pale skin, hazel eyes, golden eyes, gold bed frame, white bedsheets, beige curtains, natural light, polished skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "((masterpiece)), 1girl, nude, black hair, long hair, spread legs, looking at viewer, pale skin, golden eyes, toned abs, small breasts, bedroom setting, natural light, polished skin, gold bed frame, white bedsheets, beige curtains, soft lighting, hyperrealism, realistic, sensual"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, sensual, realistic, bedroom, soft lighting, vibrant, alluring",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, small breasts, black hair, yellow eyes, two-tone hair, streaked hair, on bed, bed, spread legs, pussy, nipples, nipple piercing, looking at viewer, lying, smile, pillow, on back, lips",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, distorted proportions, slight artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, nude woman with black and white hair, yellow eyes, small breasts, lying on bed, spread legs, looking at viewer, realistic skin, soft lighting, (artgerm, greg rutkowski:1.2)"
+}
+```

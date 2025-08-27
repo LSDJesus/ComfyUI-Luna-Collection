@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, soft_lighting, suggestive, sensual, dreamy, digital_art, high_detail, clean_lines",
+  "pyrite_content_tags": "1girl, blonde_hair, blue_eyes, large_breasts, white bra, white underwear, white thighhighs, thighhighs, on_bed, pillow, bed, lying, spread_legs, navel, blush, closed_mouth, long_hair, drill_hair, looking_at_viewer, stomach, sweat, indoors, ass, convenient_censoring, light censor, suggestive, nude_body, female, light_skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, blonde hair, blue eyes, lying on bed, wearing a white bra, white underwear, and white thighhighs. Spread legs, navel, blush, closed mouth, looking at viewer, high detail, soft lighting, sensual, anime style, clean lines, digital art, sweat."
+}
+```

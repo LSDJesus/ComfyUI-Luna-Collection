@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "natural_light, soft_focus, sensual, intimate, clean, minimalist, portrait, bedroom",
+  "pyrite_content_tags": "woman, brown hair, brown eyes, nude, bare skin, sitting on white bed, white bedsheets, natural lighting, simple background, window, blinds, neutral tones, smiling, no clothing, fair skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful woman with brown hair and brown eyes, nude, sitting on a white bed, natural light, soft focus, sensual, intimate, minimalist, clean"
+}
+```

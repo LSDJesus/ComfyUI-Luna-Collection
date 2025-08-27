@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, soft_lighting, natural, photorealistic, clean, aesthetic, serene",
+  "pyrite_content_tags": "1girl, nude, sitting on bed, black hair, long hair, closed eyes, medium breasts, nipples, navel, female pubic hair, pussy, pale skin, light pink lips, indoors, white bedsheets, black jacket on the floor, black underwear on the floor, window with blinds, natural lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, nude, sitting on a white bed, long black hair, closed eyes, soft lighting, photorealistic, intimate, medium breasts, detailed pubic hair, natural skin tones."
+}
+```

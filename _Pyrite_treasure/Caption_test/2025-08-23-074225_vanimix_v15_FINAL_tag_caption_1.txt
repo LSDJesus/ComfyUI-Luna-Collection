@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, luminous, sensual, soft lighting, photorealistic, delicate, glistening, suggestive, bedroom",
+  "pyrite_content_tags": "nude female, white sheets, white pillows, wooden bed frame, black and white hair, yellow eyes, light skin, open legs, vulva, open legs, hands on chest, bedroom setting, sunlight, white curtains, glossy skin",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, unrealistic skin texture, distorted anatomy, jpg_artifacts",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic anime style of a nude woman with black and white hair and yellow eyes, laying on a white satin bed, glossy skin, soft lighting, open legs, vulva on full display, suggestive pose, cinematic lighting, high detail, intricate details, masterpiece"
+}
+```

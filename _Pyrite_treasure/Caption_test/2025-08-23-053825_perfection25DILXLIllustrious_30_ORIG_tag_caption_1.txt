@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "hyperrealism, sensual, seductive, soft_lighting, athletic_body, detailed_skin, intimate, bedroom",
+  "pyrite_content_tags": "nude female, tan lines, black hair, white and yellow highlights in hair, yellow eyes, muscular physique, hand on genitals, open legs, white bedsheets, ornate wooden headboard, two white pillows, dark gray t-shirt, wooden bedside table, bedroom interior, natural light, slight smile",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "hyperrealistic, nude athletic woman, black hair with yellow and white highlights, yellow eyes, tan lines, sitting on bed, white bedsheets, natural light, soft focus, detailed skin, hand on genitals, intimate, seductive pose"
+}
+```

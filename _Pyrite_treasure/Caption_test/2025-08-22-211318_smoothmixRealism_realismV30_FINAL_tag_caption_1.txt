@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_focus, sunlit, high_contrast, hyperrealistic, sensual, glossy, warm_tones, inviting",
+  "pyrite_content_tags": "woman, lying down, nude, tanned skin, black hair, amber eyes, smooth skin, hands, beige bedsheets, wooden headboard, natural light, small breasts, delicate nipples, fingers, nail polish, legs spread",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "unnatural_nipples, anatomical_inconsistencies, blurry_areas, jpg_artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Hyperrealistic woman lying in bed, sunlit skin, black hair, amber eyes, small breasts, soft focus, warm tones, natural light, high contrast, detailed hands, delicate nipples. Focus on anatomical accuracy and natural light diffusion."
+}
+```

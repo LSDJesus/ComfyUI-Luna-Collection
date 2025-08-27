@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, sensual, soft_lighting, glossy, high_detail, realistic, suggestive_pose, clean lines, studio_lighting",
+  "pyrite_content_tags": "woman, laying down, nude, black and white hair, asymmetrical hair, yellow eyes, fair skin, muscular torso, white bedsheets, wooden bedframe, pillows, finger touching genitals, open legs, bedroom, natural light, small breasts",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime woman with black and white hair, yellow eyes, fair skin, laying in bed nude, open legs, finger touching genitals, soft lighting, high detail, realistic."
+}
+```

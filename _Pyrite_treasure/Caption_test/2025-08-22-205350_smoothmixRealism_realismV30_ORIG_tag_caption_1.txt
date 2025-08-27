@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, natural_lighting, soft_focus, delicate, inviting, voyeuristic, realistic",
+  "pyrite_content_tags": "young woman, nude, brown hair, dark eyes, fair skin, hand on vulva, open legs, bed, beige bedsheets, golden wallpaper, framed picture, wet hair, full breasts, exposed nipples",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A nude young woman with dark hair and brown eyes, reclining on a bed with beige sheets and golden wallpaper, natural lighting, intimate, soft focus, sensual, hand on vulva."
+}
+```

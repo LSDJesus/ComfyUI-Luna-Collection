@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "natural_lighting, soft_focus, sensual, intimate, bedroom_setting, warm_tones, photorealistic",
+  "pyrite_content_tags": "nude_woman, light_brown_hair, brown eyes, fair skin, toned_abs, sitting on bed, white sheets, white pillow, wooden headboard, wooden bedside table, wedding_ring, open legs, hands_on_body, focus_on_genitals, natural_looking, simple_background, indoor_setting",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic nude woman with light brown hair and brown eyes, sitting on a bed with white sheets, soft lighting, intimate setting, open legs, hand on body, detailed genitals, focused on the subject, natural pose, warm tones, sensual, no clothing."
+}
+```

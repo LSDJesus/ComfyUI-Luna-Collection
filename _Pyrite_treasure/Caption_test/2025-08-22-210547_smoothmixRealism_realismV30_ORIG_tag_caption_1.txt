@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "sensual, erotic, high_contrast, soft lighting, digital art, realism, bedroom, inviting, provocative, seductive",
+  "pyrite_content_tags": "nude woman, black hair, pale skin, amber eyes, lying on bed, white sheets, wooden headboard, hand on pubic area, hand on thigh, open legs, slight smile, minimalist, bedroom setting, natural light, small breasts",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "unrealistic_anatomy, slight_facial_distortion, jpg_artifacts, over-rendered_skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A nude woman with long black hair and amber eyes, lying provocatively on a bed with white sheets, soft lighting, realistic skin, and a suggestive pose, digital art, high detail."
+}
+```

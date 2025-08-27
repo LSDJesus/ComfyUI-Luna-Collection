@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, sensual, intimate, soft lighting, realistic, natural, bedroom setting",
+  "pyrite_content_tags": "1girl, nude, breasts, nipples, pussy, penis, 1boy, hand on vagina, lying on bed, pillow, brown hair, brown eyes, looking at viewer, missionary position, sex, intimate moment",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies in the male hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Realistic photograph of a beautiful woman and a man, intimate moment, on a bed, missionary position, nude, soft lighting, detailed features, brown hair, brown eyes. ((realistic, detailed rendering))"
+}
+```

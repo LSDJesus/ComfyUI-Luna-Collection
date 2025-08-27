@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, realistic, wet, high-detail, suggestive, cinematic_lighting, shallow_depth_of_field, inviting, sensual",
+  "pyrite_content_tags": "1girl, red hair, yellow highlights, short hair, amber eyes, black choker with gold cross pendant, nude, large breasts, visible nipples, bound wrists with black cuffs, bound legs with rope, sitting poolside, blue pool water, sky, day, blurred background, tree, navel, parted lips, looking at viewer, wet skin, mole on breast, mole, thighs, exposed genital area, blonde-ish bangs, white pool furniture, tan skin",
+  "pyrite_sexual_tags": "nudity, bondage",
+  "pyrite_flaw_tags": "blurry, jpg_artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece anime illustration of a nude woman with red hair, amber eyes, black choker with a gold cross, sitting by a pool, wet skin, bound wrists and legs. Cinematic lighting, shallow depth of field, realistic style, high detail, suggestive pose.  Blurry background, high-quality rendering."
+}
+```

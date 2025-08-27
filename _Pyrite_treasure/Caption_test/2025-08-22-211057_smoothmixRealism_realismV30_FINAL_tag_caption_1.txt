@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft_lighting, sensual, glossy, suggestive, hyperrealism, detailed_skin, art_nouveau_inspired",
+  "pyrite_content_tags": "woman, lying on bed, white satin bedsheet, long black hair, light brown eyes, pale skin, nude, implied bra, light-orange sunlight, toned abs, pink nipples, natural lipstick, arms overhead",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A hyperrealistic sensual woman lying on a white satin bedsheet, arms overhead, long black wavy hair, light brown eyes, pale skin, soft lighting, art nouveau, golden sunlight, detailed nipples, toned abs"
+}
+```

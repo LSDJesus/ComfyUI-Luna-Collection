@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime_style, soft_lighting, erotic, sensual, realistic_skin, detailed_anatomy, bedroom_scene, golden_hour, high_detail",
+  "pyrite_content_tags": "nude_female, fair skin, black and white split hair, yellow eyes, bed, white satin sheets, black leather headboard, bedside lamp, wooden nightstand, window with curtains, yellow nail polish, hand in genitals, small breasts, muscular physique, smiling, light_brown eyebrows, thin eyebrows",
+  "pyrite_sexual_tags": "nudity, erotic, masturbation",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, nude female, split black and white hair, yellow eyes, muscular, bedroom, satin sheets, masturbation, detailed skin, soft lighting, golden hour."
+}
+```

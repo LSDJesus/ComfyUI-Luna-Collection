@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "digital_art, anime_style, soft_lighting, ethereal, pale, doll-like, innocent",
+  "pyrite_content_tags": "naked_woman, sitting_on_bed, light_skin, dark_brown_hair, orange_eyes, small_breasts, open_legs, visible_genitalia, white_bed_sheets, cream_colored_bed_frame, simple_bedroom_setting, blank_wall, direct_gaze",
+  "pyrite_sexual_tags": "nudity, loli",
+  "pyrite_flaw_tags": "unrealistic_anatomy, doll_like_features",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Anime-style, portrait of a young woman, dark brown hair, orange eyes, naked, sitting on bed, soft lighting, simple bedroom setting, ethereal"
+}
+```

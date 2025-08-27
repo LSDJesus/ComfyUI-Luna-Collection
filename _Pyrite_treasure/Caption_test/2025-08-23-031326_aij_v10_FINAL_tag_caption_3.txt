@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, sensuous, soft lighting, luxurious, erotic, golden hour, high detail",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, bed, pillows, silk sheets, multicolored hair, two-tone hair, black hair, white streak, yellow highlights, yellow eyes, breasts, small breasts, nipples, spread legs, pussy, looking at viewer, smile, barefoot, indoors, navel, long hair, open mouth, detailed skin, realistic skin, sunlight",
+  "pyrite_sexual_tags": "nudity, explicit, suggestive",
+  "pyrite_flaw_tags": "minor anatomical inconsistencies in the hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a nude woman with multicolored hair, lying sensually on a bed with silk sheets, realistic skin, soft lighting, golden hour, high detail, (by artgerm, greg rutkowski:1.2)"
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, serene, soft lighting, natural, emotive, tranquil",
+  "pyrite_content_tags": "1girl, solo, outdoors, lake, overcast sky, long blonde hair, looking at viewer, arms raised, sports bra, navel, midriff, breasts, armpits, blurry background, covered nipples, blue eyes",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "slight softness, minor composition imbalance",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a young woman in a white sports bra, standing by a lake with her arms raised, natural lighting, overcast sky, medium shot, highly detailed, (by artgerm, greg rutkowski:1.1)"
+}
+```

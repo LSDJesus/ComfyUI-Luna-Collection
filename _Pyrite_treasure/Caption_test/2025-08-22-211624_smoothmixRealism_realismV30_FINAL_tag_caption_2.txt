@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, high_contrast, cinematic lighting, hyperrealistic, soft focus, romantic, intimate",
+  "pyrite_content_tags": "1girl, nude, lying on bed, spread legs, on back, black hair, long hair, brown eyes, small breasts, prominent nipples, navel, visible abs, pale skin, closed mouth, bed sheets, pillow, wooden headboard, sunlight, hand near genitals",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, lying on bed, spread legs, sunlight, cinematic lighting, hyperrealistic, black hair, brown eyes, small breasts, prominent nipples, visible abs, soft focus, looking at viewer, close up, intimate, sensuality"
+}
+```

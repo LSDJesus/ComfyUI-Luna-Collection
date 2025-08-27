@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, high_contrast, cinematic_lighting, sensual, hyperrealistic, soft_focus, luxurious, inviting",
+  "pyrite_content_tags": "1girl, nude, pussy, breasts, nipples, black hair, long hair, yellow eyes, looking at viewer, smile, abs, toned body, tan skin, bed, white pillows, spread legs, sitting, indoor, golden curtains, wooden frame, window, exposed navel",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, nude, pussy, breasts, long black hair, yellow eyes, looking at viewer, sitting on bed, abs, toned body, tan skin, spread legs, soft light, cinematic lighting, hyperrealistic"
+}
+```

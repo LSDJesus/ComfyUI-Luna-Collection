@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "cyberpunk, neon, digital_art, futuristic, high-tech, polished_surface, cinematic_lighting, sleek",
+  "pyrite_content_tags": "female, black hair, bangs, high ponytail, orange glowing eyes, black latex bodysuit with orange circuit board design, fingerless gloves, black boots, data center background, server racks, computer monitors, computer code on screen, blue fluorescent lighting, lab environment, standing pose, focused gaze, slender physique, full body shot, shiny material",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A cyberpunk female in a black latex bodysuit with orange glowing circuitry, high ponytail, orange eyes, standing in a high-tech data center, cinematic lighting, digital art, futuristic, sleek, 8k"
+}
+```

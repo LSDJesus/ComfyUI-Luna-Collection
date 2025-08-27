@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft_lighting, sensual, intimate, bedroom_scene, natural_light, shallow_depth_of_field",
+  "pyrite_content_tags": "nude_woman, dark_brown_hair, green_eyes, fair_skin, laying_on_bed, white_pillow, bedsheets, hands_touching_herself, bedroom_interior, wooden_headboard, tanned skin, soft_focus_background",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic image of a nude woman with dark brown hair and green eyes laying on a bed, soft lighting, intimate setting, natural light, hands touching herself, bedsheets, shallow depth of field."
+}
+```

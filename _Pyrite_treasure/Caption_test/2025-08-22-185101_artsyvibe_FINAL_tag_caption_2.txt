@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "dark_academia, gothic_vibe, cinematic_lighting, sensual, ethereal, atmospheric, high-contrast, warm_tones",
+  "pyrite_content_tags": "1girl, solo, sitting in a leather armchair, black hair, long hair, blunt bangs, yellow eyes, black bra, black panties, detached black lace sleeves, black choker, navel piercing, medium breasts, looking at viewer, indoor setting, large round window, books, book stack, table, fireplace in background, bottles, blurred background, underwear only, black lingerie, warm lighting",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), sitting in a gothic leather armchair, sensual black lingerie, black lace detached sleeves, black choker, blunt bangs, long black hair, yellow eyes, looking at viewer, large round window, fireplace in background, book stack, atmospheric lighting, high-contrast, cinematic, depth of field, masterpiece"
+}
+```

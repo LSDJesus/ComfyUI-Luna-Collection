@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, neon_lighting, high_tech, futuristic, sleek, high-contrast, digital_art, cinematic_lighting, circuit_board_design, seductive",
+  "pyrite_content_tags": "1girl, black hair with white highlights, black blunt bangs, brown eyes, medium breasts, black skintight bodysuit with orange circuit board design, black shoes, standing on one leg, leaning on a dark metal desk, two computer monitors displaying code, server racks, blue neon tube lights, orange cables, indoor setting, full body shot, digital art, focused expression, realistic skin texture",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "blurry background, slight jpeg artifacts, potential minor anatomical issues with hand",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), cyberpunk, futuristic server room, black skintight bodysuit with intricate orange glowing circuit board design, black hair, blunt bangs, brown eyes, medium breasts, leaning on desk, neon blue lighting, high contrast, cinematic lighting, full body, dynamic pose, digital art, high detail, realistic skin texture, remove blurry background"
+}
+```

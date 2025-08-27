@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, high-contrast, cinematic_lighting, seductive, ethereal, glamorous, fantasy, sensual, soft focus",
+  "pyrite_content_tags": "1girl, nude, multicolored hair (black and white), yellow eyes, short hair, lying on bed, white bedsheets, pillows, wooden bed frame, ornate headboard, looking at viewer, nipples, small breasts, open mouth, smile, sharp teeth, detailed skin texture, lit by lamp, golden wall details",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "blurry, jpg_artifacts",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, Erotic, 1girl, nude, multicolored hair (black and white), sharp yellow eyes, sharp teeth, lying on bed, soft cinematic lighting, intricate skin details, golden ornate wall, soft focus, highly detailed"
+}
+```

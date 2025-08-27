@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_focus, cinematic_lighting, natural_light, intimate, sensual, portrait, bedroom, serene",
+  "pyrite_content_tags": "woman, nude, white bedsheets, medium shot, dark hair, brown eyes, pale skin, natural light, sunlight, morning, bedroom, bookshelf in background, relaxed pose, thoughtful expression, shadow detail",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A sensual portrait of a woman in a sunlit bedroom, nude with soft focus, cinematic lighting, and natural light, relaxed pose, thoughtful expression, pale skin, brown eyes, and dark hair."
+}
+```

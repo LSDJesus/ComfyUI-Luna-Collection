@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "fantasy, seductive, boudoir, cinematic lighting, smooth skin, detailed, warm colors",
+  "pyrite_content_tags": "1girl, solo, breasts, nipples, nude, lying on bed, on bed, two-tone hair, black and white hair, short hair, yellow eyes, looking at viewer, smile, sharp teeth, hands on body, pillows, wooden headboard, ornate decor, bedroom, suggestive",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "unnatural skin, anatomy issues in hand, slightly off-kilter composition",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a seductive woman with black and white hair, glowing yellow eyes, sharp teeth, nude, lying on a bed with pillows, cinematic lighting, (by artgerm, greg rutkowski:1.2), (perfect anatomy:1.3)"
+}
+```

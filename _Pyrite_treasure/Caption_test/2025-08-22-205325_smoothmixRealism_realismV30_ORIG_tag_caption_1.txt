@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, intimate, soft_focus, golden_hour_lighting, natural_light, portrait, studio_lighting, photorealistic",
+  "pyrite_content_tags": "nude_woman, brown_hair, hazel_eyes, fair_skin, sitting_on_bed, white_pillows, wooden_bedframe, beige_bedsheets, hand_in_vagina, minimalist, bedroom_setting, small_breasts, natural_lighting, nightstand_with_lamp",
+  "pyrite_sexual_tags": "nudity, masturbation",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a nude woman with brown hair and hazel eyes, sitting on a bed in a bedroom, natural lighting, soft focus, masturbation."
+}
+```

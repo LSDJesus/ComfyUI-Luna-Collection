@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "D",
+  "pyrite_aesthetic_tags": "uncanny_valley, artificial, plastic, disturbing, hyperrealism, glossy, sterile",
+  "pyrite_content_tags": "1girl, solo, lying on bed, nude, pussy, breasts, nipples, yellow eyes, black hair, white streak, streaked hair, long hair, nail polish, red nails, pillow, bedsheets, artificial skin, doll-like",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "uncanny valley effect, unnatural skin texture, anatomical inconsistencies, poor rendering of bedsheets",
+  "pyrite_subjective_quality": "bad quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful woman, black hair with white streak, yellow eyes, lying on a bed, soft lighting, realistic skin, (by artgerm, greg rutkowski:1.2) --negative: uncanny valley, plastic, doll, unrealistic, distorted"
+}
+```

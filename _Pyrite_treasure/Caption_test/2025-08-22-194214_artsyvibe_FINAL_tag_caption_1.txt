@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, realistic, sensual, cinematic, high_detail, silky_fabric, elegant, natural_light",
+  "pyrite_content_tags": "woman, laying, bed, white bikini top, white bikini bottoms, long black hair, pale skin, light brown eyes, bedroom, pillow, white bedsheets, sunlight, window, wooden furniture, green plant, neutral color palette, white chair, white dress, pink earrings",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful woman with long black hair and pale skin, wearing a white bikini, laying on a bed with white silk sheets, bathed in natural sunlight. Realistic, soft lighting, cinematic."
+}
+```

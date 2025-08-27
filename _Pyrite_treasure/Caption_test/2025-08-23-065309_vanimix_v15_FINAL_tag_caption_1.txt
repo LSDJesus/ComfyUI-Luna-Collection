@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, sensual, soft lighting, high contrast, clean, digital painting, realistic skin texture",
+  "pyrite_content_tags": "nude woman, lying on a white bed, black and white hair, yellow eyes, fair skin, smiling, left hand holding a white sheet, right hand on the pubic area, smooth body, thin figure, open legs, visible genitalia, white sheets, pillows, wooden bed frame, bedside table, decorative plant, blue vase, wooden floor",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "anatomy issues, some rendering errors",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Anime style, nude woman with black and white hair, yellow eyes, lying on white bed sheets, soft lighting, sensual pose, focus on skin texture, realistic rendering, open legs"
+}
+```

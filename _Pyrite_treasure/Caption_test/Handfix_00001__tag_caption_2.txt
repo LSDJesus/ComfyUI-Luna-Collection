@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "realistic, scenic, sunny, high-detail, natural_light, cinematic_lighting, modern_style, portrait",
+  "pyrite_content_tags": "1girl, blonde_hair, long hair, blue eyes, fair skin, teal long-sleeved sweater dress, keyhole cutout, high-neck, visible breasts, medium breasts, holding black object, black object, boats, water, blue water, sunny day, blue sky, looking at viewer, standing, closed mouth, pier",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "blurry, jpg_artifacts, minor_facial_asymmetry",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), realistic, scenic pier, holding a black object, teal long-sleeved sweater dress, keyhole cutout, high-neck, visible breasts, medium breasts, blonde hair, long hair, blue eyes, fair skin, sunny day, blue sky, cinematic lighting, water, looking at viewer, high detail"
+}
+```

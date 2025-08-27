@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic lighting, photorealistic, anime, hyperrealism, detailed, moody, sensual",
+  "pyrite_content_tags": "1girl, 1boy, red hair, yellow eyes, black shiny sports bra, black shiny leggings with red stripe, outdoors, railway, toned, muscular, navel, parted lips, looking at viewer, white t-shirt, penis visible, cowgirl position, straddling, red traffic lights, power lines, sunset sky",
+  "pyrite_sexual_tags": "nudity, penetration, vaginal, sex, hetero",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Highly detailed, photorealistic image of a woman with red hair and yellow eyes straddling a man on a railway track, wearing a black shiny sports bra and leggings with a red stripe, engaged in sexual activity, cinematic lighting, sunset sky, perfect anatomy."
+}
+```

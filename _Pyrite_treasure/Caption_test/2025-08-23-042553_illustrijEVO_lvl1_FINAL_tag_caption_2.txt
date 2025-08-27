@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "photorealistic, soft_lighting, sensual, bedroom, intimate, high_detail, art_nouveau_inspired",
+  "pyrite_content_tags": "1girl, nude, black_hair, long_hair, white_streaks_in_hair, yellow_eyes, barefoot, sitting on bed, spread legs, open vulva, clitoris pierced with gold jewelry, small breasts, nipples, navel, soft bed sheets, pillows, wooden bed frame, two sconce lights, indoors, looking_at_viewer, pale skin, defined collarbone, defined ribcage, thin_waist",
+  "pyrite_sexual_tags": "nudity, uncensored, spread pussy, explicit",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), nude, black hair, long hair, white streaks, yellow eyes, barefoot, sitting on bed, spread legs, vulva pierced with gold jewelry, small breasts, soft bed sheets, two sconce lights, looking at viewer, realistic, soft lighting, intimate, high detail"
+}
+```

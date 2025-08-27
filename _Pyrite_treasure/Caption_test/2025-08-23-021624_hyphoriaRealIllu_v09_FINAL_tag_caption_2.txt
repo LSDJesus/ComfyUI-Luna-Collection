@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, natural_light, sensual, high_detail, focused_lighting, cinematic, intimate, realism",
+  "pyrite_content_tags": "1girl, nude, lying on a white bed, white bedsheets, white pillow, long black and white hair, fair skin, green eyes, small breasts, visible nipples, open legs, hand on pubic area, wooden bed frame, natural lighting, tan lines, exposed vulva, solo",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "1girl, nude, lying on a bed, white sheets, natural light, long black and white hair, green eyes, visible nipples, open legs, hand on pubic area, detailed skin texture, focused lighting, cinematic lighting"
+}
+```

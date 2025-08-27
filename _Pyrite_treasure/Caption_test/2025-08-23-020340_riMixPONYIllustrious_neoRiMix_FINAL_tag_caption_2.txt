@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "anime, vibrant, soft_lighting, detailed, sensual, provocative, dynamic_composition, hyperrealism",
+  "pyrite_content_tags": "1girl, nipples, solo, two-tone hair (black and white), yellow eyes, long hair, small breasts, looking at viewer, smile, ribs, skin tight, bed sheet (white), open mouth, lying on bed, cameltoe, shiny clothes (yellow), navel, yellow latex pants, no top, arm resting on the yellow latex pants, hand holding bed sheet, bed pillows (white), yellow background, sharp teeth",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, highres), 1girl, solo, lying on bed, open mouth, smile, sharp teeth, two-tone hair (black and white), yellow eyes, small breasts, wearing yellow latex pants, no top, cameltoe, hand on yellow latex pants, hand holding white bed sheet, soft lighting, detailed, anime, provocative, sensual, hyperrealism"
+}
+```

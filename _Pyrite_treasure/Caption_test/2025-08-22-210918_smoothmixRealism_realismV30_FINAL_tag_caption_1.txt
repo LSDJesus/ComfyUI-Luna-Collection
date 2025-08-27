@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "dreamy, sensual, hyperrealism, cinematic lighting, soft_focus, glossy, ethereal, seductive",
+  "pyrite_content_tags": "naked woman, pale skin, long black hair, orange eyes, lying on bed, beige bedding, wooden headboard, bedside table, wooden floor, warm sunlight, bare breasts, small nipples, smooth skin, visible ab muscles, relaxed posture, open-mouthed smile, soft lips, peach blush, bedroom, no clothing",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "bad_anatomy, jpg_artifacts, artificial_skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "A beautiful, nude woman with long black hair and bright orange eyes, lying in a bed, sunlit room, hyperrealism, soft focus, cinematic lighting, ethereal."
+}
+```

@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, soft_lighting, hyperrealism, sensual, boudoir, intimate, golden_hour, realistic, photorealistic",
+  "pyrite_content_tags": "nude female, dark hair with bangs, amber eyes, fair skin, lying on bed, cream-colored bedding, head on cream-colored pillow, hand on pubic area, slightly open legs, visible genitalia, exposed breasts, small nipples, soft shadows, smooth skin, background wood trim, natural lighting, golden light",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "photorealistic nude female, dark hair with bangs, amber eyes, lying on bed, cream-colored bedding, hand on pubic area, sensual pose, soft lighting, golden hour, hyperrealism"
+}
+```

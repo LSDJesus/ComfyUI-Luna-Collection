@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "ethereal, digital_art, anime_style, photorealistic, city_street, high_detail, atmospheric, melancholic",
+  "pyrite_content_tags": "1girl, nude, white hair, orange eyes, small breasts, pale skin, visible ribs, toned physique, white panties being pulled down, pussy juice, earrings, navel, open mouth, city street setting, brick buildings, clear blue sky, cobblestone street, day, thin figure",
+  "pyrite_sexual_tags": "nudity, exhibitionism, pussy juice, public indecency",
+  "pyrite_flaw_tags": "bad_anatomy, blurry, distorted_features",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(1girl:0.99), nude, white hair, orange eyes, detailed body, visible ribs, white panties pulled down, pussy juice, anime style, ethereal, atmospheric, city street, sunlight, photorealistic, high detail, bad anatomy corrected"
+}
+```

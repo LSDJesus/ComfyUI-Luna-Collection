@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, sensual, soft lighting, golden hues, alluring, erotic, detailed, slightly uncanny valley",
+  "pyrite_content_tags": "1girl, solo, nude, breasts, nipples, long hair, multicolored hair, two-tone hair, looking at viewer, lying on back, spread legs, abs, navel, small breasts, pillow, bed, shiny skin, golden bed frame, detailed skin texture, amber eyes",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slightly unnatural skin texture, minor anatomical inconsistencies, potential uncanny valley effect",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece portrait of a beautiful woman with long, two-tone hair, amber eyes, and a seductive gaze, lying nude on a luxurious bed, soft golden lighting, detailed skin texture, (by artgerm, greg rutkowski:1.2)"
+}
+```

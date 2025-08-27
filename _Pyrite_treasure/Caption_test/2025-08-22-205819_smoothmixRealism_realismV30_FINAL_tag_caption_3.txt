@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, photorealistic, soft lighting, warm colors, intimate, detailed skin texture",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, looking at viewer, open mouth, brown eyes, bangs, messy hair, breasts, nipples, female pubic hair, navel, pillow, beige sheets, nightstand, wooden bed frame",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies in the stomach area",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic portrait of a nude woman with brown hair and eyes, lying on a bed, smiling, natural lighting, detailed skin texture, soft focus, (by artgerm, greg rutkowski:1.2)"
+}
+```

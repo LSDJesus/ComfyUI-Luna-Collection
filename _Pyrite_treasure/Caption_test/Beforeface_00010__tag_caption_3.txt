@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime, vibrant colors, underwater, surreal, soft lighting, expressive, detailed",
+  "pyrite_content_tags": "1girl, solo, green hair, double buns, braided bun, wet hair, wet clothes, white collared shirt, open mouth, blushing, large eyes, heterochromia eyes, coral, underwater background, looking at viewer, hands on face",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "anatomy issues, hands are slightly off",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality:1.2) anime girl with green hair and double buns, wet hair, wearing a white collared shirt, open mouth, blushing, underwater background, coral, large eyes, heterochromia, hands on face, looking at viewer, (detailed eyes, detailed background:1.1)  (by makoto shinkai:1.3)  (by artgerm:1.2)"
+}
+```

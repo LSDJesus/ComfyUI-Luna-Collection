@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, smooth_lighting, clean_lines, anime_style, dreamlike, high_detail, soft_focus, realistic_rendering",
+  "pyrite_content_tags": "1girl, nude, lying on bed, two-tone hair (white and black), yellow eyes, looking at viewer, small breasts, arm up, hand near breasts, armpits visible, navel visible, barefoot, silk sheets, white pillow, beige bed, wooden floor, realistic skin texture, open lips",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, 1girl, lying on white silk bed, two-tone hair (white and black), yellow eyes, realistic skin texture, smooth lighting, soft focus, arm up, hand near breasts, nude, detailed anatomy, anime style, clean lines"
+}
+```

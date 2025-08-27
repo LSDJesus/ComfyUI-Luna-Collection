@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cyberpunk, futuristic, high-tech, cinematic_lighting, dynamic_pose, sleek, digital_art, vibrant_colors",
+  "pyrite_content_tags": "1girl, solo, black_hair, long_ponytail, black_bodysuit with orange circuit pattern, skin tight, high heels, black fingerless gloves, standing, indoor, server room, monitors, computer desk, chairs, data, digital display, blue and orange lighting, medium breasts, sensual pose, full body",
+  "pyrite_sexual_tags": "none",
+  "pyrite_flaw_tags": "blurry, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, 1girl, cyberpunk data technician, black bodysuit with orange circuit pattern, long black ponytail, high heels, standing next to server racks, cinematic lighting, dynamic pose, high detail, perfect anatomy, blurry background, futuristic environment"
+}
+```

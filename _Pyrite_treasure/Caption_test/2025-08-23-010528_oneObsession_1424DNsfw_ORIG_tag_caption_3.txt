@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "soft lighting, anime style, hyperrealism, sensual, minimalist, clean, ethereal",
+  "pyrite_content_tags": "1girl, solo, nude, lying on bed, looking at viewer, yellow eyes, two-tone hair, black and white hair, barefoot, small breasts, navel, ribbed torso, hand on stomach, bed sheets, indoors, daylight, nipples",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues (ribs too prominent), slightly unnatural pose",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, realistic portrait of a beautiful anime girl with black and white hair, yellow eyes, nude, lying on a white bed, sensual pose, soft lighting, (artgerm, greg rutkowski:1.2)"
+}
+```

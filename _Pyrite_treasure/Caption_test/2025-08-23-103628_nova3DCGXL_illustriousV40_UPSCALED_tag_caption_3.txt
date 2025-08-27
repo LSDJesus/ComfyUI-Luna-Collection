@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "soft_lighting, photorealistic, sensuous, ethereal, delicate, anime_inspired, detailed_shadows, vibrant_colors, artistic",
+  "pyrite_content_tags": "1girl, solo, multicolored hair, two-tone hair, black and white hair, yellow eyes, lying on back, nude, breasts, nipples, on bed, looking at viewer, realistic, medium breasts, long hair, lips, ribs, nose, navel, pillow, barefoot, knee up, hand on own stomach, indoors, sunlight, white sheets, art-nouveau inspired",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "slight anatomical inconsistencies, hands slightly off",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "Masterpiece, realistic portrait of a beautiful woman with two-tone black and white long hair, yellow eyes, lying nude on a white sheet in a sunlit room, soft lighting, intricate details, artistic, (by artgerm, greg rutkowski:1.2)"
+}
+```

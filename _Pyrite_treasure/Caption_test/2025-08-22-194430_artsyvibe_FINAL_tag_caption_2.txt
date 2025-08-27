@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "cinematic_lighting, ethereal, romantic, golden_hour, dreamy, high_contrast, painterly, detailed_atmosphere",
+  "pyrite_content_tags": "(1girl), black_hair, long_hair, brown eyes, black leather bra, beige pants, white bedsheets, pillows, indoors, sitting on bed, window, chair, plant, room, wooden furniture, golden particles, closed eyes, sunlight, delicate facial features, bare shoulders, bracelet, no visible shoes",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl), sitting on a bed bathed in golden light, wearing a black leather bra and beige pants, ethereal atmosphere, cinematic lighting, long black hair, closed eyes, detailed environment, intricate details, perfect anatomy, masterpiece, highly detailed"
+}
+```

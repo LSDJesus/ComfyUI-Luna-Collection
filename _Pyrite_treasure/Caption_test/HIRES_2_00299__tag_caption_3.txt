@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime-style, photorealistic, soft lighting, suggestive, sensual",
+  "pyrite_content_tags": "1girl, white hair, purple eyes, ahoge, pigtails, hairband, pink bow, white crop top, pink trim, see-through shirt, exposed nipples, navel, abs, pink athletic shorts, skin tight, high-waisted, couch, indoor, looking at viewer, parted lips, breasts, midriff, solo focus",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomical issues, inconsistent lighting, overly smooth skin",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece portrait of a beautiful anime girl with white hair and purple eyes, wearing a white see-through crop top and pink athletic shorts, sitting on a couch, soft lighting, photorealistic rendering, (artgerm, greg rutkowski:1.2)"
+}
+```

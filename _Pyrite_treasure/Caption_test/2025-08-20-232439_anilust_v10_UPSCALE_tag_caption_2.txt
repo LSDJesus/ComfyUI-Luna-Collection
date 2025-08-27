@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic, high-contrast, cinematic_lighting, realistic, detailed, digital_art, sensual, dynamic_pose",
+  "pyrite_content_tags": "1girl, 1boy, nude, completely nude, red hair, short hair, yellow eyes, open mouth, visible nipples, detailed abs, muscular male body, butt, doggystyle position, looking at viewer, tattoo-like marks on the face, gray flooring, dark background, smiling face",
+  "pyrite_sexual_tags": "nudity, sex from behind, oral, penetration, hetero",
+  "pyrite_flaw_tags": "bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, erotic, 1girl, 1boy, nude, sex from behind, doggystyle, red hair, short hair, yellow eyes, detailed abs, muscular male body, open mouth, smiling, highly detailed realistic rendering, cinematic lighting, studio lighting, focused on the ass and penetration"
+}
+```

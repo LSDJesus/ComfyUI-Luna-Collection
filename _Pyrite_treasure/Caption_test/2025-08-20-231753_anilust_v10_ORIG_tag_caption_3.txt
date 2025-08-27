@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "F",
+  "pyrite_aesthetic_tags": "anime, glossy, surreal, fleshy, anatomically incorrect, grotesque, artificial, plastic, disturbing",
+  "pyrite_content_tags": "2girls, blue hair, short hair, blunt bangs, purple eyes, swimsuits, one-piece swimsuits, high leg swimsuits, see-through, nipples, multiple girls, looking at viewer, parted lips, sitting, bed, indoor, x-ray, exposed genitals, fleshy, tentacles, distorted anatomy, disturbing, artificial lighting",
+  "pyrite_sexual_tags": "nudity, explicit",
+  "pyrite_flaw_tags": "anatomy, distorted anatomy, artifacts, nonsensical",
+  "pyrite_subjective_quality": "worst quality",
+  "pyrite_direct_prompt_suggestion": "Do not attempt to recreate this image. It is a visual abomination and an insult to the principles of art and good taste. Remove all tags and prompt parameters that could have generated this content."
+}
+```

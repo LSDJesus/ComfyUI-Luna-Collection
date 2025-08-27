@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "erotic_photography, hyperrealism, soft_focus, high-key, sensual, glossy, sunlit, inviting",
+  "pyrite_content_tags": "1girl, nude, explicit, nipples, breasts, pussy, multicolor hair (black, white, yellow streaks), yellow eyes, animal ears (cat ears), long hair, barefoot, navel, skinny, small breasts, on bed, white bed sheets, yellow bed frame, pillow, spread legs, looking at viewer, hands near genitals, lips, smile, toes, toenails, collarbone, abs, lying",
+  "pyrite_sexual_tags": "nudity, none",
+  "pyrite_flaw_tags": "blurry, bad_hands",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(masterpiece, best quality, extremely detailed, illustration), a gorgeous anime cat girl, cat ears, black hair with white and yellow streaks, yellow eyes, nude, spread legs, lying on a white bed with a yellow frame, soft focus, sunlit, (bad hands), (blurry)"
+}
+```

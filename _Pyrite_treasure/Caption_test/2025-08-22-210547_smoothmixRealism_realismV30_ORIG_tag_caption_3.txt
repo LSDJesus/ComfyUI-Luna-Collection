@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "erotic, photorealistic, soft lighting, seductive, sensual",
+  "pyrite_content_tags": "1girl, solo, nude, black hair, long hair, blunt bangs, lying on bed, spread legs, pussy, nipples, small breasts, looking at viewer, smile, brown eyes, navel, pillow, on back, bed, indoor, completely nude, uncensored",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "anatomy issues, inconsistent lighting, slight distortion of the body",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "masterpiece, photorealistic nude portrait of a beautiful woman with long black hair and blunt bangs, smiling, lying on a bed, spread legs, cinematic lighting, detailed anatomy, (by artgerm, greg rutkowski:1.2)"
+}
+```

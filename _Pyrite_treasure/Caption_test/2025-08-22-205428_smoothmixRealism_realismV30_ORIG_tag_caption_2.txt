@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "A",
+  "pyrite_aesthetic_tags": "sensual, realistic, intimate, soft_lighting, high-detail, close-up, natural_skin_tones, inviting",
+  "pyrite_content_tags": "1girl, nude, completely nude, brown hair, wavy hair, brown eyes, parted lips, looking at viewer, lying on back, spread legs, hands near genitals, visible pubic hair, medium breasts, defined abs, visible veins, pale skin, 1boy, penis, partial view of arm, bed, beige sheets, white pillow, wooden bedside table, bedside lamp with warm light",
+  "pyrite_sexual_tags": "nudity, penetration, explicit, vaginal, hetero, sex",
+  "pyrite_flaw_tags": "none",
+  "pyrite_subjective_quality": "high quality",
+  "pyrite_direct_prompt_suggestion": "(1girl, nude:1.2), brown hair, brown eyes, parted lips, lying on back, legs spread, hands near genitals, looking at viewer, penis, explicit, realistic lighting, soft focus, intimacy, bed, warm colors"
+}
+```

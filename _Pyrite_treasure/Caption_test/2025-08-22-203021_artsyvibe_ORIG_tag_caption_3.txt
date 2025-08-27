@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "photorealistic, natural lighting, sensual, intimate, soft focus, clean, minimalist",
+  "pyrite_content_tags": "1girl, solo, nude, nudity, long black hair, breasts, nipples, navel, pubic hair, pussy, spread legs, sitting, bed, on bed, looking at viewer, indoors, natural skin tone, Asian features",
+  "pyrite_sexual_tags": "nudity, suggestive",
+  "pyrite_flaw_tags": "composition could be more dynamic, slightly bland expression",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "Photorealistic portrait of a beautiful Asian woman, nude, sitting on a bed with soft natural lighting, sensual pose, spread legs, long black hair, looking directly at the viewer, (by artgerm:1.3)"
+}
+```

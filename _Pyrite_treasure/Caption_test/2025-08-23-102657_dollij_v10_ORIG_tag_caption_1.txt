@@ -1,0 +1,11 @@
+```json
+{
+  "pyrite_rating": "B",
+  "pyrite_aesthetic_tags": "anime_style, golden_light, soft_focus, sensuous, detailed_background, surreal, vibrant_colors, romantic",
+  "pyrite_content_tags": "nude_female, fair_skin, black_and_white_hair, yellow_eyes, yellow_nail_polish, yellow_flower, tan_bedding, wooden_bedframe, white_pillows, open_legs, nude_breasts, floral_bedsheet_design, detailed_hands, lying_down, indoor, bedroom, light_from_window",
+  "pyrite_sexual_tags": "nudity",
+  "pyrite_flaw_tags": "bad_anatomy, blurry_details, artifacts, unnatural_skin_tone",
+  "pyrite_subjective_quality": "normal quality",
+  "pyrite_direct_prompt_suggestion": "(((anime_style, sensual))), nude_female, black and white hair, yellow eyes, laying on bed with yellow flowers, golden light, detailed background, soft focus, bad anatomy, blurry details, artifacts, unnatural skin tones."
+}
+```
