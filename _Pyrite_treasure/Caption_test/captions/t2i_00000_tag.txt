@@ -1,1 +1,0 @@
-(eye focus:0.98), (solo:0.90), (general:0.89), (close-up:0.88), (eyelashes:0.78), (dripping:0.77), (blue eyes:0.73), (male focus:0.69), (black hair:0.68), (water drop:0.63), (1boy:0.63), (looking at viewer:0.57), (blurry:0.53), (eye reflection:0.52)

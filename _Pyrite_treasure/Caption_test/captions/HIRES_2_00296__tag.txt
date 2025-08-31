@@ -1,1 +1,0 @@
-(1girl:1.00), (breasts:0.98), (questionable:0.98), (nipples:0.98), (solo:0.96), (blue eyes:0.91), (blue hair:0.90), (navel:0.89), (looking at viewer:0.86), (nude:0.86), (medium breasts:0.82), (hair ornament:0.81), (jewelry:0.78), (earrings:0.71), (outdoors:0.69), (parted lips:0.68), (skull hair ornament:0.66), (flower:0.66), (upper body:0.61), (lips:0.56), (toned:0.51)
