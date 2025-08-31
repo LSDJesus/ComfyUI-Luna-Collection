@@ -1,1 +1,0 @@
-(1girl:0.95), (solo:0.94), (realistic:0.92), (looking at viewer:0.77), (short hair:0.71), (lips:0.71), (nude:0.70), (black hair:0.61), (shower head:0.56)

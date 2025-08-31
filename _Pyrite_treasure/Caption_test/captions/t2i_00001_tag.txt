@@ -1,1 +1,0 @@
-(eye focus:0.98), (general:0.95), (close-up:0.94), (solo:0.93), (1girl:0.92), (eyelashes:0.91), (looking at viewer:0.67), (yellow eyes:0.57), (water drop:0.51)

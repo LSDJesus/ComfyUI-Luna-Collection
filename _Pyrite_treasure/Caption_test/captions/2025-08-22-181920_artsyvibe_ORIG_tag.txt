@@ -1,1 +1,0 @@
-(1girl:1.00), (jewelry:0.98), (breasts:0.95), (solo:0.94), (bookshelf:0.93), (necklace:0.92), (earrings:0.91), (book:0.91), (black hair:0.84), (realistic:0.84), (long hair:0.78), (sensitive:0.76), (jacket:0.73), (library:0.70), (blurry:0.70), (pen:0.69), (no bra:0.66), (indoors:0.62), (holding:0.60), (open clothes:0.59), (parted lips:0.57), (looking at viewer:0.55), (lips:0.54)

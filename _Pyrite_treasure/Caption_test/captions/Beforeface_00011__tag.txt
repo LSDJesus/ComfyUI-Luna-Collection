@@ -1,1 +1,0 @@
-(1girl:1.00), (book:0.95), (solo:0.94), (bookshelf:0.88), (long hair:0.85), (indoors:0.84), (skirt:0.78), (window:0.77), (looking at viewer:0.74), (jacket:0.74), (realistic:0.71), (general:0.68), (red lips:0.66), (leaning forward:0.59), (red nails:0.56), (brown hair:0.55), (black jacket:0.54)
