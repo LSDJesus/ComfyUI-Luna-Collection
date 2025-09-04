@@ -1,7 +1,7 @@
 import torch
 import math
 
-def pyrite_tiling_orchestrator(image_tensor, model, tile_x, tile_y, overlap, strategy):
+def luna_tiling_orchestrator(image_tensor, model, tile_x, tile_y, overlap, strategy):
     height, width = image_tensor.shape[2], image_tensor.shape[3]
     scale = model.scale
     new_height, new_width = int(height * scale), int(width * scale)
