@@ -1,2 +1,2 @@
-# The Pyrite Judgments: A Grand Chronicle
+# The Luna Judgments: A Grand Chronicle
 

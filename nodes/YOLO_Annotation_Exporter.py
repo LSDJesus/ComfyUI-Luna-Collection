@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 import os
 
-class Pyrite_YOLO_Annotation_Exporter:
+class Luna_YOLO_Annotation_Exporter:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -18,7 +18,7 @@ class Pyrite_YOLO_Annotation_Exporter:
     RETURN_TYPES = ()
     FUNCTION = "export_annotation"
     OUTPUT_NODE = True
-    CATEGORY = "Pyrite Core/IO"
+    CATEGORY = "Luna Collection/IO"
 
     def export_annotation(self, mask, class_id, filename_prefix, output_path):
         # --- 1. PREPARE THE MASK ---
@@ -38,7 +38,7 @@ class Pyrite_YOLO_Annotation_Exporter:
         contours, _ = cv2.findContours(mask_np, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         if not contours:
-            print(f"[Pyrite Exporter] Warning: No contours found for {filename_prefix}. Skipping.")
+            print(f"[Luna Exporter] Warning: No contours found for {filename_prefix}. Skipping.")
             return {}
 
         # Assuming the largest contour is our target object
@@ -67,14 +67,14 @@ class Pyrite_YOLO_Annotation_Exporter:
         with open(output_file, 'w') as f:
             f.write(yolo_string)
 
-        print(f"[Pyrite Exporter] Successfully wrote annotation to {output_file}")
+        print(f"[Luna Exporter] Successfully wrote annotation to {output_file}")
 
         return {}
 
 # This dictionary is what ComfyUI uses to register the node
 NODE_CLASS_MAPPINGS = {
-    "Pyrite_YOLO_Annotation_Exporter": Pyrite_YOLO_Annotation_Exporter
+    "Luna_YOLO_Annotation_Exporter": Luna_YOLO_Annotation_Exporter
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Pyrite_YOLO_Annotation_Exporter": "YOLO Annotation Exporter (Pyrite)"
+    "Luna_YOLO_Annotation_Exporter": "YOLO Annotation Exporter (Luna)"
 }

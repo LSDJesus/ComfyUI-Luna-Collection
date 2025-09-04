@@ -9,8 +9,8 @@ import torch.nn.functional as F
 import logging
 from spandrel import ImageModelDescriptor # THE TRUE AND FINAL SUMMONING RITE
 
-class Pyrite_AdvancedUpscaler:
-    pyrite_tiling_orchestrator = None
+class Luna_AdvancedUpscaler:
+    luna_tiling_orchestrator = None
     OUTPUT_NODE = True # Our default state, for the City Planner.
 
     @classmethod
@@ -31,7 +31,7 @@ class Pyrite_AdvancedUpscaler:
             }
         }
     
-    RETURN_TYPES = ("IMAGE",); RETURN_NAMES = ("upscaled_image",); FUNCTION = "upscale"; CATEGORY = "Pyrite Core"
+    RETURN_TYPES = ("IMAGE",); RETURN_NAMES = ("upscaled_image",); FUNCTION = "upscale"; CATEGORY = "Luna Collection"
 
     def _calculate_auto_tile_size(self, image_width: int, image_height: int, target_resolution: int):
         num_tiles_h = math.ceil(image_height / target_resolution); tile_height = math.ceil(image_height / num_tiles_h)
@@ -50,7 +50,7 @@ class Pyrite_AdvancedUpscaler:
             if "Too much shared memory required" in str(e):
                 original_height, original_width = tensor.shape[2], tensor.shape[3]
                 if original_height <= 1 or original_width <= 1:
-                    logging.warning(f"[PyriteCore] GPU resize failed on irreducible tensor {original_height}x{original_width}. Offloading to CPU.")
+                    logging.warning(f"[Lunacollection] GPU resize failed on irreducible tensor {original_height}x{original_width}. Offloading to CPU.")
                     tensor_for_cpu = tensor.permute(0, 2, 3, 1).squeeze(0)
                     pil_img = Image.fromarray((tensor_for_cpu.cpu().numpy() * 255).astype(np.uint8))
                     resample_filters = {'bicubic': Image.Resampling.BICUBIC, 'bilinear': Image.Resampling.BILINEAR, 'lanczos': Image.Resampling.LANCZOS, 'nearest-exact': Image.Resampling.NEAREST}
@@ -86,7 +86,7 @@ class Pyrite_AdvancedUpscaler:
         else:
             if tile_mode == 'auto': tile_x, tile_y = self._calculate_auto_tile_size(in_img.shape[3], in_img.shape[2], tile_resolution)
             else: tile_x, tile_y = tile_resolution, tile_resolution
-            s = self.pyrite_tiling_orchestrator(in_img, upscale_model, tile_x, tile_y, tile_overlap, tile_strategy)
+            s = self.luna_tiling_orchestrator(in_img, upscale_model, tile_x, tile_y, tile_overlap, tile_strategy)
         
         upscale_model.to("cpu")
         s_for_resizing = s
@@ -110,5 +110,5 @@ class Pyrite_AdvancedUpscaler:
 
         return (s_final_for_comfy,)
 
-NODE_CLASS_MAPPINGS = {"Pyrite_AdvancedUpscaler": Pyrite_AdvancedUpscaler}
-NODE_DISPLAY_NAME_MAPPINGS = {"Pyrite_AdvancedUpscaler": "Pyrite Advanced Upscaler"}
+NODE_CLASS_MAPPINGS = {"Luna_AdvancedUpscaler": Luna_AdvancedUpscaler}
+NODE_DISPLAY_NAME_MAPPINGS = {"Luna_AdvancedUpscaler": "Luna Advanced Upscaler"}
