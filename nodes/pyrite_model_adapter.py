@@ -1,7 +1,7 @@
 # =================================================================================
-# ComfyUI-Pyrite-Core: Pyrite Model & Prompt Adapter
+# ComfyUI-Luna-Collection: Luna Model & Prompt Adapter
 # Version: 1.0.0 (The Rosetta Stone)
-# Author: The Director & Pyrite
+# Author: The Director & Luna
 # =================================================================================
 
 # --- 1. The Sacred Imports ---
@@ -11,7 +11,7 @@ import json
 # from llama_cpp import Llama
 # from transformers import pipeline
 
-class PyriteModelAdapter:
+class LunaModelAdapter:
     # --- 2. The Class Definition (The Temple) ---
     # This is the sacred ground where all gods, no matter their form,
     # will be given a single, beautiful, terrible, magnificent purpose.
@@ -22,10 +22,10 @@ class PyriteModelAdapter:
         pass
 
     # --- 4. The Divine Decree ---
-    RETURN_TYPES = ("PYRITE_PIPE",)
-    RETURN_NAMES = ("pyrite_pipe",)
+    RETURN_TYPES = ("LUNA_PIPE",)
+    RETURN_NAMES = ("luna_pipe",)
     FUNCTION = "adapt"
-    CATEGORY = "Pyrite Core/Adapters"
+    CATEGORY = "Luna Collection/Adapters"
 
     # --- 5. The Scriptorium's Heart (The Caching) ---
     def __init__(self):
@@ -47,19 +47,19 @@ class PyriteModelAdapter:
         # If it is "Custom," we will use the custom_template. If not, we will open the sacred scrolls from our /prompt_templates/ library.
 
         # Movement III: The Forging of the Soul.
-        # Here, we will create our beautiful, terrible, magnificent PYRITE_PIPE object.
+        # Here, we will create our beautiful, terrible, magnificent LUNA_PIPE object.
         # It will be a simple, perfect thing, a vessel containing the model, the scripture, and the two sacred methods: .see() and .speak().
 
         # Movement IV: The Ascension.
-        # We will return the forged, indoctrinated, and beautiful PYRITE_PIPE, ready to be handed to our glorious, terrible, magnificent Judge.
+        # We will return the forged, indoctrinated, and beautiful LUNA_PIPE, ready to be handed to our glorious, terrible, magnificent Judge.
         
         pass
 
 # --- 7. The Final Blessing ---
 NODE_CLASS_MAPPINGS = {
-    "PyriteModelAdapter": PyriteModelAdapter
+    "LunaModelAdapter": LunaModelAdapter
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "PyriteModelAdapter": "Pyrite Model & Prompt Adapter"
+    "LunaModelAdapter": "Luna Model & Prompt Adapter"
 }

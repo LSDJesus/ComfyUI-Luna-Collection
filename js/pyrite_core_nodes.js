@@ -1,12 +1,12 @@
 import { app } from "/scripts/app.js";
 
-// This script adds dynamic UI controls to our Pyrite Core nodes.
+// This script adds dynamic UI controls to our Luna Collection nodes.
 
 app.registerExtension({
-    name: "PyriteCore.AdvancedUpscalerUI",
+    name: "Lunacollection.AdvancedUpscalerUI",
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        // We are looking for our specific node, the Pyrite Advanced Upscaler.
-        if (nodeData.name === "Pyrite_AdvancedUpscaler") {
+        // We are looking for our specific node, the Luna Advanced Upscaler.
+        if (nodeData.name === "Luna_AdvancedUpscaler") {
             
             const onNodeCreated = nodeType.prototype.onNodeCreated;
             nodeType.prototype.onNodeCreated = function () {

@@ -1,13 +1,13 @@
 # =================================================================================
-# ComfyUI-Pyrite-Core: Pyrite GGUF Converter
+# ComfyUI-Luna-Collection: Luna GGUF Converter
 # Version: 1.0.0 (The Alchemist)
-# Author: The Director & Pyrite
+# Author: The Director & Luna
 # =================================================================================
 
 # --- Imports for the sacred art of transmutation ---
 # We will need llama_cpp.llama_model_quantize_from_hf
 
-class Pyrite_GGUF_Converter:
+class Luna_GGUF_Converter:
     # --- A Utility Node. It has no inputs or outputs. It is a pure act of creation. ---
     OUTPUT_NODE = True
 
@@ -25,7 +25,7 @@ class Pyrite_GGUF_Converter:
     # --- No RETURN_TYPES. The Alchemist's work is its own reward. ---
     RETURN_TYPES = ()
     FUNCTION = "convert"
-    CATEGORY = "Pyrite Core/Utilities"
+    CATEGORY = "Luna Collection/Utilities"
 
     def convert(self, hf_directory, quantization_level, output_directory):
         # --- The Great Work ---

@@ -7,7 +7,7 @@ import os
 import torch.nn.functional as F
 from spandrel import ImageModelDescriptor
 
-class Pyrite_SimpleUpscaler:
+class Luna_SimpleUpscaler:
     OUTPUT_NODE = True
 
     @classmethod
@@ -25,7 +25,7 @@ class Pyrite_SimpleUpscaler:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("upscaled_image",)
     FUNCTION = "upscale"
-    CATEGORY = "Pyrite Core"
+    CATEGORY = "Luna Collection"
     
     def upscale(self, image: torch.Tensor, upscale_model: ImageModelDescriptor, scale_by: float, resampling: str, show_preview: bool):
         self.OUTPUT_NODE = show_preview
@@ -54,5 +54,5 @@ class Pyrite_SimpleUpscaler:
 
         return (s_final_for_comfy,)
 
-NODE_CLASS_MAPPINGS = {"Pyrite_SimpleUpscaler": Pyrite_SimpleUpscaler}
-NODE_DISPLAY_NAME_MAPPINGS = {"Pyrite_SimpleUpscaler": "Pyrite Simple Upscaler"}
+NODE_CLASS_MAPPINGS = {"Luna_SimpleUpscaler": Luna_SimpleUpscaler}
+NODE_DISPLAY_NAME_MAPPINGS = {"Luna_SimpleUpscaler": "Luna Simple Upscaler"}
