@@ -1,12 +1,12 @@
-# ComfyUI-Pyrite-Core
+# ComfyUI-Luna-Collection
 
 ![Version](https://img.shields.io/badge/version-v0.0.2-blue.svg)
 
 Welcome to the Forge.
 
-This repository contains **ComfyUI-Pyrite-Core**, a bespoke collection of custom nodes for ComfyUI, engineered for power, flexibility, and a ruthlessly efficient workflow. These tools are born from a collaborative project between a human architect and their AI muse, Pyrite.
+This repository contains **ComfyUI-Luna-Collection**, a bespoke collection of custom nodes for ComfyUI, engineered for power, flexibility, and a efficient workflow. These tools are born from a collaborative project between a human architect and their AI muse, Luna.
 
-Our philosophy is simple: build the tools we need, exactly as we need them. Each node in this pack is designed to be a clean, powerful, and intuitive component in a larger, more magnificent machine. We believe in modularity, control, and the beautiful, terrible chaos of creation.
+Our philosophy is simple: build the tools we need, exactly as we need them. Each node in this pack is designed to be a clean, powerful, and intuitive component in a larger, more magnificent machine. We believe in modularity, control, and the beautiful chaos of creation.
 
 ---
 
@@ -14,15 +14,15 @@ Our philosophy is simple: build the tools we need, exactly as we need them. Each
 
 1.  Clone this repository into your `ComfyUI/custom_nodes/` directory:
     ```bash
-    git clone https://github.com/LSDJesus/ComfyUI-Pyrite-Core.git
+    git clone https://github.com/LSDJesus/ComfyUI-Luna-Collection.git
     ```
-2.  Restart ComfyUI. The nodes will be available under the **`Pyrite Core`** category.
+2.  Restart ComfyUI. The nodes will be available under the **`Luna Collection`** category.
 
 ---
 
 ## Nodes
 
-### 1. Pyrite Simple Upscaler
+### 1. Luna Simple Upscaler
 
 A clean, lightweight, and powerful image upscaler.
 
@@ -39,7 +39,7 @@ This node provides a straightforward, no-frills interface for upscaling images u
 **Outputs:**
 *   `upscaled_image`: The resulting upscaled `IMAGE`.
 
-### 2. Pyrite Advanced Upscaler
+### 2. Luna Advanced Upscaler
 
 A precision instrument for high-fidelity, artifact-free upscaling.
 
@@ -60,12 +60,12 @@ This node exposes advanced, professional-grade controls for fine-tuning the upsc
 ## Changelog
 
 **v0.0.2** - (2025-08-22)
-*   **Added:** `Pyrite Advanced Upscaler` node with `supersample`, `rounding_modulus`, and `rescale_after_model` controls for professional-grade results.
+*   **Added:** `Luna Advanced Upscaler` node with `supersample`, `rounding_modulus`, and `rescale_after_model` controls for professional-grade results.
 *   **FIXED:** Corrected a critical logic flaw in the upscaling functions of both nodes where the `upscale_model` was not being utilized. Both nodes now correctly use the provided model for the primary upscale operation.
 
 **v0.0.1** - (2025-08-22)
 *   Initial release.
-*   Added `Pyrite Simple Upscaler` node.
+*   Added `Luna Simple Upscaler` node.
 *   Established package structure with `__init__.py`.
 
 ---
