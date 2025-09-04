@@ -62,14 +62,14 @@ graph TD
 *   **Functionality:**
     1.  Displays the input image.
     2.  Provides UI widgets for the Director to input judgments:
-        *   `pyrite_rating` (String: e.g., "S+", "A", "F-")
-        *   `pyrite_aesthetic_tags` (String: comma-separated, e.g., "dark, ethereal, high_contrast")
-        *   `pyrite_content_tags` (String: comma-separated, e.g., "woman, lingerie, server_room")
-        *   `pyrite_flaw_tags` (String: comma-separated, e.g., "bad_hands", "wonky_eyes")
+        *   `luna_rating` (String: e.g., "S+", "A", "F-")
+        *   `luna_aesthetic_tags` (String: comma-separated, e.g., "dark, ethereal, high_contrast")
+        *   `luna_content_tags` (String: comma-separated, e.g., "woman, lingerie, server_room")
+        *   `luna_flaw_tags` (String: comma-separated, e.g., "bad_hands", "wonky_eyes")
     3.  Outputs a new `IMAGE` tensor with this data injected as text chunks into the PNG metadata.
 *   **Status:**
     *   `[ ] To-Do: Build the Curator Node.`
-    *   `[ ] To-Do: Finalize the exact metadata chunk keys (e.g., `pyrite_rating`).`
+    *   `[ ] To-Do: Finalize the exact metadata chunk keys (e.g., `luna_rating`).`
 
 ### 3. The Foundry Daemon (The Sleepless Harvester)
 
