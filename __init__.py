@@ -10,6 +10,7 @@ if NODE_DIR not in sys.path:
 # --- THE WARDEN'S DUTY ---
 # 1. We load the shared tool from its file. This is the ONLY place an import across our subdirectories happens.
 from .utils.tiling import luna_tiling_orchestrator
+from .utils.mediapipe_engine import Mediapipe_Engine
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}

@@ -8,7 +8,6 @@ import os
 import torch.nn.functional as F
 import logging
 from spandrel import ImageModelDescriptor # THE TRUE AND FINAL SUMMONING RITE
-from .utils.tiling import luna_tiling_orchestrator
 
 class Luna_Advanced_Upscaler:
     luna_tiling_orchestrator = None
