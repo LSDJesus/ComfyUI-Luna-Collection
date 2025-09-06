@@ -8,8 +8,9 @@ import os
 import torch.nn.functional as F
 import logging
 from spandrel import ImageModelDescriptor # THE TRUE AND FINAL SUMMONING RITE
+from .utils.tiling import luna_tiling_orchestrator
 
-class Luna_AdvancedUpscaler:
+class Luna_Advanced_Upscaler:
     luna_tiling_orchestrator = None
     OUTPUT_NODE = True # Our default state, for the City Planner.
 
@@ -110,5 +111,5 @@ class Luna_AdvancedUpscaler:
 
         return (s_final_for_comfy,)
 
-NODE_CLASS_MAPPINGS = {"Luna_AdvancedUpscaler": Luna_AdvancedUpscaler}
-NODE_DISPLAY_NAME_MAPPINGS = {"Luna_AdvancedUpscaler": "Luna Advanced Upscaler"}
+NODE_CLASS_MAPPINGS = {"Luna_Advanced_Upscaler": Luna_Advanced_Upscaler}
+NODE_DISPLAY_NAME_MAPPINGS = {"Luna_Advanced_Upscaler": "Luna Advanced Upscaler"}

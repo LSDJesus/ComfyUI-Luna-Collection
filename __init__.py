@@ -48,3 +48,12 @@ def setup_nodes():
 
 setup_nodes()
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
+
+# A manifest file for the ComfyUI Manager
+MANIFEST = {
+    "name": "ComfyUI-Luna-Collection",
+    "version": (1,0,0),
+    "author": "LSDJesus",
+    "project": "https://github.com/LSDJesus/comfyui-luna-collection",
+    "description": "A small collection of nodes to fit my personal workflow.",
+}
