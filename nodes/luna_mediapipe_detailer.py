@@ -2,8 +2,6 @@ import torch
 import numpy as np
 import comfy.utils
 import node_helpers
-from .utils.mediapipe_engine import Mediapipe_Engine
-
 
 ENGINE_INSTANCE = None
 
@@ -34,7 +32,7 @@ class Luna_MediaPipe_Detailer:
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "LATENT", "FLOAT", "MASK", "IMAGE", "CLIP", "VAE", "IMAGE")
     RETURN_NAMES = ("POSITIVE", "NEGATIVE", "LATENT", "DENOISE", "MASK", "IMAGE_PASSTHROUGH", "CLIP_PASSTHROUGH", "VAE_PASSTHROUGH", "MASKED_PREVIEW")
     FUNCTION = "process"
-    CATEGORY = "HandFixerSuite"
+    CATEGORY = "Luna Collection"
 
     def process(self, image, clip, vae, model_type, sort_by, max_objects, confidence, mask_padding, mask_blur, noise_mask, detail_positive_prompt, detail_negative_prompt, denoise, flux_guidance_strength):
         global ENGINE_INSTANCE
@@ -100,7 +98,7 @@ class Luna_MediaPipe_Detailer:
         return (out_pos, out_neg, out_latent, denoise, mask_tensor, image, clip, vae, masked_preview)
     
 NODE_CLASS_MAPPINGS = {
-    "Luna_MediaPipe_Detailer": Luna_Mediapipe_Detailer
+    "Luna_MediaPipe_Detailer": Luna_MediaPipe_Detailer
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
