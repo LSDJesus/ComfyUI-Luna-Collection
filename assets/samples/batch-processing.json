@@ -1,0 +1,167 @@
+{
+  "workflow_name": "Luna Batch Processing Workflow",
+  "description": "High-throughput batch processing workflow for multiple images with Luna's optimization features",
+  "version": "1.0.0",
+  "author": "Luna Collection Team",
+  "tags": ["batch", "processing", "optimization", "high-throughput"],
+  "nodes": [
+    {
+      "id": "checkpoint_loader",
+      "type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "v1-5-pruned-emaonly.ckpt"
+      },
+      "position": [100, 100]
+    },
+    {
+      "id": "lora_stacker",
+      "type": "LunaLoRAStacker",
+      "inputs": {
+        "model": ["checkpoint_loader", 0],
+        "clip": ["checkpoint_loader", 1],
+        "lora_1": "detail-tweaker.safetensors",
+        "strength_1": 0.6,
+        "lora_2": "color-enhancer.safetensors",
+        "strength_2": 0.4,
+        "lora_3": "sharpness-boost.safetensors",
+        "strength_3": 0.3
+      },
+      "position": [100, 300]
+    },
+    {
+      "id": "batch_prompt_processor",
+      "type": "LunaUnifiedPromptProcessor",
+      "inputs": {
+        "text": "batch of beautiful landscapes, varied styles, different times of day, professional quality",
+        "enable_preprocessing": true,
+        "enable_enhancement": true,
+        "enable_styling": true,
+        "quality_level": "quality",
+        "target_length": 100
+      },
+      "position": [400, 50]
+    },
+    {
+      "id": "clip_text_encode_positive",
+      "type": "CLIPTextEncode",
+      "inputs": {
+        "text": ["batch_prompt_processor", 0],
+        "clip": ["lora_stacker", 1]
+      },
+      "position": [700, 50]
+    },
+    {
+      "id": "clip_text_encode_negative",
+      "type": "CLIPTextEncode",
+      "inputs": {
+        "text": "blurry, low quality, distorted, ugly, watermark, text, signature, deformed",
+        "clip": ["lora_stacker", 1]
+      },
+      "position": [700, 200]
+    },
+    {
+      "id": "batch_latent_generator",
+      "type": "EmptyLatentImage",
+      "inputs": {
+        "width": 768,
+        "height": 768,
+        "batch_size": 4
+      },
+      "position": [1000, 100]
+    },
+    {
+      "id": "luna_sampler_batch",
+      "type": "LunaSampler",
+      "inputs": {
+        "model": ["lora_stacker", 0],
+        "positive": ["clip_text_encode_positive", 0],
+        "negative": ["clip_text_encode_negative", 0],
+        "latent_image": ["batch_latent_generator", 0],
+        "noise_seed": 999,
+        "steps": 25,
+        "cfg": 7.0,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 1.0,
+        "adaptive_threshold": 0.05
+      },
+      "position": [1300, 100]
+    },
+    {
+      "id": "vae_decode_batch",
+      "type": "VAEDecode",
+      "inputs": {
+        "samples": ["luna_sampler_batch", 0],
+        "vae": ["checkpoint_loader", 2]
+      },
+      "position": [1600, 100]
+    },
+    {
+      "id": "batch_upscaler",
+      "type": "LunaSimpleUpscaler",
+      "inputs": {
+        "image": ["vae_decode_batch", 0],
+        "upscale_model": "4x_NMKD-Superscale-SP_178000_G.pth",
+        "scale_by": 1.5,
+        "resampling": "lanczos"
+      },
+      "position": [1900, 100]
+    },
+    {
+      "id": "batch_performance_monitor",
+      "type": "LunaPerformanceLogger",
+      "inputs": {
+        "log_filename": "batch-processing.log",
+        "enable_gpu_monitoring": true,
+        "log_interval": 1.0,
+        "max_log_size": 100
+      },
+      "position": [2200, 100]
+    },
+    {
+      "id": "batch_save",
+      "type": "SaveImage",
+      "inputs": {
+        "images": ["batch_upscaler", 0],
+        "filename_prefix": "Luna_Batch"
+      },
+      "position": [2500, 100]
+    }
+  ],
+  "output_node": "batch_save",
+  "batch_config": {
+    "batch_size": 4,
+    "max_concurrent_batches": 2,
+    "memory_limit_per_batch": "2GB",
+    "enable_parallel_processing": true,
+    "error_handling": "continue_on_error"
+  },
+  "metadata": {
+    "estimated_time": "3-8 minutes",
+    "memory_usage": "~12GB VRAM",
+    "recommended_gpu": "RTX 4080 or better",
+    "difficulty": "intermediate",
+    "throughput": "4-8 images per minute",
+    "features_used": [
+      "LoRA stacking",
+      "Batch processing",
+      "Prompt enhancement",
+      "Adaptive sampling",
+      "Performance monitoring"
+    ]
+  },
+  "validation_rules": {
+    "required_models": ["v1-5-pruned-emaonly.ckpt", "4x_NMKD-Superscale-SP_178000_G.pth"],
+    "required_loras": ["detail-tweaker.safetensors", "color-enhancer.safetensors", "sharpness-boost.safetensors"],
+    "min_gpu_memory": "12GB",
+    "recommended_batch_size": "2-8",
+    "max_resolution": "1024x1024"
+  },
+  "optimization_tips": [
+    "Reduce batch size if running out of memory",
+    "Use lower quality settings for faster processing",
+    "Enable GPU monitoring to track performance",
+    "Consider using simpler upscaler for batch processing",
+    "Monitor temperature and adjust batch size accordingly"
+  ]
+}

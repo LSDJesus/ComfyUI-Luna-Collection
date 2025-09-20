@@ -1,0 +1,128 @@
+{
+  "name": "Artistic Styles Collection",
+  "description": "Comprehensive collection of artistic painting and illustration styles",
+  "version": "1.0.0",
+  "author": "Luna Collection Team",
+  "categories": {
+    "oil_painting": {
+      "name": "Classical Oil Painting",
+      "base_prompt": "oil painting, classical art style, rich textures, visible brush strokes, masterpiece",
+      "style_enhancements": [
+        "oil on canvas",
+        "impressionist technique",
+        "fine art",
+        "museum quality",
+        "traditional painting",
+        "rich colors",
+        "textured surface"
+      ],
+      "negative_prompts": [
+        "digital art",
+        "photography",
+        "modern",
+        "blurry",
+        "low quality"
+      ],
+      "recommended_settings": {
+        "cfg": 7.0,
+        "steps": 25,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras"
+      },
+      "tags": ["oil", "classical", "painting", "traditional"]
+    },
+    "watercolor": {
+      "name": "Soft Watercolor",
+      "base_prompt": "watercolor painting, soft edges, flowing colors, artistic technique, hand painted",
+      "style_enhancements": [
+        "watercolor illustration",
+        "soft watercolor",
+        "artistic style",
+        "vibrant colors",
+        "wet paper effect",
+        "transparent layers",
+        "fluid brushwork"
+      ],
+      "negative_prompts": [
+        "sharp lines",
+        "digital",
+        "oil painting",
+        "harsh colors",
+        "blurry"
+      ],
+      "recommended_settings": {
+        "cfg": 8.0,
+        "steps": 20,
+        "sampler": "euler",
+        "scheduler": "normal"
+      },
+      "tags": ["watercolor", "soft", "artistic", "fluid"]
+    },
+    "digital_illustration": {
+      "name": "Digital Illustration",
+      "base_prompt": "digital illustration, clean lines, vibrant colors, modern art style, concept art",
+      "style_enhancements": [
+        "digital art",
+        "sharp focus",
+        "vibrant colors",
+        "detailed illustration",
+        "concept art",
+        "professional digital",
+        "high resolution"
+      ],
+      "negative_prompts": [
+        "traditional painting",
+        "photography",
+        "blurry",
+        "low detail",
+        "amateur"
+      ],
+      "recommended_settings": {
+        "cfg": 7.5,
+        "steps": 30,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras"
+      },
+      "tags": ["digital", "illustration", "modern", "vibrant"]
+    },
+    "pencil_sketch": {
+      "name": "Pencil Sketch",
+      "base_prompt": "pencil sketch, detailed drawing, graphite on paper, artistic sketch",
+      "style_enhancements": [
+        "pencil drawing",
+        "graphite sketch",
+        "detailed lines",
+        "shading technique",
+        "artistic rendering",
+        "hand drawn",
+        "monochrome"
+      ],
+      "negative_prompts": [
+        "color",
+        "digital",
+        "painting",
+        "blurry",
+        "low detail"
+      ],
+      "recommended_settings": {
+        "cfg": 6.5,
+        "steps": 25,
+        "sampler": "euler",
+        "scheduler": "normal"
+      },
+      "tags": ["pencil", "sketch", "drawing", "monochrome"]
+    }
+  },
+  "usage_examples": [
+    {
+      "category": "oil_painting",
+      "subject": "portrait",
+      "full_prompt": "oil painting, classical art style, rich textures, visible brush strokes, masterpiece, elderly man portrait, wise expression, detailed wrinkles, professional lighting"
+    },
+    {
+      "category": "watercolor",
+      "subject": "landscape",
+      "full_prompt": "watercolor painting, soft edges, flowing colors, artistic technique, hand painted, mountain landscape, misty morning, soft lighting, peaceful atmosphere"
+    }
+  ]
+}

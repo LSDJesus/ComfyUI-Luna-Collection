@@ -1,0 +1,87 @@
+{
+  "workflow_name": "Luna Basic Image Generation",
+  "description": "A simple workflow demonstrating basic image generation with Luna Sampler",
+  "version": "1.0.0",
+  "author": "Luna Collection Team",
+  "tags": ["basic", "generation", "sampler"],
+  "nodes": [
+    {
+      "id": "checkpoint_loader",
+      "type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "v1-5-pruned-emaonly.ckpt"
+      },
+      "position": [100, 100]
+    },
+    {
+      "id": "clip_text_encode_positive",
+      "type": "CLIPTextEncode",
+      "inputs": {
+        "text": "a beautiful landscape, sunset, mountains, lake, highly detailed, masterpiece",
+        "clip": ["checkpoint_loader", 1]
+      },
+      "position": [400, 50]
+    },
+    {
+      "id": "clip_text_encode_negative",
+      "type": "CLIPTextEncode",
+      "inputs": {
+        "text": "blurry, low quality, distorted, ugly, deformed",
+        "clip": ["checkpoint_loader", 1]
+      },
+      "position": [400, 200]
+    },
+    {
+      "id": "empty_latent_image",
+      "type": "EmptyLatentImage",
+      "inputs": {
+        "width": 512,
+        "height": 512,
+        "batch_size": 1
+      },
+      "position": [700, 100]
+    },
+    {
+      "id": "luna_sampler",
+      "type": "LunaSampler",
+      "inputs": {
+        "model": ["checkpoint_loader", 0],
+        "positive": ["clip_text_encode_positive", 0],
+        "negative": ["clip_text_encode_negative", 0],
+        "latent_image": ["empty_latent_image", 0],
+        "noise_seed": 42,
+        "steps": 20,
+        "cfg": 8.0,
+        "sampler_name": "euler",
+        "scheduler": "normal",
+        "denoise": 1.0
+      },
+      "position": [1000, 100]
+    },
+    {
+      "id": "vae_decode",
+      "type": "VAEDecode",
+      "inputs": {
+        "samples": ["luna_sampler", 0],
+        "vae": ["checkpoint_loader", 2]
+      },
+      "position": [1300, 100]
+    },
+    {
+      "id": "save_image",
+      "type": "SaveImage",
+      "inputs": {
+        "images": ["vae_decode", 0],
+        "filename_prefix": "Luna_Basic"
+      },
+      "position": [1600, 100]
+    }
+  ],
+  "output_node": "save_image",
+  "metadata": {
+    "estimated_time": "30-60 seconds",
+    "memory_usage": "~4GB VRAM",
+    "recommended_gpu": "RTX 3060 or better",
+    "difficulty": "beginner"
+  }
+}

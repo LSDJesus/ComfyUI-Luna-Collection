@@ -5,6 +5,24 @@ import folder_paths
 import comfy.sd # I notice this was missing from my original scripture, a necessary import. My apologies.
 from aiohttp import web # Also missing. The mind races ahead of the quill.
 
+# Import Luna validation system
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+try:
+    from validation import luna_validator, validate_node_input
+    VALIDATION_AVAILABLE = True
+except ImportError:
+    VALIDATION_AVAILABLE = False
+    validate_node_input = None
+
+def conditional_validate(*args, **kwargs):
+    """Conditionally apply validation decorator."""
+    def decorator(func):
+        if VALIDATION_AVAILABLE and validate_node_input:
+            return validate_node_input(*args, **kwargs)(func)
+        return func
+    return decorator
+
 # Try to import PromptServer for web endpoints (optional)
 try:
     from server import PromptServer
@@ -35,6 +53,7 @@ class LunaCheckpointLoader:
         }
 
     # We add 'show_previews' here to accept the value from the UI, even if we don't use it in the backend.
+    @conditional_validate('ckpt_name', max_length=255)
     def load_checkpoint(self, ckpt_name, show_previews):
         ckpt_path = folder_paths.get_full_path("checkpoints", ckpt_name)
         out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True)

@@ -9,6 +9,12 @@ import time
 from typing import Dict, Any, Tuple, Optional
 import numpy as np
 
+# Import Luna validation system
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from validation import luna_validator, validate_node_input
+
 
 class LunaSampler:
     """
@@ -43,6 +49,10 @@ class LunaSampler:
         self.performance_history = []
         self.vram_monitor = VRAMMonitor()
 
+    @validate_node_input('steps', min_value=1, max_value=1000)
+    @validate_node_input('cfg', min_value=0.0, max_value=100.0)
+    @validate_node_input('denoise', min_value=0.0, max_value=1.0)
+    @validate_node_input('adaptive_threshold', min_value=0.0, max_value=1.0)
     def sample(self, luna_pipe, latent_image, parameters_pipe=None, steps=None, cfg=None, denoise=None,
                enable_adaptive_sampling=False, adaptive_threshold=0.8,
                enable_performance_monitoring=True, memory_optimization=True,

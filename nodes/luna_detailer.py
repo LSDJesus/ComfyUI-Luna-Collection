@@ -32,6 +32,8 @@ import folder_paths
 TENSORRT_ENGINE_INSTANCE = None
 
 class Luna_Detailer:
+    CATEGORY = "Luna/Detailing"
+
     @classmethod
     def INPUT_TYPES(cls):
         return {

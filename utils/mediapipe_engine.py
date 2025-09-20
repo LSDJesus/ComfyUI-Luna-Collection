@@ -3,6 +3,7 @@ import cv2
 import mediapipe as mp
 from PIL import Image
 import warnings
+from typing import Optional, List, Any, Tuple, Union, Callable
 
 warnings.filterwarnings("ignore")
 
@@ -15,36 +16,94 @@ FACE_MESH_LANDMARKS_EYES = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 
 FACE_MESH_LANDMARKS_MOUTH = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308]
 
 class Mediapipe_Engine:
+    """
+    MediaPipe-based computer vision engine for Luna Collection.
+
+    Provides unified interface for various MediaPipe models including:
+    - Hand detection and tracking
+    - Pose estimation (body, feet, torso)
+    - Face mesh analysis (face, eyes, mouth)
+    - Selfie segmentation for person detection
+
+    The engine caches models to improve performance across multiple calls.
+    """
+
     def __init__(self):
+        """Initialize the MediaPipe engine with empty model cache."""
         self.models = {}
 
-    def _get_model(self, model_type, confidence):
+    def _get_model(self, model_type: str, confidence: float):
+        """
+        Get or create a MediaPipe model for the specified type and confidence.
+
+        Args:
+            model_type: Type of model to create ('hands', 'pose', 'face_mesh', 'selfie')
+            confidence: Minimum detection confidence threshold (0.0-1.0)
+
+        Returns:
+            MediaPipe model instance or None if creation fails
+        """
         model_name_map = {
             'face': 'face_mesh', 'eyes': 'face_mesh', 'mouth': 'face_mesh',
             'full_body (bbox)': 'pose', 'feet': 'pose', 'torso': 'pose',
             'person (segmentation)': 'selfie', 'hands': 'hands'
         }
         model_name = model_name_map.get(model_type, model_type)
-        
+
         model_key = f"{model_name}_{confidence}"
         if model_name == 'selfie': model_key = "selfie_segmentation"
 
         if model_key not in self.models:
             try:
-                if model_name == 'hands': 
-                    self.models[model_key] = mp.solutions.hands.Hands(static_image_mode=True, max_num_hands=10, min_detection_confidence=confidence)  # type: ignore
-                elif model_name == 'pose': 
-                    self.models[model_key] = mp.solutions.pose.Pose(static_image_mode=True, min_detection_confidence=confidence)  # type: ignore
-                elif model_name == 'face_mesh': 
-                    self.models[model_key] = mp.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=10, min_detection_confidence=confidence)  # type: ignore
-                elif model_name == 'selfie': 
-                    self.models[model_key] = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=0)  # type: ignore
+                if model_name == 'hands':
+                    hands_module = getattr(mp.solutions, 'hands', None)
+                    if hands_module:
+                        self.models[model_key] = hands_module.Hands(  # type: ignore
+                            static_image_mode=True,
+                            max_num_hands=10,
+                            min_detection_confidence=confidence
+                        )
+                elif model_name == 'pose':
+                    pose_module = getattr(mp.solutions, 'pose', None)
+                    if pose_module:
+                        self.models[model_key] = pose_module.Pose(  # type: ignore
+                            static_image_mode=True,
+                            min_detection_confidence=confidence
+                        )
+                elif model_name == 'face_mesh':
+                    face_mesh_module = getattr(mp.solutions, 'face_mesh', None)
+                    if face_mesh_module:
+                        self.models[model_key] = face_mesh_module.FaceMesh(  # type: ignore
+                            static_image_mode=True,
+                            max_num_faces=10,
+                            min_detection_confidence=confidence
+                        )
+                elif model_name == 'selfie':
+                    selfie_module = getattr(mp.solutions, 'selfie_segmentation', None)
+                    if selfie_module:
+                        self.models[model_key] = selfie_module.SelfieSegmentation(  # type: ignore
+                            model_selection=0
+                        )
             except AttributeError as e:
                 print(f"Failed to create {model_name} model: {e}")
                 return None
         return self.models.get(model_key)
 
-    def _create_mask_from_landmarks(self, image_shape, landmarks, padding, blur, min_area=500, region_filter=None):
+    def _create_mask_from_landmarks(self, image_shape: Tuple[int, int, int], landmarks: Any, padding: int, blur: int, min_area: int = 500, region_filter: Optional[Callable[[float, int], bool]] = None):
+        """
+        Create a binary mask from detected landmarks.
+
+        Args:
+            image_shape: Shape of the input image (height, width)
+            landmarks: List of detected landmark coordinates
+            padding: Padding to add around landmarks (pixels)
+            blur: Gaussian blur radius to apply to mask
+            min_area: Minimum area threshold for valid masks
+            region_filter: Optional function to filter specific landmark regions
+
+        Returns:
+            Binary mask as numpy array or None if no valid landmarks
+        """
         if not landmarks:
             print("No landmarks detected, skipping mask.")
             return None
@@ -52,9 +111,10 @@ class Mediapipe_Engine:
 
         list_of_points = []
         # Check if landmarks is a MediaPipe landmark list object
-        if hasattr(landmarks, 'landmark'):
+        landmark_attr = getattr(landmarks, 'landmark', None)
+        if landmark_attr is not None:
             # It's a NormalizedLandmarkList or similar MediaPipe object
-            list_of_points = landmarks.landmark
+            list_of_points = landmark_attr
         else:
             # It's already a list of landmarks
             list_of_points = landmarks
@@ -86,7 +146,7 @@ class Mediapipe_Engine:
             y_indices = np.where(mask > 0)[0]
             if len(y_indices) > 0:
                 y_mean = np.mean(y_indices)
-                if not region_filter(y_mean, H):
+                if not region_filter(float(y_mean), H):
                     print("Mask region filter failed, skipping.")
                     return None
         return mask

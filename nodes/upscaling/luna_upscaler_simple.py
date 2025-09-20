@@ -12,6 +12,26 @@ import sys
 # Add the parent directory to sys.path to enable relative imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Import Luna validation system
+validation_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "validation")
+if validation_path not in sys.path:
+    sys.path.insert(0, validation_path)
+
+try:
+    from validation import luna_validator, validate_node_input
+    VALIDATION_AVAILABLE = True
+except ImportError:
+    VALIDATION_AVAILABLE = False
+    validate_node_input = None
+
+def conditional_validate(*args, **kwargs):
+    """Conditionally apply validation decorator."""
+    def decorator(func):
+        if VALIDATION_AVAILABLE and validate_node_input:
+            return validate_node_input(*args, **kwargs)(func)
+        return func
+    return decorator
+
 # Import utils modules directly
 utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils")
 if utils_path not in sys.path:
@@ -51,8 +71,9 @@ class Luna_SimpleUpscaler:
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("upscaled_image",)
     FUNCTION = "upscale"
-    CATEGORY = "Luna Collection"
+    CATEGORY = "Luna/Upscaling"
     
+    @conditional_validate('scale_by', min_value=0.0, max_value=8.0)
     def upscale(self, image: torch.Tensor, scale_by: float, resampling: str, show_preview: bool, upscale_model=None, tensorrt_engine_path=None):
         self.OUTPUT_NODE = show_preview
         

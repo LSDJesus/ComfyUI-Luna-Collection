@@ -18,11 +18,22 @@ utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 if utils_path not in sys.path:
     sys.path.insert(0, utils_path)
 
+import importlib
+
+LunaPerformanceMonitor = None
 try:
-    from trt_engine import Engine  # type: ignore
+    luna_perf_module = importlib.import_module('luna_performance_monitor')
+    LunaPerformanceMonitor = luna_perf_module.LunaPerformanceMonitor
 except ImportError:
-    print("Luna Ultimate SD Upscale: trt_engine not available")
-    Engine = None
+    print("Luna Ultimate SD Upscale: Performance monitoring not available")
+
+# Import TensorRT Engine
+Engine = None
+try:
+    luna_trt_module = importlib.import_module('trt_engine')
+    Engine = luna_trt_module.Engine
+except ImportError:
+    print("Luna Ultimate SD Upscale: TensorRT Engine not available. Please ensure trt_engine.py is properly installed.")
 
 # Global instances for TensorRT engines
 TENSORRT_UPSCALE_ENGINE = None
@@ -42,8 +53,8 @@ class USDUSFMode(Enum):
 
 class Luna_UltimateSDUpscale:
     CATEGORY = "Luna/Meta"
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("upscaled_image",)
+    RETURN_TYPES = ("IMAGE", "PERFORMANCE_STATS")
+    RETURN_NAMES = ("upscaled_image", "performance_stats")
     FUNCTION = "upscale"
     OUTPUT_NODE = True
 
@@ -132,6 +143,11 @@ class Luna_UltimateSDUpscale:
         self.diffusion_engine = TENSORRT_DIFFUSION_ENGINE
 
     def upscale(self, image, luna_pipe=None, model_opt=None, positive_opt=None, negative_opt=None, vae_opt=None, upscale_model=None, upscaler_trt_model=None, upscale_by=2.0, tile_width=512, tile_height=512, mask_blur=8, tile_padding=32, redraw_mode="Linear", seam_fix_mode="Half Tile", seam_fix_denoise=1.0, seam_fix_width=64, seam_fix_mask_blur=8, seam_fix_padding=16, force_uniform_tiles=True, tiled_decode=False, seed_opt=None, steps_opt=None, cfg_opt=None, sampler_name_opt=None, scheduler_opt=None, denoise_opt=None):
+        # Initialize performance monitoring
+        performance_monitor = LunaPerformanceMonitor() if LunaPerformanceMonitor else None
+        if performance_monitor:
+            performance_monitor.start_monitoring("Luna_UltimateSDUpscale")
+
         # Validate TensorRT constraints if upscaler_trt_model is connected
         if upscaler_trt_model is not None:
             # TensorRT requires tile dimensions between 512 and 1536-tile_padding
@@ -240,7 +256,24 @@ class Luna_UltimateSDUpscale:
         else:
             result = image
 
-        return (result,)
+        # Collect performance stats
+        performance_stats = {}
+        if performance_monitor:
+            performance_stats = performance_monitor.stop_monitoring(
+                upscale_by=upscale_by,
+                tile_width=tile_width,
+                tile_height=tile_height,
+                redraw_mode=redraw_mode,
+                seam_fix_mode=seam_fix_mode,
+                force_uniform_tiles=force_uniform_tiles,
+                tiled_decode=tiled_decode,
+                input_shape=str(image.shape),
+                output_shape=str(result.shape),
+                target_width=target_width,
+                target_height=target_height
+            )
+
+        return (result, performance_stats)
 
     def tensor_to_pil(self, tensor):
         """Convert tensor to PIL Image"""
