@@ -1,0 +1,164 @@
+{
+  "name": "Photorealistic Styles Collection",
+  "description": "Professional photography and photorealistic rendering styles for high-quality results",
+  "version": "1.0.0",
+  "author": "Luna Collection Team",
+  "categories": {
+    "studio_portrait": {
+      "name": "Studio Portrait",
+      "base_prompt": "professional studio portrait, perfect lighting, sharp focus, high resolution, photorealistic",
+      "style_enhancements": [
+        "masterpiece",
+        "photorealistic",
+        "studio lighting",
+        "professional photography",
+        "8k resolution",
+        "detailed skin texture",
+        "professional makeup",
+        "perfect composition"
+      ],
+      "negative_prompts": [
+        "blurry",
+        "low quality",
+        "distorted",
+        "amateur",
+        "poor lighting",
+        "grainy",
+        "watermark"
+      ],
+      "recommended_settings": {
+        "cfg": 7.5,
+        "steps": 30,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras"
+      },
+      "tags": ["portrait", "studio", "professional", "photorealistic"]
+    },
+    "landscape": {
+      "name": "Landscape Photography",
+      "base_prompt": "breathtaking landscape photography, golden hour, professional composition, photorealistic",
+      "style_enhancements": [
+        "landscape photography",
+        "professional",
+        "highly detailed",
+        "sharp focus",
+        "dramatic lighting",
+        "depth of field",
+        "professional camera",
+        "8k resolution"
+      ],
+      "negative_prompts": [
+        "blurry",
+        "low quality",
+        "distorted",
+        "amateur",
+        "poor composition",
+        "watermark",
+        "text"
+      ],
+      "recommended_settings": {
+        "cfg": 8.0,
+        "steps": 25,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras"
+      },
+      "tags": ["landscape", "nature", "photography", "dramatic"]
+    },
+    "product": {
+      "name": "Product Photography",
+      "base_prompt": "professional product photography, clean studio setup, perfect lighting, commercial quality",
+      "style_enhancements": [
+        "product photography",
+        "commercial",
+        "clean background",
+        "professional lighting",
+        "high resolution",
+        "detailed textures",
+        "perfect focus",
+        "commercial grade"
+      ],
+      "negative_prompts": [
+        "blurry",
+        "low quality",
+        "cluttered background",
+        "poor lighting",
+        "amateur",
+        "distorted",
+        "watermark"
+      ],
+      "recommended_settings": {
+        "cfg": 7.0,
+        "steps": 28,
+        "sampler": "euler",
+        "scheduler": "normal"
+      },
+      "tags": ["product", "commercial", "studio", "clean"]
+    },
+    "street": {
+      "name": "Street Photography",
+      "base_prompt": "candid street photography, urban environment, natural lighting, documentary style",
+      "style_enhancements": [
+        "street photography",
+        "candid moment",
+        "urban environment",
+        "natural lighting",
+        "documentary",
+        "sharp focus",
+        "realistic",
+        "authentic"
+      ],
+      "negative_prompts": [
+        "posed",
+        "studio",
+        "artificial lighting",
+        "blurry",
+        "low quality",
+        "distorted"
+      ],
+      "recommended_settings": {
+        "cfg": 6.5,
+        "steps": 22,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras"
+      },
+      "tags": ["street", "urban", "candid", "documentary"]
+    }
+  },
+  "usage_examples": [
+    {
+      "category": "studio_portrait",
+      "subject": "business professional",
+      "full_prompt": "professional studio portrait, perfect lighting, sharp focus, high resolution, photorealistic, business professional, confident expression, corporate attire, clean background"
+    },
+    {
+      "category": "landscape",
+      "subject": "mountain sunset",
+      "full_prompt": "breathtaking landscape photography, golden hour, professional composition, photorealistic, majestic mountains, dramatic sunset, alpine lake, professional camera, 8k resolution"
+    },
+    {
+      "category": "product",
+      "subject": "luxury watch",
+      "full_prompt": "professional product photography, clean studio setup, perfect lighting, commercial quality, luxury watch, metallic textures, pristine condition, white background, commercial grade"
+    }
+  ],
+  "camera_settings": {
+    "studio_portrait": {
+      "aperture": "f/2.8",
+      "iso": 100,
+      "shutter_speed": "1/125",
+      "focal_length": "85mm"
+    },
+    "landscape": {
+      "aperture": "f/11",
+      "iso": 100,
+      "shutter_speed": "1/60",
+      "focal_length": "24mm"
+    },
+    "product": {
+      "aperture": "f/16",
+      "iso": 50,
+      "shutter_speed": "1/200",
+      "focal_length": "100mm"
+    }
+  }
+}

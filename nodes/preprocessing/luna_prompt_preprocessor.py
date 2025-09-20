@@ -5,6 +5,10 @@ from safetensors.torch import save_file
 import folder_paths
 from nodes import CLIPTextEncode
 import comfy.utils
+from datetime import datetime
+import gzip
+import bz2
+import lzma
 
 class LunaPromptPreprocessor:
     CATEGORY = "Luna/Preprocessing"
@@ -29,12 +33,15 @@ class LunaPromptPreprocessor:
                 "custom_output_dir": ("STRING", {"default": "", "tooltip": "Custom output directory (leave empty for auto-generated based on prompt list filename)"}),
                 "prepend_text": ("STRING", {"multiline": True, "default": "", "tooltip": "Text to prepend to each prompt (supports embeddings with <embedding:name> syntax)"}),
                 "append_text": ("STRING", {"multiline": True, "default": "", "tooltip": "Text to append to each prompt (supports embeddings with <embedding:name> syntax)"}),
+                "quantize_embeddings": ("BOOLEAN", {"default": False, "tooltip": "Quantize embeddings to reduce VRAM usage (converts to float16)"}),
+                "compression_level": ("INT", {"default": 0, "min": 0, "max": 9, "tooltip": "Compression level for safetensors (0 = no compression, higher values not yet implemented)"}),
             }
         }
 
     def preprocess_prompts(self, clip, prompt_list_path, filename_prefix="prompt",
                           batch_size=10, start_index=0, max_prompts=-1, overwrite_existing=False,
-                          custom_output_dir="", prepend_text="", append_text=""):
+                          custom_output_dir="", prepend_text="", append_text="", quantize_embeddings=False,
+                          compression_level=0):
 
         # Validate inputs
         if not os.path.exists(prompt_list_path):
@@ -112,6 +119,16 @@ class LunaPromptPreprocessor:
                 encoded_result = text_encoder.encode(clip, combined_prompt)
                 encoded_tensor = encoded_result[0]  # CLIPTextEncode returns a tuple
 
+                # Quantize if requested
+                if quantize_embeddings:
+                    # Quantize to half precision for VRAM savings
+                    encoded_tensor = encoded_tensor.to(torch.float16)
+                    print(f"[LunaPromptPreprocessor] Quantized embedding to float16 for prompt {current_index}")
+
+                # Handle compression level (placeholder for future implementation)
+                if compression_level > 0:
+                    print(f"[LunaPromptPreprocessor] Compression level {compression_level} requested (not yet implemented) for prompt {current_index}")
+
                 # Save as safetensors
                 tensors_dict = {
                     "clip_embeddings": encoded_tensor,
@@ -119,13 +136,21 @@ class LunaPromptPreprocessor:
                     "combined_prompt": combined_prompt,  # Store the final combined prompt
                     "prepend_text": prepend_text,
                     "append_text": append_text,
-                    "index": current_index
+                    "index": current_index,
+                    "quantized": quantize_embeddings,  # Track quantization status
+                    "compression_level": compression_level,  # Track compression level
+                    "created": str(datetime.now())  # Add timestamp
                 }
 
                 save_file(tensors_dict, filepath)
 
-                # Add to mappings
-                mappings[filename] = filepath
+                # Apply compression if requested
+                if compression_level > 0:
+                    compressed_path = self._compress_file(filepath, compression_level)
+                    # Update mappings with compressed path
+                    mappings[filename] = compressed_path
+                else:
+                    mappings[filename] = filepath
 
                 processed_count += 1
 
@@ -153,6 +178,68 @@ class LunaPromptPreprocessor:
                 json.dump(mappings, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"[LunaPromptPreprocessor] Error saving mappings: {e}")
+
+    def _compress_file(self, filepath, compression_level):
+        """Compress a safetensors file based on compression level"""
+        if compression_level == 0:
+            return filepath  # No compression
+
+        # Determine compression method and extension
+        if 1 <= compression_level <= 3:
+            compressor = gzip
+            extension = '.gz'
+            level = compression_level  # gzip levels 1-3
+        elif 4 <= compression_level <= 6:
+            compressor = bz2
+            extension = '.bz2'
+            level = compression_level - 3  # bz2 levels 1-3
+        elif 7 <= compression_level <= 9:
+            compressor = lzma
+            extension = '.xz'
+            level = compression_level - 6  # lzma levels 1-3
+        else:
+            print(f"[LunaPromptPreprocessor] Invalid compression level {compression_level}, using no compression")
+            return filepath
+
+        compressed_path = filepath + extension
+
+        try:
+            with open(filepath, 'rb') as f_in:
+                data = f_in.read()
+
+            compressed_data = None
+
+            # Compress based on compression level range
+            if 1 <= compression_level <= 3:
+                compressed_data = gzip.compress(data, compresslevel=level)
+            elif 4 <= compression_level <= 6:
+                compressed_data = bz2.compress(data, compresslevel=level)
+            elif 7 <= compression_level <= 9:
+                compressed_data = lzma.compress(data, preset=level)
+
+            if compressed_data is None:
+                print(f"[LunaPromptPreprocessor] Unsupported compression level {compression_level}")
+                return filepath
+
+            # Write compressed data
+            with open(compressed_path, 'wb') as f_out:
+                f_out.write(compressed_data)
+
+            # Remove original uncompressed file
+            os.remove(filepath)
+
+            # Calculate and display compression ratio
+            original_size = len(data)
+            compressed_size = len(compressed_data)
+            ratio = compressed_size / original_size if original_size > 0 else 1.0
+            savings = (1 - ratio) * 100
+            print(f"[LunaPromptPreprocessor] Compressed {os.path.basename(filepath)} -> {os.path.basename(compressed_path)}")
+            print(f"[LunaPromptPreprocessor] Size: {original_size:,} -> {compressed_size:,} bytes ({ratio:.2%}, {savings:.1f}% savings)")
+            return compressed_path
+
+        except Exception as e:
+            print(f"[LunaPromptPreprocessor] Compression failed: {e}")
+            return filepath  # Return original path on failure
 
 NODE_CLASS_MAPPINGS = {
     "LunaPromptPreprocessor": LunaPromptPreprocessor,

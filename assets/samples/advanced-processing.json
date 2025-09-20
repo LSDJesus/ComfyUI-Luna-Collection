@@ -1,0 +1,149 @@
+{
+  "workflow_name": "Luna Advanced Image Processing Pipeline",
+  "description": "Advanced workflow showcasing Luna's image processing capabilities with upscaling and validation",
+  "version": "1.0.0",
+  "author": "Luna Collection Team",
+  "tags": ["advanced", "upscaling", "processing", "validation"],
+  "nodes": [
+    {
+      "id": "checkpoint_loader",
+      "type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "v1-5-pruned-emaonly.ckpt"
+      },
+      "position": [100, 100]
+    },
+    {
+      "id": "lora_loader",
+      "type": "LoraLoader",
+      "inputs": {
+        "model": ["checkpoint_loader", 0],
+        "clip": ["checkpoint_loader", 1],
+        "lora_name": "detail-enhancer.safetensors",
+        "strength_model": 0.8,
+        "strength_clip": 0.8
+      },
+      "position": [100, 250]
+    },
+    {
+      "id": "clip_text_encode_positive",
+      "type": "CLIPTextEncode",
+      "inputs": {
+        "text": "masterpiece, best quality, ultra detailed, sharp focus, professional photography, (intricate details:1.2), (hyperrealistic:1.1)",
+        "clip": ["lora_loader", 1]
+      },
+      "position": [400, 50]
+    },
+    {
+      "id": "clip_text_encode_negative",
+      "type": "CLIPTextEncode",
+      "inputs": {
+        "text": "blurry, low quality, distorted, ugly, deformed, noisy, grainy, watermark, text, signature",
+        "clip": ["lora_loader", 1]
+      },
+      "position": [400, 200]
+    },
+    {
+      "id": "empty_latent_image",
+      "type": "EmptyLatentImage",
+      "inputs": {
+        "width": 1024,
+        "height": 1024,
+        "batch_size": 1
+      },
+      "position": [700, 100]
+    },
+    {
+      "id": "luna_sampler",
+      "type": "LunaSampler",
+      "inputs": {
+        "model": ["lora_loader", 0],
+        "positive": ["clip_text_encode_positive", 0],
+        "negative": ["clip_text_encode_negative", 0],
+        "latent_image": ["empty_latent_image", 0],
+        "noise_seed": 12345,
+        "steps": 30,
+        "cfg": 7.5,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 1.0,
+        "adaptive_threshold": 0.1
+      },
+      "position": [1000, 100]
+    },
+    {
+      "id": "vae_decode",
+      "type": "VAEDecode",
+      "inputs": {
+        "samples": ["luna_sampler", 0],
+        "vae": ["checkpoint_loader", 2]
+      },
+      "position": [1300, 100]
+    },
+    {
+      "id": "luna_upscaler",
+      "type": "LunaAdvancedUpscaler",
+      "inputs": {
+        "image": ["vae_decode", 0],
+        "upscale_model": "4x-UltraSharp.pth",
+        "scale_by": 2.0,
+        "supersample": true,
+        "rounding_modulus": 8,
+        "resampling": "lanczos"
+      },
+      "position": [1600, 100]
+    },
+    {
+      "id": "luna_mediapipe_detailer",
+      "type": "LunaMediaPipeDetailer",
+      "inputs": {
+        "image": ["luna_upscaler", 0],
+        "model_type": "face",
+        "confidence": 0.7,
+        "mask_padding": 15,
+        "mask_blur": 8
+      },
+      "position": [1900, 100]
+    },
+    {
+      "id": "luna_performance_logger",
+      "type": "LunaPerformanceLogger",
+      "inputs": {
+        "log_filename": "advanced-workflow.log",
+        "enable_gpu_monitoring": true,
+        "log_interval": 2.0,
+        "max_log_size": 50
+      },
+      "position": [2200, 100]
+    },
+    {
+      "id": "save_image",
+      "type": "SaveImage",
+      "inputs": {
+        "images": ["luna_mediapipe_detailer", 0],
+        "filename_prefix": "Luna_Advanced"
+      },
+      "position": [2500, 100]
+    }
+  ],
+  "output_node": "save_image",
+  "metadata": {
+    "estimated_time": "2-5 minutes",
+    "memory_usage": "~8GB VRAM",
+    "recommended_gpu": "RTX 4070 or better",
+    "difficulty": "advanced",
+    "features_used": [
+      "LoRA loading",
+      "Advanced sampling",
+      "Image upscaling",
+      "Face detection",
+      "Performance monitoring"
+    ]
+  },
+  "validation_rules": {
+    "required_models": ["v1-5-pruned-emaonly.ckpt", "4x-UltraSharp.pth"],
+    "required_loras": ["detail-enhancer.safetensors"],
+    "min_gpu_memory": "8GB",
+    "recommended_python": "3.10+"
+  }
+}

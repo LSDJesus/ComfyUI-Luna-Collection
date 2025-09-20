@@ -4,6 +4,10 @@ import torch
 from safetensors.torch import load_file, save_file
 import folder_paths
 from datetime import datetime
+import gzip
+import bz2
+import lzma
+from io import BytesIO
 
 class LunaSelectPromptFolder:
     CATEGORY = "Luna/Preprocessing"
@@ -54,6 +58,21 @@ class LunaLoadPreprocessedPrompt:
 
     @classmethod
     def INPUT_TYPES(cls):
+        # Auto-detect folders created by LunaPromptPreprocessor
+        output_dir = folder_paths.get_output_directory()
+        available_folders = []
+
+        if os.path.exists(output_dir):
+            for item in os.listdir(output_dir):
+                item_path = os.path.join(output_dir, item)
+                if os.path.isdir(item_path):
+                    # Check if this looks like a LunaPromptPreprocessor output folder
+                    json_files = [f for f in os.listdir(item_path) if f.endswith('_mappings.json')]
+                    if json_files:
+                        available_folders.append(item)
+
+        available_folders.sort()
+
         # Get available negative prompt files from models/luna_prompts
         luna_prompts_dir = os.path.join(folder_paths.models_dir, "luna_prompts")
         negative_files = []
@@ -71,11 +90,23 @@ class LunaLoadPreprocessedPrompt:
                 "folder_path": ("STRING", {"default": "", "tooltip": "Path to the prompt folder containing JSON mappings and safetensors files"}),
                 "prompt_key": ("STRING", {"default": "", "tooltip": "Key/name of the prompt to load (from the mappings JSON)"}),
                 "negative_prompt_file": (negative_files, {"tooltip": "Select a negative prompt safetensors file from models/luna_prompts"}),
+            },
+            "optional": {
+                "auto_select_folder": (available_folders, {"tooltip": "Auto-detected folders from LunaPromptPreprocessor output"}),
             }
         }
 
-    def load_preprocessed_prompt(self, folder_path, prompt_key, negative_prompt_file):
+    def load_preprocessed_prompt(self, folder_path, prompt_key, negative_prompt_file, auto_select_folder=None):
+        # Use auto-selected folder if provided and folder_path is empty
+        if not folder_path and auto_select_folder:
+            output_dir = folder_paths.get_output_directory()
+            folder_path = os.path.join(output_dir, auto_select_folder)
+            print(f"[LunaLoadPreprocessedPrompt] Using auto-selected folder: {folder_path}")
+
         # Validate inputs
+        if not folder_path:
+            raise ValueError("Either folder_path must be provided or auto_select_folder must be chosen")
+
         if not os.path.exists(folder_path):
             raise FileNotFoundError(f"Folder not found: {folder_path}")
 
@@ -106,7 +137,7 @@ class LunaLoadPreprocessedPrompt:
 
         # Load the positive prompt safetensors file
         try:
-            tensors = load_file(prompt_filepath)
+            tensors = self._load_compressed_file(prompt_filepath)
         except Exception as e:
             raise ValueError(f"Error loading positive prompt safetensors file: {e}")
 
@@ -142,6 +173,47 @@ class LunaLoadPreprocessedPrompt:
         print(f"[LunaLoadPreprocessedPrompt] Index: {index}")
 
         return (positive_conditioning, negative_conditioning, original_prompt, index)
+
+    def _load_compressed_file(self, filepath):
+        """Load a compressed safetensors file"""
+        try:
+            # Determine decompression method based on file extension
+            if filepath.endswith('.gz'):
+                with gzip.open(filepath, 'rb') as f:
+                    data = f.read()
+            elif filepath.endswith('.bz2'):
+                with bz2.open(filepath, 'rb') as f:
+                    data = f.read()
+            elif filepath.endswith('.xz'):
+                with lzma.open(filepath, 'rb') as f:
+                    data = f.read()
+            else:
+                # Not compressed, load normally
+                return load_file(filepath)
+
+            # Ensure data is bytes
+            if isinstance(data, str):
+                data = data.encode('utf-8')
+
+            # Load from decompressed data using safetensors
+            import tempfile
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_file.write(data)
+                temp_file.flush()
+                tensors = load_file(temp_file.name)
+
+            # Clean up temp file
+            try:
+                os.unlink(temp_file.name)
+            except:
+                pass
+
+            return tensors
+
+        except Exception as e:
+            print(f"[LunaLoadPreprocessedPrompt] Error loading compressed file {filepath}: {e}")
+            # Fallback to normal loading
+            return load_file(filepath)
 
 class LunaModifyPreprocessedPrompt:
     CATEGORY = "Luna/Preprocessing"
@@ -186,153 +258,6 @@ class LunaModifyPreprocessedPrompt:
         else:
             print(f"[LunaModifyPreprocessedPrompt] No changes detected, using original conditioning")
             modified_conditioning = preprocessed_conditioning
-
-class LunaBatchPreprocessor:
-    CATEGORY = "Luna/Preprocessing"
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("batch_info",)
-    FUNCTION = "batch_preprocess_prompts"
-    OUTPUT_NODE = True
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "prompt_list_path": ("STRING", {"default": "", "tooltip": "Path to the prompt list file"}),
-                "clip": ("CLIP", {"tooltip": "CLIP model for text encoding"}),
-                "batch_size": ("INT", {"default": 10, "min": 1, "max": 50, "tooltip": "Number of prompts to process in each batch"}),
-                "output_folder_name": ("STRING", {"default": "batch_preprocessed", "tooltip": "Name of the output folder"}),
-            },
-            "optional": {
-                "start_index": ("INT", {"default": 0, "min": 0, "tooltip": "Starting index in the prompt list"}),
-                "max_prompts": ("INT", {"default": -1, "min": -1, "tooltip": "Maximum number of prompts to process (-1 for all)"}),
-                "quantize_embeddings": ("BOOLEAN", {"default": False, "tooltip": "Quantize embeddings to reduce VRAM usage"}),
-                "compression_level": ("INT", {"default": 0, "min": 0, "max": 9, "tooltip": "Compression level for safetensors (0 = no compression)"}),
-                "overwrite_existing": ("BOOLEAN", {"default": False, "tooltip": "Overwrite existing preprocessed files"}),
-            }
-        }
-
-    def batch_preprocess_prompts(self, prompt_list_path, clip, batch_size=10, output_folder_name="batch_preprocessed",
-                                start_index=0, max_prompts=-1, quantize_embeddings=False, compression_level=0, overwrite_existing=False):
-        import torch
-        from safetensors.torch import save_file
-        import json
-        import time
-
-        # Validate input file
-        if not os.path.exists(prompt_list_path):
-            raise FileNotFoundError(f"Prompt list file not found: {prompt_list_path}")
-
-        # Read prompts
-        with open(prompt_list_path, 'r', encoding='utf-8') as f:
-            all_prompts = [line.strip() for line in f.readlines() if line.strip()]
-
-        if not all_prompts:
-            raise ValueError("No prompts found in the file")
-
-        # Apply limits
-        if max_prompts > 0:
-            all_prompts = all_prompts[:max_prompts]
-
-        total_prompts = len(all_prompts)
-        if start_index >= total_prompts:
-            raise ValueError(f"Start index {start_index} is beyond the total number of prompts ({total_prompts})")
-
-        prompts_to_process = all_prompts[start_index:]
-        print(f"[LunaBatchPreprocessor] Processing {len(prompts_to_process)} prompts starting from index {start_index}")
-
-        # Set up output directory
-        output_dir = os.path.join(folder_paths.get_output_directory(), "luna_prompts", output_folder_name)
-        os.makedirs(output_dir, exist_ok=True)
-
-        # Initialize text encoder
-        from nodes import CLIPTextEncode
-        text_encoder = CLIPTextEncode()
-
-        # Create mappings file
-        mappings = {}
-        batch_info = {
-            "total_prompts": len(prompts_to_process),
-            "batch_size": batch_size,
-            "quantized": quantize_embeddings,
-            "compression_level": compression_level,
-            "processed_batches": 0,
-            "total_processed": 0,
-            "start_time": time.time()
-        }
-
-        # Process in batches
-        for batch_start in range(0, len(prompts_to_process), batch_size):
-            batch_end = min(batch_start + batch_size, len(prompts_to_process))
-            batch_prompts = prompts_to_process[batch_start:batch_end]
-
-            print(f"[LunaBatchPreprocessor] Processing batch {batch_start//batch_size + 1}: prompts {batch_start}-{batch_end-1}")
-
-            # Process batch
-            for i, prompt in enumerate(batch_prompts):
-                current_index = start_index + batch_start + i
-                filename = "04d"
-                filepath = os.path.join(output_dir, filename)
-
-                # Skip if file exists and not overwriting
-                if os.path.exists(filepath) and not overwrite_existing:
-                    if filename not in mappings:
-                        mappings[filename] = filepath
-                    continue
-
-                try:
-                    # Encode the prompt
-                    encoded_result = text_encoder.encode(clip, prompt)
-                    encoded_tensor = encoded_result[0]
-
-                    # Quantize if requested
-                    if quantize_embeddings:
-                        # Quantize to half precision for VRAM savings
-                        encoded_tensor = encoded_tensor.to(torch.float16)
-                        print(f"[LunaBatchPreprocessor] Quantized embedding to float16")
-
-                    # Prepare tensors dict
-                    tensors_dict = {
-                        "clip_embeddings": encoded_tensor,
-                        "original_prompt": prompt,
-                        "batch_index": current_index,
-                        "quantized": quantize_embeddings,
-                        "created": datetime.now().isoformat()
-                    }
-
-                    # Save with compression if requested
-                    if compression_level > 0:
-                        # Note: safetensors doesn't natively support compression levels
-                        # This is a placeholder for future implementation
-                        print(f"[LunaBatchPreprocessor] Compression level {compression_level} requested (not yet implemented)")
-
-                    save_file(tensors_dict, filepath)
-                    mappings[filename] = filepath
-
-                except Exception as e:
-                    print(f"[LunaBatchPreprocessor] Error processing prompt {current_index}: {e}")
-                    continue
-
-            batch_info["processed_batches"] += 1
-            batch_info["total_processed"] = batch_start + len(batch_prompts)
-            print(f"[LunaBatchPreprocessor] Completed batch {batch_info['processed_batches']}")
-
-        # Save mappings file
-        mappings_path = os.path.join(output_dir, f"{output_folder_name}_mappings.json")
-        with open(mappings_path, 'w', encoding='utf-8') as f:
-            json.dump(mappings, f, indent=2, ensure_ascii=False)
-
-        # Final statistics
-        end_time = time.time()
-        batch_info["end_time"] = end_time
-        batch_info["total_time"] = end_time - batch_info["start_time"]
-        batch_info["prompts_per_second"] = batch_info["total_processed"] / batch_info["total_time"]
-
-        print(f"[LunaBatchPreprocessor] Completed! Processed {batch_info['total_processed']} prompts in {batch_info['total_time']:.2f}s")
-        print(f"[LunaBatchPreprocessor] Speed: {batch_info['prompts_per_second']:.2f} prompts/second")
-        print(f"[LunaBatchPreprocessor] Output: {output_dir}")
-
-        return (f"Processed {batch_info['total_processed']} prompts to {output_dir}",)
 
 class LunaEmbeddingCache:
     """Global cache for frequently used embeddings"""
@@ -1142,7 +1067,6 @@ NODE_CLASS_MAPPINGS = {
     "LunaSinglePromptProcessor": LunaSinglePromptProcessor,
     "LunaModifyPreprocessedPrompt": LunaModifyPreprocessedPrompt,
     "LunaWildcardPromptGenerator": LunaWildcardPromptGenerator,
-    "LunaBatchPreprocessor": LunaBatchPreprocessor,
     "LunaOptimizedPreprocessedLoader": LunaOptimizedPreprocessedLoader,
     "LunaCacheManager": LunaCacheManager,
     "LunaPerformanceMonitor": LunaPerformanceMonitor,
@@ -1156,7 +1080,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "LunaSinglePromptProcessor": "Luna Single Prompt Processor",
     "LunaModifyPreprocessedPrompt": "Luna Modify Preprocessed Prompt",
     "LunaWildcardPromptGenerator": "Luna Wildcard Prompt Generator",
-    "LunaBatchPreprocessor": "Luna Batch Preprocessor",
     "LunaOptimizedPreprocessedLoader": "Luna Optimized Preprocessed Loader",
     "LunaCacheManager": "Luna Cache Manager",
     "LunaPerformanceMonitor": "Luna Performance Monitor",

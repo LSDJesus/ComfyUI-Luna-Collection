@@ -2,6 +2,11 @@ import os
 import random
 import folder_paths
 from nodes import MAX_RESOLUTION
+import sys
+
+# Add validation to path
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "validation"))
+from validation import luna_validator, validate_node_input
 
 class LunaTextProcessor:
     CATEGORY = "Luna/Text"
@@ -32,6 +37,20 @@ class LunaTextProcessor:
 
     def load_text_file(self, file_path):
         """Load and cache text file lines"""
+        # Validate file path
+        if file_path:
+            try:
+                validated_path = luna_validator.validate_file_path(
+                    file_path,
+                    must_exist=True,
+                    allowed_extensions=['.txt', '.csv', '.md'],
+                    cache_key=f"text_file_{hash(file_path)}"
+                )
+                file_path = validated_path
+            except ValueError as e:
+                print(f"[LunaTextProcessor] {e}")
+                return []
+
         if not file_path or not os.path.exists(file_path):
             return []
 
@@ -84,6 +103,18 @@ class LunaTextProcessor:
         return lines[actual_index], actual_index
 
     def process_text(self, text_file, selection_mode, reset_counter, start_index, stop_index, step, additional_text, delimiter, concat_mode):
+        # Validate additional text
+        try:
+            additional_text = luna_validator.validate_text_input(
+                additional_text,
+                max_length=10000,  # Reasonable limit
+                allow_empty=True,
+                cache_key=f"additional_text_{hash(additional_text)}"
+            )
+        except ValueError as e:
+            print(f"[LunaTextProcessor] {e}")
+            additional_text = ""
+
         # Load text file
         lines = self.load_text_file(text_file)
 
