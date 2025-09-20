@@ -1,5 +1,21 @@
 import torch
 import numpy as np
+import sys
+import os
+
+# Add the parent directory to sys.path to enable relative imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import utils modules directly
+utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils")
+if utils_path not in sys.path:
+    sys.path.insert(0, utils_path)
+
+try:
+    from mediapipe_engine import Mediapipe_Engine  # type: ignore
+except ImportError:
+    print("Luna MediaPipe SEGS: mediapipe_engine not available")
+    Mediapipe_Engine = None
 
 ENGINE_INSTANCE = None
 
@@ -33,6 +49,8 @@ class Luna_MediaPipe_Segs:
     def process(self, image, detect_hands, detect_face, detect_eyes, detect_mouth, detect_feet, detect_torso, detect_full_body, detect_person_segmentation, confidence, sort_by, max_objects, mask_padding, mask_blur):
         global ENGINE_INSTANCE
         if ENGINE_INSTANCE is None:
+            if Mediapipe_Engine is None:
+                raise ImportError("Mediapipe_Engine is not available. Please ensure mediapipe_engine.py is properly installed.")
             ENGINE_INSTANCE = Mediapipe_Engine()
 
         np_image = (image[0].numpy() * 255).astype(np.uint8)

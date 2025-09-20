@@ -5,7 +5,7 @@ import os
 
 class Luna_YOLO_Annotation_Exporter:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         return {
             "required": {
                 "mask": ("MASK",),

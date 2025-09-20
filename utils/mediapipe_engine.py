@@ -6,8 +6,8 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-# This import is now needed for the type check
-from mediapipe.framework.formats import landmark_pb2
+# Type checking imports - using hasattr check instead of isinstance for better compatibility
+# from mediapipe.framework.formats.landmark_pb2 import NormalizedLandmarkList
 
 POSE_LANDMARKS_FEET = [27, 28, 29, 30, 31, 32]
 POSE_LANDMARKS_TORSO = [11, 12, 23, 24]
@@ -30,10 +30,18 @@ class Mediapipe_Engine:
         if model_name == 'selfie': model_key = "selfie_segmentation"
 
         if model_key not in self.models:
-            if model_name == 'hands': self.models[model_key] = mp.solutions.hands.Hands(static_image_mode=True, max_num_hands=10, min_detection_confidence=confidence)
-            elif model_name == 'pose': self.models[model_key] = mp.solutions.pose.Pose(static_image_mode=True, min_detection_confidence=confidence)
-            elif model_name == 'face_mesh': self.models[model_key] = mp.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=10, min_detection_confidence=confidence)
-            elif model_name == 'selfie': self.models[model_key] = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=0)
+            try:
+                if model_name == 'hands': 
+                    self.models[model_key] = mp.solutions.hands.Hands(static_image_mode=True, max_num_hands=10, min_detection_confidence=confidence)  # type: ignore
+                elif model_name == 'pose': 
+                    self.models[model_key] = mp.solutions.pose.Pose(static_image_mode=True, min_detection_confidence=confidence)  # type: ignore
+                elif model_name == 'face_mesh': 
+                    self.models[model_key] = mp.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=10, min_detection_confidence=confidence)  # type: ignore
+                elif model_name == 'selfie': 
+                    self.models[model_key] = mp.solutions.selfie_segmentation.SelfieSegmentation(model_selection=0)  # type: ignore
+            except AttributeError as e:
+                print(f"Failed to create {model_name} model: {e}")
+                return None
         return self.models.get(model_key)
 
     def _create_mask_from_landmarks(self, image_shape, landmarks, padding, blur, min_area=500, region_filter=None):
@@ -43,9 +51,12 @@ class Mediapipe_Engine:
         H, W, _ = image_shape
 
         list_of_points = []
-        if isinstance(landmarks, landmark_pb2.NormalizedLandmarkList):
+        # Check if landmarks is a MediaPipe landmark list object
+        if hasattr(landmarks, 'landmark'):
+            # It's a NormalizedLandmarkList or similar MediaPipe object
             list_of_points = landmarks.landmark
         else:
+            # It's already a list of landmarks
             list_of_points = landmarks
 
         points = np.array([(lm.x * W, lm.y * H) for lm in list_of_points if hasattr(lm, 'x')], dtype=np.int32)

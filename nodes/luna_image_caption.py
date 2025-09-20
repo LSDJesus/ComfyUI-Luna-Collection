@@ -16,7 +16,7 @@ import json
 class luna_image_caption:
     # --- 2. The Class Definition ---
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         default_master_prompt = """Analyze the provided image. Respond ONLY with a single, raw JSON object. The JSON object must contain the following three keys: "caption", "tags", and "rating".
 
 - "caption": A concise, objective, and descriptive caption of the image content.
