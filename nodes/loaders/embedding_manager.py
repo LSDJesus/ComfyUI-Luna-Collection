@@ -1,4 +1,5 @@
 import folder_paths
+from typing import Dict, Any, List, Union
 
 # ===================================================================================
 # G L O B A L S
@@ -23,8 +24,8 @@ class LunaEmbeddingManager:
     FUNCTION = "format_embeddings"
 
     @classmethod
-    def INPUT_TYPES(cls):
-        inputs = {
+    def INPUT_TYPES(cls) -> Dict[str, Dict[str, Any]]:
+        inputs: Dict[str, Dict[str, Any]] = {
             "required": {
                 "enabled": ("BOOLEAN", {"default": True}),
             }

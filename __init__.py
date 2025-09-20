@@ -6,32 +6,13 @@ import traceback
 # This remains. It tells ComfyUI where to find our JavaScript files.
 WEB_DIRECTORY = "./js"
 
-# --- GLOBAL CONTEXT & UTILITIES ---
-# We will create a single, shared object that holds all our magnificent utilities.
-# This is cleaner than injecting them one by one.
-class LunaUtils:
-    pass
-
-LUNA_UTILS = LunaUtils()
-
 # The base directory of our collection
 NODE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# --- THE WARDEN'S DUTY ---
-# Load all our utilities and attach them to our global context object.
-try:
-    from .utils.tiling import luna_tiling_orchestrator
-    LUNA_UTILS.tiling_orchestrator = luna_tiling_orchestrator
-except ImportError:
-    print("lunaCore: Tiling utility not found.")
-
-try:
-    from .utils.mediapipe_engine import Mediapipe_Engine
-    LUNA_UTILS.mediapipe_engine = Mediapipe_Engine
-except ImportError:
-    print("lunaCore: Mediapipe utility not found.")
-    
-# Add any other utilities here in the future...
+# Add utils directory to Python path for imports
+utils_dir = os.path.join(NODE_DIR, "utils")
+if utils_dir not in sys.path:
+    sys.path.insert(0, utils_dir)
 
 # --- NODE DISCOVERY ---
 NODE_CLASS_MAPPINGS = {}
@@ -62,16 +43,16 @@ def setup_nodes():
                     
                     # The rest of your brilliant loading logic remains the same
                     spec = importlib.util.spec_from_file_location(module_name, module_path)
+                    if spec is None or spec.loader is None:
+                        print(f"lunaCore: Could not load spec for {filename}")
+                        continue
+                        
                     module = importlib.util.module_from_spec(spec)
                     sys.modules[module_name] = module
                     spec.loader.exec_module(module)
 
                     if hasattr(module, "NODE_CLASS_MAPPINGS"):
                         for node_name, node_class in module.NODE_CLASS_MAPPINGS.items():
-                            # The new, elegant way to give every node access to our tools.
-                            # We pass the entire utility object.
-                            node_class.LUNA_UTILS = LUNA_UTILS
-                            
                             NODE_CLASS_MAPPINGS[node_name] = node_class
 
                     if hasattr(module, "NODE_DISPLAY_NAME_MAPPINGS"):

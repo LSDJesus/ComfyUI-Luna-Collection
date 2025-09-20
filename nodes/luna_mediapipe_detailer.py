@@ -1,13 +1,28 @@
 import torch
 import numpy as np
-import comfy.utils
 import node_helpers
+import sys
+import os
+
+# Add the parent directory to sys.path to enable relative imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Import utils modules directly
+utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils")
+if utils_path not in sys.path:
+    sys.path.insert(0, utils_path)
+
+try:
+    from mediapipe_engine import Mediapipe_Engine  # type: ignore
+except ImportError:
+    print("Luna MediaPipe Detailer: mediapipe_engine not available")
+    Mediapipe_Engine = None
 
 ENGINE_INSTANCE = None
 
 class Luna_MediaPipe_Detailer:
     @classmethod
-    def INPUT_TYPES(s):
+    def INPUT_TYPES(cls):
         model_types = ["hands", "face", "eyes", "mouth", "feet", "torso", "full_body (bbox)", "person (segmentation)"]
         sort_by_types = ["Confidence", "Area: Largest to Smallest", "Position: Left to Right", "Position: Top to Bottom", "Position: Nearest to Center"]
         return {
@@ -37,6 +52,8 @@ class Luna_MediaPipe_Detailer:
     def process(self, image, clip, vae, model_type, sort_by, max_objects, confidence, mask_padding, mask_blur, noise_mask, detail_positive_prompt, detail_negative_prompt, denoise, flux_guidance_strength):
         global ENGINE_INSTANCE
         if ENGINE_INSTANCE is None:
+            if Mediapipe_Engine is None:
+                raise ImportError("Mediapipe_Engine is not available. Please ensure mediapipe_engine.py is properly installed.")
             ENGINE_INSTANCE = Mediapipe_Engine()
 
         # 1. Generate Mask
