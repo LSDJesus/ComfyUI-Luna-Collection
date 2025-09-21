@@ -3,12 +3,23 @@ import json
 import torch
 from safetensors.torch import save_file
 import folder_paths
-from nodes import CLIPTextEncode
 import comfy.utils
 from datetime import datetime
 import gzip
 import bz2
 import lzma
+
+# Import CLIPTextEncode conditionally to avoid circular imports
+try:
+    # Try importing from main ComfyUI nodes
+    import sys
+    comfy_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    if comfy_path not in sys.path:
+        sys.path.insert(0, comfy_path)
+    from nodes import CLIPTextEncode
+except ImportError:
+    # Fallback for when running in test environment
+    CLIPTextEncode = None
 
 class LunaPromptPreprocessor:
     CATEGORY = "Luna/Preprocessing"
@@ -88,6 +99,8 @@ class LunaPromptPreprocessor:
         print(f"[LunaPromptPreprocessor] Output directory: {output_dir}")
 
         # Initialize text encoder
+        if CLIPTextEncode is None:
+            raise ImportError("CLIPTextEncode not available. This node requires ComfyUI to be properly installed.")
         text_encoder = CLIPTextEncode()
 
         processed_count = 0

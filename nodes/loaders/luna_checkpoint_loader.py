@@ -6,14 +6,17 @@ import comfy.sd # I notice this was missing from my original scripture, a necess
 from aiohttp import web # Also missing. The mind races ahead of the quill.
 
 # Import Luna validation system
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 try:
-    from validation import luna_validator, validate_node_input
+    from ...validation import luna_validator, validate_node_input
     VALIDATION_AVAILABLE = True
 except ImportError:
-    VALIDATION_AVAILABLE = False
-    validate_node_input = None
+    try:
+        # Fallback to absolute import if relative fails
+        from validation import luna_validator, validate_node_input
+        VALIDATION_AVAILABLE = True
+    except ImportError:
+        VALIDATION_AVAILABLE = False
+        validate_node_input = None
 
 def conditional_validate(*args, **kwargs):
     """Conditionally apply validation decorator."""
