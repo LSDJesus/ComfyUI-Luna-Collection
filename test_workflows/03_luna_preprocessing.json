@@ -1,0 +1,110 @@
+{
+  "workflow_name": "Luna Preprocessing - Text Processing Pipeline",
+  "description": "Test all Luna preprocessing nodes for text and prompt processing",
+  "nodes": {
+    "1": {
+      "id": 1,
+      "type": "LunaCheckpointLoader",
+      "pos": [100, 100],
+      "properties": {
+        "ckpt_name": "test_checkpoint.safetensors",
+        "show_previews": true
+      }
+    },
+    "2": {
+      "id": 2,
+      "type": "LunaPromptPreprocessor",
+      "pos": [400, 100],
+      "properties": {
+        "prompts": "a beautiful landscape, sunset, mountains, lake, forest",
+        "negative_prompts": "blurry, low quality, distorted",
+        "batch_size": 5,
+        "output_dir": "./preprocessed_prompts",
+        "save_format": "json"
+      }
+    },
+    "3": {
+      "id": 3,
+      "type": "LunaTextProcessor",
+      "pos": [700, 100],
+      "properties": {
+        "text_input": "Create stunning artwork of nature scenes",
+        "process_type": "enhance",
+        "max_length": 200
+      }
+    },
+    "4": {
+      "id": 4,
+      "type": "LunaUnifiedPromptProcessor",
+      "pos": [1000, 100],
+      "properties": {
+        "base_prompt": "photorealistic image",
+        "style_tags": "cinematic, dramatic lighting",
+        "quality_tags": "8k, detailed, masterpiece",
+        "subject_tags": "landscape, nature",
+        "negative_tags": "blurry, artifacts, low quality",
+        "enhancement_level": "high"
+      }
+    },
+    "5": {
+      "id": 5,
+      "type": "CLIPTextEncode",
+      "pos": [1300, 100],
+      "properties": {
+        "text": ""
+      }
+    },
+    "6": {
+      "id": 6,
+      "type": "EmptyLatentImage",
+      "pos": [1600, 100],
+      "properties": {
+        "width": 1024,
+        "height": 1024,
+        "batch_size": 1
+      }
+    },
+    "7": {
+      "id": 7,
+      "type": "KSampler",
+      "pos": [1900, 100],
+      "properties": {
+        "seed": 54321,
+        "steps": 30,
+        "cfg": 7.5,
+        "sampler_name": "euler_a",
+        "scheduler": "normal",
+        "denoise": 1.0
+      }
+    },
+    "8": {
+      "id": 8,
+      "type": "VAEDecode",
+      "pos": [2200, 100],
+      "properties": {}
+    },
+    "9": {
+      "id": 9,
+      "type": "SaveImage",
+      "pos": [2500, 100],
+      "properties": {
+        "filename_prefix": "luna_preprocessing_test"
+      }
+    }
+  },
+  "links": [
+    [1, 1, 5, 0],
+    [4, 0, 5, 1],
+    [5, 0, 7, 2],
+    [6, 0, 7, 3],
+    [7, 0, 8, 0],
+    [8, 0, 9, 0]
+  ],
+  "groups": [
+    {
+      "title": "Preprocessing Pipeline",
+      "bounding": [380, 80, 680, 60],
+      "color": "#4caf50"
+    }
+  ]
+}

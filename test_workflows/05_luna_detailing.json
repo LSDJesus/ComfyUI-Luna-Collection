@@ -1,0 +1,119 @@
+{
+  "workflow_name": "Luna Detailing - Face & Object Enhancement",
+  "description": "Test Luna detailer nodes for face detection and enhancement",
+  "nodes": {
+    "1": {
+      "id": 1,
+      "type": "LunaCheckpointLoader",
+      "pos": [100, 100],
+      "properties": {
+        "ckpt_name": "realistic_checkpoint.safetensors",
+        "show_previews": true
+      }
+    },
+    "2": {
+      "id": 2,
+      "type": "CLIPTextEncode",
+      "pos": [400, 100],
+      "properties": {
+        "text": "photorealistic portrait of a person, detailed face, sharp focus"
+      }
+    },
+    "3": {
+      "id": 3,
+      "type": "CLIPTextEncode",
+      "pos": [400, 200],
+      "properties": {
+        "text": "blurry, low quality, distorted"
+      }
+    },
+    "4": {
+      "id": 4,
+      "type": "EmptyLatentImage",
+      "pos": [700, 100],
+      "properties": {
+        "width": 1024,
+        "height": 1024,
+        "batch_size": 1
+      }
+    },
+    "5": {
+      "id": 5,
+      "type": "KSampler",
+      "pos": [1000, 100],
+      "properties": {
+        "seed": 77777,
+        "steps": 25,
+        "cfg": 8.0,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 1.0
+      }
+    },
+    "6": {
+      "id": 6,
+      "type": "VAEDecode",
+      "pos": [1300, 100],
+      "properties": {}
+    },
+    "7": {
+      "id": 7,
+      "type": "LunaDetailer",
+      "pos": [1600, 100],
+      "properties": {
+        "model": "face_yolov8m.pt",
+        "confidence": 0.5,
+        "mask_dilation": 4,
+        "mask_blur": 4,
+        "mask_padding": 32,
+        "inpaint_model": "realistic_vision.safetensors",
+        "noise_mask": true,
+        "inpaint_respective_field": 512,
+        "inpaint_steps": 20,
+        "inpaint_cfg": 8.0,
+        "inpaint_sampler": "dpmpp_2m",
+        "inpaint_scheduler": "karras"
+      }
+    },
+    "8": {
+      "id": 8,
+      "type": "LunaMediaPipeDetailer",
+      "pos": [1900, 100],
+      "properties": {
+        "face": true,
+        "hands": false,
+        "pose": false,
+        "min_confidence": 0.5,
+        "max_faces": 1,
+        "mask_blur": 4,
+        "mask_padding": 16
+      }
+    },
+    "9": {
+      "id": 9,
+      "type": "SaveImage",
+      "pos": [2200, 100],
+      "properties": {
+        "filename_prefix": "luna_detailing_test"
+      }
+    }
+  },
+  "links": [
+    [1, 0, 5, 0],
+    [1, 1, 2, 0],
+    [2, 0, 5, 2],
+    [3, 0, 5, 3],
+    [4, 0, 5, 4],
+    [5, 0, 6, 0],
+    [6, 0, 7, 0],
+    [7, 0, 8, 0],
+    [8, 0, 9, 0]
+  ],
+  "groups": [
+    {
+      "title": "Face Detection & Enhancement",
+      "bounding": [1580, 80, 480, 60],
+      "color": "#9c27b0"
+    }
+  ]
+}

@@ -39,15 +39,17 @@ for module in mock_modules:
     if module not in sys.modules:
         sys.modules[module] = mock.MagicMock()
 
-# Mock specific functions that are used in the tests
-comfy_mock = sys.modules['comfy']
+# Set up mocks properly to avoid attribute assignment issues
+comfy_mock = mock.MagicMock()
 comfy_mock.sd = mock.MagicMock()
 comfy_mock.sd.load_checkpoint_guess_config = mock.MagicMock()
 comfy_mock.utils = mock.MagicMock()
+sys.modules['comfy'] = comfy_mock
 
-folder_paths_mock = sys.modules['folder_paths']
-folder_paths_mock.get_filename_list = mock.MagicMock()
-folder_paths_mock.get_full_path = mock.MagicMock()
+folder_paths_mock = mock.MagicMock()
+folder_paths_mock.get_filename_list = mock.MagicMock(return_value=[])
+folder_paths_mock.get_full_path = mock.MagicMock(return_value="/fake/path")
+sys.modules['folder_paths'] = folder_paths_mock
 
 # Try to import our modules, use mocks if not available
 IMPORTS_SUCCESSFUL = False  # Force use of mocks for testing
@@ -71,8 +73,8 @@ if not IMPORTS_SUCCESSFUL:
                     folder_paths_mock.get_filename_list("checkpoints")
             return {
                 "required": {
-                    "ckpt_name": ([], ),
-                    "show_previews": ("BOOLEAN", {"default": True}),
+                    "ckpt_name": ([], ),  # type: ignore  # Empty list to match folder_paths format
+                    "show_previews": (True, ),  # type: ignore  # Boolean default
                 }
             }
 
@@ -89,15 +91,15 @@ if not IMPORTS_SUCCESSFUL:
         def INPUT_TYPES(cls):
             inputs = {
                 "required": {
-                    "enabled": ("BOOLEAN", {"default": True}),
-                    "show_previews": ("BOOLEAN", {"default": True}),
+                    "enabled": (True, ),  # Boolean default
+                    "show_previews": (True, ),  # Boolean default
                 },
                 "optional": {}
             }
             for i in range(1, 5):
-                inputs["optional"][f"lora_{i}"] = ("LORA",)
-                inputs["optional"][f"strength_{i}"] = ("FLOAT", {"default": 1.0, "min": -2.0, "max": 2.0, "step": 0.01})
-                inputs["optional"][f"enabled_{i}"] = ("BOOLEAN", {"default": True})
+                inputs["optional"][f"lora_{i}"] = ("LORA", {})  # type: ignore  # Empty dict for optional
+                inputs["optional"][f"strength_{i}"] = (1.0, )  # type: ignore  # Float default
+                inputs["optional"][f"enabled_{i}"] = (True, )  # type: ignore  # Boolean default
             return inputs
 
         def configure_stack(self, enabled, show_previews, **kwargs):
@@ -122,13 +124,13 @@ if not IMPORTS_SUCCESSFUL:
         def INPUT_TYPES(cls):
             inputs = {
                 "required": {
-                    "enabled": ("BOOLEAN", {"default": True}),
+                    "enabled": (True, ),  # Boolean default
                 }
             }
             for i in range(1, 5):
-                inputs["required"][f"embedding_{i}_enabled"] = ("BOOLEAN", {"default": True})
-                inputs["required"][f"embedding_name_{i}"] = ("STRING", {"default": ""})
-                inputs["required"][f"embedding_weight_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
+                inputs["required"][f"embedding_{i}_enabled"] = (True, )  # type: ignore  # Boolean default
+                inputs["required"][f"embedding_name_{i}"] = ("", )  # type: ignore  # String default
+                inputs["required"][f"embedding_weight_{i}"] = (1.0, )  # type: ignore  # Float default
             return inputs
 
         def format_embeddings(self, enabled, **kwargs):
