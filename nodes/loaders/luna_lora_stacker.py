@@ -29,6 +29,7 @@ class LunaLoRAStacker:
 
     @classmethod
     def INPUT_TYPES(cls):
+        lora_list = folder_paths.get_filename_list("loras")
         inputs = {
             "required": {
                 "enabled": ("BOOLEAN", {"default": True}),
@@ -39,11 +40,11 @@ class LunaLoRAStacker:
             }
         }
         
-        # Add LoRA slots dynamically
+        # Add LoRA slots dynamically with dropdowns
         for i in range(1, MAX_LORA_SLOTS + 1):
-            inputs["optional"][f"lora_{i}"] = ("LORA",)
-            inputs["optional"][f"strength_{i}"] = ("FLOAT", {"default": 1.0, "min": -2.0, "max": 2.0, "step": 0.01})
             inputs["optional"][f"enabled_{i}"] = ("BOOLEAN", {"default": True})
+            inputs["optional"][f"lora_{i}"] = (lora_list, {"default": ""})
+            inputs["optional"][f"strength_{i}"] = ("FLOAT", {"default": 1.0, "min": -2.0, "max": 2.0, "step": 0.01})
             
         return inputs
 
@@ -60,10 +61,7 @@ class LunaLoRAStacker:
             lora_enabled = kwargs.get(f"enabled_{i}", True)
             
             if lora_name and lora_enabled:
-                lora_stack.append({
-                    "lora": lora_name,
-                    "strength": strength
-                })
+                lora_stack.append((lora_name, strength, strength))  # Tuple: (lora_name, model_strength, clip_strength)
                 
         return (lora_stack,)
 
