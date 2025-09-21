@@ -1,0 +1,102 @@
+{
+  "workflow_name": "Luna Loaders - Random Variations",
+  "description": "Test random loader nodes with seeded generation for reproducible results",
+  "nodes": {
+    "1": {
+      "id": 1,
+      "type": "LunaCheckpointLoader",
+      "pos": [100, 100],
+      "properties": {
+        "ckpt_name": "test_checkpoint.safetensors",
+        "show_previews": true
+      }
+    },
+    "2": {
+      "id": 2,
+      "type": "LunaLoRAStackerRandom",
+      "pos": [400, 100],
+      "properties": {
+        "enabled": true,
+        "show_previews": true,
+        "seed": 42,
+        "lora_1": "style_lora.safetensors",
+        "lora_2": "character_lora.safetensors",
+        "lora_3": "effect_lora.safetensors",
+        "strength_min": 0.5,
+        "strength_max": 1.2,
+        "enabled_1": true,
+        "enabled_2": true,
+        "enabled_3": true
+      }
+    },
+    "3": {
+      "id": 3,
+      "type": "LunaEmbeddingManagerRandom",
+      "pos": [700, 100],
+      "properties": {
+        "enabled": true,
+        "seed": 123,
+        "embedding_1_enabled": true,
+        "embedding_name_1": "art_style.pt",
+        "embedding_2_enabled": true,
+        "embedding_name_2": "quality.pt",
+        "embedding_3_enabled": true,
+        "embedding_name_3": "lighting.pt",
+        "weight_min": 0.3,
+        "weight_max": 1.5
+      }
+    },
+    "4": {
+      "id": 4,
+      "type": "CLIPTextEncode",
+      "pos": [1000, 100],
+      "properties": {
+        "text": "masterpiece, best quality"
+      }
+    },
+    "5": {
+      "id": 5,
+      "type": "KSampler",
+      "pos": [1300, 100],
+      "properties": {
+        "seed": 999,
+        "steps": 25,
+        "cfg": 8.0,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 1.0
+      }
+    },
+    "6": {
+      "id": 6,
+      "type": "VAEDecode",
+      "pos": [1600, 100],
+      "properties": {}
+    },
+    "7": {
+      "id": 7,
+      "type": "SaveImage",
+      "pos": [1900, 100],
+      "properties": {
+        "filename_prefix": "luna_random_test"
+      }
+    }
+  },
+  "links": [
+    [1, 0, 5, 0],
+    [1, 1, 4, 0],
+    [1, 2, 6, 2],
+    [2, 0, 5, 1],
+    [3, 0, 4, 1],
+    [4, 0, 5, 2],
+    [5, 0, 6, 0],
+    [6, 0, 7, 0]
+  ],
+  "groups": [
+    {
+      "title": "Random Loaders Test",
+      "bounding": [80, 80, 840, 60],
+      "color": "#ff9800"
+    }
+  ]
+}
