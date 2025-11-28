@@ -1,37 +1,26 @@
 # 🌙 ComfyUI Luna Collection
 
-![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)
-![Python](https://img.shields.io/badge/python-3.8+-green.svg)
+![Version](https://img.shields.io/badge/version-v1.1.0-blue.svg)
+![Python](https://img.shields.io/badge/python-3.10+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 
-**A comprehensive suite of production-ready ComfyUI nodes engineered for power, flexibility, and efficiency.**
+**A comprehensive suite of ComfyUI custom nodes for advanced image processing, model management, and workflow automation.**
 
-Luna Collection represents the pinnacle of collaborative development between human creativity and AI precision. Each node is meticulously crafted to be a clean, powerful, and intuitive component in your creative workflow.
+Luna Collection provides a modular set of tools for image upscaling, MediaPipe-based detailing, LoRA stacking, prompt preprocessing, and more. Each node is designed to be intuitive and integrate seamlessly into your ComfyUI workflows.
 
 ---
 
 ## ✨ Features
 
 ### 🔧 **Core Capabilities**
-- **Advanced Upscaling**: Professional-grade image upscaling with artifact prevention
-- **Intelligent Sampling**: KSampler with adaptive parameters and performance monitoring
-- **Model Management**: Comprehensive checkpoint and LoRA loading with validation
-- **Text Processing**: Unified prompt processing with multiple enhancement modes
-- **Performance Monitoring**: Real-time performance tracking and optimization
-- **Validation System**: Robust input validation with graceful degradation
-
-### 🛡️ **Quality Assurance**
-- **Comprehensive Testing**: 41+ automated tests covering all functionality
-- **Performance Benchmarking**: Sub-millisecond validation with caching
-- **CI/CD Pipeline**: Automated testing and deployment via GitHub Actions
-- **Type Safety**: Full Pylance compatibility with proper type annotations
-- **Error Handling**: Graceful degradation when validation system is unavailable
-
-### 📊 **Performance**
-- **⚡ Sub-millisecond validation** (471K ops/sec throughput)
-- **💾 Minimal memory overhead** (0.0MB for 1000+ cached validations)
-- **🔄 Intelligent caching** with LRU eviction and 50% performance improvement
-- **🎯 Memory efficient** with automatic cleanup and resource management
+- **Advanced Upscaling**: Multiple upscaling nodes with model-based and resampling methods
+- **MediaPipe Integration**: Face, hand, pose, and body segmentation and detailing
+- **LoRA Management**: Advanced LoRA stacking with individual strength controls
+- **Prompt Processing**: Comprehensive text preprocessing and enhancement tools
+- **Model Loading**: Intelligent checkpoint and embedding management
+- **TensorRT Support**: High-performance inference with TensorRT engines
+- **YOLO Integration**: Annotation export for object detection workflows
+- **Image Captioning**: Automated image description generation
 
 ---
 
@@ -39,8 +28,8 @@ Luna Collection represents the pinnacle of collaborative development between hum
 
 ### Prerequisites
 - ComfyUI (latest version recommended)
-- Python 3.8+
-- PyTorch with CUDA support (optional, for GPU acceleration)
+- Python 3.10+
+- PyTorch with CUDA support (for GPU acceleration)
 
 ### Quick Install
 1. **Clone the repository:**
@@ -57,210 +46,196 @@ Luna Collection represents the pinnacle of collaborative development between hum
 
 3. **Restart ComfyUI**
 
-The nodes will be available under the **`Luna Collection`** category.
-
-### Optional: Performance Testing Setup
-For development and performance monitoring:
-```bash
-pip install -r requirements-performance.txt
-python run_performance_tests.py
-```
+The nodes will be available under the **`Luna Collection`** or **`Luna/`** categories.
 
 ---
 
-## 🎯 Node Categories
+## 🎯 Available Nodes
 
-### 🖼️ **Image Processing**
+### 🖼️ **Image Processing & Upscaling**
 | Node | Description | Key Features |
 |------|-------------|--------------|
-| **Luna Simple Upscaler** | Clean, lightweight upscaling | Model-based scaling, resampling options |
-| **Luna Advanced Upscaler** | Professional-grade upscaling | Supersampling, rounding modulus, artifact prevention |
-| **Luna Ultimate SD Upscale** | AI-powered upscaling | Stable Diffusion integration, quality enhancement |
+| **Luna Simple Upscaler** | Clean, lightweight upscaling | Model-based scaling, multiple resampling methods |
+| **Luna Advanced Upscaler** | Professional-grade upscaling | Supersampling, modulus rounding, advanced controls |
+| **Luna Ultimate SD Upscale** | Multi-stage SD upscaling | Tile-based processing, seam blending |
 
-### 🎨 **Sampling & Generation**
+### 🎨 **MediaPipe Detailing**
 | Node | Description | Key Features |
 |------|-------------|--------------|
-| **Luna Sampler** | Advanced KSampler | Adaptive parameters, performance monitoring, validation |
-| **Luna Performance Logger** | Real-time performance tracking | Execution time, memory usage, throughput metrics |
+| **Luna MediaPipe Detailer** | Face/body detailing with inpainting | Flux-compatible, conditional detailing, mask generation |
+| **Luna MediaPipe Segs** | Segmentation mask generation | Multi-target detection (hands, face, eyes, etc.) |
+| **TensorRT Face Detailer** | High-performance TensorRT detailing | Dynamic engine support, bbox detection, SAM integration |
 
 ### 📁 **Model Management**
 | Node | Description | Key Features |
 |------|-------------|--------------|
-| **Luna Checkpoint Loader** | Intelligent model loading | Validation, caching, error handling |
-| **Luna LoRA Stacker** | Multi-LoRA management | Weighted combinations, validation |
-| **Luna Embedding Manager** | Textual inversion support | Batch processing, validation |
+| **Luna Checkpoint Loader** | Checkpoint loading with metadata | Model info display, efficient loading |
+| **Luna LoRA Stacker** | Multi-LoRA management | Up to 4 LoRAs, individual strength/toggle controls |
+| **Luna LoRA Stacker Random** | Randomized LoRA selection | Automatic variation generation |
+| **Luna Embedding Manager** | Textual inversion management | Multiple embedding support |
+| **Luna Embedding Manager Random** | Randomized embedding selection | Variation and experimentation |
 
-### 📝 **Text Processing**
+### 📝 **Text & Prompt Processing**
 | Node | Description | Key Features |
 |------|-------------|--------------|
-| **Luna Prompt Preprocessor** | Advanced prompt enhancement | Multiple processing modes, validation |
-| **Luna Text Processor** | Unified text processing | Length control, content filtering |
-| **Luna Unified Prompt Processor** | All-in-one text enhancement | Combined preprocessing pipeline |
+| **Luna Unified Prompt Processor** | All-in-one prompt enhancement | Multiple processing modes, wildcard support |
+| **Luna Prompt Preprocessor** | Advanced prompt preprocessing | Style enhancement, quality boosting |
+| **Luna Text Processor** | Text manipulation and filtering | Length control, content filtering |
+| **Luna Wildcard Prompt Generator** | Dynamic prompt generation | Random wildcard expansion |
+| **Luna Load Preprocessed** | Load saved prompts | Prompt library management |
+| **Luna Save Negative Prompt** | Save negative prompts | Reusable negative prompt templates |
 
-### 🔍 **Computer Vision**
+### 🔧 **Workflow & Utilities**
 | Node | Description | Key Features |
 |------|-------------|--------------|
-| **Luna MediaPipe Detailer** | AI-powered segmentation | Face, pose, hand detection |
-| **Luna Face Detailer** | Facial feature enhancement | Eye, mouth, face mesh analysis |
+| **Luna Sampler** | Advanced KSampler | Custom sampling with enhanced controls |
+| **Luna Multi Saver** | Batch image saving | Multiple format support, organized output |
+| **Luna Parameters Bridge** | Parameter passing between nodes | Workflow organization |
+| **Luna Load Parameters** | Load saved parameters | Reusable configurations |
+| **Luna Image Caption** | Automated image captioning | AI-powered descriptions |
+| **Luna YOLO Annotation Exporter** | YOLO format export | Object detection workflow integration |
+| **Luna Performance Monitor** | Workflow performance tracking | Execution time monitoring |
+| **Luna Cache Manager** | Cache management | Memory optimization |
 
 ---
 
-## 📚 Documentation
+## 📚 Key Features by Node
 
-### 📖 **Guides & Tutorials**
-- **[Node Reference](assets/guides/node-reference.md)** - Detailed documentation for all nodes
-- **[Performance Optimization](assets/guides/performance-guide.md)** - Optimization tips and benchmarks
-- **[Validation System](assets/guides/validation-guide.md)** - Input validation and error handling
-- **[CI/CD Setup](assets/guides/ci-cd-guide.md)** - Automated testing and deployment
-- **[Development](assets/guides/development-guide.md)** - Contributing and development setup
+### Luna MediaPipe Detailer
+- Detects and details faces, hands, eyes, mouth, feet, torso, and full body
+- Flux-compatible conditioning with pooled outputs
+- Configurable mask padding, blur, and confidence thresholds
+- Multiple sorting options (confidence, area, position)
+- Automatic mask generation and inpainting support
 
-### 🎯 **Quick Start Examples**
-- **[Basic Workflow](assets/samples/basic-workflow.json)** - Simple upscaling workflow
-- **[Advanced Pipeline](assets/samples/advanced-pipeline.json)** - Full production pipeline
-- **[Performance Monitoring](assets/samples/performance-workflow.json)** - Performance tracking setup
+### Luna LoRA Stacker
+- Stack up to 4 LoRAs with individual controls
+- Dropdown selection from your `models/loras` directory
+- Individual enable/disable toggles per LoRA
+- Separate strength controls for fine-tuning
+- Compatible with ComfyUI-Impact-Pack's Apply LoRA Stack nodes
 
-### 📝 **Prompt Templates**
-- **[Style Presets](assets/prompts/style-presets.md)** - Curated prompt collections
-- **[Quality Enhancement](assets/prompts/quality-templates.md)** - Quality improvement prompts
+### TensorRT Face Detailer
+- High-performance inference using TensorRT engines
+- Dynamic engine support (min: 768, max: 1280, opt: 1024)
+- ONNX bbox detector compatibility
+- SAM (Segment Anything Model) integration for refinement
+- Automatic region cropping and resizing
+
+### Luna Ultimate SD Upscale
+- Multi-stage upscaling with SD inpainting
+- Tile-based processing for large images
+- Seam blending for seamless results
+- Configurable tile size and overlap
+- Support for various upscaling models
 
 ---
 
-## 🔧 Configuration
+## 🔧 Dependencies
 
-### Environment Variables
+### Core Requirements
+- **ComfyUI** - Latest version recommended
+- **PyTorch** - With CUDA support for GPU acceleration
+- **MediaPipe** - For face/pose/hand detection nodes
+- **OpenCV** - Image processing
+- **NumPy** - Numerical operations
+
+### Optional Dependencies
+- **TensorRT** - For TensorRT Face Detailer node
+- **Polygraphy** - TensorRT engine utilities
+- **SAM Models** - For segmentation refinement
+- **Impact Pack** - For bbox detection integration
+
+Install all dependencies with:
 ```bash
-# Performance monitoring
-LUNA_PERFORMANCE_LOG=true
-LUNA_CACHE_SIZE=1000
-
-# Validation settings
-LUNA_VALIDATION_STRICT=false
-LUNA_ERROR_HANDLING=graceful
-
-# Development mode
-LUNA_DEBUG=false
+pip install -r requirements.txt
 ```
-
-### Node Settings
-Most nodes support configuration via their inputs:
-- **Cache Settings**: Control validation caching behavior
-- **Performance Monitoring**: Enable/disable performance tracking
-- **Validation Mode**: Strict vs. graceful validation
 
 ---
 
-## 🧪 Testing & Quality Assurance
+## 🏗️ Project Structure
 
-### Automated Testing
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run performance benchmarks
-python run_performance_tests.py
-
-# Run specific test categories
-pytest tests/unit/ -v
-pytest tests/integration/ -v
 ```
-
-### Performance Benchmarks
-- **Validation Throughput**: 471,032 operations/second
-- **Memory Overhead**: < 1MB for 1000+ validations
-- **Cache Hit Rate**: > 95% for repeated validations
-- **Error Recovery**: < 100ms graceful degradation
-
-### CI/CD Pipeline
-- **Automated Testing**: Runs on every push/PR
-- **Multi-Python Support**: Python 3.8, 3.9, 3.10, 3.11
-- **Performance Regression Detection**: Automatic benchmarking
-- **Code Coverage**: > 90% test coverage required
-
----
-
-## 🏗️ Architecture
-
-### Core Components
+ComfyUI-Luna-Collection/
+├── nodes/                          # All node implementations
+│   ├── loaders/                    # Model loading nodes
+│   │   ├── luna_checkpoint_loader.py
+│   │   ├── luna_lora_stacker.py
+│   │   ├── luna_lora_stacker_random.py
+│   │   ├── luna_embedding_manager.py
+│   │   └── luna_embedding_manager_random.py
+│   ├── upscaling/                  # Image upscaling nodes
+│   │   ├── luna_upscaler_simple.py
+│   │   ├── luna_upscaler_advanced.py
+│   │   └── luna_ultimate_sd_upscale.py
+│   ├── preprocessing/              # Text/prompt processing nodes
+│   │   ├── luna_prompt_preprocessor.py
+│   │   ├── luna_text_processor.py
+│   │   └── luna_unified_prompt_processor.py
+│   ├── detailing/                  # MediaPipe detailing nodes
+│   ├── performance/                # Performance monitoring nodes
+│   ├── luna_mediapipe_detailer.py  # MediaPipe face detailer
+│   ├── luna_sampler.py             # Advanced sampler
+│   ├── luna_image_caption.py       # Image captioning
+│   ├── luna_multi_saver.py         # Batch saving
+│   ├── luna_yolo_annotation_exporter.py
+│   └── tensorrt_detailer.py        # TensorRT face detailer
+├── utils/                          # Shared utilities
+│   ├── mediapipe_engine.py         # MediaPipe processing engine
+│   ├── trt_engine.py               # TensorRT engine wrapper
+│   ├── impact_core.py              # Impact Pack integration utilities
+│   └── tiling.py                   # Tiling utilities
+├── js/                             # Frontend JavaScript
+│   ├── luna_lora_stacker.js
+│   └── luna_collection_nodes.js
+├── caption-templates/              # Image captioning templates
+├── test/                           # Unit tests
+└── __init__.py                     # Package initialization
 ```
-Luna Collection/
-├── validation/          # Input validation system
-├── nodes/              # Node implementations
-│   ├── upscaling/      # Image upscaling nodes
-│   ├── sampling/       # Generation nodes
-│   ├── loaders/        # Model management
-│   ├── preprocessing/  # Text processing
-│   └── detailing/      # Computer vision
-├── utils/              # Shared utilities
-│   ├── mediapipe_engine.py  # Computer vision engine
-│   └── luna_logger.py       # Logging system
-├── tests/              # Comprehensive test suite
-└── assets/             # Documentation and samples
-    ├── guides/         # Detailed documentation
-    ├── prompts/        # Prompt templates
-    ├── screenshots/    # Visual examples
-    └── samples/        # Workflow examples
-```
-
-### Validation System
-- **Pydantic V2**: Type-safe validation with custom models
-- **LRU Caching**: Intelligent caching with automatic cleanup
-- **Graceful Degradation**: Continues working without validation
-- **Error Recovery**: Comprehensive error handling and reporting
-
-### Performance Monitoring
-- **Real-time Metrics**: Execution time, memory usage, throughput
-- **Benchmarking**: Automated performance regression detection
-- **Resource Tracking**: GPU memory, CPU usage, I/O operations
-- **Optimization**: Intelligent caching and resource management
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Development Guide](assets/guides/development-guide.md) for:
-- Development setup and workflow
-- Coding standards and best practices
-- Testing requirements
-- Pull request guidelines
+Contributions are welcome! If you'd like to add features, fix bugs, or improve documentation:
 
-### Development Setup
-```bash
-# Clone and setup
-git clone https://github.com/LSDJesus/ComfyUI-Luna-Collection.git
-cd ComfyUI-Luna-Collection
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-# Install development dependencies
-pip install -r requirements-performance.txt
-
-# Run tests
-pytest tests/ -v
-
-# Run performance benchmarks
-python run_performance_tests.py
-```
+Please ensure your code follows the existing style and includes appropriate comments.
 
 ---
 
 ## 📈 Changelog
 
-### v1.0.0 - Production Ready (2025-09-20)
-- ✅ **Complete Validation System**: Comprehensive input validation with caching
-- ✅ **Performance Monitoring**: Real-time performance tracking and optimization
-- ✅ **CI/CD Pipeline**: Automated testing and deployment
-- ✅ **Type Safety**: Full Pylance compatibility
-- ✅ **Documentation**: Comprehensive guides and examples
-- ✅ **41+ Automated Tests**: Complete test coverage
-- ✅ **Performance Benchmarks**: 471K ops/sec validation throughput
+### v1.1.0 - Current (2025-09-21)
+- ✅ **TensorRT Integration**: High-performance TensorRT Face Detailer node
+- ✅ **Enhanced LoRA Stacker**: Dropdown selection, individual toggles, proper tuple format
+- ✅ **MediaPipe Improvements**: Enhanced detailer with Flux compatibility
+- ✅ **Utility Functions**: Local impact_core and trt_engine utilities
+- ✅ **Bug Fixes**: Fixed MediaPipe engine imports, LoRA stack format
 
-### v0.0.2 - Advanced Features (2025-08-22)
-- ➕ **Luna Advanced Upscaler**: Professional-grade upscaling controls
-- 🐛 **Fixed**: Critical logic flaw in upscaling model utilization
-- 📊 **Performance**: Initial performance monitoring capabilities
+### v1.0.0 - Initial Release (2025-08-22)
+- 🎯 **Core Nodes**: Simple, Advanced, and Ultimate SD upscalers
+- 🎯 **MediaPipe Integration**: Face, pose, and hand segmentation
+- 🎯 **LoRA Management**: Stacking and random selection
+- 🎯 **Prompt Processing**: Preprocessing and enhancement tools
+- 🎯 **Workflow Tools**: Multi-saver, parameter bridge, sampler
 
-### v0.0.1 - Foundation (2025-08-22)
-- 🎯 **Luna Simple Upscaler**: Clean, lightweight upscaling
-- 🏗️ **Package Structure**: Established modular architecture
-- 📦 **Initial Release**: Core functionality and documentation
+---
+
+## 🙏 Acknowledgments
+
+This project builds upon the excellent work of the ComfyUI community. Special thanks to:
+
+- **ComfyUI Team** - For the incredible platform and architecture
+- **MediaPipe** - For computer vision and pose estimation capabilities
+- **Impact Pack** - For bbox detection and segmentation utilities
+- **ComfyUI-Impact-Pack** - For LoRA stack compatibility and detailing tools
+- **TensorRT Community** - For high-performance inference optimization
 
 ---
 
@@ -270,29 +245,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🙏 Acknowledgments
+*Built with ❤️ by the Luna Collective*
 
-**Luna Collection** is born from the collaborative synergy between human creativity and AI precision. Special thanks to:
-
-- The ComfyUI community for the incredible platform
-- MediaPipe team for computer vision capabilities
-- PyTorch ecosystem for machine learning foundations
-- The open-source community for inspiration and tools
-
----
-
-## 🎯 Philosophy
-
-> "We build the tools we need, exactly as we need them. Each node is designed to be a clean, powerful, and intuitive component in a larger, more magnificent machine."
-
-**Luna Collection** represents our commitment to:
-- **Modularity**: Clean, reusable components
-- **Quality**: Production-ready with comprehensive testing
-- **Performance**: Optimized for speed and efficiency
-- **Reliability**: Robust error handling and validation
-- **Innovation**: Pushing the boundaries of what's possible
-
----
-
-*Built with ❤️ by the Luna Collective*  
-*Forged in the fires of creativity and precision*

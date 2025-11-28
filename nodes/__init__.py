@@ -25,6 +25,29 @@ from .luna_multi_saver import LunaMultiSaver
 from .luna_parameters_bridge import LunaParametersBridge
 from .luna_sampler import LunaSampler
 from .luna_yolo_annotation_exporter import Luna_YOLO_Annotation_Exporter
+from .luna_yaml_wildcard import (
+    LunaYAMLWildcard,
+    LunaYAMLWildcardBatch,
+    LunaYAMLWildcardExplorer,
+    LunaWildcardBuilder,
+    LunaLoRARandomizer,
+    LunaYAMLInjector,
+    LunaYAMLPathExplorer,
+)
+
+# Import shared daemon nodes
+from .luna_shared_vae import (
+    LunaSharedVAEEncode,
+    LunaSharedVAEDecode,
+    LunaSharedVAEEncodeTiled,
+    LunaSharedVAEDecodeTiled,
+    LunaDaemonStatus,
+)
+from .luna_shared_clip import (
+    LunaSharedCLIPEncode,
+    LunaSharedCLIPEncodeSDXL,
+    LunaSharedCLIPEncodeDual,
+)
 
 # Combine all node mappings
 NODE_CLASS_MAPPINGS = {}
@@ -65,6 +88,22 @@ NODE_CLASS_MAPPINGS.update({
     "LunaParametersBridge": LunaParametersBridge,
     "LunaSampler": LunaSampler,
     "Luna_YOLO_Annotation_Exporter": Luna_YOLO_Annotation_Exporter,
+    "LunaYAMLWildcard": LunaYAMLWildcard,
+    "LunaYAMLWildcardBatch": LunaYAMLWildcardBatch,
+    "LunaYAMLWildcardExplorer": LunaYAMLWildcardExplorer,
+    "LunaWildcardBuilder": LunaWildcardBuilder,
+    "LunaLoRARandomizer": LunaLoRARandomizer,
+    "LunaYAMLInjector": LunaYAMLInjector,
+    "LunaYAMLPathExplorer": LunaYAMLPathExplorer,
+    # Shared daemon nodes
+    "LunaSharedVAEEncode": LunaSharedVAEEncode,
+    "LunaSharedVAEDecode": LunaSharedVAEDecode,
+    "LunaSharedVAEEncodeTiled": LunaSharedVAEEncodeTiled,
+    "LunaSharedVAEDecodeTiled": LunaSharedVAEDecodeTiled,
+    "LunaDaemonStatus": LunaDaemonStatus,
+    "LunaSharedCLIPEncode": LunaSharedCLIPEncode,
+    "LunaSharedCLIPEncodeSDXL": LunaSharedCLIPEncodeSDXL,
+    "LunaSharedCLIPEncodeDual": LunaSharedCLIPEncodeDual,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -85,4 +124,20 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "LunaParametersBridge": "Luna Parameters Bridge",
     "LunaSampler": "Luna Sampler",
     "Luna_YOLO_Annotation_Exporter": "Luna YOLO Annotation Exporter",
+    "LunaYAMLWildcard": "Luna YAML Wildcard",
+    "LunaYAMLWildcardBatch": "Luna YAML Wildcard Batch",
+    "LunaYAMLWildcardExplorer": "Luna YAML Wildcard Explorer",
+    "LunaWildcardBuilder": "Luna Wildcard Builder",
+    "LunaLoRARandomizer": "Luna LoRA Randomizer",
+    "LunaYAMLInjector": "Luna YAML Injector",
+    "LunaYAMLPathExplorer": "Luna YAML Path Explorer",
+    # Shared daemon nodes
+    "LunaSharedVAEEncode": "Luna Shared VAE Encode",
+    "LunaSharedVAEDecode": "Luna Shared VAE Decode",
+    "LunaSharedVAEEncodeTiled": "Luna Shared VAE Encode (Tiled)",
+    "LunaSharedVAEDecodeTiled": "Luna Shared VAE Decode (Tiled)",
+    "LunaDaemonStatus": "Luna Daemon Status",
+    "LunaSharedCLIPEncode": "Luna Shared CLIP Encode",
+    "LunaSharedCLIPEncodeSDXL": "Luna Shared CLIP Encode (SDXL)",
+    "LunaSharedCLIPEncodeDual": "Luna Shared CLIP Encode (Dual)",
 })
