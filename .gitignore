@@ -1,3 +1,52 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyc
+
+# Byte-compiled / optimized / DLL files
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Project-specific
 embedding_metadata/
 lora_metadata/
 tree*.*
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+test_reports/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
