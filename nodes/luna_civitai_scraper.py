@@ -32,6 +32,14 @@ try:
 except ImportError:
     HAS_AIOHTTP = False
 
+# Import Luna metadata database
+try:
+    from utils.luna_metadata_db import get_db, store_civitai_metadata
+    HAS_METADATA_DB = True
+except ImportError:
+    HAS_METADATA_DB = False
+    print("LunaCivitai: Metadata database not available")
+
 # Try to import PromptServer for web endpoints
 try:
     from server import PromptServer
@@ -474,6 +482,15 @@ class LunaCivitaiScraper:
         if write_sidecar:
             write_swarm_json_sidecar(model_path, metadata)
         
+        # Store in Luna metadata database
+        if HAS_METADATA_DB:
+            try:
+                db_model_type = "lora" if model_type == "LoRA" else "embedding"
+                store_civitai_metadata(model_name, db_model_type, metadata, tensor_hash)
+                print(f"LunaCivitai: Stored metadata in database for {model_name}")
+            except Exception as e:
+                print(f"LunaCivitai: Warning - failed to store in database: {e}")
+        
         status = f"Success! Found: {title}"
         if trigger_words:
             status += f"\nTriggers: {trigger_words[:100]}{'...' if len(trigger_words) > 100 else ''}"
@@ -605,6 +622,14 @@ class LunaCivitaiBatchScraper:
                 success = write_safetensors_header(model_path, metadata)
             if write_sidecar:
                 write_swarm_json_sidecar(model_path, metadata)
+            
+            # Store in database
+            if HAS_METADATA_DB:
+                try:
+                    db_model_type = "lora" if model_type == "LoRA" else "embedding"
+                    store_civitai_metadata(model_name, db_model_type, metadata, tensor_hash)
+                except Exception as e:
+                    print(f"LunaCivitai: DB write failed for {model_name}: {e}")
             
             if success:
                 title = metadata.get("modelspec.title", model_name)
