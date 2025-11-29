@@ -1,12 +1,12 @@
 # 🌙 ComfyUI Luna Collection
 
-![Version](https://img.shields.io/badge/version-v1.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 
 **A comprehensive suite of ComfyUI custom nodes for advanced image processing, model management, and workflow automation.**
 
-Luna Collection provides a modular set of tools for image upscaling, MediaPipe-based detailing, LoRA stacking, prompt preprocessing, and more. Each node is designed to be intuitive and integrate seamlessly into your ComfyUI workflows.
+Luna Collection provides a modular set of tools for image upscaling, MediaPipe-based detailing, LoRA stacking, YAML wildcards, multi-instance VRAM sharing, and more. Each node is designed to be intuitive and integrate seamlessly into your ComfyUI workflows.
 
 ---
 
@@ -16,11 +16,12 @@ Luna Collection provides a modular set of tools for image upscaling, MediaPipe-b
 - **Advanced Upscaling**: Multiple upscaling nodes with model-based and resampling methods
 - **MediaPipe Integration**: Face, hand, pose, and body segmentation and detailing
 - **LoRA Management**: Advanced LoRA stacking with individual strength controls
+- **YAML Wildcards**: Hierarchical prompt templates with nested path resolution
+- **Luna Daemon**: Multi-instance VRAM sharing for VAE/CLIP across ComfyUI instances
+- **Civitai Integration**: Automatic metadata scraping with local SQLite database
 - **Prompt Processing**: Comprehensive text preprocessing and enhancement tools
-- **Model Loading**: Intelligent checkpoint and embedding management
 - **TensorRT Support**: High-performance inference with TensorRT engines
-- **YOLO Integration**: Annotation export for object detection workflows
-- **Image Captioning**: Automated image description generation
+- **Input Validation**: Pydantic-based validation for all node inputs
 
 ---
 
@@ -85,6 +86,33 @@ The nodes will be available under the **`Luna Collection`** or **`Luna/`** categ
 | **Luna Load Preprocessed** | Load saved prompts | Prompt library management |
 | **Luna Save Negative Prompt** | Save negative prompts | Reusable negative prompt templates |
 
+### 🎲 **YAML Wildcards**
+| Node | Description | Key Features |
+|------|-------------|--------------|
+| **Luna YAML Wildcard** | Hierarchical YAML wildcard expansion | Nested path resolution, templates, numeric ranges |
+| **Luna YAML Wildcard Batch** | Generate multiple prompts at once | Batch processing, variation generation |
+| **Luna YAML Wildcard Explorer** | Browse and preview wildcards | Interactive exploration of YAML files |
+| **Luna Wildcard Builder** | Construct prompts with wildcards | Visual prompt building |
+| **Luna LoRA Randomizer** | Random LoRA selection from YAML | Weighted random selection |
+| **Luna Wildcard CSV Injector** | Import CSV data into YAML | Batch data import |
+
+### 🔗 **Luna Daemon (Multi-Instance VRAM Sharing)**
+| Node | Description | Key Features |
+|------|-------------|--------------|
+| **Luna Shared VAE Encode** | Encode via daemon's shared VAE | Offload VAE to separate GPU |
+| **Luna Shared VAE Decode** | Decode via daemon's shared VAE | Free VRAM on main GPU |
+| **Luna Shared VAE Encode (Tiled)** | Tiled encoding for large images | Memory-efficient encoding |
+| **Luna Shared VAE Decode (Tiled)** | Tiled decoding for large images | Memory-efficient decoding |
+| **Luna Shared CLIP Encode** | Encode via daemon's shared CLIP | Offload CLIP to separate GPU |
+| **Luna Shared CLIP Encode (SDXL)** | SDXL dual CLIP encoding | SDXL-specific encoding |
+| **Luna Daemon Status** | Check daemon connection status | Health monitoring |
+
+### 🌐 **Civitai Integration**
+| Node | Description | Key Features |
+|------|-------------|--------------|
+| **Luna Civitai Metadata Scraper** | Fetch metadata from Civitai | Trigger words, tags, descriptions |
+| **Luna Civitai Batch Scraper** | Bulk scrape multiple models | Folder-based batch processing |
+
 ### 🔧 **Workflow & Utilities**
 | Node | Description | Key Features |
 |------|-------------|--------------|
@@ -129,6 +157,67 @@ The nodes will be available under the **`Luna Collection`** or **`Luna/`** categ
 - Configurable tile size and overlap
 - Support for various upscaling models
 
+### 🎲 Luna YAML Wildcard System
+A powerful hierarchical wildcard system using YAML files for organized prompt generation.
+
+**Prompt Syntax:**
+- `{filename}` - Random template from `filename.yaml`'s `templates` section
+- `{filename:path.to.items}` - Random item from nested path
+- `{filename: text with [path.to.item] substitutions}` - Inline template
+- `{1-10}` - Random integer range
+- `{0.5-1.5:0.1}` - Random float with step resolution
+- `__path/file__` - Legacy .txt wildcard reference
+
+**Example YAML structure:**
+```yaml
+templates:
+  full:
+    - "a [category.item] with [another.path]"
+category:
+  item:
+    - option_one
+    - option_two
+```
+
+### 🔗 Luna Daemon (Multi-Instance VRAM Sharing)
+Share VAE and CLIP models across multiple ComfyUI instances to save VRAM.
+
+**Architecture:**
+```
+┌─────────────────────────────────────────────────────────┐
+│                   GPU 1 (cuda:1)                        │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │           Luna VAE/CLIP Daemon                   │   │
+│  │  • VAE + CLIP loaded once                       │   │
+│  │  • Serves encode/decode via local socket        │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+                          ▲ Socket (127.0.0.1:19283)
+        ┌─────────────────┼─────────────────┐
+        ▼                 ▼                 ▼
+┌───────────────┐ ┌───────────────┐ ┌───────────────┐
+│ ComfyUI :8188 │ │ ComfyUI :8189 │ │ ComfyUI :8190 │
+│ UNet only     │ │ UNet only     │ │ UNet only     │
+└───────────────┘ └───────────────┘ └───────────────┘
+```
+
+**Usage:**
+1. Start the daemon: `python luna_daemon/server.py`
+2. Use `Luna Shared VAE Encode/Decode` nodes instead of standard VAE nodes
+3. Multiple ComfyUI instances share the same VAE/CLIP on a separate GPU
+
+### 🌐 Luna Metadata Database
+Local SQLite database for LoRA/embedding metadata storage.
+
+**Location:** `{ComfyUI}/user/default/ComfyUI-Luna-Collection/metadata.db`
+
+**Features:**
+- Fast hash-based lookups (Civitai tensor hash format)
+- Full-text search across trigger words, tags, descriptions
+- User customization: favorites, ratings, custom tags, notes
+- Usage tracking: use count, last used timestamp
+- Query by base model (SDXL, Pony, Illustrious, etc.)
+
 ---
 
 ## 🔧 Dependencies
@@ -145,6 +234,7 @@ The nodes will be available under the **`Luna Collection`** or **`Luna/`** categ
 - **Polygraphy** - TensorRT engine utilities
 - **SAM Models** - For segmentation refinement
 - **Impact Pack** - For bbox detection integration
+- **Pydantic** - For input validation (v2.0+)
 
 Install all dependencies with:
 ```bash
@@ -159,37 +249,31 @@ pip install -r requirements.txt
 ComfyUI-Luna-Collection/
 ├── nodes/                          # All node implementations
 │   ├── loaders/                    # Model loading nodes
-│   │   ├── luna_checkpoint_loader.py
-│   │   ├── luna_lora_stacker.py
-│   │   ├── luna_lora_stacker_random.py
-│   │   ├── luna_embedding_manager.py
-│   │   └── luna_embedding_manager_random.py
 │   ├── upscaling/                  # Image upscaling nodes
-│   │   ├── luna_upscaler_simple.py
-│   │   ├── luna_upscaler_advanced.py
-│   │   └── luna_ultimate_sd_upscale.py
 │   ├── preprocessing/              # Text/prompt processing nodes
-│   │   ├── luna_prompt_preprocessor.py
-│   │   ├── luna_text_processor.py
-│   │   └── luna_unified_prompt_processor.py
 │   ├── detailing/                  # MediaPipe detailing nodes
 │   ├── performance/                # Performance monitoring nodes
+│   ├── luna_yaml_wildcard.py       # YAML wildcard system
+│   ├── luna_shared_vae.py          # Shared VAE nodes (daemon)
+│   ├── luna_shared_clip.py         # Shared CLIP nodes (daemon)
+│   ├── luna_civitai_scraper.py     # Civitai metadata scraper
 │   ├── luna_mediapipe_detailer.py  # MediaPipe face detailer
-│   ├── luna_sampler.py             # Advanced sampler
-│   ├── luna_image_caption.py       # Image captioning
-│   ├── luna_multi_saver.py         # Batch saving
-│   ├── luna_yolo_annotation_exporter.py
-│   └── tensorrt_detailer.py        # TensorRT face detailer
+│   └── ...                         # Other node files
+├── luna_daemon/                    # Multi-instance VRAM sharing daemon
+│   ├── server.py                   # Daemon server
+│   ├── client.py                   # Client utilities
+│   └── config.py                   # Daemon configuration
 ├── utils/                          # Shared utilities
+│   ├── luna_metadata_db.py         # SQLite metadata database
 │   ├── mediapipe_engine.py         # MediaPipe processing engine
 │   ├── trt_engine.py               # TensorRT engine wrapper
-│   ├── impact_core.py              # Impact Pack integration utilities
-│   └── tiling.py                   # Tiling utilities
+│   ├── luna_performance_monitor.py # Performance tracking
+│   └── ...                         # Other utilities
+├── validation/                     # Pydantic input validation
+│   └── __init__.py                 # Validators and models
 ├── js/                             # Frontend JavaScript
-│   ├── luna_lora_stacker.js
-│   └── luna_collection_nodes.js
-├── caption-templates/              # Image captioning templates
-├── test/                           # Unit tests
+├── tests/                          # Unit and integration tests
+├── scripts/                        # Utility scripts
 └── __init__.py                     # Package initialization
 ```
 
@@ -211,7 +295,17 @@ Please ensure your code follows the existing style and includes appropriate comm
 
 ## 📈 Changelog
 
-### v1.1.0 - Current (2025-09-21)
+### v1.2.0 - Current (2025-11-29)
+- ✅ **YAML Wildcard System**: Hierarchical wildcards with templates, nested paths, numeric ranges
+- ✅ **Luna Daemon**: Multi-instance VRAM sharing for VAE/CLIP across ComfyUI instances
+- ✅ **Shared VAE/CLIP Nodes**: Encode/decode via daemon's shared models
+- ✅ **Civitai Integration**: Automatic metadata scraping and embedding
+- ✅ **SQLite Metadata Database**: Local storage for model metadata with full-text search
+- ✅ **Input Validation**: Pydantic-based validation system for all node inputs
+- ✅ **Performance Monitoring**: Execution time tracking and optimization tools
+- ✅ **Project Cleanup**: Removed redundant code, fixed imports, improved structure
+
+### v1.1.0 (2025-09-21)
 - ✅ **TensorRT Integration**: High-performance TensorRT Face Detailer node
 - ✅ **Enhanced LoRA Stacker**: Dropdown selection, individual toggles, proper tuple format
 - ✅ **MediaPipe Improvements**: Enhanced detailer with Flux compatibility
