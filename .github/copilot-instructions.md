@@ -13,7 +13,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {"NodeName": "Display Name"}
 ```
 
 ### Core Components
-- **`utils/`** - Shared engines: `mediapipe_engine.py`, `trt_engine.py`, `luna_logger.py`
+- **`utils/`** - Shared utilities: `mediapipe_engine.py`, `luna_logger.py`, `logic_engine.py`
 - **`nodes/`** - ComfyUI node implementations with `CATEGORY = "Luna/..."` hierarchy
 - **`luna_daemon/`** - Separate VAE/CLIP server for multi-instance VRAM sharing (socket-based, configurable via `config.py`)
 - **`luna_collection/`** - Core library code with validation utilities

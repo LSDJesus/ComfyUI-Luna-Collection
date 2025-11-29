@@ -7,7 +7,12 @@ import socket
 import pickle
 import torch
 from typing import Tuple, Optional, Any
-from .config import DAEMON_HOST, DAEMON_PORT, CLIENT_TIMEOUT
+
+# Try relative import first (when used as module), fall back to direct import
+try:
+    from .config import DAEMON_HOST, DAEMON_PORT, CLIENT_TIMEOUT
+except ImportError:
+    from config import DAEMON_HOST, DAEMON_PORT, CLIENT_TIMEOUT
 
 
 class DaemonConnectionError(Exception):

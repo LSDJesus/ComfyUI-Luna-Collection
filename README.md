@@ -41,11 +41,15 @@ pip install -r requirements.txt
 # For MediaPipe nodes (face/body detection)
 pip install mediapipe opencv-python
 
-# For TensorRT acceleration
-pip install tensorrt polygraphy
-
 # For advanced performance features
 pip install -r requirements-performance.txt
+```
+
+**Recommended companion extension:**
+```bash
+# WaveSpeed - faster than TensorRT without constraints!
+# Install from: https://github.com/chengzeyi/Comfy-WaveSpeed
+# Use "Apply First Block Cache" node for ~40% speedup with no model conversion
 ```
 
 Restart ComfyUI and nodes will appear under `Luna/` categories.
@@ -75,30 +79,31 @@ A powerful hierarchical wildcard system using YAML files instead of traditional 
 __legacy/wildcard__              → Legacy .txt wildcard support
 ```
 
+**SDXL Prompt Assembly Order:**
+
+SDXL-based models (Illustrious, Pony, etc.) work best with comma-delimited atomic tags in this order:
+
+| Priority | Category | Examples |
+|----------|----------|----------|
+| 1 | Quality/Score | `masterpiece, best quality, score_9` |
+| 2 | Style/Medium | `anime, photorealistic, digital art` |
+| 3 | Subject | `1girl, solo, <lora:character:0.8>` |
+| 4 | Physical | `long blonde hair, blue eyes, slim` |
+| 5 | Expression | `smile, looking at viewer, blush` |
+| 6 | Clothing | `white dress, high heels, jewelry` |
+| 7 | Pose/Action | `standing, walking, arms behind back` |
+| 8 | Setting | `classroom, forest, simple background` |
+| 9 | Props | `holding book, bag, glasses` |
+| 10 | Composition | `cowboy shot, from above, close-up` |
+| 11 | Lighting | `dramatic lighting, golden hour, rim light` |
+
+> Front-load important elements - CLIP weights earlier tokens more heavily.
+
 ### 📁 **Model Loaders** (`Luna/Loaders`)
 
 | Node | Purpose |
 |------|---------|
 | **Luna Checkpoint Loader** | Load checkpoints with metadata display |
-| **Luna LoRA Stacker** | Stack up to 4 LoRAs with individual toggles/strengths |
-| **Luna LoRA Stacker Random** | Randomized LoRA selection from categories |
-| **Luna Embedding Manager** | Manage textual inversions with syntax support |
-| **Luna Embedding Manager Random** | Random embedding selection for variation |
-
-### 🎨 **MediaPipe Detailing** (`Luna/Detailing`)
-
-| Node | Purpose |
-|------|---------|
-| **Luna MediaPipe Detailer** | Face/body inpainting with Flux compatibility |
-| **Luna MediaPipe SEGS** | Generate segmentation masks for hands/face/body |
-| **Luna Detailer** | General-purpose region enhancement |
-| **Luna TensorRT Detailer** | High-performance TensorRT-based detailing |
-
-**Detection Targets:**
-- Face, Eyes, Mouth
-- Hands, Feet
-- Torso, Full Body
-- Person Segmentation
 
 ### ⬆️ **Upscaling** (`Luna/Upscaling`)
 
@@ -172,6 +177,7 @@ Smart linking between wildcards and LoRAs/embeddings:
 
 ## 📖 Detailed Guides
 
+- **[WaveSpeed Acceleration](Docs/guides/wavespeed_acceleration.md)** - 🚀 40% faster inference (recommended!)
 - **[YAML Wildcard Guide](Docs/guides/yaml_wildcards.md)** - Complete YAML wildcard syntax and examples
 - **[Daemon Setup Guide](luna_daemon/README.md)** - Multi-instance VRAM sharing setup
 - **[LoRA Connections Guide](Docs/guides/lora_connections.md)** - Smart LoRA/embedding linking
@@ -186,45 +192,34 @@ Smart linking between wildcards and LoRAs/embeddings:
 ComfyUI-Luna-Collection/
 ├── nodes/                          # All node implementations
 │   ├── loaders/                    # Model loading nodes
-│   │   ├── luna_checkpoint_loader.py
-│   │   ├── luna_lora_stacker.py
-│   │   ├── luna_lora_stacker_random.py
-│   │   ├── luna_embedding_manager.py
-│   │   └── luna_embedding_manager_random.py
+│   │   └── luna_checkpoint_loader.py
+│   ├── preprocessing/              # Prompt processing nodes
+│   │   ├── luna_prompt_preprocessor.py
+│   │   └── luna_logic_resolver.py
 │   ├── upscaling/                  # Image upscaling nodes
 │   │   ├── luna_upscaler_simple.py
 │   │   ├── luna_upscaler_advanced.py
 │   │   └── luna_ultimate_sd_upscale.py
-│   ├── preprocessing/              # Prompt processing nodes
-│   │   ├── luna_prompt_preprocessor.py
-│   │   ├── luna_text_processor.py
-│   │   ├── luna_logic_resolver.py
-│   │   └── luna_unified_prompt_processor.py
-│   ├── detailing/                  # MediaPipe detailing nodes
-│   │   ├── luna_detailer.py
-│   │   ├── luna_mediapipe_detailer.py
-│   │   └── luna_mediapipe_segs.py
-│   ├── performance/                # Performance monitoring nodes
 │   ├── luna_yaml_wildcard.py       # YAML wildcard system
 │   ├── luna_wildcard_connections.py # LoRA/embedding linking
 │   ├── luna_shared_vae.py          # Daemon VAE nodes
 │   ├── luna_shared_clip.py         # Daemon CLIP nodes
 │   ├── luna_daemon_config.py       # Daemon configuration
 │   ├── luna_civitai_scraper.py     # Civitai metadata
-│   └── ...
+│   ├── luna_sampler.py             # Custom sampler
+│   └── luna_hyperlora.py           # HyperLoRA integration (experimental)
 ├── luna_daemon/                    # Shared model daemon
-│   ├── server.py                   # Daemon server
+│   ├── server.py                   # Static daemon (v1)
+│   ├── server_v2.py                # Dynamic scaling daemon
 │   ├── client.py                   # Client library
 │   └── config.py                   # Configuration
 ├── utils/                          # Shared utilities
 │   ├── mediapipe_engine.py         # MediaPipe processing
-│   ├── trt_engine.py               # TensorRT engine
 │   ├── logic_engine.py             # Wildcard logic
 │   └── luna_logger.py              # Logging utilities
 ├── scripts/                        # Utility scripts
 │   ├── start_daemon.ps1            # Start daemon server
-│   ├── extract_lora_metadata.py    # LoRA metadata extraction
-│   └── ...
+│   └── start_server_workflow.ps1   # Start ComfyUI with daemon
 ├── Docs/                           # Documentation
 │   └── guides/                     # Usage guides
 ├── tests/                          # Unit tests
@@ -251,7 +246,6 @@ psutil>=5.9.0
 ```
 mediapipe        # MediaPipe nodes
 opencv-python    # Image processing
-tensorrt         # TensorRT acceleration
 aiohttp          # Civitai scraper
 spandrel         # Upscaling models
 ```
@@ -285,7 +279,7 @@ pytest -m integration
 - ✅ **50+ Nodes**: Comprehensive node collection
 
 ### v1.1.0 (2025-09-21)
-- ✅ TensorRT Face Detailer
+- ✅ Enhanced Face Detailer
 - ✅ Enhanced LoRA Stacker
 - ✅ MediaPipe improvements
 

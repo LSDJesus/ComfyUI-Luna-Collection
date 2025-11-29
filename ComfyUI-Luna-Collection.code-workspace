@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../../SD Models/Wildcards"
+		},
+		{
+			"path": "../../../SD Models/wildcards_atomic"
+		},
+		{
+			"path": "../../../SD Models/wildcards_yaml"
+		}
+	],
+	"settings": {}
+}

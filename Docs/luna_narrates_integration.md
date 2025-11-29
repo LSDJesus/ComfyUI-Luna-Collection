@@ -2,325 +2,435 @@
 
 ## Overview
 
-This document describes the ComfyUI nodes and API endpoints created for integration between ComfyUI image generation and the Luna Narrates server. These nodes enable:
+This document describes how Luna Narrates integrates with ComfyUI for image generation. The architecture follows a **clean separation of concerns**:
 
-1. **Sending generation metadata** (LoRAs, prompts, seeds) to Luna Narrates for database storage
-2. **Character-LoRA associations** for consistent character rendering across narrative sessions
-3. **Zero-shot LoRA generation** via HyperLoRA for instant character consistency from reference images
-4. **Pre-conditioned prompt caching** for faster batch generation
+- **Luna Narrates** = Orchestration layer (calls ComfyUI API with workflows)
+- **ComfyUI** = Rendering engine (executes workflows, returns images)
+- **Luna Daemon** = Shared VAE/CLIP service (offloads models to secondary GPU)
+
+**Key Principle:** ComfyUI nodes should be generic and reusable. All Narrates-specific orchestration logic lives in the Narrates server, not in custom ComfyUI nodes.
 
 ---
 
-## API Endpoints to Implement
+## Architecture
 
-The Luna Narrates server should implement these HTTP endpoints:
-
-### POST `/api/comfyui/generation`
-
-Receives metadata about each generated image.
-
-**Request Body:**
-```json
-{
-  "timestamp": "2025-11-28T12:34:56.789Z",
-  "session_id": "narr_abc123",
-  "character_id": "char_luna",
-  "scene_id": "chapter1_scene3",
-  "prompt": "a young woman with silver hair, standing in a forest, fantasy style",
-  "negative_prompt": "blurry, bad quality",
-  "loras": [
-    {
-      "name": "luna_character_v2",
-      "model_strength": 0.8,
-      "clip_strength": 0.8
-    },
-    {
-      "name": "fantasy_style",
-      "model_strength": 0.5,
-      "clip_strength": 0.5
-    }
-  ],
-  "generation_params": {
-    "seed": 12345,
-    "steps": 25,
-    "cfg": 7.0,
-    "sampler": "dpmpp_2m",
-    "scheduler": "karras",
-    "model": "realvisxl_v4"
-  },
-  "image_hash": "a1b2c3d4e5f6g7h8",
-  "image_shape": [1, 1024, 1024, 3]
-}
 ```
-
-**Expected Response:**
-```json
-{
-  "status": "ok",
-  "generation_id": "gen_xyz789"
-}
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         LUNA-Narrates Server                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
+│  │ Preprocessor│→ │ Strategist  │→ │   Writer    │→ │   Dreamer   │    │
+│  │   Agent     │  │   Agent     │  │   Agent     │  │   Agent     │    │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └──────┬──────┘    │
+│                                                             │           │
+│                    Monitors daemon health ←─────────────────┼───┐       │
+│                                                             │   │       │
+└─────────────────────────────────────────────────────────────┼───┼───────┘
+                                                              │   │
+                              ┌────────────────────────────────   │
+                              │ HTTP POST /prompt                 │ WebSocket
+                              │ (workflow + parameters)           │ ws://127.0.0.1:19284
+                              ▼                                   │
+┌─────────────────────────────────────────────────────────────────┼───────┐
+│                    ComfyUI Instance(s)                          │       │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │       │
+│  │ Port 8188   │  │ Port 8189   │  │ Port 8190 ...           │  │       │
+│  │ (Anime)     │  │ (Realistic) │  │ (Other styles)          │  │       │
+│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │       │
+│         │                │                     │                │       │
+│         └────────────────┴─────────────────────┘                │       │
+│                          │                                      │       │
+│              Uses Luna Shared VAE/CLIP nodes                    │       │
+│                          │                                      │       │
+└──────────────────────────┼──────────────────────────────────────┘       │
+                           │ Socket (127.0.0.1:19283)                     │
+                           ▼                                              │
+┌─────────────────────────────────────────────────────────────────────────┤
+│                    Luna VAE/CLIP Daemon (cuda:1)                        │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │  Dynamic Worker Scaling                                          │   │
+│  │  ┌─────────────┐  ┌───────────────────────────────────────────┐ │   │
+│  │  │  CLIP Pool  │  │              VAE Pool                     │ │   │
+│  │  │  1-2 workers│  │  1-4 workers (scales with demand)         │ │◄──┘
+│  │  └─────────────┘  └───────────────────────────────────────────┘ │
+│  └─────────────────────────────────────────────────────────────────┘
+│  WebSocket: ws://127.0.0.1:19284 (status monitoring)
+│  Socket: 127.0.0.1:19283 (VAE/CLIP operations)
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### POST `/api/comfyui/character/register`
+## Luna Daemon WebSocket Monitoring
 
-Registers a LoRA association with a character ID.
+Luna Narrates can monitor the daemon's health and scaling status via WebSocket.
 
-**Request Body:**
-```json
-{
-  "character_id": "char_luna",
-  "character_name": "Luna",
-  "lora": {
-    "name": "luna_character_v2.safetensors",
-    "type": "character",
-    "trigger_words": ["luna", "silver hair", "blue eyes"],
-    "default_strength": 0.8
-  },
-  "timestamp": "2025-11-28T12:34:56.789Z"
-}
+### Connection
+
+```
+ws://127.0.0.1:19284
 ```
 
-**LoRA Types:** `character`, `style`, `concept`, `pose`, `clothing`
+### Message Types
 
----
+#### 1. Status Updates (automatic, every 1 second)
 
-### POST `/api/comfyui/webhook`
-
-Generic webhook for custom events.
-
-**Request Body:**
 ```json
 {
-  "event_type": "custom",
-  "session_id": "narr_abc123",
-  "timestamp": "2025-11-28T12:34:56.789Z",
+  "type": "status",
   "data": {
-    // arbitrary JSON payload
+    "status": "ok",
+    "version": "2.0-dynamic",
+    "device": "cuda:1",
+    "precision": "bf16",
+    "uptime_seconds": 3600.5,
+    "total_requests": 1234,
+    "vram_used_gb": 3.2,
+    "vram_total_gb": 12.0,
+    "vae_pool": {
+      "type": "vae",
+      "active_workers": 2,
+      "queue_depth": 0,
+      "total_requests": 800,
+      "worker_ids": [0, 1]
+    },
+    "clip_pool": {
+      "type": "clip",
+      "active_workers": 1,
+      "queue_depth": 0,
+      "total_requests": 434,
+      "worker_ids": [0]
+    }
   }
 }
 ```
 
----
+#### 2. Scaling Events (real-time)
 
-## ComfyUI Nodes Available
-
-### Luna Narrates - Send Generation
-**Node Name:** `LunaNarratesSendGeneration`
-
-Sends generation metadata to Luna Narrates server after image generation.
-
-**Inputs:**
-| Input | Type | Required | Description |
-|-------|------|----------|-------------|
-| image | IMAGE | Yes | The generated image |
-| prompt | STRING | Yes | Prompt used for generation |
-| session_id | STRING | No | Narrative session ID |
-| character_id | STRING | No | Character this image is for |
-| scene_id | STRING | No | Scene/chapter identifier |
-| lora_stack | LORA_STACK | No | LoRA stack from stacker nodes |
-| lora_names_csv | STRING | No | Alternative: comma-separated LoRA names |
-| negative_prompt | STRING | No | Negative prompt |
-| seed | INT | No | Generation seed |
-| steps | INT | No | Sampling steps |
-| cfg | FLOAT | No | CFG scale |
-| sampler_name | STRING | No | Sampler name |
-| scheduler | STRING | No | Scheduler name |
-| model_name | STRING | No | Model name |
-| server_url | STRING | No | Override default server URL |
-| endpoint | STRING | No | API endpoint path |
-| async_send | BOOLEAN | No | Non-blocking send (default: true) |
-
-**Outputs:**
-| Output | Type | Description |
-|--------|------|-------------|
-| response | STRING | Server response |
-| success | BOOLEAN | Whether send succeeded |
-
----
-
-### Luna Narrates - Extract LoRAs
-**Node Name:** `LunaNarratesLoRAExtractor`
-
-Extracts LoRA information from various sources.
-
-**Inputs:**
-| Input | Type | Description |
-|-------|------|-------------|
-| lora_stack | LORA_STACK | LoRA stack from stacker nodes |
-| prompt | STRING | Prompt with `<lora:name:weight>` syntax |
-| model | MODEL | Model to extract patches from |
-| include_weights | BOOLEAN | Include strength values in output |
-
-**Outputs:**
-| Output | Type | Description |
-|--------|------|-------------|
-| lora_names_json | STRING | JSON array of LoRA info |
-| lora_names_csv | STRING | Comma-separated names |
-| lora_count | INT | Number of LoRAs found |
-
----
-
-### Luna Narrates - Register Character LoRA
-**Node Name:** `LunaNarratesCharacterLoRA`
-
-Registers a character → LoRA association in the database.
-
-**Inputs:**
-| Input | Type | Description |
-|-------|------|-------------|
-| character_id | STRING | Unique character identifier |
-| lora_name | STRING | LoRA filename |
-| character_name | STRING | Human-readable name |
-| trigger_words | STRING | Comma-separated triggers |
-| default_strength | FLOAT | Default application strength |
-| lora_type | ENUM | character/style/concept/pose/clothing |
-
----
-
-## Configuration
-
-### Environment Variables
-
-The ComfyUI nodes use these environment variables (with defaults):
-
-```bash
-LUNA_NARRATES_HOST=127.0.0.1
-LUNA_NARRATES_PORT=8765
-LUNA_NARRATES_ENDPOINT=/api/comfyui/generation
+```json
+{
+  "type": "scaling",
+  "data": {
+    "event": "scale_up",
+    "pool": "vae",
+    "worker_id": 2,
+    "active_workers": 3,
+    "vram_available_gb": 4.5
+  }
+}
 ```
 
-### In-Node Override
-
-Each node also accepts `server_url` as an optional input to override the default.
-
----
-
-## HyperLoRA Integration (Experimental)
-
-For zero-shot character consistency, HyperLoRA nodes are available:
-
-### Luna HyperLoRA Generate
-**Node Name:** `LunaHyperLoRAGenerate`
-
-Generates LoRA weights from reference images using ByteDance's HyperLoRA.
-
-**Inputs:**
-| Input | Type | Description |
-|-------|------|-------------|
-| reference_images | IMAGE | Reference image(s) of character |
-| character_id | STRING | Character ID for caching |
-| save_to_disk | BOOLEAN | Cache to `models/loras/hyperlora_cache/` |
-| use_cached | BOOLEAN | Use cached if available |
-
-**Outputs:**
-| Output | Type | Description |
-|--------|------|-------------|
-| lora_weights | LORA_WEIGHTS | In-memory LoRA tensors |
-| lora_path | STRING | Path to cached file (if saved) |
-| character_hash | STRING | Hash of reference images |
-
-**Workflow Options:**
-1. **In-memory application:** Use `LunaHyperLoRAApply` node to apply weights directly
-2. **Cached reuse:** Set `save_to_disk=True`, then use standard LoRA loaders with the cached path
-
----
-
-## Example Workflow
-
+```json
+{
+  "type": "scaling",
+  "data": {
+    "event": "scale_down",
+    "pool": "vae",
+    "worker_id": 2,
+    "active_workers": 2,
+    "vram_available_gb": 5.1
+  }
+}
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  1. Generate image with character LoRA                          │
-│     [Load Checkpoint] → [Luna LoRA Stacker] → [Apply LoRA]      │
-│                               ↓                                  │
-│                          LORA_STACK                              │
-│                               ↓                                  │
-│  2. Extract LoRA info    [Luna LoRA Extractor]                  │
-│                               ↓                                  │
-│                          lora_names_json                         │
-│                               ↓                                  │
-│  3. Generate image       [KSampler] → [VAE Decode] → image      │
-│                               ↓                                  │
-│  4. Send to server       [Luna Narrates - Send Generation]      │
-│                               │                                  │
-│                               ↓                                  │
-│                          HTTP POST to Luna Narrates              │
-│                          /api/comfyui/generation                 │
-└─────────────────────────────────────────────────────────────────┘
+
+#### 3. On-Demand Status Request
+
+**Send:**
+```json
+{"type": "get_status"}
+```
+
+**Receive:** Full status message immediately.
+
+### Example: Python Client
+
+```python
+import asyncio
+import websockets
+import json
+
+async def monitor_daemon():
+    uri = "ws://127.0.0.1:19284"
+    
+    async with websockets.connect(uri) as ws:
+        # Receive messages
+        async for message in ws:
+            data = json.loads(message)
+            
+            if data["type"] == "status":
+                status = data["data"]
+                print(f"Daemon: {status['status']}, VRAM: {status['vram_used_gb']:.1f}GB")
+                print(f"  VAE workers: {status['vae_pool']['active_workers']}")
+                print(f"  CLIP workers: {status['clip_pool']['active_workers']}")
+                
+            elif data["type"] == "scaling":
+                event = data["data"]
+                print(f"Scaling: {event['pool']} {event['event']} → {event['active_workers']} workers")
+
+asyncio.run(monitor_daemon())
 ```
 
 ---
 
-## Database Schema Suggestions
+## ComfyUI API Integration
 
-Based on the data being sent, Luna Narrates might store:
+Luna Narrates calls ComfyUI's standard HTTP API - no custom bridge nodes needed.
 
-### `generations` table
-```sql
-CREATE TABLE generations (
-    id UUID PRIMARY KEY,
-    session_id VARCHAR(255),
-    character_id VARCHAR(255),
-    scene_id VARCHAR(255),
-    prompt TEXT,
-    negative_prompt TEXT,
-    seed BIGINT,
-    steps INT,
-    cfg FLOAT,
-    sampler VARCHAR(50),
-    scheduler VARCHAR(50),
-    model_name VARCHAR(255),
-    image_hash VARCHAR(64),
-    created_at TIMESTAMP
-);
+### Queue a Workflow
+
+```http
+POST http://127.0.0.1:8188/prompt
+Content-Type: application/json
+
+{
+  "prompt": { /* workflow JSON */ },
+  "client_id": "luna-narrates-session-123"
+}
 ```
 
-### `generation_loras` table
-```sql
-CREATE TABLE generation_loras (
-    id UUID PRIMARY KEY,
-    generation_id UUID REFERENCES generations(id),
-    lora_name VARCHAR(255),
-    model_strength FLOAT,
-    clip_strength FLOAT
-);
+### Monitor Execution (WebSocket)
+
+```
+ws://127.0.0.1:8188/ws?clientId=luna-narrates-session-123
 ```
 
-### `character_loras` table
-```sql
-CREATE TABLE character_loras (
-    id UUID PRIMARY KEY,
-    character_id VARCHAR(255),
-    character_name VARCHAR(255),
-    lora_name VARCHAR(255),
-    lora_type VARCHAR(50),
-    trigger_words TEXT[],
-    default_strength FLOAT,
-    created_at TIMESTAMP
-);
+Messages received:
+- `{"type": "status", "data": {"status": {"exec_info": {...}}}}`
+- `{"type": "executing", "data": {"node": "3"}}`
+- `{"type": "progress", "data": {"value": 5, "max": 20}}`
+- `{"type": "executed", "data": {"node": "9", "output": {...}}}`
+
+### Retrieve Output
+
+```http
+GET http://127.0.0.1:8188/history/{prompt_id}
+GET http://127.0.0.1:8188/view?filename={filename}&subfolder={subfolder}&type=output
 ```
 
 ---
 
-## Files Created
+## Workflow Templates
+
+Luna Narrates should store workflow templates as JSON and inject parameters at runtime.
+
+### Parameter Injection Points
+
+Workflows use node IDs. Common injection points:
+
+| Parameter | Node Type | Field |
+|-----------|-----------|-------|
+| Positive prompt | CLIPTextEncode / Luna Shared CLIP Encode | `text` |
+| Negative prompt | CLIPTextEncode | `text` |
+| Seed | KSampler | `seed` |
+| Image dimensions | EmptyLatentImage | `width`, `height` |
+| LoRA selection | LoraLoader / Luna LoRA Stacker | `lora_name`, `strength_model` |
+
+### Example: Injecting Prompt
+
+```python
+import copy
+
+def inject_params(workflow_template, params):
+    workflow = copy.deepcopy(workflow_template)
+    
+    # Find CLIP text encode node and update prompt
+    for node_id, node in workflow.items():
+        if node["class_type"] == "CLIPTextEncode":
+            if "positive" in node.get("_meta", {}).get("title", "").lower():
+                node["inputs"]["text"] = params["positive_prompt"]
+            elif "negative" in node.get("_meta", {}).get("title", "").lower():
+                node["inputs"]["text"] = params["negative_prompt"]
+        
+        # Update seed
+        if node["class_type"] == "KSampler":
+            node["inputs"]["seed"] = params.get("seed", random.randint(0, 2**32))
+    
+    return workflow
+```
+
+---
+
+## Multi-Instance Load Balancing
+
+With multiple ComfyUI instances (each with WaveSpeed acceleration), Luna Narrates can route requests by style:
+
+| Port | Instance | Model | Use Case |
+|------|----------|-------|----------|
+| 8188 | ComfyUI-Anime | Illustrious | Anime/manga style |
+| 8189 | ComfyUI-Real | RealVisXL | Photorealistic |
+| 8190 | ComfyUI-Pony | Pony | Semi-realistic |
+| 8191 | ComfyUI-Art | Artium | Artistic/stylized |
+
+> **Performance Note:** Using [Comfy-WaveSpeed](https://github.com/chengzeyi/Comfy-WaveSpeed) "Apply First Block Cache" provides ~40% speedup (faster than TensorRT) with no model conversion or resolution constraints.
+
+### Style Router Example
+
+```python
+STYLE_PORTS = {
+    "anime": 8188,
+    "realistic": 8189,
+    "semi_realistic": 8190,
+    "artistic": 8191,
+}
+
+def get_comfyui_endpoint(style: str) -> str:
+    port = STYLE_PORTS.get(style, 8188)
+    return f"http://127.0.0.1:{port}"
+```
+
+---
+
+## Luna Collection Nodes for Narrates Workflows
+
+These ComfyUI-Luna-Collection nodes are useful in Narrates workflows:
+
+### Shared VAE/CLIP (Daemon Nodes)
+
+| Node | Purpose |
+|------|---------|
+| `Luna Shared CLIP Encode` | Text encoding via daemon (frees main GPU) |
+| `Luna Shared VAE Encode` | Image → latent via daemon |
+| `Luna Shared VAE Decode` | Latent → image via daemon |
+| `Luna Daemon Status` | Check daemon health in workflow |
+
+### LoRA Management
+
+| Node | Purpose |
+|------|---------|
+| `Luna LoRA Stacker` | Stack multiple LoRAs with strengths |
+| `Luna LoRA Randomizer` | Random LoRA selection from YAML |
+
+### Prompt Processing
+
+| Node | Purpose |
+|------|---------|
+| `Luna YAML Wildcard` | Template-based prompt generation |
+| `Luna Prompt Combiner` | Combine prompt fragments |
+
+### Upscaling & Detailing
+
+| Node | Purpose |
+|------|---------|
+| `Luna Simple Upscaler` | Model-based upscaling |
+| `Luna Face Detailer` | MediaPipe-based face enhancement |
+
+---
+
+## Daemon Configuration
+
+### Config File: `luna_daemon/config.py`
+
+```python
+# Network
+DAEMON_HOST = "127.0.0.1"
+DAEMON_PORT = 19283      # Socket for VAE/CLIP ops
+DAEMON_WS_PORT = 19284   # WebSocket for monitoring
+
+# Device
+SHARED_DEVICE = "cuda:1"  # Secondary GPU
+
+# Model paths
+CLIP_L_PATH = r"D:\AI\SD Models\clip\Clip-L\clip-L_noMERGE_Universal_CLIP_FLUX_illustrious_Base-fp32.safetensors"
+CLIP_G_PATH = r"D:\AI\SD Models\clip\Clip-G\clip-G_noMERGE_Universal_CLIP_FLUX_illustrious_Base-fp32.safetensors"
+VAE_PATH = "path/to/vae.safetensors"
+
+# Precision (fp32 models converted on load)
+MODEL_PRECISION = "bf16"
+
+# Dynamic scaling
+MAX_VAE_WORKERS = 4
+MAX_CLIP_WORKERS = 2
+MIN_VAE_WORKERS = 1
+MIN_CLIP_WORKERS = 1
+IDLE_TIMEOUT_SEC = 60.0
+```
+
+### Starting the Daemon
+
+```powershell
+# Static mode (single worker each)
+.\scripts\start_daemon.ps1
+
+# Dynamic scaling mode (recommended for Narrates)
+.\scripts\start_daemon.ps1 -Dynamic
+```
+
+---
+
+## Health Checks
+
+Luna Narrates should verify services before dispatching work:
+
+### 1. Daemon Health (Socket)
+
+```python
+import socket
+
+def check_daemon_health(host="127.0.0.1", port=19283) -> bool:
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(2.0)
+        sock.connect((host, port))
+        sock.close()
+        return True
+    except:
+        return False
+```
+
+### 2. Daemon Health (WebSocket - Recommended)
+
+```python
+import asyncio
+import websockets
+import json
+
+async def check_daemon_health_ws(host="127.0.0.1", port=19284) -> dict:
+    try:
+        uri = f"ws://{host}:{port}"
+        async with websockets.connect(uri, close_timeout=2.0) as ws:
+            # Request status
+            await ws.send(json.dumps({"type": "get_status"}))
+            response = await asyncio.wait_for(ws.recv(), timeout=2.0)
+            return json.loads(response)["data"]
+    except:
+        return {"status": "offline"}
+```
+
+### 3. ComfyUI Health
+
+```python
+import httpx
+
+async def check_comfyui_health(port=8188) -> bool:
+    try:
+        async with httpx.AsyncClient() as client:
+            r = await client.get(f"http://127.0.0.1:{port}/system_stats", timeout=2.0)
+            return r.status_code == 200
+    except:
+        return False
+```
+
+---
+
+## Removed Components
+
+The following were removed as they belong in Luna Narrates, not ComfyUI:
+
+| Removed | Reason |
+|---------|--------|
+| `luna_narrates_bridge.py` | HTTP bridge to Narrates - orchestration belongs in Narrates server |
+
+**Principle:** ComfyUI receives workflows via API. It doesn't need to know about Narrates sessions, characters, or story context.
+
+---
+
+## Files Reference
 
 | File | Purpose |
 |------|---------|
-| `nodes/luna_narrates_bridge.py` | HTTP communication nodes |
-| `nodes/luna_hyperlora.py` | HyperLoRA generation nodes |
-
----
-
-## Dependencies
-
-The bridge nodes require `aiohttp` for async HTTP:
-
-```bash
-pip install aiohttp
-```
-
-HyperLoRA nodes require the model to be downloaded from:
-https://huggingface.co/bytedance-research/HyperLoRA
-
-Place in: `models/hyperlora/`
+| `luna_daemon/server.py` | Static daemon (v1) |
+| `luna_daemon/server_v2.py` | Dynamic scaling daemon with WebSocket |
+| `luna_daemon/client.py` | Client library for nodes |
+| `luna_daemon/config.py` | Configuration |
+| `nodes/loaders/luna_shared_*.py` | Daemon-connected nodes |
+| `scripts/start_daemon.ps1` | Daemon startup script |
+| `scripts/start_server_workflow.ps1` | ComfyUI + daemon launcher |

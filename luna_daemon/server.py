@@ -25,11 +25,24 @@ comfy_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..',
 if comfy_path not in sys.path:
     sys.path.insert(0, comfy_path)
 
-from .config import (
-    DAEMON_HOST, DAEMON_PORT, SHARED_DEVICE,
-    VAE_PATH, CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
-    MAX_WORKERS, LOG_LEVEL
-)
+# Add daemon folder to path for direct script execution
+daemon_path = os.path.dirname(os.path.abspath(__file__))
+if daemon_path not in sys.path:
+    sys.path.insert(0, daemon_path)
+
+# Try relative import first (when used as module), fall back to direct import
+try:
+    from .config import (
+        DAEMON_HOST, DAEMON_PORT, SHARED_DEVICE,
+        VAE_PATH, CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
+        MAX_WORKERS, LOG_LEVEL, MODEL_PRECISION
+    )
+except ImportError:
+    from config import (
+        DAEMON_HOST, DAEMON_PORT, SHARED_DEVICE,
+        VAE_PATH, CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
+        MAX_WORKERS, LOG_LEVEL, MODEL_PRECISION
+    )
 
 # Setup logging
 logging.basicConfig(
@@ -45,8 +58,9 @@ class VAECLIPDaemon:
     Daemon server that loads VAE and CLIP models once and serves encode/decode requests.
     """
     
-    def __init__(self, device: str = SHARED_DEVICE):
+    def __init__(self, device: str = SHARED_DEVICE, precision: str = MODEL_PRECISION):
         self.device = device
+        self.precision = precision
         self.lock = threading.Lock()
         self.request_count = 0
         self.start_time = None
@@ -54,10 +68,32 @@ class VAECLIPDaemon:
         # Models (loaded on startup)
         self.vae = None
         self.clip = None
+    
+    @property
+    def dtype(self) -> torch.dtype:
+        """Get torch dtype based on precision setting"""
+        if self.precision == "bf16":
+            return torch.bfloat16
+        elif self.precision == "fp16":
+            return torch.float16
+        return torch.float32
+    
+    def _convert_state_dict_precision(self, sd: dict) -> dict:
+        """Convert state dict tensors to target precision"""
+        if self.precision == "fp32":
+            return sd  # No conversion needed
+        
+        converted = {}
+        for key, value in sd.items():
+            if isinstance(value, torch.Tensor) and value.is_floating_point():
+                converted[key] = value.to(self.dtype)
+            else:
+                converted[key] = value
+        return converted
         
     def load_models(self):
-        """Load VAE and CLIP models to GPU"""
-        logger.info(f"Loading models to {self.device}...")
+        """Load VAE and CLIP models to GPU, converting to target precision"""
+        logger.info(f"Loading models to {self.device} (precision: {self.precision})...")
         self.start_time = time.time()
         
         try:
@@ -70,14 +106,22 @@ class VAECLIPDaemon:
             logger.info(f"Loading VAE from: {VAE_PATH}")
             if os.path.exists(VAE_PATH):
                 sd = comfy.utils.load_torch_file(VAE_PATH)
+                
+                # Convert to target precision (bf16 recommended)
+                if self.precision != "fp32":
+                    logger.info(f"Converting VAE to {self.precision}...")
+                    sd = self._convert_state_dict_precision(sd)
+                
                 self.vae = comfy.sd.VAE(sd=sd)
                 self.current_vae_path = VAE_PATH
-                logger.info("VAE loaded successfully")
+                logger.info(f"VAE loaded successfully ({self.precision})")
             else:
                 logger.error(f"VAE file not found: {VAE_PATH}")
                 raise FileNotFoundError(f"VAE not found: {VAE_PATH}")
             
-            # Load CLIP using ComfyUI's loader
+            # Load CLIP using ComfyUI's loader  
+            # Note: ComfyUI's load_clip handles precision internally, but we'll
+            # load manually for full control over precision conversion
             logger.info(f"Loading CLIP from: {CLIP_L_PATH}, {CLIP_G_PATH}")
             clip_paths = []
             if os.path.exists(CLIP_L_PATH):
@@ -88,11 +132,18 @@ class VAECLIPDaemon:
                 self.current_clip_g_path = CLIP_G_PATH
             
             if clip_paths:
+                # Load CLIP with precision conversion
                 self.clip = comfy.sd.load_clip(
                     ckpt_paths=clip_paths,
                     embedding_directory=EMBEDDINGS_DIR if os.path.exists(EMBEDDINGS_DIR) else None
                 )
-                logger.info("CLIP loaded successfully")
+                
+                # Convert CLIP model to target precision
+                if self.precision != "fp32" and hasattr(self.clip, 'cond_stage_model'):
+                    logger.info(f"Converting CLIP to {self.precision}...")
+                    self.clip.cond_stage_model.to(self.dtype)
+                
+                logger.info(f"CLIP loaded successfully ({self.precision})")
             else:
                 logger.error("No CLIP files found!")
                 raise FileNotFoundError("CLIP files not found")
@@ -226,6 +277,7 @@ class VAECLIPDaemon:
         info = {
             "status": "ok",
             "device": self.device,
+            "precision": self.precision,
             "request_count": self.request_count,
             "uptime_seconds": time.time() - self.start_time if self.start_time else 0,
             "vae_loaded": self.vae is not None,
@@ -282,10 +334,15 @@ class VAECLIPDaemon:
                     if os.path.exists(new_vae_path):
                         logger.info(f"Loading new VAE: {new_vae_path}")
                         sd = comfy.utils.load_torch_file(new_vae_path)
+                        
+                        # Convert to target precision
+                        if self.precision != "fp32":
+                            sd = self._convert_state_dict_precision(sd)
+                        
                         self.vae = comfy.sd.VAE(sd=sd)
                         self.current_vae_path = new_vae_path
                         reloaded.append("vae")
-                        logger.info("VAE reloaded successfully")
+                        logger.info(f"VAE reloaded successfully ({self.precision})")
                     else:
                         return {"status": "error", "error": f"VAE not found: {new_vae_path}"}
                 
@@ -446,6 +503,7 @@ def main():
     print("=" * 60)
     print("  Luna VAE/CLIP Daemon")
     print("  Shared model server for multi-instance ComfyUI")
+    print(f"  Device: {SHARED_DEVICE} | Precision: {MODEL_PRECISION}")
     print("=" * 60)
     print()
     
