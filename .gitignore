@@ -39,6 +39,8 @@ env/
 embedding_metadata/
 lora_metadata/
 tree*.*
+magicmock/
+_narrates_fun/
 
 # Test artifacts
 .pytest_cache/
