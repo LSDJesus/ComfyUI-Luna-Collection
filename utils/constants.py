@@ -30,7 +30,8 @@ MODEL_EXTENSIONS = [".safetensors", ".ckpt", ".pth"]
 
 # Performance monitoring
 PERFORMANCE_LOG_PREFIX = "[LunaPerformance]"
-LOG_FORMAT = "[{node_name}] {message}"
+LOG_FORMAT = "%(asctime)s [Luna] %(levelname)s: %(message)s"
+LOG_DATE_FORMAT = "%H:%M:%S"
 
 # Error messages
 ERROR_MESSAGES = {

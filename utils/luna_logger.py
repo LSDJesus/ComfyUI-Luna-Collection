@@ -7,7 +7,7 @@ Centralized logging system for consistent output across all Luna nodes.
 import logging
 import sys
 from typing import Optional
-from .constants import LOG_FORMAT
+from .constants import LOG_FORMAT, LOG_DATE_FORMAT
 
 class LunaLogger:
     """
@@ -28,8 +28,8 @@ class LunaLogger:
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(level)
 
-        # Create formatter
-        formatter = logging.Formatter(LOG_FORMAT)
+        # Create formatter with proper %-style format
+        formatter = logging.Formatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
         handler.setFormatter(formatter)
 
         self.logger.addHandler(handler)
@@ -37,31 +37,23 @@ class LunaLogger:
 
     def info(self, message: str, node_name: Optional[str] = None):
         """Log info message"""
-        if node_name:
-            self.logger.info(message, extra={"node_name": node_name})
-        else:
-            self.logger.info(message)
+        prefix = f"[{node_name}] " if node_name else ""
+        self.logger.info(f"{prefix}{message}")
 
     def warning(self, message: str, node_name: Optional[str] = None):
         """Log warning message"""
-        if node_name:
-            self.logger.warning(message, extra={"node_name": node_name})
-        else:
-            self.logger.warning(message)
+        prefix = f"[{node_name}] " if node_name else ""
+        self.logger.warning(f"{prefix}{message}")
 
     def error(self, message: str, node_name: Optional[str] = None):
         """Log error message"""
-        if node_name:
-            self.logger.error(message, extra={"node_name": node_name})
-        else:
-            self.logger.error(message)
+        prefix = f"[{node_name}] " if node_name else ""
+        self.logger.error(f"{prefix}{message}")
 
     def debug(self, message: str, node_name: Optional[str] = None):
         """Log debug message"""
-        if node_name:
-            self.logger.debug(message, extra={"node_name": node_name})
-        else:
-            self.logger.debug(message)
+        prefix = f"[{node_name}] " if node_name else ""
+        self.logger.debug(f"{prefix}{message}")
 
 # Global logger instance
 luna_logger = LunaLogger()
