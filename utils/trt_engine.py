@@ -244,20 +244,91 @@ class Engine:
             self.tensors[binding] = tensor
         nvtx.range_pop()
 
-    def infer(self, feed_dict, stream, use_cuda_graph=False):
+    def infer(self, feed_dict, stream, use_cuda_graph=False, synchronize=True):
+        """
+        Run TensorRT inference.
+        
+        Args:
+            feed_dict: Dict mapping input tensor names to tensors
+            stream: CUDA stream (can be torch.cuda.current_stream().cuda_stream)
+            use_cuda_graph: Whether to use CUDA graphs for repeated inference
+            synchronize: Whether to synchronize stream after inference (recommended True)
+        
+        Returns:
+            Dict of output tensors
+        """
         nvtx.range_push("set_tensors")
         for name, buf in feed_dict.items():
+            if name not in self.tensors:
+                raise ValueError(f"Unknown input tensor: {name}. Available: {list(self.tensors.keys())}")
             self.tensors[name].copy_(buf)
 
         for name, tensor in self.tensors.items():
             self.context.set_tensor_address(name, tensor.data_ptr())  # type: ignore
         nvtx.range_pop()
+        
         nvtx.range_push("execute")
-        noerror = self.context.execute_async_v3(stream)  # type: ignore
+        # Handle stream - can be a raw CUDA stream or torch stream
+        if hasattr(stream, 'cuda_stream'):
+            cuda_stream = stream.cuda_stream
+        else:
+            cuda_stream = stream
+            
+        noerror = self.context.execute_async_v3(cuda_stream)  # type: ignore
         if not noerror:
-            raise ValueError("ERROR: inference failed.")
+            raise ValueError("ERROR: TensorRT inference failed.")
+        
+        # Synchronize to ensure results are ready before returning
+        if synchronize:
+            torch.cuda.synchronize()
         nvtx.range_pop()
+        
         return self.tensors
+    
+    def warmup(self, feed_dict=None, num_iterations=3):
+        """
+        Warm up the TensorRT engine to trigger JIT compilation of autotuned kernels.
+        First inference is often slower due to this compilation.
+        
+        Args:
+            feed_dict: Optional input dict. If None, uses random data matching input shapes.
+            num_iterations: Number of warm-up iterations (default 3)
+        """
+        print(f"Warming up TensorRT engine with {num_iterations} iterations...")
+        
+        # Create dummy input if not provided
+        if feed_dict is None:
+            feed_dict = {}
+            for idx in range(self.engine.num_io_tensors):  # type: ignore
+                name = self.engine.get_tensor_name(idx)  # type: ignore
+                if self.engine.get_tensor_mode(name) == trt.TensorIOMode.INPUT:  # type: ignore
+                    shape = self.context.get_tensor_shape(name)
+                    dtype = trt.nptype(self.engine.get_tensor_dtype(name))  # type: ignore
+                    feed_dict[name] = torch.randn(tuple(shape), dtype=numpy_to_torch_dtype_dict[dtype]).cuda()
+        
+        stream = torch.cuda.current_stream()
+        for i in range(num_iterations):
+            self.infer(feed_dict, stream, synchronize=True)
+        
+        print("TensorRT engine warm-up complete.")
+    
+    def get_input_names(self):
+        """Get list of input tensor names."""
+        names = []
+        for idx in range(self.engine.num_io_tensors):  # type: ignore
+            name = self.engine.get_tensor_name(idx)  # type: ignore
+            if self.engine.get_tensor_mode(name) == trt.TensorIOMode.INPUT:  # type: ignore
+                names.append(name)
+        return names
+    
+    def get_output_names(self):
+        """Get list of output tensor names."""
+        names = []
+        for idx in range(self.engine.num_io_tensors):  # type: ignore
+            name = self.engine.get_tensor_name(idx)  # type: ignore
+            if self.engine.get_tensor_mode(name) == trt.TensorIOMode.OUTPUT:  # type: ignore
+                names.append(name)
+        return names
 
     def __str__(self):
         out = ""

@@ -287,14 +287,30 @@ def main():
     print("Embedding Metadata Extractor - Safetensors + JSON")
     print("="*80)
     
-    # Paths
-    base_dir = Path(__file__).parent
-    embedding_root_path = Path('D:/AI/SD Models/embeddings')
+    # Paths - try folder_paths first, then fallback
+    base_dir = Path(__file__).parent.parent
     output_dir = base_dir / 'embedding_metadata'
     
-    if not embedding_root_path.exists():
-        print(f"ERROR: Embedding root directory not found: {embedding_root_path}")
-        return
+    try:
+        import sys
+        comfyui_root = base_dir.parent.parent
+        if str(comfyui_root) not in sys.path:
+            sys.path.insert(0, str(comfyui_root))
+        import folder_paths
+        embedding_paths = folder_paths.get_folder_paths("embeddings")
+        embedding_root_path = Path(embedding_paths[0]) if embedding_paths else None
+    except ImportError:
+        embedding_root_path = None
+    
+    if not embedding_root_path or not embedding_root_path.exists():
+        # Fallback - prompt user or use ComfyUI default structure
+        embedding_root_path = base_dir.parent.parent / 'models' / 'embeddings'
+        if not embedding_root_path.exists():
+            print(f"ERROR: Embedding directory not found. Please specify path.")
+            print(f"Tried: {embedding_root_path}")
+            return
+    
+    print(f"Using embeddings directory: {embedding_root_path}")
     
     # Scan all subdirectories
     all_categories = {}

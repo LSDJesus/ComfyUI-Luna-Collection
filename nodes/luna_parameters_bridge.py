@@ -144,18 +144,50 @@ class LunaParametersBridge:
                 clip_skip, batch_size, vae, metadata, luna_pipe, latent_image, parameters_pipe_out)
 
     def _blend_conditionings(self, cond1, cond2, blend_mode, strength):
-        """Blend two conditionings using different modes"""
-        if blend_mode == "add":
-            # Simple addition with strength
-            return cond1 + (cond2 * strength)
-        elif blend_mode == "multiply":
-            # Element-wise multiplication
-            return cond1 * (cond2 * strength)
-        elif blend_mode == "average":
-            # Weighted average
-            return (cond1 + (cond2 * strength)) / 2
-        else:  # replace (default)
+        """
+        Blend two conditionings using different modes.
+        
+        ComfyUI conditioning format: [[tensor, {"pooled_output": pooled, ...}], ...]
+        We need to blend the actual tensors, not the list wrappers.
+        """
+        if blend_mode == "replace":
             return cond1
+        
+        # Extract tensors from conditioning format
+        # Each conditioning is a list of [tensor, metadata_dict] pairs
+        blended = []
+        for c1 in cond1:
+            tensor1 = c1[0]
+            metadata1 = c1[1].copy() if len(c1) > 1 else {}
+            
+            # Find corresponding tensor in cond2 (or use first one)
+            tensor2 = cond2[0][0] if cond2 else tensor1
+            metadata2 = cond2[0][1] if cond2 and len(cond2[0]) > 1 else {}
+            
+            # Blend the main conditioning tensors
+            if blend_mode == "add":
+                blended_tensor = tensor1 + (tensor2 * strength)
+            elif blend_mode == "multiply":
+                blended_tensor = tensor1 * (1.0 + (tensor2 - 1.0) * strength)
+            elif blend_mode == "average":
+                blended_tensor = (tensor1 + tensor2 * strength) / (1.0 + strength)
+            else:
+                blended_tensor = tensor1
+            
+            # Blend pooled_output if both have it
+            if "pooled_output" in metadata1 and "pooled_output" in metadata2:
+                pooled1 = metadata1["pooled_output"]
+                pooled2 = metadata2["pooled_output"]
+                if blend_mode == "add":
+                    metadata1["pooled_output"] = pooled1 + (pooled2 * strength)
+                elif blend_mode == "multiply":
+                    metadata1["pooled_output"] = pooled1 * (1.0 + (pooled2 - 1.0) * strength)
+                elif blend_mode == "average":
+                    metadata1["pooled_output"] = (pooled1 + pooled2 * strength) / (1.0 + strength)
+            
+            blended.append([blended_tensor, metadata1])
+        
+        return blended
 
 
 NODE_CLASS_MAPPINGS = {

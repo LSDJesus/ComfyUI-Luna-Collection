@@ -6,11 +6,28 @@ Tests parsing and selection logic without ComfyUI
 
 import yaml
 import random
+import sys
+import os
 from pathlib import Path
 
+# Try to get wildcards path from folder_paths
+def get_default_wildcards_dir():
+    try:
+        base_dir = Path(__file__).parent.parent
+        comfyui_root = base_dir.parent.parent
+        sys.path.insert(0, str(comfyui_root))
+        import folder_paths
+        paths = folder_paths.get_folder_paths("wildcards")
+        if paths:
+            return paths[0]
+    except ImportError:
+        pass
+    # Fallback to ComfyUI models directory
+    return str(Path(__file__).parent.parent.parent.parent / 'models' / 'wildcards')
+
 class YAMLWildcardTester:
-    def __init__(self, yaml_dir="D:/AI/SD Models/wildcards_atomic", rules_file=None):
-        self.yaml_dir = Path(yaml_dir)
+    def __init__(self, yaml_dir=None, rules_file=None):
+        self.yaml_dir = Path(yaml_dir or get_default_wildcards_dir())
         self.rules = self._load_rules(rules_file or self.yaml_dir / "wildcard_rules.yaml")
         self.cache = {}
     

@@ -21,8 +21,26 @@ from decimal import Decimal, ROUND_HALF_UP
 
 try:
     import folder_paths
+    # Register wildcards as a model folder if not already registered
+    if "wildcards" not in folder_paths.folder_names_and_paths:
+        wildcards_path = os.path.join(folder_paths.models_dir, "wildcards")
+        os.makedirs(wildcards_path, exist_ok=True)
+        folder_paths.folder_names_and_paths["wildcards"] = ([wildcards_path], {".yaml", ".txt"})
 except ImportError:
     folder_paths = None
+
+
+def get_wildcards_dir() -> str:
+    """Get the wildcards directory from ComfyUI's folder_paths"""
+    if folder_paths is not None:
+        try:
+            paths = folder_paths.get_folder_paths("wildcards")
+            if paths:
+                return paths[0]
+        except:
+            pass
+    # Fallback to relative path
+    return os.path.join(os.path.dirname(os.path.dirname(__file__)), "wildcards")
 
 
 class LunaYAMLWildcardParser:
@@ -38,11 +56,9 @@ class LunaYAMLWildcardParser:
     - Nested path selection from any depth
     """
     
-    DEFAULT_TXT_WILDCARD_DIR = "D:/AI/SD Models/Wildcards"
-    
-    def __init__(self, yaml_dir: str, txt_wildcard_dir: str = ""):
-        self.yaml_dir = yaml_dir
-        self.txt_wildcard_dir = txt_wildcard_dir or self.DEFAULT_TXT_WILDCARD_DIR
+    def __init__(self, yaml_dir: str = "", txt_wildcard_dir: str = ""):
+        self.yaml_dir = yaml_dir or get_wildcards_dir()
+        self.txt_wildcard_dir = txt_wildcard_dir or get_wildcards_dir()
         self.cache: Dict[str, dict] = {}
         self.txt_cache: Dict[str, List[str]] = {}  # Cache for .txt wildcard files
         self.rules: Optional[dict] = None
@@ -466,9 +482,6 @@ class LunaYAMLWildcard:
     RETURN_NAMES = ("prompt",)
     FUNCTION = "process_wildcards"
     
-    DEFAULT_YAML_DIR = "D:/AI/SD Models/wildcards_atomic"
-    DEFAULT_TXT_WILDCARD_DIR = "D:/AI/SD Models/Wildcards"
-    
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -487,12 +500,12 @@ class LunaYAMLWildcard:
             },
             "optional": {
                 "yaml_directory": ("STRING", {
-                    "default": cls.DEFAULT_YAML_DIR,
-                    "tooltip": "Directory containing YAML wildcard files"
+                    "default": "",
+                    "tooltip": "Directory containing YAML wildcard files (default: ComfyUI/models/wildcards)"
                 }),
                 "txt_wildcard_directory": ("STRING", {
-                    "default": cls.DEFAULT_TXT_WILDCARD_DIR,
-                    "tooltip": "Directory containing legacy .txt wildcard files (for __path/file__ syntax)"
+                    "default": "",
+                    "tooltip": "Directory containing legacy .txt wildcard files (default: ComfyUI/models/wildcards)"
                 }),
             }
         }
@@ -502,9 +515,9 @@ class LunaYAMLWildcard:
         """Process the prompt template and replace wildcards"""
         
         if not yaml_directory:
-            yaml_directory = self.DEFAULT_YAML_DIR
+            yaml_directory = get_wildcards_dir()
         if not txt_wildcard_directory:
-            txt_wildcard_directory = self.DEFAULT_TXT_WILDCARD_DIR
+            txt_wildcard_directory = get_wildcards_dir()
         
         if not os.path.exists(yaml_directory):
             print(f"[LunaYAMLWildcard] Warning: Directory not found: {yaml_directory}")
@@ -526,9 +539,6 @@ class LunaYAMLWildcardBatch:
     RETURN_NAMES = ("prompts",)
     OUTPUT_IS_LIST = (True,)
     FUNCTION = "generate_batch"
-    
-    DEFAULT_YAML_DIR = "D:/AI/SD Models/wildcards_atomic"
-    DEFAULT_TXT_WILDCARD_DIR = "D:/AI/SD Models/Wildcards"
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -554,11 +564,12 @@ class LunaYAMLWildcardBatch:
             },
             "optional": {
                 "yaml_directory": ("STRING", {
-                    "default": cls.DEFAULT_YAML_DIR,
+                    "default": "",
+                    "tooltip": "Directory containing YAML wildcard files (default: ComfyUI/models/wildcards)"
                 }),
                 "txt_wildcard_directory": ("STRING", {
-                    "default": cls.DEFAULT_TXT_WILDCARD_DIR,
-                    "tooltip": "Directory containing legacy .txt wildcard files"
+                    "default": "",
+                    "tooltip": "Directory containing legacy .txt wildcard files (default: ComfyUI/models/wildcards)"
                 }),
                 "unique_only": ("BOOLEAN", {
                     "default": True,
@@ -573,9 +584,9 @@ class LunaYAMLWildcardBatch:
         """Generate multiple prompt variations"""
         
         if not yaml_directory:
-            yaml_directory = self.DEFAULT_YAML_DIR
+            yaml_directory = get_wildcards_dir()
         if not txt_wildcard_directory:
-            txt_wildcard_directory = self.DEFAULT_TXT_WILDCARD_DIR
+            txt_wildcard_directory = get_wildcards_dir()
         
         if not os.path.exists(yaml_directory):
             return ([prompt_template],)
@@ -611,8 +622,6 @@ class LunaYAMLWildcardExplorer:
     RETURN_NAMES = ("available_paths",)
     FUNCTION = "explore"
     
-    DEFAULT_YAML_DIR = "D:/AI/SD Models/wildcards_atomic"
-    
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -623,7 +632,8 @@ class LunaYAMLWildcardExplorer:
             },
             "optional": {
                 "yaml_directory": ("STRING", {
-                    "default": cls.DEFAULT_YAML_DIR,
+                    "default": "",
+                    "tooltip": "Directory containing YAML wildcard files (default: ComfyUI/models/wildcards)"
                 }),
             }
         }
@@ -632,7 +642,7 @@ class LunaYAMLWildcardExplorer:
         """List all available paths in a YAML file"""
         
         if not yaml_directory:
-            yaml_directory = self.DEFAULT_YAML_DIR
+            yaml_directory = get_wildcards_dir()
         
         if not os.path.exists(yaml_directory):
             return (f"Directory not found: {yaml_directory}",)
@@ -673,9 +683,6 @@ class LunaWildcardBuilder:
     RETURN_TYPES = ("STRING", "STRING", "STRING")
     RETURN_NAMES = ("prompt", "loras_string", "full_prompt")
     FUNCTION = "build_prompt"
-    
-    DEFAULT_YAML_DIR = "D:/AI/SD Models/wildcards_atomic"
-    DEFAULT_TXT_WILDCARD_DIR = "D:/AI/SD Models/Wildcards"
     
     @classmethod
     def get_lora_list(cls) -> List[str]:
@@ -719,11 +726,12 @@ class LunaWildcardBuilder:
             },
             "optional": {
                 "yaml_directory": ("STRING", {
-                    "default": cls.DEFAULT_YAML_DIR,
+                    "default": "",
+                    "tooltip": "Directory containing YAML wildcard files (default: ComfyUI/models/wildcards)"
                 }),
                 "txt_wildcard_directory": ("STRING", {
-                    "default": cls.DEFAULT_TXT_WILDCARD_DIR,
-                    "tooltip": "Directory containing legacy .txt wildcard files"
+                    "default": "",
+                    "tooltip": "Directory containing legacy .txt wildcard files (default: ComfyUI/models/wildcards)"
                 }),
                 # External LoRA string input (from LunaLoRARandomizer or other sources)
                 "lora_string_input": ("STRING", {
@@ -770,9 +778,9 @@ class LunaWildcardBuilder:
         """Build a complete prompt with wildcards, LoRAs, and embeddings"""
         
         if not yaml_directory:
-            yaml_directory = self.DEFAULT_YAML_DIR
+            yaml_directory = get_wildcards_dir()
         if not txt_wildcard_directory:
-            txt_wildcard_directory = self.DEFAULT_TXT_WILDCARD_DIR
+            txt_wildcard_directory = get_wildcards_dir()
         
         # Process wildcards
         if os.path.exists(yaml_directory):
@@ -965,12 +973,10 @@ class LunaYAMLInjector:
     FUNCTION = "inject_items"
     OUTPUT_NODE = True
     
-    DEFAULT_YAML_DIR = "D:/AI/SD Models/wildcards_atomic"
-    
     @classmethod
     def get_yaml_files(cls) -> List[str]:
         """Get list of YAML files in the wildcard directory"""
-        yaml_dir = cls.DEFAULT_YAML_DIR
+        yaml_dir = get_wildcards_dir()
         if not os.path.exists(yaml_dir):
             return ["none"]
         
@@ -1011,7 +1017,8 @@ class LunaYAMLInjector:
             },
             "optional": {
                 "yaml_directory": ("STRING", {
-                    "default": cls.DEFAULT_YAML_DIR,
+                    "default": "",
+                    "tooltip": "Directory containing YAML wildcard files (default: ComfyUI/models/wildcards)"
                 }),
                 "preview_only": ("BOOLEAN", {
                     "default": True,
@@ -1067,7 +1074,7 @@ class LunaYAMLInjector:
         """Inject CSV items into YAML file"""
         
         if not yaml_directory:
-            yaml_directory = self.DEFAULT_YAML_DIR
+            yaml_directory = get_wildcards_dir()
         
         if target_yaml == "none":
             return ("", "Error: No YAML file selected", False)
@@ -1162,12 +1169,10 @@ class LunaYAMLPathExplorer:
     RETURN_NAMES = ("paths",)
     FUNCTION = "explore_paths"
     
-    DEFAULT_YAML_DIR = "D:/AI/SD Models/wildcards_atomic"
-    
     @classmethod
     def get_yaml_files(cls) -> List[str]:
         """Get list of YAML files"""
-        yaml_dir = cls.DEFAULT_YAML_DIR
+        yaml_dir = get_wildcards_dir()
         if not os.path.exists(yaml_dir):
             return ["none"]
         
@@ -1200,7 +1205,8 @@ class LunaYAMLPathExplorer:
             },
             "optional": {
                 "yaml_directory": ("STRING", {
-                    "default": cls.DEFAULT_YAML_DIR,
+                    "default": "",
+                    "tooltip": "Directory containing YAML wildcard files (default: ComfyUI/models/wildcards)"
                 }),
             }
         }
@@ -1232,7 +1238,7 @@ class LunaYAMLPathExplorer:
         """List all available paths in a YAML file"""
         
         if not yaml_directory:
-            yaml_directory = self.DEFAULT_YAML_DIR
+            yaml_directory = get_wildcards_dir()
         
         if yaml_file == "none":
             return ("No YAML file selected",)

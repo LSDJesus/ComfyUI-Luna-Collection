@@ -464,12 +464,26 @@ def main():
     print("ATOMIC WILDCARD PROCESSOR")
     print("="*80)
     
-    # Paths
-    base_dir = Path(__file__).parent
+    # Paths - try folder_paths first
+    base_dir = Path(__file__).parent.parent
     lora_metadata_dir = base_dir / 'lora_metadata'
     embedding_metadata_dir = base_dir / 'embedding_metadata'
-    input_wildcard_dir = Path('D:/AI/SD Models/wildcards_yaml')
     output_dir = base_dir / 'wildcards_atomic'
+    
+    try:
+        import sys
+        comfyui_root = base_dir.parent.parent
+        sys.path.insert(0, str(comfyui_root))
+        import folder_paths
+        wildcards_paths = folder_paths.get_folder_paths("wildcards")
+        input_wildcard_dir = Path(wildcards_paths[0]) if wildcards_paths else None
+    except ImportError:
+        input_wildcard_dir = None
+    
+    if not input_wildcard_dir or not input_wildcard_dir.exists():
+        input_wildcard_dir = base_dir.parent.parent / 'models' / 'wildcards'
+    
+    print(f"Using wildcards directory: {input_wildcard_dir}")
     
     # Initialize registries
     print("\n" + "="*80)

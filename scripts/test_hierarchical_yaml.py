@@ -6,14 +6,31 @@ Tests parsing, path resolution, and random selection
 
 import yaml
 import random
+import sys
+import os
 from pathlib import Path
 from typing import Any, List, Dict, Optional, Union
+
+# Try to get wildcards path from folder_paths
+def get_default_wildcards_dir():
+    try:
+        base_dir = Path(__file__).parent.parent
+        comfyui_root = base_dir.parent.parent
+        sys.path.insert(0, str(comfyui_root))
+        import folder_paths
+        paths = folder_paths.get_folder_paths("wildcards")
+        if paths:
+            return paths[0]
+    except ImportError:
+        pass
+    # Fallback to ComfyUI models directory
+    return str(Path(__file__).parent.parent.parent.parent / 'models' / 'wildcards')
 
 class HierarchicalWildcardParser:
     """Parser for the new hierarchical YAML wildcard format"""
     
-    def __init__(self, yaml_dir: str = "D:/AI/SD Models/wildcards_atomic"):
-        self.yaml_dir = Path(yaml_dir)
+    def __init__(self, yaml_dir: str = None):
+        self.yaml_dir = Path(yaml_dir or get_default_wildcards_dir())
         self.cache: Dict[str, dict] = {}
         self.errors: List[str] = []
     

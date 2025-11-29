@@ -28,13 +28,15 @@ The Luna Daemon:
 
 ### 1. Configure Paths
 
-Edit `luna_daemon/config.py` to match your setup:
+Edit `luna_daemon/config.py` to match your setup. By default, it uses ComfyUI's `folder_paths` to locate models automatically:
 
 ```python
 SHARED_DEVICE = "cuda:1"  # GPU for shared models
-VAE_PATH = "D:/AI/SD Models/vae/sdxl_vae.safetensors"
-CLIP_L_PATH = "D:/AI/SD Models/clip/clip_l.safetensors"
-CLIP_G_PATH = "D:/AI/SD Models/clip/clip_g.safetensors"
+
+# These use folder_paths by default - override with full paths if needed
+VAE_PATH = get_model_path("vae", "sdxl_vae.safetensors")
+CLIP_L_PATH = get_model_path("clip", "clip_l.safetensors")
+CLIP_G_PATH = get_model_path("clip", "clip_g.safetensors")
 ```
 
 ### 2. Start the Daemon

@@ -155,6 +155,27 @@ class DaemonClient:
             "target_width": target_width,
             "target_height": target_height
         })
+    
+    def configure(self, config: dict) -> dict:
+        """
+        Configure the daemon with new model paths.
+        
+        Args:
+            config: Dict with optional keys:
+                - device: GPU device to use (e.g., "cuda:1")
+                - vae_path: Path to VAE model
+                - clip_l_path: Path to CLIP-L model
+                - clip_g_path: Path to CLIP-G model
+                - t5xxl_path: Path to T5-XXL model (for Flux)
+                - embeddings_dir: Path to embeddings directory
+        
+        Returns:
+            Dict with status and list of reloaded models
+        """
+        return self._send_request({
+            "cmd": "configure",
+            "config": config
+        })
 
 
 # Singleton client instance
@@ -193,3 +214,8 @@ def clip_encode(positive: str, negative: str = "") -> Tuple:
 def clip_encode_sdxl(positive: str, negative: str = "", **kwargs) -> Tuple[list, list]:
     """Encode text with SDXL conditioning via daemon"""
     return get_client().clip_encode_sdxl(positive, negative, **kwargs)
+
+
+def configure(config: dict) -> dict:
+    """Configure the daemon with new model paths"""
+    return get_client().configure(config)

@@ -1,10 +1,16 @@
 """Test template resolution for YAML wildcards"""
 
 import sys
-sys.path.insert(0, 'D:/AI/ComfyUI/custom_nodes/ComfyUI-Luna-Collection/nodes')
-from luna_yaml_wildcard import LunaYAMLWildcardParser
+import os
+from pathlib import Path
 
-parser = LunaYAMLWildcardParser('D:/AI/SD Models/wildcards_atomic')
+# Add nodes directory to path
+base_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(base_dir / 'nodes'))
+
+from luna_yaml_wildcard import LunaYAMLWildcardParser, get_wildcards_dir
+
+parser = LunaYAMLWildcardParser(get_wildcards_dir())
 
 # Test 1: {body} should use a template from templates.full/descriptive
 print('Test 1: {body} template selection')

@@ -232,11 +232,31 @@ def main():
     print("LoRA Metadata Extractor - CivitAI Data from SwarmUI LiteDB")
     print("="*80)
     
-    # Paths
-    base_dir = Path(__file__).parent
-    db_path = base_dir / 'model_metadata.ldb'
-    lora_base_path = Path('D:/AI/SD Models/Lora/Illustrious')
+    # Paths - try folder_paths first, then fallback
+    base_dir = Path(__file__).parent.parent
+    db_path = base_dir / 'scripts' / 'model_metadata.ldb'
     output_dir = base_dir / 'lora_metadata'
+    
+    try:
+        import sys
+        comfyui_root = base_dir.parent.parent
+        if str(comfyui_root) not in sys.path:
+            sys.path.insert(0, str(comfyui_root))
+        import folder_paths
+        lora_paths = folder_paths.get_folder_paths("loras")
+        lora_base_path = Path(lora_paths[0]) if lora_paths else None
+    except ImportError:
+        lora_base_path = None
+    
+    if not lora_base_path or not lora_base_path.exists():
+        # Fallback - use ComfyUI default structure
+        lora_base_path = base_dir.parent.parent / 'models' / 'loras'
+        if not lora_base_path.exists():
+            print(f"ERROR: LoRA directory not found. Please specify path.")
+            print(f"Tried: {lora_base_path}")
+            return
+    
+    print(f"Using LoRA directory: {lora_base_path}")
     
     # Extract metadata
     metadata = extract_civitai_metadata(db_path)

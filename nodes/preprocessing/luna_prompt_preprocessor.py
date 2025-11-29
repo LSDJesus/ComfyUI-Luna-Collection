@@ -108,7 +108,7 @@ class LunaPromptPreprocessor:
 
         for i, prompt in enumerate(prompts_to_process):
             current_index = start_index + i
-            filename = "04d"
+            filename = f"{filename_prefix}_{current_index:04d}.safetensors"
             filepath = os.path.join(output_dir, filename)
 
             # Skip if file exists and not overwriting
@@ -130,30 +130,44 @@ class LunaPromptPreprocessor:
 
                 # Encode the combined prompt
                 encoded_result = text_encoder.encode(clip, combined_prompt)
-                encoded_tensor = encoded_result[0]  # CLIPTextEncode returns a tuple
+                conditioning = encoded_result[0]  # CLIPTextEncode returns ([[tensor, dict]],)
+                
+                # Extract the actual tensor and pooled output from conditioning format
+                # ComfyUI conditioning format: [[cond_tensor, {"pooled_output": pooled_tensor, ...}]]
+                cond_tensor = conditioning[0][0]  # The main conditioning tensor
+                cond_metadata = conditioning[0][1]  # The metadata dict with pooled_output
+                pooled_output = cond_metadata.get("pooled_output", None)
 
                 # Quantize if requested
                 if quantize_embeddings:
                     # Quantize to half precision for VRAM savings
-                    encoded_tensor = encoded_tensor.to(torch.float16)
+                    cond_tensor = cond_tensor.to(torch.float16)
+                    if pooled_output is not None:
+                        pooled_output = pooled_output.to(torch.float16)
                     print(f"[LunaPromptPreprocessor] Quantized embedding to float16 for prompt {current_index}")
 
                 # Handle compression level (placeholder for future implementation)
                 if compression_level > 0:
                     print(f"[LunaPromptPreprocessor] Compression level {compression_level} requested (not yet implemented) for prompt {current_index}")
 
-                # Save as safetensors
+                # Save as safetensors - store full conditioning structure
                 tensors_dict = {
-                    "clip_embeddings": encoded_tensor,
+                    "cond_tensor": cond_tensor,  # Main conditioning tensor
                     "original_prompt": prompt,  # Keep original prompt for reference
                     "combined_prompt": combined_prompt,  # Store the final combined prompt
                     "prepend_text": prepend_text,
                     "append_text": append_text,
-                    "index": current_index,
-                    "quantized": quantize_embeddings,  # Track quantization status
-                    "compression_level": compression_level,  # Track compression level
-                    "created": str(datetime.now())  # Add timestamp
+                    "index": torch.tensor([current_index]),  # Must be tensor for safetensors
+                    "quantized": torch.tensor([quantize_embeddings]),  # Track quantization status
+                    "compression_level": torch.tensor([compression_level]),  # Track compression level
                 }
+                
+                # Add pooled_output if present (required for SDXL/FLUX)
+                if pooled_output is not None:
+                    tensors_dict["pooled_output"] = pooled_output
+                    tensors_dict["has_pooled"] = torch.tensor([True])
+                else:
+                    tensors_dict["has_pooled"] = torch.tensor([False])
 
                 save_file(tensors_dict, filepath)
 
