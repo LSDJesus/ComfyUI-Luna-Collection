@@ -7,9 +7,19 @@ from pathlib import Path
 import sys
 
 # Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+_PACKAGE_ROOT = Path(__file__).parent.parent.parent
+if str(_PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PACKAGE_ROOT))
 
-from utils.logic_engine import LunaLogicEngine
+try:
+    from utils.logic_engine import LunaLogicEngine
+except ImportError:
+    # Fallback for different import contexts
+    try:
+        from ...utils.logic_engine import LunaLogicEngine
+    except ImportError:
+        LunaLogicEngine = None
+        print("lunaCore: LunaLogicEngine not available - Luna Logic Resolver disabled")
 
 
 class LunaLogicResolver:
@@ -120,11 +130,15 @@ class LunaLogicResolver:
             return (text, "", error_msg)
 
 
-# Node registration
-NODE_CLASS_MAPPINGS = {
-    "LunaLogicResolver": LunaLogicResolver
-}
+# Node registration - only if LunaLogicEngine is available
+if LunaLogicEngine is not None:
+    NODE_CLASS_MAPPINGS = {
+        "LunaLogicResolver": LunaLogicResolver
+    }
 
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "LunaLogicResolver": "🌙 Luna Logic Resolver"
-}
+    NODE_DISPLAY_NAME_MAPPINGS = {
+        "LunaLogicResolver": "🌙 Luna Logic Resolver"
+    }
+else:
+    NODE_CLASS_MAPPINGS = {}
+    NODE_DISPLAY_NAME_MAPPINGS = {}
