@@ -4,9 +4,9 @@ from . import performance
 from . import upscaling
 from . import detailing
 from . import loaders
+from . import promptcraft
 
 # Import individual files
-from .luna_image_caption import luna_image_caption
 from .luna_load_parameters import LunaLoadParameters
 from .luna_load_preprocessed import (
     LunaSelectPromptFolder,
@@ -24,7 +24,6 @@ from .luna_load_preprocessed import (
 from .luna_multi_saver import LunaMultiSaver
 from .luna_parameters_bridge import LunaParametersBridge
 from .luna_sampler import LunaSampler
-from .luna_yolo_annotation_exporter import Luna_YOLO_Annotation_Exporter
 from .luna_yaml_wildcard import (
     LunaYAMLWildcard,
     LunaYAMLWildcardBatch,
@@ -39,8 +38,6 @@ from .luna_yaml_wildcard import (
 from .luna_shared_vae import (
     LunaSharedVAEEncode,
     LunaSharedVAEDecode,
-    LunaSharedVAEEncodeTiled,
-    LunaSharedVAEDecodeTiled,
     LunaDaemonStatus,
 )
 from .luna_shared_clip import (
@@ -69,9 +66,11 @@ NODE_DISPLAY_NAME_MAPPINGS.update(detailing.NODE_DISPLAY_NAME_MAPPINGS)
 NODE_CLASS_MAPPINGS.update(loaders.NODE_CLASS_MAPPINGS)
 NODE_DISPLAY_NAME_MAPPINGS.update(loaders.NODE_DISPLAY_NAME_MAPPINGS)
 
+NODE_CLASS_MAPPINGS.update(promptcraft.NODE_CLASS_MAPPINGS)
+NODE_DISPLAY_NAME_MAPPINGS.update(promptcraft.NODE_DISPLAY_NAME_MAPPINGS)
+
 # Add mappings from individual files
 NODE_CLASS_MAPPINGS.update({
-    "luna_image_caption": luna_image_caption,
     "LunaLoadParameters": LunaLoadParameters,
     "LunaSelectPromptFolder": LunaSelectPromptFolder,
     "LunaLoadPreprocessedPrompt": LunaLoadPreprocessedPrompt,
@@ -87,7 +86,6 @@ NODE_CLASS_MAPPINGS.update({
     "LunaMultiSaver": LunaMultiSaver,
     "LunaParametersBridge": LunaParametersBridge,
     "LunaSampler": LunaSampler,
-    "Luna_YOLO_Annotation_Exporter": Luna_YOLO_Annotation_Exporter,
     "LunaYAMLWildcard": LunaYAMLWildcard,
     "LunaYAMLWildcardBatch": LunaYAMLWildcardBatch,
     "LunaYAMLWildcardExplorer": LunaYAMLWildcardExplorer,
@@ -98,8 +96,6 @@ NODE_CLASS_MAPPINGS.update({
     # Shared daemon nodes
     "LunaSharedVAEEncode": LunaSharedVAEEncode,
     "LunaSharedVAEDecode": LunaSharedVAEDecode,
-    "LunaSharedVAEEncodeTiled": LunaSharedVAEEncodeTiled,
-    "LunaSharedVAEDecodeTiled": LunaSharedVAEDecodeTiled,
     "LunaDaemonStatus": LunaDaemonStatus,
     "LunaSharedCLIPEncode": LunaSharedCLIPEncode,
     "LunaSharedCLIPEncodeSDXL": LunaSharedCLIPEncodeSDXL,
@@ -107,7 +103,6 @@ NODE_CLASS_MAPPINGS.update({
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
-    "luna_image_caption": "Luna Image Caption",
     "LunaLoadParameters": "Luna Load Parameters",
     "LunaSelectPromptFolder": "Luna Select Prompt Folder",
     "LunaLoadPreprocessedPrompt": "Luna Load Preprocessed Prompt",
@@ -123,7 +118,6 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "LunaMultiSaver": "Luna Multi Saver",
     "LunaParametersBridge": "Luna Parameters Bridge",
     "LunaSampler": "Luna Sampler",
-    "Luna_YOLO_Annotation_Exporter": "Luna YOLO Annotation Exporter",
     "LunaYAMLWildcard": "Luna YAML Wildcard",
     "LunaYAMLWildcardBatch": "Luna YAML Wildcard Batch",
     "LunaYAMLWildcardExplorer": "Luna YAML Wildcard Explorer",
@@ -134,8 +128,6 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     # Shared daemon nodes
     "LunaSharedVAEEncode": "Luna Shared VAE Encode",
     "LunaSharedVAEDecode": "Luna Shared VAE Decode",
-    "LunaSharedVAEEncodeTiled": "Luna Shared VAE Encode (Tiled)",
-    "LunaSharedVAEDecodeTiled": "Luna Shared VAE Decode (Tiled)",
     "LunaDaemonStatus": "Luna Daemon Status",
     "LunaSharedCLIPEncode": "Luna Shared CLIP Encode",
     "LunaSharedCLIPEncodeSDXL": "Luna Shared CLIP Encode (SDXL)",

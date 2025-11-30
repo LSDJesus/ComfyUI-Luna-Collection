@@ -57,7 +57,7 @@ class Luna_Advanced_Upscaler:
             
         return inputs
     
-    RETURN_TYPES = ("IMAGE",); RETURN_NAMES = ("upscaled_image",); FUNCTION = "upscale"; CATEGORY = "Luna Collection"
+    RETURN_TYPES = ("IMAGE",); RETURN_NAMES = ("upscaled_image",); FUNCTION = "upscale"; CATEGORY = "Luna/Upscaling"
 
     def _calculate_auto_tile_size(self, image_width: int, image_height: int, target_resolution: int):
         num_tiles_h = math.ceil(image_height / target_resolution); tile_height = math.ceil(image_height / num_tiles_h)

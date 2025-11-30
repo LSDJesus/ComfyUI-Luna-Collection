@@ -5,15 +5,6 @@
 		},
 		{
 			"path": "../../../SD Models/Wildcards"
-		},
-		{
-			"path": "../../../SD Models/wildcards_atomic"
-		},
-		{
-			"path": "../../../SD Models/wildcards_yaml"
-		},
-		{
-			"path": "../../../SD Models/hyper_lora"
 		}
 	],
 	"settings": {}

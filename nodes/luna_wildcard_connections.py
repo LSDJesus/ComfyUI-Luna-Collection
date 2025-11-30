@@ -47,24 +47,27 @@ class ConnectionsDB:
     @staticmethod
     def get_connections_path() -> str:
         """Get path to connections.json file"""
-        # Check for custom path first
-        wildcards_dir = folder_paths.get_folder_paths("wildcards")[0] if folder_paths.get_folder_paths("wildcards") else None
-        if wildcards_dir:
-            conn_path = os.path.join(wildcards_dir, "connections.json")
-            if os.path.exists(conn_path):
-                return conn_path
+        # Try registered wildcards path first (if another node registered it)
+        try:
+            wildcards_paths = folder_paths.get_folder_paths("wildcards")
+            if wildcards_paths:
+                conn_path = os.path.join(wildcards_paths[0], "connections.json")
+                if os.path.exists(conn_path):
+                    return conn_path
+        except (KeyError, IndexError):
+            pass
         
-        # Fallback to models/wildcards
-        models_path = folder_paths.get_folder_paths("loras")[0]
-        base_path = os.path.dirname(os.path.dirname(models_path))
-        default_path = os.path.join(base_path, "wildcards", "connections.json")
+        # Default: ComfyUI models_dir/wildcards
+        models_dir = getattr(folder_paths, 'models_dir', None)
+        if models_dir:
+            default_path = os.path.join(models_dir, "wildcards", "connections.json")
+            if os.path.exists(default_path):
+                return default_path
+            # Return this path even if it doesn't exist (will be created on first save)
+            return default_path
         
-        # Also check atomic wildcards location
-        atomic_path = r"D:\AI\SD Models\wildcards_atomic\connections.json"
-        if os.path.exists(atomic_path):
-            return atomic_path
-            
-        return default_path
+        # Last resort fallback: alongside this node file
+        return os.path.join(os.path.dirname(__file__), "..", "wildcards", "connections.json")
     
     def load(self, force_reload: bool = False) -> Dict:
         """Load connections database with caching"""

@@ -243,6 +243,8 @@ class LunaSharedVAEEncode:
     
     Use this instead of VAEEncode when running multiple ComfyUI workflows
     to save ~200MB VRAM per workflow.
+    
+    Enable tiled mode for high-resolution images that would otherwise run out of VRAM.
     """
     
     CATEGORY = "Luna/Shared"
@@ -255,10 +257,31 @@ class LunaSharedVAEEncode:
         return {
             "required": {
                 "pixels": ("IMAGE",),
+                "use_tiled": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Enable tiled encoding for high-resolution images to reduce VRAM usage."
+                }),
+            },
+            "optional": {
+                "tile_size": ("INT", {
+                    "default": 512,
+                    "min": 256,
+                    "max": 1024,
+                    "step": 64,
+                    "tooltip": "Size of tiles to encode (only used when tiled is enabled). Smaller = less VRAM but slower."
+                }),
+                "overlap": ("INT", {
+                    "default": 64,
+                    "min": 0,
+                    "max": 256,
+                    "step": 8,
+                    "tooltip": "Overlap between tiles to reduce seams (only used when tiled is enabled)."
+                }),
             }
         }
     
-    def encode(self, pixels: torch.Tensor) -> Tuple[dict]:
+    def encode(self, pixels: torch.Tensor, use_tiled: bool = False, 
+               tile_size: int = 512, overlap: int = 64) -> Tuple[dict]:
         if not DAEMON_AVAILABLE:
             raise RuntimeError(
                 "Luna daemon client not available. "
@@ -273,9 +296,29 @@ class LunaSharedVAEEncode:
             )
         
         try:
-            # Send to daemon for encoding
-            # ComfyUI format is (B, H, W, C) which the daemon expects
-            latents = daemon_client.vae_encode(pixels)
+            if use_tiled:
+                # Check if tiling is actually needed
+                _, h, w, _ = pixels.shape
+                if h <= tile_size and w <= tile_size:
+                    # Image fits in a single tile, use regular encode
+                    latents = daemon_client.vae_encode(pixels)
+                else:
+                    # Use tiled encoding
+                    def encode_fn(tile):
+                        return daemon_client.vae_encode(tile)
+                    
+                    latents = tiled_encode(
+                        pixels, 
+                        encode_fn, 
+                        tile_x=tile_size, 
+                        tile_y=tile_size, 
+                        overlap=overlap,
+                        downscale_ratio=8,
+                        latent_channels=4
+                    )
+            else:
+                # Standard encoding
+                latents = daemon_client.vae_encode(pixels)
             
             return ({"samples": latents},)
             
@@ -292,6 +335,8 @@ class LunaSharedVAEDecode:
     
     Use this instead of VAEDecode when running multiple ComfyUI workflows
     to save ~200MB VRAM per workflow.
+    
+    Enable tiled mode for high-resolution latents that would otherwise run out of VRAM.
     """
     
     CATEGORY = "Luna/Shared"
@@ -304,10 +349,31 @@ class LunaSharedVAEDecode:
         return {
             "required": {
                 "samples": ("LATENT",),
+                "use_tiled": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Enable tiled decoding for high-resolution latents to reduce VRAM usage."
+                }),
+            },
+            "optional": {
+                "tile_size": ("INT", {
+                    "default": 64,
+                    "min": 32,
+                    "max": 128,
+                    "step": 8,
+                    "tooltip": "Size of tiles in latent space (8x in pixel space). Only used when tiled is enabled."
+                }),
+                "overlap": ("INT", {
+                    "default": 16,
+                    "min": 0,
+                    "max": 64,
+                    "step": 4,
+                    "tooltip": "Overlap between tiles in latent space. Only used when tiled is enabled."
+                }),
             }
         }
     
-    def decode(self, samples: dict) -> Tuple[torch.Tensor]:
+    def decode(self, samples: dict, use_tiled: bool = False,
+               tile_size: int = 64, overlap: int = 16) -> Tuple[torch.Tensor]:
         if not DAEMON_AVAILABLE:
             raise RuntimeError(
                 "Luna daemon client not available. "
@@ -324,143 +390,34 @@ class LunaSharedVAEDecode:
         try:
             latents = samples["samples"]
             
-            # Send to daemon for decoding
-            pixels = daemon_client.vae_decode(latents)
+            if use_tiled:
+                _, _, h, w = latents.shape
+                # Check if tiling is actually needed
+                if h <= tile_size and w <= tile_size:
+                    # Latents fit in a single tile, use regular decode
+                    pixels = daemon_client.vae_decode(latents)
+                else:
+                    # Use tiled decoding
+                    def decode_fn(tile):
+                        return daemon_client.vae_decode(tile)
+                    
+                    pixels = tiled_decode(
+                        latents,
+                        decode_fn,
+                        tile_x=tile_size,
+                        tile_y=tile_size,
+                        overlap=overlap,
+                        upscale_ratio=8,
+                        out_channels=3
+                    )
+            else:
+                # Standard decoding
+                pixels = daemon_client.vae_decode(latents)
             
             return (pixels,)
             
         except DaemonConnectionError as e:
             raise RuntimeError(f"Daemon error: {e}")
-
-
-class LunaSharedVAEEncodeTiled:
-    """
-    Tiled VAE encoding using the shared daemon.
-    Useful for high-resolution images that would otherwise run out of VRAM.
-    
-    The image is split into overlapping tiles, each tile is encoded separately
-    by the daemon, and the results are blended back together.
-    """
-    
-    CATEGORY = "Luna/Shared"
-    RETURN_TYPES = ("LATENT",)
-    RETURN_NAMES = ("samples",)
-    FUNCTION = "encode"
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "pixels": ("IMAGE",),
-                "tile_size": ("INT", {
-                    "default": 512,
-                    "min": 256,
-                    "max": 1024,
-                    "step": 64,
-                    "tooltip": "Size of tiles to encode. Smaller = less VRAM but slower."
-                }),
-                "overlap": ("INT", {
-                    "default": 64,
-                    "min": 0,
-                    "max": 256,
-                    "step": 8,
-                    "tooltip": "Overlap between tiles to reduce seams."
-                }),
-            }
-        }
-    
-    def encode(self, pixels: torch.Tensor, tile_size: int, overlap: int) -> Tuple[dict]:
-        if not DAEMON_AVAILABLE or not daemon_client.is_daemon_running():
-            raise RuntimeError("Luna VAE/CLIP Daemon is not running!")
-        
-        # Check if tiling is actually needed
-        _, h, w, _ = pixels.shape
-        if h <= tile_size and w <= tile_size:
-            # Image fits in a single tile, use regular encode
-            latents = daemon_client.vae_encode(pixels)
-            return ({"samples": latents},)
-        
-        # Use tiled encoding
-        def encode_fn(tile):
-            return daemon_client.vae_encode(tile)
-        
-        latents = tiled_encode(
-            pixels, 
-            encode_fn, 
-            tile_x=tile_size, 
-            tile_y=tile_size, 
-            overlap=overlap,
-            downscale_ratio=8,
-            latent_channels=4
-        )
-        
-        return ({"samples": latents},)
-
-
-class LunaSharedVAEDecodeTiled:
-    """
-    Tiled VAE decoding using the shared daemon.
-    Useful for high-resolution latents that would otherwise run out of VRAM.
-    
-    The latents are split into overlapping tiles, each tile is decoded separately
-    by the daemon, and the results are blended back together.
-    """
-    
-    CATEGORY = "Luna/Shared"
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("image",)
-    FUNCTION = "decode"
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "samples": ("LATENT",),
-                "tile_size": ("INT", {
-                    "default": 64,
-                    "min": 32,
-                    "max": 128,
-                    "step": 8,
-                    "tooltip": "Size of tiles in latent space (will be 8x in pixel space)."
-                }),
-                "overlap": ("INT", {
-                    "default": 16,
-                    "min": 0,
-                    "max": 64,
-                    "step": 4,
-                    "tooltip": "Overlap between tiles in latent space."
-                }),
-            }
-        }
-    
-    def decode(self, samples: dict, tile_size: int, overlap: int) -> Tuple[torch.Tensor]:
-        if not DAEMON_AVAILABLE or not daemon_client.is_daemon_running():
-            raise RuntimeError("Luna VAE/CLIP Daemon is not running!")
-        
-        latents = samples["samples"]
-        _, _, h, w = latents.shape
-        
-        # Check if tiling is actually needed
-        if h <= tile_size and w <= tile_size:
-            # Latents fit in a single tile, use regular decode
-            pixels = daemon_client.vae_decode(latents)
-            return (pixels,)
-        
-        # Use tiled decoding
-        def decode_fn(tile):
-            return daemon_client.vae_decode(tile)
-        
-        pixels = tiled_decode(
-            latents,
-            decode_fn,
-            tile_x=tile_size,
-            tile_y=tile_size,
-            overlap=overlap,
-            upscale_ratio=8,
-            out_channels=3
-        )
-        
-        return (pixels,)
 
 
 class LunaDaemonStatus:
@@ -510,15 +467,11 @@ class LunaDaemonStatus:
 NODE_CLASS_MAPPINGS = {
     "LunaSharedVAEEncode": LunaSharedVAEEncode,
     "LunaSharedVAEDecode": LunaSharedVAEDecode,
-    "LunaSharedVAEEncodeTiled": LunaSharedVAEEncodeTiled,
-    "LunaSharedVAEDecodeTiled": LunaSharedVAEDecodeTiled,
     "LunaDaemonStatus": LunaDaemonStatus,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "LunaSharedVAEEncode": "Luna Shared VAE Encode",
     "LunaSharedVAEDecode": "Luna Shared VAE Decode",
-    "LunaSharedVAEEncodeTiled": "Luna Shared VAE Encode (Tiled)",
-    "LunaSharedVAEDecodeTiled": "Luna Shared VAE Decode (Tiled)",
     "LunaDaemonStatus": "Luna Daemon Status",
 }
