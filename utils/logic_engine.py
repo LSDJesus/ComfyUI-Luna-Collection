@@ -8,7 +8,7 @@ import random
 import re
 import os
 from dataclasses import dataclass, field
-from typing import List, Set, Dict, Tuple, Optional
+from typing import List, Set, Dict, Tuple, Optional, Callable
 from pathlib import Path
 
 
@@ -100,11 +100,76 @@ class LunaLogicEngine:
         print(f"Loaded wildcard: {name} ({len(items)} items)")
     
     def _check_circular_dependencies(self, name: str, items: List[LogicItem]):
-        """Detect if any items have circular composition references"""
+        """Detect if any items have circular composition references (A→B→C→A)"""
+        # Direct self-reference check
         for item in items:
             if name in item.composition:
                 raise ValueError(f"Circular dependency detected: {name} references itself in {item.id}")
-            # TODO: Add deeper circular dependency checking (A->B->A)
+        
+        # Build dependency graph for this wildcard file
+        # Note: We can only fully validate after all files are loaded,
+        # but we can detect cycles within what's already loaded
+        self._detect_cycles_dfs(name, items)
+    
+    def _detect_cycles_dfs(self, name: str, items: List[LogicItem]):
+        """Use DFS to detect circular dependencies in composition chains"""
+        # Collect all composition references from this wildcard's items
+        deps = set()
+        for item in items:
+            deps.update(item.composition)
+        
+        if not deps:
+            return  # No compositions, no cycles possible
+        
+        # DFS cycle detection: start from each dependency and see if we can reach 'name'
+        visited = set()
+        rec_stack = set()
+        
+        def dfs(current: str, path: List[str]) -> Optional[List[str]]:
+            """Returns the cycle path if found, None otherwise"""
+            if current not in self.wildcards:
+                return None  # Unknown wildcard, can't check further
+            
+            if current in rec_stack:
+                # Found a cycle - return the path
+                return path + [current]
+            
+            if current in visited:
+                return None  # Already fully explored
+            
+            visited.add(current)
+            rec_stack.add(current)
+            
+            # Get all dependencies of this wildcard
+            for item in self.wildcards[current]:
+                for dep in item.composition:
+                    cycle = dfs(dep, path + [current])
+                    if cycle:
+                        return cycle
+            
+            rec_stack.remove(current)
+            return None
+        
+        # Check if any dependency of 'name' leads back to 'name'
+        # First, temporarily add the new wildcard to check against it
+        temp_items = self.wildcards.get(name)
+        self.wildcards[name] = items
+        
+        try:
+            for item in items:
+                for dep in item.composition:
+                    cycle = dfs(dep, [name])
+                    if cycle:
+                        cycle_str = " → ".join(cycle)
+                        raise ValueError(
+                            f"Circular dependency detected in '{name}' item '{item.id}': {cycle_str}"
+                        )
+        finally:
+            # Restore previous state
+            if temp_items is None:
+                del self.wildcards[name]
+            else:
+                self.wildcards[name] = temp_items
     
     def resolve_prompt(self, template: str, seed: int, initial_context: Optional[Set[str]] = None) -> Tuple[str, str]:
         """
