@@ -6,7 +6,7 @@
 
 **A comprehensive suite of ComfyUI custom nodes for advanced image processing, model management, and workflow automation.**
 
-Luna Collection provides a modular set of tools for image upscaling, MediaPipe-based detailing, LoRA stacking, YAML wildcards, multi-instance VRAM sharing, and more. Each node is designed to be intuitive and integrate seamlessly into your ComfyUI workflows.
+Luna Collection provides a modular set of tools for image upscaling, LoRA stacking, YAML wildcards, multi-instance VRAM sharing, and more. Each node is designed to be intuitive and integrate seamlessly into your ComfyUI workflows.
 
 ---
 
@@ -14,7 +14,7 @@ Luna Collection provides a modular set of tools for image upscaling, MediaPipe-b
 
 ### 🔧 **Core Capabilities**
 - **Advanced Upscaling**: Multiple upscaling nodes with model-based and resampling methods
-- **MediaPipe Integration**: Face, hand, pose, and body segmentation and detailing
+
 - **LoRA Management**: Advanced LoRA stacking with individual strength controls
 - **YAML Wildcards**: Hierarchical prompt templates with nested path resolution
 - **Luna Daemon**: Multi-instance VRAM sharing for VAE/CLIP across ComfyUI instances
@@ -60,11 +60,10 @@ The nodes will be available under the **`Luna Collection`** or **`Luna/`** categ
 | **Luna Advanced Upscaler** | Professional-grade upscaling | Supersampling, modulus rounding, advanced controls |
 | **Luna Ultimate SD Upscale** | Multi-stage SD upscaling | Tile-based processing, seam blending |
 
-### 🎨 **MediaPipe Detailing**
+### 🎨 **Detailing**
 | Node | Description | Key Features |
 |------|-------------|--------------|
-| **Luna MediaPipe Detailer** | Face/body detailing with inpainting | Flux-compatible, conditional detailing, mask generation |
-| **Luna MediaPipe Segs** | Segmentation mask generation | Multi-target detection (hands, face, eyes, etc.) |
+| **Luna Detailer** | Face/body detailing with inpainting | Conditional detailing, mask generation |
 | **TensorRT Face Detailer** | High-performance TensorRT detailing | Dynamic engine support, bbox detection, SAM integration |
 
 ### 📁 **Model Management**
@@ -128,13 +127,6 @@ The nodes will be available under the **`Luna Collection`** or **`Luna/`** categ
 ---
 
 ## 📚 Key Features by Node
-
-### Luna MediaPipe Detailer
-- Detects and details faces, hands, eyes, mouth, feet, torso, and full body
-- Flux-compatible conditioning with pooled outputs
-- Configurable mask padding, blur, and confidence thresholds
-- Multiple sorting options (confidence, area, position)
-- Automatic mask generation and inpainting support
 
 ### Luna LoRA Stacker
 - Stack up to 4 LoRAs with individual controls
@@ -225,7 +217,7 @@ Local SQLite database for LoRA/embedding metadata storage.
 ### Core Requirements
 - **ComfyUI** - Latest version recommended
 - **PyTorch** - With CUDA support for GPU acceleration
-- **MediaPipe** - For face/pose/hand detection nodes
+
 - **OpenCV** - Image processing
 - **NumPy** - Numerical operations
 
@@ -251,13 +243,12 @@ ComfyUI-Luna-Collection/
 │   ├── loaders/                    # Model loading nodes
 │   ├── upscaling/                  # Image upscaling nodes
 │   ├── preprocessing/              # Text/prompt processing nodes
-│   ├── detailing/                  # MediaPipe detailing nodes
+│   ├── detailing/                  # Detailing nodes
 │   ├── performance/                # Performance monitoring nodes
 │   ├── luna_yaml_wildcard.py       # YAML wildcard system
 │   ├── luna_shared_vae.py          # Shared VAE nodes (daemon)
 │   ├── luna_shared_clip.py         # Shared CLIP nodes (daemon)
 │   ├── luna_civitai_scraper.py     # Civitai metadata scraper
-│   ├── luna_mediapipe_detailer.py  # MediaPipe face detailer
 │   └── ...                         # Other node files
 ├── luna_daemon/                    # Multi-instance VRAM sharing daemon
 │   ├── server.py                   # Daemon server
@@ -265,7 +256,7 @@ ComfyUI-Luna-Collection/
 │   └── config.py                   # Daemon configuration
 ├── utils/                          # Shared utilities
 │   ├── luna_metadata_db.py         # SQLite metadata database
-│   ├── mediapipe_engine.py         # MediaPipe processing engine
+
 │   ├── trt_engine.py               # TensorRT engine wrapper
 │   ├── luna_performance_monitor.py # Performance tracking
 │   └── ...                         # Other utilities
@@ -308,13 +299,13 @@ Please ensure your code follows the existing style and includes appropriate comm
 ### v1.1.0 (2025-09-21)
 - ✅ **TensorRT Integration**: High-performance TensorRT Face Detailer node
 - ✅ **Enhanced LoRA Stacker**: Dropdown selection, individual toggles, proper tuple format
-- ✅ **MediaPipe Improvements**: Enhanced detailer with Flux compatibility
+
 - ✅ **Utility Functions**: Local impact_core and trt_engine utilities
-- ✅ **Bug Fixes**: Fixed MediaPipe engine imports, LoRA stack format
+- ✅ **Bug Fixes**: Fixed LoRA stack format
 
 ### v1.0.0 - Initial Release (2025-08-22)
 - 🎯 **Core Nodes**: Simple, Advanced, and Ultimate SD upscalers
-- 🎯 **MediaPipe Integration**: Face, pose, and hand segmentation
+
 - 🎯 **LoRA Management**: Stacking and random selection
 - 🎯 **Prompt Processing**: Preprocessing and enhancement tools
 - 🎯 **Workflow Tools**: Multi-saver, parameter bridge, sampler
@@ -326,7 +317,7 @@ Please ensure your code follows the existing style and includes appropriate comm
 This project builds upon the excellent work of the ComfyUI community. Special thanks to:
 
 - **ComfyUI Team** - For the incredible platform and architecture
-- **MediaPipe** - For computer vision and pose estimation capabilities
+
 - **Impact Pack** - For bbox detection and segmentation utilities
 - **ComfyUI-Impact-Pack** - For LoRA stack compatibility and detailing tools
 - **TensorRT Community** - For high-performance inference optimization

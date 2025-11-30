@@ -1,7 +1,7 @@
 # ComfyUI Luna Collection - AI Agent Instructions
 
 ## Project Overview
-A ComfyUI custom node collection for image generation workflows. Provides nodes for upscaling, MediaPipe detailing, LoRA/embedding management, prompt processing, and multi-instance VRAM sharing via the Luna Daemon.
+A ComfyUI custom node collection for image generation workflows. Provides nodes for upscaling, LoRA/embedding management, prompt processing, and multi-instance VRAM sharing via the Luna Daemon.
 
 ## Architecture
 
@@ -13,7 +13,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {"NodeName": "Display Name"}
 ```
 
 ### Core Components
-- **`utils/`** - Shared utilities: `mediapipe_engine.py`, `luna_logger.py`, `logic_engine.py`
+- **`utils/`** - Shared utilities: `luna_logger.py`, `logic_engine.py`
 - **`nodes/`** - ComfyUI node implementations with `CATEGORY = "Luna/..."` hierarchy
 - **`luna_daemon/`** - Separate VAE/CLIP server for multi-instance VRAM sharing (socket-based, configurable via `config.py`)
 - **`luna_collection/`** - Core library code with validation utilities
