@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "../../../SD Models/wildcards_yaml"
+		},
+		{
+			"path": "../../../SD Models/hyper_lora"
 		}
 	],
 	"settings": {}
