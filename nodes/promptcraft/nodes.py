@@ -1,10 +1,12 @@
 """
 Luna PromptCraft Nodes
 ComfyUI nodes for smart wildcard resolution.
-These are thin wrappers around the core engine.
+Single unified node - complexity lives in engine + JS panel.
 """
 
 import os
+import json
+import random
 from typing import Dict, List, Tuple, Any, Optional
 
 try:
@@ -21,45 +23,79 @@ from .engine import LunaPromptEngine, create_engine
 # Shared Engine Instance
 # =============================================================================
 
-_engine_instance = None
+_engine_instance: Optional[LunaPromptEngine] = None
+_engine_path: Optional[str] = None
 
-def get_engine() -> LunaPromptEngine:
+
+def get_engine(wildcards_path: Optional[str] = None) -> LunaPromptEngine:
     """Get or create the shared engine instance"""
-    global _engine_instance
+    global _engine_instance, _engine_path
     
-    if _engine_instance is None:
-        _engine_instance = create_engine()
+    # Use provided path or find default
+    if wildcards_path is None:
+        wildcards_path = get_default_wildcards_dir()
+    
+    # Recreate if path changed
+    if _engine_instance is None or _engine_path != wildcards_path:
+        _engine_instance = LunaPromptEngine(wildcards_path)
+        _engine_path = wildcards_path
     
     return _engine_instance
 
 
-def get_wildcards_dir() -> str:
-    """Get the wildcards directory path"""
+def get_default_wildcards_dir() -> str:
+    """Get the default wildcards directory path"""
     if HAS_FOLDER_PATHS:
         models_dir = getattr(folder_paths, 'models_dir', None)
         if models_dir:
-            return os.path.join(models_dir, 'wildcards')
+            wildcards_path = os.path.join(models_dir, 'wildcards')
+            if os.path.exists(wildcards_path):
+                return wildcards_path
     
-    # Fallback
-    return os.path.join(os.path.dirname(__file__), '..', '..', 'wildcards')
+    # Fallback paths
+    fallbacks = [
+        "D:/AI/SD Models/wildcards",
+        os.path.join(os.path.dirname(__file__), '..', '..', 'wildcards'),
+    ]
+    
+    for path in fallbacks:
+        if os.path.exists(path):
+            return path
+    
+    return fallbacks[0]
 
 
 # =============================================================================
-# Luna Base Prompt
+# Luna PromptCraft (Main Node)
 # =============================================================================
 
-class LunaBasePrompt:
+class LunaPromptCraft:
     """
-    Creates a base prompt template with wildcard placeholders.
+    Smart wildcard resolution with constraints, modifiers, expanders, and LoRA linking.
     
-    Use {category} or {category:path} syntax for wildcards.
-    Example: "{location}, 1girl, {clothing}, {action}"
+    Template syntax:
+        {category}           - Pick from category
+        {category:path}      - Pick from specific path
+        {category:path.sub}  - Pick from nested path
+    
+    Features (configured via JS Connection Manager panel):
+        - Constraints: Filter items based on context (beach → swimwear)
+        - Modifiers: Transform picks based on actions (sex → "pulled aside")
+        - Expanders: Add scene details (beach → lighting, atmosphere)
+        - LoRA Links: Auto-suggest LoRAs based on picks
+    
+    Outputs:
+        - prompt: Final resolved prompt with all expansions
+        - seed: Actual seed used (for reproducibility)
+        - lora_stack: LORA_STACK compatible with Apply LoRA Stack
+        - trigger_words: Combined trigger words from linked LoRAs
+        - debug: JSON debug info with picks, paths, tags
     """
     
     CATEGORY = "Luna/PromptCraft"
-    RETURN_TYPES = ("LUNA_TEMPLATE",)
-    RETURN_NAMES = ("template",)
-    FUNCTION = "create_template"
+    RETURN_TYPES = ("STRING", "INT", "LORA_STACK", "STRING", "STRING")
+    RETURN_NAMES = ("prompt", "seed", "lora_stack", "trigger_words", "debug")
+    FUNCTION = "process"
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -67,214 +103,9 @@ class LunaBasePrompt:
             "required": {
                 "template": ("STRING", {
                     "multiline": True,
-                    "default": "{location}, 1girl, {clothing}, {action}",
-                    "tooltip": "Prompt template with {wildcards}"
+                    "default": "{setting}, 1girl, {clothing}, {action}",
+                    "tooltip": "Prompt template with {wildcards}. Use {category} or {category:path.to.items}"
                 }),
-            },
-        }
-    
-    def create_template(self, template: str) -> Tuple[Dict]:
-        """Package template for downstream nodes"""
-        engine = get_engine()
-        
-        return ({
-            "template": template,
-            "combinations": engine.count_combinations(template)
-        },)
-
-
-# =============================================================================
-# Luna Conditionals
-# =============================================================================
-
-class LunaConditionals:
-    """
-    Loads and configures constraint rules for context-aware resolution.
-    
-    When connected to Luna Assembler, wildcards will be filtered
-    based on what was previously picked (e.g., beach → swimwear).
-    """
-    
-    CATEGORY = "Luna/PromptCraft"
-    RETURN_TYPES = ("LUNA_CONDITIONALS",)
-    RETURN_NAMES = ("conditionals",)
-    FUNCTION = "load_conditionals"
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "enable_compatibility": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Filter items based on location/action context"
-                }),
-                "enable_conflicts": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Exclude mutually exclusive items"
-                }),
-            },
-        }
-    
-    def load_conditionals(
-        self, 
-        enable_compatibility: bool,
-        enable_conflicts: bool
-    ) -> Tuple[Dict]:
-        return ({
-            "enable_compatibility": enable_compatibility,
-            "enable_conflicts": enable_conflicts,
-        },)
-
-
-# =============================================================================
-# Luna Expanders
-# =============================================================================
-
-class LunaExpanders:
-    """
-    Loads scene expansion rules to add contextual details.
-    
-    When connected, adds relevant details based on resolved wildcards
-    (e.g., beach → "palm trees, ocean waves, sandy shore").
-    """
-    
-    CATEGORY = "Luna/PromptCraft"
-    RETURN_TYPES = ("LUNA_EXPANDERS",)
-    RETURN_NAMES = ("expanders",)
-    FUNCTION = "load_expanders"
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "enabled": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Enable scene expansions"
-                }),
-                "detail_level": (["minimal", "normal", "detailed", "maximum"], {
-                    "default": "normal",
-                    "tooltip": "How much detail to add"
-                }),
-            },
-        }
-    
-    def load_expanders(self, enabled: bool, detail_level: str) -> Tuple[Dict]:
-        return ({
-            "enabled": enabled,
-            "detail_level": detail_level,
-        },)
-
-
-# =============================================================================
-# Luna Modifiers
-# =============================================================================
-
-class LunaModifiers:
-    """
-    Loads action-based modifier rules.
-    
-    When connected, applies transformations based on actions
-    (e.g., action:sex → clothing gets "pulled aside" appended).
-    """
-    
-    CATEGORY = "Luna/PromptCraft"
-    RETURN_TYPES = ("LUNA_MODIFIERS",)
-    RETURN_NAMES = ("modifiers",)
-    FUNCTION = "load_modifiers"
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "enabled": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Enable action-based modifiers"
-                }),
-            },
-        }
-    
-    def load_modifiers(self, enabled: bool) -> Tuple[Dict]:
-        return ({
-            "enabled": enabled,
-        },)
-
-
-# =============================================================================
-# Luna LoRA Linker
-# =============================================================================
-
-class LunaLoRALinker:
-    """
-    Links wildcard categories to LoRAs/embeddings.
-    
-    When a category is resolved, automatically adds the linked LoRA
-    to the output stack with configured weight.
-    """
-    
-    CATEGORY = "Luna/PromptCraft"
-    RETURN_TYPES = ("LUNA_LORA_RULES",)
-    RETURN_NAMES = ("lora_rules",)
-    FUNCTION = "load_lora_rules"
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "enabled": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Enable automatic LoRA linking"
-                }),
-                "weight_mode": (["optimal", "random", "min", "max"], {
-                    "default": "optimal",
-                    "tooltip": "How to select LoRA weights"
-                }),
-            },
-            "optional": {
-                "weight_variance": ("FLOAT", {
-                    "default": 0.0,
-                    "min": 0.0,
-                    "max": 0.3,
-                    "step": 0.05,
-                    "tooltip": "Random variance to add to optimal weight"
-                }),
-            }
-        }
-    
-    def load_lora_rules(
-        self, 
-        enabled: bool, 
-        weight_mode: str,
-        weight_variance: float = 0.0
-    ) -> Tuple[Dict]:
-        return ({
-            "enabled": enabled,
-            "weight_mode": weight_mode,
-            "weight_variance": weight_variance,
-        },)
-
-
-# =============================================================================
-# Luna Assembler (Main Node)
-# =============================================================================
-
-class LunaAssembler:
-    """
-    Main assembler node - resolves wildcards and builds the final prompt.
-    
-    Connect optional inputs to enable constraints, expanders, modifiers,
-    and LoRA linking. Without optional inputs, works as a basic wildcard resolver.
-    """
-    
-    CATEGORY = "Luna/PromptCraft"
-    RETURN_TYPES = ("STRING", "STRING", "LORA_STACK", "STRING")
-    RETURN_NAMES = ("prompt", "negative", "lora_stack", "debug_info")
-    FUNCTION = "assemble"
-    
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "base_prompt": ("LUNA_TEMPLATE",),
                 "seed": ("INT", {
                     "default": -1,
                     "min": -1,
@@ -283,95 +114,194 @@ class LunaAssembler:
                 }),
             },
             "optional": {
-                "negative_template": ("STRING", {
-                    "multiline": True,
+                "wildcards_path": ("STRING", {
                     "default": "",
-                    "tooltip": "Optional negative prompt template"
+                    "tooltip": "Path to wildcards directory (leave empty for default)"
                 }),
-                "conditionals": ("LUNA_CONDITIONALS",),
-                "expanders": ("LUNA_EXPANDERS",),
-                "modifiers": ("LUNA_MODIFIERS",),
-                "lora_linker": ("LUNA_LORA_RULES",),
+                "enable_constraints": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Filter items based on context (beach → prefer swimwear)"
+                }),
+                "enable_modifiers": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Apply action-based modifiers (sex → clothing 'pulled aside')"
+                }),
+                "enable_expanders": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Add scene details (beach → lighting, atmosphere)"
+                }),
+                "enable_lora_links": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Auto-link LoRAs based on character/style picks"
+                }),
+                "add_trigger_words": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Append LoRA trigger words to prompt"
+                }),
             }
         }
     
-    def assemble(
+    def process(
         self,
-        base_prompt: Dict,
+        template: str,
         seed: int,
-        negative_template: str = "",
-        conditionals: Optional[Dict] = None,
-        expanders: Optional[Dict] = None,
-        modifiers: Optional[Dict] = None,
-        lora_linker: Optional[Dict] = None
-    ) -> Tuple[str, str, List, str]:
+        wildcards_path: str = "",
+        enable_constraints: bool = True,
+        enable_modifiers: bool = True,
+        enable_expanders: bool = True,
+        enable_lora_links: bool = True,
+        add_trigger_words: bool = True,
+    ) -> Tuple[str, int, List, str, str]:
         
-        engine = get_engine()
+        # Handle random seed
+        if seed == -1:
+            seed = random.randint(0, 0xffffffffffffffff)
         
-        # Determine what's enabled
-        enable_constraints = conditionals.get("enable_compatibility", False) if conditionals else False
-        enable_modifiers = modifiers.get("enabled", False) if modifiers else False
-        enable_expanders = expanders.get("enabled", False) if expanders else False
-        detail_level = expanders.get("detail_level", "normal") if expanders else "normal"
+        # Get engine
+        path = wildcards_path if wildcards_path else None
+        engine = get_engine(path)
         
-        # Process the template
-        template = base_prompt.get("template", "")
+        # Process template
         result = engine.process_template(
             template=template,
             seed=seed,
             enable_constraints=enable_constraints,
             enable_modifiers=enable_modifiers,
             enable_expanders=enable_expanders,
-            detail_level=detail_level
+            enable_lora_links=enable_lora_links,
         )
         
-        # Process negative template if provided
-        negative = ""
-        if negative_template:
-            neg_result = engine.process_template(
-                template=negative_template,
-                seed=seed + 1,  # Different seed for variety
-                enable_constraints=False,
-                enable_modifiers=False,
-                enable_expanders=False
-            )
-            negative = neg_result.get("prompt", "")
+        # Extract results
+        prompt = result.get('prompt', template)
+        lora_stack = result.get('lora_stack', [])
+        trigger_words = result.get('trigger_words', [])
         
-        # Build LoRA stack (placeholder - will be enhanced)
-        lora_stack = []
-        if lora_linker and lora_linker.get("enabled", False):
-            # TODO: Implement LoRA linking based on resolved paths
-            pass
+        # Format trigger words
+        trigger_words_str = ", ".join(trigger_words) if trigger_words else ""
         
-        # Format debug info
-        debug_lines = [
-            f"Seed: {seed}",
-            f"Combinations: {base_prompt.get('combinations', 'unknown')}",
-            f"Constraints: {'ON' if enable_constraints else 'OFF'}",
-            f"Modifiers: {'ON' if enable_modifiers else 'OFF'}",
-            f"Expanders: {'ON' if enable_expanders else 'OFF'} ({detail_level})",
+        # Add trigger words to prompt if enabled (and not already added by engine)
+        # Engine already adds them, so this is just for the separate output
+        
+        # Build debug info
+        debug_data = {
+            "seed": seed,
+            "wildcards_path": engine.wildcards_dir,
+            "picks": result.get('picks', {}),
+            "paths": result.get('paths', {}),
+            "tags": result.get('tags', []),
+            "expansions": result.get('expansions', []),
+            "loras": [
+                {"name": l[0], "model_weight": l[1], "clip_weight": l[2]}
+                for l in lora_stack
+            ],
+            "embeddings": result.get('embeddings', []),
+            "trigger_words": trigger_words,
+            "settings": {
+                "constraints": enable_constraints,
+                "modifiers": enable_modifiers,
+                "expanders": enable_expanders,
+                "lora_links": enable_lora_links,
+            }
+        }
+        
+        debug_str = json.dumps(debug_data, indent=2)
+        
+        return (prompt, seed, lora_stack, trigger_words_str, debug_str)
+
+
+# =============================================================================
+# Luna PromptCraft Debug (Viewer Node)
+# =============================================================================
+
+class LunaPromptCraftDebug:
+    """
+    Debug viewer for PromptCraft output.
+    
+    Connect the debug output from Luna PromptCraft to visualize
+    what was picked, which rules applied, and the final state.
+    """
+    
+    CATEGORY = "Luna/PromptCraft"
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("formatted",)
+    FUNCTION = "format_debug"
+    OUTPUT_NODE = True
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "debug_json": ("STRING", {
+                    "forceInput": True,
+                    "tooltip": "Debug JSON from Luna PromptCraft"
+                }),
+            },
+            "optional": {
+                "show_paths": ("BOOLEAN", {"default": True}),
+                "show_tags": ("BOOLEAN", {"default": True}),
+                "show_loras": ("BOOLEAN", {"default": True}),
+            }
+        }
+    
+    def format_debug(
+        self,
+        debug_json: str,
+        show_paths: bool = True,
+        show_tags: bool = True,
+        show_loras: bool = True,
+    ) -> Tuple[str]:
+        
+        try:
+            data = json.loads(debug_json)
+        except json.JSONDecodeError:
+            return (f"Invalid JSON:\n{debug_json}",)
+        
+        lines = [
+            f"═══ Luna PromptCraft Debug ═══",
+            f"Seed: {data.get('seed', 'unknown')}",
+            f"Wildcards: {data.get('wildcards_path', 'unknown')}",
             "",
-            "Picks:"
+            "── Picks ──"
         ]
         
-        for wildcard, value in result.get('picks', {}).items():
-            path = result.get('paths', {}).get(wildcard, '')
-            debug_lines.append(f"  {{{wildcard}}} → {value}")
-            debug_lines.append(f"    path: {path}")
+        picks = data.get('picks', {})
+        paths = data.get('paths', {})
         
-        if result.get('expansions'):
-            debug_lines.append("")
-            debug_lines.append("Expansions:")
-            for exp in result['expansions']:
-                debug_lines.append(f"  + {exp}")
+        for wildcard, value in picks.items():
+            lines.append(f"  {{{wildcard}}} → {value}")
+            if show_paths and wildcard in paths:
+                lines.append(f"    └─ {paths[wildcard]}")
         
-        if result.get('tags'):
-            debug_lines.append("")
-            debug_lines.append(f"Context tags: {', '.join(sorted(result['tags']))}")
+        if data.get('expansions'):
+            lines.append("")
+            lines.append("── Expansions ──")
+            for exp in data['expansions']:
+                lines.append(f"  + {exp}")
         
-        debug_info = "\n".join(debug_lines)
+        if show_tags and data.get('tags'):
+            lines.append("")
+            lines.append(f"── Tags ──")
+            lines.append(f"  {', '.join(sorted(data['tags']))}")
         
-        return (result.get('prompt', ''), negative, lora_stack, debug_info)
+        if show_loras and data.get('loras'):
+            lines.append("")
+            lines.append("── LoRAs ──")
+            for lora in data['loras']:
+                lines.append(f"  {lora['name']} @ {lora['model_weight']}/{lora['clip_weight']}")
+        
+        if data.get('trigger_words'):
+            lines.append("")
+            lines.append("── Trigger Words ──")
+            lines.append(f"  {', '.join(data['trigger_words'])}")
+        
+        settings = data.get('settings', {})
+        lines.append("")
+        lines.append("── Settings ──")
+        for key, val in settings.items():
+            status = "✓" if val else "✗"
+            lines.append(f"  {status} {key}")
+        
+        return ("\n".join(lines),)
 
 
 # =============================================================================
@@ -379,19 +309,11 @@ class LunaAssembler:
 # =============================================================================
 
 NODE_CLASS_MAPPINGS = {
-    "LunaBasePrompt": LunaBasePrompt,
-    "LunaConditionals": LunaConditionals,
-    "LunaExpanders": LunaExpanders,
-    "LunaModifiers": LunaModifiers,
-    "LunaLoRALinker": LunaLoRALinker,
-    "LunaAssembler": LunaAssembler,
+    "LunaPromptCraft": LunaPromptCraft,
+    "LunaPromptCraftDebug": LunaPromptCraftDebug,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "LunaBasePrompt": "Luna Base Prompt",
-    "LunaConditionals": "Luna Conditionals",
-    "LunaExpanders": "Luna Expanders", 
-    "LunaModifiers": "Luna Modifiers",
-    "LunaLoRALinker": "Luna LoRA Linker",
-    "LunaAssembler": "Luna Assembler",
+    "LunaPromptCraft": "Luna PromptCraft",
+    "LunaPromptCraftDebug": "Luna PromptCraft Debug",
 }

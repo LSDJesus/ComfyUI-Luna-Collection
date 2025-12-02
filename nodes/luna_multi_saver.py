@@ -25,6 +25,8 @@ class LunaMultiSaver:
     RETURN_NAMES = ()
     FUNCTION = "save_images"
     OUTPUT_NODE = True
+    
+    FORMATS = ["png", "webp", "jpeg"]
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -32,29 +34,34 @@ class LunaMultiSaver:
             "required": {
                 "save_path": ("STRING", {"default": "", "tooltip": "Custom save path relative to output directory (e.g., 'prompt_list/test'). Leave empty to use model_name based paths."}),
                 "save_mode": (["parallel", "sequential"], {"default": "parallel", "tooltip": "Parallel saves asynchronously, sequential saves one by one"}),
-                "quality_check": ("BOOLEAN", {"default": False, "label_on": "Enable", "label_off": "Disable", "tooltip": "Enable quality-based conditional saving"}),
-                "min_quality_threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01, "tooltip": "Minimum quality score required for saving"}),
+                "quality_gate": (["disabled", "variance", "edge_density", "both"], {"default": "disabled", "tooltip": "Quality check mode: variance detects flat/blank images, edge_density detects blurry images, both requires passing both checks"}),
+                "min_quality_threshold": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05, "tooltip": "Minimum quality score required for saving (0.3 recommended for filtering obviously bad images)"}),
             },
             "optional": {
                 "model_name": ("STRING", {"tooltip": "Model name from LunaLoadParameters (used for folder structure)"}),
-                "image_1": ("IMAGE", {"tooltip": "First image (required)"}),
-                "image_2": ("IMAGE", {"tooltip": "Second image (optional)"}),
-                "image_3": ("IMAGE", {"tooltip": "Third image (optional)"}),
-                "image_4": ("IMAGE", {"tooltip": "Fourth image (optional)"}),
-                "image_5": ("IMAGE", {"tooltip": "Fifth image (optional)"}),
-                "affix_1": ("STRING", {"default": "IMAGE1", "tooltip": "Affix name for image_1"}),
-                "affix_2": ("STRING", {"default": "IMAGE2", "tooltip": "Affix name for image_2"}),
-                "affix_3": ("STRING", {"default": "IMAGE3", "tooltip": "Affix name for image_3"}),
+                "image_1": ("IMAGE", {"tooltip": "First image"}),
+                "image_2": ("IMAGE", {"tooltip": "Second image"}),
+                "image_3": ("IMAGE", {"tooltip": "Third image"}),
+                "image_4": ("IMAGE", {"tooltip": "Fourth image"}),
+                "image_5": ("IMAGE", {"tooltip": "Fifth image"}),
+                "affix_1": ("STRING", {"default": "RAW", "tooltip": "Affix name for image_1"}),
+                "affix_2": ("STRING", {"default": "UPSCALED", "tooltip": "Affix name for image_2"}),
+                "affix_3": ("STRING", {"default": "DETAILED", "tooltip": "Affix name for image_3"}),
                 "affix_4": ("STRING", {"default": "IMAGE4", "tooltip": "Affix name for image_4"}),
                 "affix_5": ("STRING", {"default": "IMAGE5", "tooltip": "Affix name for image_5"}),
+                "format_1": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_1"}),
+                "format_2": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_2"}),
+                "format_3": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_3"}),
+                "format_4": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_4"}),
+                "format_5": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_5"}),
                 "subdir_1": ("BOOLEAN", {"default": True, "label_on": "Subdir", "label_off": "Root", "tooltip": "Save image_1 to affix subdirectory"}),
                 "subdir_2": ("BOOLEAN", {"default": True, "label_on": "Subdir", "label_off": "Root", "tooltip": "Save image_2 to affix subdirectory"}),
                 "subdir_3": ("BOOLEAN", {"default": True, "label_on": "Subdir", "label_off": "Root", "tooltip": "Save image_3 to affix subdirectory"}),
                 "subdir_4": ("BOOLEAN", {"default": True, "label_on": "Subdir", "label_off": "Root", "tooltip": "Save image_4 to affix subdirectory"}),
                 "subdir_5": ("BOOLEAN", {"default": True, "label_on": "Subdir", "label_off": "Root", "tooltip": "Save image_5 to affix subdirectory"}),
-                "extension": (["png", "webp"], {"default": "png", "tooltip": "File extension/format to save images as"}),
-                "lossless_webp": ("BOOLEAN", {"default": True, "label_on": "Lossless", "label_off": "Lossy", "tooltip": "Use lossless compression for WebP files"}),
-                "quality_webp": ("INT", {"default": 95, "min": 1, "max": 100, "tooltip": "Quality setting for lossy WebP (1-100, higher = better quality, ignored for lossless WebP)"}),
+                "png_compression": ("INT", {"default": 4, "min": 0, "max": 9, "tooltip": "PNG compression level (0=fastest/no compression, 9=smallest/slowest). Quality is identical - only affects file size and save speed."}),
+                "lossy_quality": ("INT", {"default": 90, "min": 70, "max": 100, "tooltip": "Quality for JPEG and lossy WebP (70-100). Below 70 produces visible artifacts."}),
+                "lossless_webp": ("BOOLEAN", {"default": False, "label_on": "Lossless", "label_off": "Lossy", "tooltip": "Use lossless compression for WebP files (ignores lossy_quality setting)"}),
                 "embed_workflow": ("BOOLEAN", {"default": True, "label_on": "Embed", "label_off": "Skip", "tooltip": "Embed workflow metadata in saved images"}),
                 "filename": ("STRING", {"default": "", "tooltip": "Filename from LunaTextProcessor (without extension)"}),
                 "filename_index": ("INT", {"default": 0, "min": 0, "max": 10000, "tooltip": "Index from LunaTextProcessor"}),
@@ -72,25 +79,69 @@ class LunaMultiSaver:
         self.save_threads = []
         self.save_results = []
 
-    def quality_check_image(self, image, threshold):
-        """Simple quality check based on image variance"""
-        # Convert to grayscale and calculate variance as a proxy for quality
-        if len(image.shape) == 4:  # Batch of images
-            image = image[0]  # Take first image
-
-        # Convert to grayscale-like using luminance
+    def check_variance(self, image, threshold):
+        """Check if image has enough variance (not flat/blank)"""
+        if len(image.shape) == 4:
+            image = image[0]
+        
+        # Convert to grayscale using luminance
         gray = 0.299 * image[:, :, 0] + 0.587 * image[:, :, 1] + 0.114 * image[:, :, 2]
         variance = np.var(gray)
+        
+        # Normalize: typical SD images have variance 2000-8000, blank ~0, solid color ~0
+        # Scale so 0.3 threshold catches obviously bad images
+        score = min(1.0, variance / 3000.0)
+        return score, score >= threshold
+    
+    def check_edge_density(self, image, threshold):
+        """Check if image has enough edge detail (not blurry/smooth)"""
+        if len(image.shape) == 4:
+            image = image[0]
+        
+        # Convert to grayscale
+        gray = 0.299 * image[:, :, 0] + 0.587 * image[:, :, 1] + 0.114 * image[:, :, 2]
+        
+        # Simple Sobel-like edge detection
+        # Horizontal edges
+        gx = np.abs(gray[:-1, :] - gray[1:, :])
+        # Vertical edges
+        gy = np.abs(gray[:, :-1] - gray[:, 1:])
+        
+        # Edge density = mean edge magnitude
+        edge_mean = (np.mean(gx) + np.mean(gy)) / 2.0
+        
+        # Normalize: typical detailed images have edge_mean 0.02-0.08, blurry ~0.005
+        score = min(1.0, edge_mean / 0.05)
+        return score, score >= threshold
 
-        # Normalize variance to 0-1 range (rough approximation)
-        quality_score = min(1.0, variance / 1000.0)
-        return quality_score >= threshold
+    def quality_check_image(self, image, threshold, mode):
+        """Check image quality based on selected mode"""
+        if mode == "disabled":
+            return True, 1.0, "disabled"
+        
+        if mode == "variance":
+            score, passed = self.check_variance(image, threshold)
+            return passed, score, "variance"
+        
+        if mode == "edge_density":
+            score, passed = self.check_edge_density(image, threshold)
+            return passed, score, "edge_density"
+        
+        if mode == "both":
+            var_score, var_passed = self.check_variance(image, threshold)
+            edge_score, edge_passed = self.check_edge_density(image, threshold)
+            combined_score = (var_score + edge_score) / 2.0
+            return var_passed and edge_passed, combined_score, f"variance={var_score:.2f}, edge={edge_score:.2f}"
+        
+        return True, 1.0, "unknown"
 
-    def save_single_image(self, image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, batch_counter=0, filename="", filename_index=0, extension="png", lossless_webp=True, quality_webp=95, embed_workflow=True):
+    def save_single_image(self, image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, batch_counter=0, filename="", filename_index=0, extension="png", lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
         """Save a single image with custom filename format and folder structure"""
         try:
-            # Generate timestamp
-            timestamp = datetime.now().strftime("%Y_%m_%d_%H%M%S")
+            # Normalize extension
+            ext = extension.lower()
+            if ext == "jpeg":
+                ext = "jpg"
 
             # Determine save path based on model name and subdirectory setting
             if custom_path:
@@ -122,12 +173,12 @@ class LunaMultiSaver:
                 filename_part = f"_{filename}" if filename else ""
                 index_part = f"_{filename_index}" if filename_index > 0 else ""
                 batch_part = f"_{batch_number}" if len(image) > 1 else ""
-                final_filename = f"{batch_timestamp}_{model_part}_{affix_name}{filename_part}{index_part}{batch_part}.{extension}"
+                final_filename = f"{batch_timestamp}_{model_part}_{affix_name}{filename_part}{index_part}{batch_part}.{ext}"
 
                 file_path = os.path.join(save_dir, final_filename)
 
                 # Handle metadata based on format
-                if extension == 'png':
+                if ext == 'png':
                     # PNG format - use PngInfo
                     png_metadata = None
                     if embed_workflow and not args.disable_metadata:
@@ -152,38 +203,32 @@ class LunaMultiSaver:
                         png_metadata.add_text("save_timestamp", batch_timestamp)
                         png_metadata.add_text("batch_index", str(batch_number))
 
-                    pil_img.save(file_path, pnginfo=png_metadata, compress_level=4)
+                    pil_img.save(file_path, pnginfo=png_metadata, compress_level=png_compression)
 
-                else:
-                    # JPEG/WEBP format - use EXIF metadata
+                elif ext == 'webp':
+                    # WebP format
                     if embed_workflow and HAS_PIEXIF and piexif is not None and not args.disable_metadata:
-                        # Prepare metadata for EXIF
-                        pnginfo_json = {}
-                        prompt_json = {}
-                        if extra_pnginfo is not None:
-                            pnginfo_json = {piexif.ImageIFD.Make - i: f"{k}:{json.dumps(v, separators=(',', ':'))}" for i, (k, v) in enumerate(extra_pnginfo.items())}
-                        if prompt is not None:
-                            prompt_json = {piexif.ImageIFD.Model: f"prompt:{json.dumps(prompt, separators=(',', ':'))}"}
-
-                        # Create EXIF data
-                        exif_dict = ({
-                            "0th": pnginfo_json | prompt_json
-                            } if pnginfo_json or prompt_json else {}) | ({
-                            "Exif": {
-                                piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(
-                                    f"Image Type: {affix_name}, Model: {model_name or 'Unknown'}, Timestamp: {batch_timestamp}, Batch: {batch_number}" +
-                                    (f", Generation Metadata: {json.dumps(metadata, separators=(',', ':'))}" if metadata is not None else "") +
-                                    (f", Custom: {custom_metadata}" if custom_metadata and metadata is None else ""),
-                                    encoding="unicode"
-                                )
-                            },
-                        } if metadata is not None or custom_metadata or True else {})
-
-                        exif_bytes = piexif.dump(exif_dict)
-                        pil_img.save(file_path, exif=exif_bytes, quality=quality_webp, lossless=lossless_webp if extension == 'webp' else None)
+                        exif_bytes = self._build_exif_metadata(affix_name, model_name, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo)
+                        if lossless_webp:
+                            pil_img.save(file_path, exif=exif_bytes, lossless=True)
+                        else:
+                            pil_img.save(file_path, exif=exif_bytes, quality=lossy_quality, lossless=False)
                     else:
-                        # Save without metadata
-                        pil_img.save(file_path, quality=quality_webp, lossless=lossless_webp if extension == 'webp' else None)
+                        if lossless_webp:
+                            pil_img.save(file_path, lossless=True)
+                        else:
+                            pil_img.save(file_path, quality=lossy_quality, lossless=False)
+
+                else:  # jpg/jpeg
+                    # JPEG format - convert to RGB if needed (no alpha)
+                    if pil_img.mode in ('RGBA', 'LA', 'P'):
+                        pil_img = pil_img.convert('RGB')
+                    
+                    if embed_workflow and HAS_PIEXIF and piexif is not None and not args.disable_metadata:
+                        exif_bytes = self._build_exif_metadata(affix_name, model_name, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo)
+                        pil_img.save(file_path, exif=exif_bytes, quality=lossy_quality)
+                    else:
+                        pil_img.save(file_path, quality=lossy_quality)
 
                 results.append({
                     "filename": final_filename,
@@ -195,17 +240,43 @@ class LunaMultiSaver:
         except Exception as e:
             print(f"[LunaMultiSaver] Error saving {affix_name} image: {e}")
             return []
+    
+    def _build_exif_metadata(self, affix_name, model_name, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo):
+        """Build EXIF metadata for JPEG/WebP files"""
+        pnginfo_json = {}
+        prompt_json = {}
+        if extra_pnginfo is not None:
+            pnginfo_json = {piexif.ImageIFD.Make - i: f"{k}:{json.dumps(v, separators=(',', ':'))}" for i, (k, v) in enumerate(extra_pnginfo.items())}
+        if prompt is not None:
+            prompt_json = {piexif.ImageIFD.Model: f"prompt:{json.dumps(prompt, separators=(',', ':'))}"}
 
-    def save_images_parallel(self, images_data, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename="", filename_index=0, extension="png", lossless_webp=True, quality_webp=95, embed_workflow=True):
+        exif_dict = ({
+            "0th": pnginfo_json | prompt_json
+            } if pnginfo_json or prompt_json else {}) | ({
+            "Exif": {
+                piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(
+                    f"Image Type: {affix_name}, Model: {model_name or 'Unknown'}, Timestamp: {batch_timestamp}, Batch: {batch_number}" +
+                    (f", Generation Metadata: {json.dumps(metadata, separators=(',', ':'))}" if metadata is not None else "") +
+                    (f", Custom: {custom_metadata}" if custom_metadata and metadata is None else ""),
+                    encoding="unicode"
+                )
+            },
+        })
+
+        return piexif.dump(exif_dict)
+
+    def save_images_parallel(self, images_data, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename="", filename_index=0, lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
         """Save images in parallel threads"""
         self.save_results = []
         self.save_threads = []
+        results_lock = threading.Lock()
 
         def save_worker(image_data, idx):
-            image, affix_name, use_subdir = image_data
+            image, affix_name, use_subdir, fmt = image_data
             if image is not None:
-                results = self.save_single_image(image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, idx, filename, filename_index, extension, lossless_webp, quality_webp, embed_workflow)
-                self.save_results.extend(results)
+                results = self.save_single_image(image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, idx, filename, filename_index, fmt, lossless_webp, lossy_quality, png_compression, embed_workflow)
+                with results_lock:
+                    self.save_results.extend(results)
 
         # Start parallel saves
         for idx, image_data in enumerate(images_data):
@@ -221,59 +292,87 @@ class LunaMultiSaver:
 
         return self.save_results
 
-    def save_images_sequential(self, images_data, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename="", filename_index=0, extension="png", lossless_webp=True, quality_webp=95, embed_workflow=True):
+    def save_images_sequential(self, images_data, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename="", filename_index=0, lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
         """Save images sequentially"""
         results = []
-        for idx, (image, affix_name, use_subdir) in enumerate(images_data):
+        for idx, (image, affix_name, use_subdir, fmt) in enumerate(images_data):
             if image is not None:
-                batch_results = self.save_single_image(image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, idx, filename, filename_index, extension, lossless_webp, quality_webp, embed_workflow)
+                batch_results = self.save_single_image(image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, idx, filename, filename_index, fmt, lossless_webp, lossy_quality, png_compression, embed_workflow)
                 results.extend(batch_results)
 
         return results
 
-    def save_images(self, save_path, save_mode, quality_check, min_quality_threshold,
+    def save_images(self, save_path, save_mode, quality_gate, min_quality_threshold,
                    model_name=None, image_1=None, image_2=None, image_3=None, image_4=None, image_5=None,
-                   affix_1="IMAGE1", affix_2="IMAGE2", affix_3="IMAGE3", affix_4="IMAGE4", affix_5="IMAGE5",
+                   affix_1="RAW", affix_2="UPSCALED", affix_3="DETAILED", affix_4="IMAGE4", affix_5="IMAGE5",
+                   format_1="png", format_2="png", format_3="png", format_4="png", format_5="png",
                    subdir_1=True, subdir_2=True, subdir_3=True, subdir_4=True, subdir_5=True,
-                   extension="png", lossless_webp=True, quality_webp=95, embed_workflow=True,
+                   png_compression=4, lossy_quality=90, lossless_webp=False, embed_workflow=True,
                    filename="", filename_index=0, custom_metadata="", metadata=None, prompt=None, extra_pnginfo=None):
+
+        # Strip common model file extensions from model_name
+        if model_name:
+            for ext in ('.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.gguf'):
+                if model_name.lower().endswith(ext):
+                    model_name = model_name[:-len(ext)]
+                    break
 
         # Generate single timestamp for all images in this batch
         batch_timestamp = datetime.now().strftime("%Y_%m_%d_%H%M%S")
 
-        # Prepare image data with custom affixes and subdirectory settings
+        # Prepare image data with custom affixes, subdirectory settings, and formats
         images_data = [
-            (image_1, affix_1, subdir_1),
-            (image_2, affix_2, subdir_2),
-            (image_3, affix_3, subdir_3),
-            (image_4, affix_4, subdir_4),
-            (image_5, affix_5, subdir_5),
+            (image_1, affix_1, subdir_1, format_1),
+            (image_2, affix_2, subdir_2, format_2),
+            (image_3, affix_3, subdir_3, format_3),
+            (image_4, affix_4, subdir_4, format_4),
+            (image_5, affix_5, subdir_5, format_5),
         ]
 
-        # Filter out None images and apply quality check if enabled
+        # Separate images into passed and discarded based on quality check
         filtered_images = []
-        for image, affix, subdir in images_data:
+        discarded_images = []
+        
+        for image, affix, subdir, fmt in images_data:
             if image is not None:
-                if quality_check:
-                    # Check quality of first image in batch
-                    if self.quality_check_image(image, min_quality_threshold):
-                        filtered_images.append((image, affix, subdir))
-                    else:
-                        print(f"[LunaMultiSaver] Skipping {affix} - quality below threshold")
+                passed, score, mode_info = self.quality_check_image(image, min_quality_threshold, quality_gate)
+                if passed:
+                    filtered_images.append((image, affix, subdir, fmt))
                 else:
-                    filtered_images.append((image, affix, subdir))
+                    # Save to discarded folder instead of skipping entirely
+                    discarded_images.append((image, affix, subdir, fmt, score, mode_info))
+                    print(f"[LunaMultiSaver] Discarding {affix} - quality check failed ({mode_info}, score={score:.2f}, threshold={min_quality_threshold})")
 
-        if not filtered_images:
+        all_results = []
+        
+        # Save passed images to normal location
+        if filtered_images:
+            if save_mode == "parallel":
+                results = self.save_images_parallel(filtered_images, model_name, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+            else:
+                results = self.save_images_sequential(filtered_images, model_name, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+            all_results.extend(results)
+        
+        # Save discarded images to _discarded subfolder for review
+        if discarded_images:
+            discarded_path = os.path.join(save_path, "_discarded") if save_path else "_discarded"
+            discarded_data = [(img, affix, subdir, fmt) for img, affix, subdir, fmt, score, mode in discarded_images]
+            
+            if save_mode == "parallel":
+                discarded_results = self.save_images_parallel(discarded_data, model_name, discarded_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+            else:
+                discarded_results = self.save_images_sequential(discarded_data, model_name, discarded_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+            
+            # Mark discarded results for UI distinction (optional)
+            for r in discarded_results:
+                r["discarded"] = True
+            all_results.extend(discarded_results)
+
+        if not all_results:
             print("[LunaMultiSaver] No images to save")
             return {"ui": {"images": []}}
 
-        # Save images based on mode
-        if save_mode == "parallel":
-            results = self.save_images_parallel(filtered_images, model_name, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, extension, lossless_webp, quality_webp, embed_workflow)
-        else:
-            results = self.save_images_sequential(filtered_images, model_name, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, extension, lossless_webp, quality_webp, embed_workflow)
-
-        return {"ui": {"images": results}}
+        return {"ui": {"images": all_results}}
 
 NODE_CLASS_MAPPINGS = {
     "LunaMultiSaver": LunaMultiSaver,
