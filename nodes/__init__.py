@@ -42,7 +42,11 @@ from .luna_daemon_loader import (
 from .luna_batch_prompt_extractor import (
     LunaBatchPromptExtractor,
     LunaBatchPromptLoader,
+    LunaDimensionScaler,
 )
+
+# Import LoRA validator
+from .luna_lora_validator import LunaLoRAValidator
 
 # Combine all node mappings
 NODE_CLASS_MAPPINGS = {}
@@ -86,6 +90,9 @@ NODE_CLASS_MAPPINGS.update({
     # Batch prompt utilities
     "LunaBatchPromptExtractor": LunaBatchPromptExtractor,
     "LunaBatchPromptLoader": LunaBatchPromptLoader,
+    "LunaDimensionScaler": LunaDimensionScaler,
+    # LoRA validation
+    "LunaLoRAValidator": LunaLoRAValidator,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -118,4 +125,7 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     # Batch prompt utilities
     "LunaBatchPromptExtractor": "Luna Batch Prompt Extractor",
     "LunaBatchPromptLoader": "Luna Batch Prompt Loader",
+    "LunaDimensionScaler": "Luna Dimension Scaler",
+    # LoRA validation
+    "LunaLoRAValidator": "Luna LoRA Validator",
 })

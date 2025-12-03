@@ -32,8 +32,8 @@ class LunaMultiSaver:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "save_path": ("STRING", {"default": "", "tooltip": "Path relative to output dir. Supports: %model_path% (full path like Illustrious/3DCG/model), %model_name% (just model name), %time:FORMAT% (e.g. %time:YYYY-mm-dd%). Empty = output root."}),
-                "filename": ("STRING", {"default": "%time:YYYY_mm_dd.HH.MM.SS%_%model_name%", "tooltip": "Filename template. Supports: %model_name%, %time:FORMAT% (e.g. %time:YYYY-mm-dd.HH.MM.SS%). Affix is always appended."}),
+                "save_path": ("STRING", {"default": "", "tooltip": "Path relative to output dir. Supports: %model_path% (full path like Illustrious/3DCG/model), %model_name% (just model name), %index%, %time:FORMAT% (e.g. %time:YYYY-mm-dd%). Empty = output root."}),
+                "filename": ("STRING", {"default": "%time:YYYY_mm_dd.HH.MM.SS%_%model_name%", "tooltip": "Filename template. Supports: %model_name%, %index%, %time:FORMAT% (e.g. %time:YYYY-mm-dd.HH.MM.SS%). Affix is always appended."}),
                 "save_mode": (["parallel", "sequential"], {"default": "parallel", "tooltip": "Parallel saves asynchronously, sequential saves one by one"}),
                 "quality_gate": (["disabled", "variance", "edge_density", "both"], {"default": "disabled", "tooltip": "Quality check mode: variance detects flat/blank images, edge_density detects blurry images, both requires passing both checks"}),
                 "min_quality_threshold": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05, "tooltip": "Minimum quality score required for saving (0.3 recommended for filtering obviously bad images)"}),
@@ -64,7 +64,7 @@ class LunaMultiSaver:
                 "lossy_quality": ("INT", {"default": 90, "min": 70, "max": 100, "tooltip": "Quality for JPEG and lossy WebP (70-100). Below 70 produces visible artifacts."}),
                 "lossless_webp": ("BOOLEAN", {"default": False, "label_on": "Lossless", "label_off": "Lossy", "tooltip": "Use lossless compression for WebP files (ignores lossy_quality setting)"}),
                 "embed_workflow": ("BOOLEAN", {"default": True, "label_on": "Embed", "label_off": "Skip", "tooltip": "Embed workflow metadata in saved images"}),
-                "filename_index": ("INT", {"default": 0, "min": 0, "max": 10000, "tooltip": "Optional index appended to filename"}),
+                "filename_index": ("INT", {"default": 0, "min": 0, "max": 10000, "tooltip": "Index value for %index% template variable. Connect from LunaBatchPromptLoader index output."}),
                 "custom_metadata": ("STRING", {"multiline": True, "default": "", "tooltip": "Custom metadata added to all images"}),
                 "metadata": ("METADATA", {"tooltip": "Metadata from LunaLoadParameters node (overrides custom_metadata)"}),
             },
@@ -138,10 +138,10 @@ class LunaMultiSaver:
         
         return re.sub(pattern, replace_time, template_str)
 
-    def _process_template(self, template_str, model_path, model_name, model_dir, timestamp=None):
+    def _process_template(self, template_str, model_path, model_name, model_dir, timestamp=None, index=0):
         """
         Process all template variables in a string.
-        Supports: %model_path%, %model_name%, %time:FORMAT%
+        Supports: %model_path%, %model_name%, %model_dir%, %index%, %time:FORMAT%
         """
         if not template_str:
             return ''
@@ -152,6 +152,9 @@ class LunaMultiSaver:
         result = result.replace('%model_path%', model_path)
         result = result.replace('%model_name%', model_name)
         result = result.replace('%model_dir%', model_dir)
+        
+        # Process index template
+        result = result.replace('%index%', str(index))
         
         # Process time templates
         result = self._process_time_template(result, timestamp)
@@ -235,8 +238,8 @@ class LunaMultiSaver:
             # Parse model info from raw model name
             model_path, model_name, model_dir = self._parse_model_info(model_name_raw)
             
-            # Process save_path template
-            processed_path = self._process_template(custom_path, model_path, model_name, model_dir, timestamp)
+            # Process save_path template (index can be used in path too)
+            processed_path = self._process_template(custom_path, model_path, model_name, model_dir, timestamp, filename_index)
             
             # Build final save directory
             if processed_path:
@@ -262,16 +265,16 @@ class LunaMultiSaver:
                 pil_img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
 
                 # Process filename template
-                processed_filename = self._process_template(filename_template, model_path, model_name, model_dir, timestamp)
+                processed_filename = self._process_template(filename_template, model_path, model_name, model_dir, timestamp, filename_index)
                 
                 # If no template provided, use default format
                 if not processed_filename:
                     processed_filename = f"{batch_timestamp}_{model_name}"
                 
-                # Build final filename with affix and optional parts
-                index_part = f"_{filename_index}" if filename_index > 0 else ""
+                # Build final filename with affix
+                # Note: %index% is now handled in template, so we don't append separately
                 batch_part = f"_{batch_number}" if len(image) > 1 else ""
-                final_filename = f"{processed_filename}_{affix_name}{index_part}{batch_part}.{ext}"
+                final_filename = f"{processed_filename}_{affix_name}{batch_part}.{ext}"
 
                 file_path = os.path.join(save_dir, final_filename)
                 print(f"[LunaMultiSaver] Saving to: {file_path}")

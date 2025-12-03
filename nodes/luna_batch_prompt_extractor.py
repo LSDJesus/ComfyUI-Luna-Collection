@@ -382,6 +382,16 @@ class LunaBatchPromptExtractor:
             metadata["image_name"] = os.path.basename(image_path)
             metadata["image_path"] = os.path.abspath(image_path)
             
+            # Extract image dimensions
+            try:
+                with Image.open(image_path) as img:
+                    metadata["width"] = img.width
+                    metadata["height"] = img.height
+            except Exception as e:
+                print(f"[LunaBatchPromptExtractor] Could not get dimensions for {image_path}: {e}")
+                metadata["width"] = 0
+                metadata["height"] = 0
+            
             metadata_list.append(metadata)
             metadata_extracted += 1
         
@@ -419,8 +429,8 @@ class LunaBatchPromptLoader:
     """
     
     CATEGORY = "Luna/Utils"
-    RETURN_TYPES = ("STRING", "STRING", "LORA_STACK", "INT", "INT", "INT", "BOOLEAN")
-    RETURN_NAMES = ("positive", "negative", "lora_stack", "seed", "current_index", "total_entries", "list_complete")
+    RETURN_TYPES = ("STRING", "STRING", "LORA_STACK", "INT", "INT", "INT", "BOOLEAN", "INT", "INT")
+    RETURN_NAMES = ("positive", "negative", "lora_stack", "seed", "current_index", "total_entries", "list_complete", "width", "height")
     FUNCTION = "load_metadata"
     
     # Cache for discovered LoRAs/embeddings (name -> relative path)
@@ -644,7 +654,7 @@ class LunaBatchPromptLoader:
         index: int,
         lora_output: str,
         lora_validation: str
-    ) -> Tuple[str, str, List[Tuple[str, float, float]], int, int, int, bool]:
+    ) -> Tuple[str, str, List[Tuple[str, float, float]], int, int, int, bool, int, int]:
         """Load metadata entry from JSON file
         
         Returns:
@@ -655,6 +665,8 @@ class LunaBatchPromptLoader:
             - current_index (int) - the actual index used
             - total_entries (int) - total entries in the JSON
             - list_complete (bool) - True if this is the last entry in the list
+            - width (int) - original image width
+            - height (int) - original image height
         """
         
         # Resolve file path from input directory
@@ -664,7 +676,7 @@ class LunaBatchPromptLoader:
             file_path = json_file
         
         if not os.path.isfile(file_path):
-            return (f"Error: {json_file} not found", "", [], 0, 0, 0, False)
+            return (f"Error: {json_file} not found", "", [], 0, 0, 0, False, 0, 0)
         
         try:
             # Load JSON metadata
@@ -672,7 +684,7 @@ class LunaBatchPromptLoader:
                 metadata_list = json.load(f)
             
             if not metadata_list or not isinstance(metadata_list, list):
-                return ("Error: JSON file is empty or invalid", "", [], 0, 0, 0, False)
+                return ("Error: JSON file is empty or invalid", "", [], 0, 0, 0, False, 0, 0)
             
             total = len(metadata_list)
             
@@ -687,6 +699,10 @@ class LunaBatchPromptLoader:
             
             pos_prompt = entry.get("positive_prompt", "")
             neg_prompt = entry.get("negative_prompt", "")
+            
+            # Extract dimensions
+            img_width = entry.get("width", 0)
+            img_height = entry.get("height", 0)
             
             # Extract seed from metadata
             extra = entry.get("extra", {})
@@ -733,19 +749,139 @@ class LunaBatchPromptLoader:
             if inline_lora_strings and lora_output in ("inline_only", "both"):
                 pos_prompt = pos_prompt.strip() + " " + " ".join(inline_lora_strings)
             
-            return (pos_prompt, neg_prompt, lora_stack, extracted_seed, current_index, total, list_complete)
+            return (pos_prompt, neg_prompt, lora_stack, extracted_seed, current_index, total, list_complete, img_width, img_height)
             
         except Exception as e:
-            return (f"Error loading metadata: {e}", "", [], 0, 0, 0, False)
+            return (f"Error loading metadata: {e}", "", [], 0, 0, 0, False, 0, 0)
+
+
+class LunaDimensionScaler:
+    """
+    Scale input dimensions to native model resolutions.
+    
+    Takes width/height and reduces the larger dimension to the model's
+    max native size, then scales the smaller dimension proportionally.
+    Output dimensions are rounded to the nearest multiple of 8 (required for latent space).
+    """
+    
+    CATEGORY = "Luna/Utils"
+    RETURN_TYPES = ("INT", "INT")
+    RETURN_NAMES = ("width", "height")
+    FUNCTION = "scale_dimensions"
+    
+    # Native resolutions for different model types
+    # These are the max dimensions models were trained on
+    MODEL_NATIVE_SIZES = {
+        "SD 1.5": 512,
+        "SD 2.1": 768,
+        "SDXL": 1024,
+        "SD 3.5": 1024,
+        "Flux": 1024,
+        "Illustrious": 1024,
+        "Pony": 1024,
+        "Cascade": 1024,
+        "Custom": 1024,
+    }
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "width": ("INT", {
+                    "default": 1024,
+                    "min": 64,
+                    "max": 8192,
+                    "step": 8,
+                    "tooltip": "Input width (from Luna Batch Prompt Loader or manual)"
+                }),
+                "height": ("INT", {
+                    "default": 1024,
+                    "min": 64,
+                    "max": 8192,
+                    "step": 8,
+                    "tooltip": "Input height (from Luna Batch Prompt Loader or manual)"
+                }),
+                "model_type": (list(cls.MODEL_NATIVE_SIZES.keys()), {
+                    "default": "SDXL",
+                    "tooltip": "Model type determines the max native resolution"
+                }),
+                "custom_max_size": ("INT", {
+                    "default": 1024,
+                    "min": 256,
+                    "max": 4096,
+                    "step": 64,
+                    "tooltip": "Custom max size (only used when model_type is 'Custom')"
+                }),
+                "round_to": ("INT", {
+                    "default": 8,
+                    "min": 1,
+                    "max": 64,
+                    "step": 1,
+                    "tooltip": "Round output dimensions to nearest multiple (8 for latent, 64 for some models)"
+                }),
+            }
+        }
+    
+    def scale_dimensions(
+        self,
+        width: int,
+        height: int,
+        model_type: str,
+        custom_max_size: int,
+        round_to: int
+    ) -> Tuple[int, int]:
+        """
+        Scale dimensions so the larger side matches model's native max size.
+        Smaller side is scaled proportionally, both rounded to nearest multiple.
+        """
+        # Get max size for model type
+        if model_type == "Custom":
+            max_size = custom_max_size
+        else:
+            max_size = self.MODEL_NATIVE_SIZES.get(model_type, 1024)
+        
+        # Handle edge cases
+        if width <= 0 or height <= 0:
+            return (max_size, max_size)
+        
+        # Determine which dimension is larger
+        if width >= height:
+            # Width is larger or equal - scale width to max, height proportionally
+            if width <= max_size:
+                # Already fits, just round
+                new_width = width
+                new_height = height
+            else:
+                scale = max_size / width
+                new_width = max_size
+                new_height = int(height * scale)
+        else:
+            # Height is larger - scale height to max, width proportionally
+            if height <= max_size:
+                # Already fits, just round
+                new_width = width
+                new_height = height
+            else:
+                scale = max_size / height
+                new_height = max_size
+                new_width = int(width * scale)
+        
+        # Round to nearest multiple
+        new_width = max(round_to, round(new_width / round_to) * round_to)
+        new_height = max(round_to, round(new_height / round_to) * round_to)
+        
+        return (new_width, new_height)
 
 
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "LunaBatchPromptExtractor": LunaBatchPromptExtractor,
     "LunaBatchPromptLoader": LunaBatchPromptLoader,
+    "LunaDimensionScaler": LunaDimensionScaler,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "LunaBatchPromptExtractor": "Luna Batch Prompt Extractor",
     "LunaBatchPromptLoader": "Luna Batch Prompt Loader",
+    "LunaDimensionScaler": "Luna Dimension Scaler",
 }
