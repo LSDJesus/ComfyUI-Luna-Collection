@@ -38,6 +38,12 @@ from .luna_daemon_loader import (
     LunaDaemonCLIPLoader,
 )
 
+# Import batch prompt utilities
+from .luna_batch_prompt_extractor import (
+    LunaBatchPromptExtractor,
+    LunaBatchPromptLoader,
+)
+
 # Combine all node mappings
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -77,6 +83,9 @@ NODE_CLASS_MAPPINGS.update({
     # Daemon proxy loaders
     "LunaDaemonVAELoader": LunaDaemonVAELoader,
     "LunaDaemonCLIPLoader": LunaDaemonCLIPLoader,
+    # Batch prompt utilities
+    "LunaBatchPromptExtractor": LunaBatchPromptExtractor,
+    "LunaBatchPromptLoader": LunaBatchPromptLoader,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -106,4 +115,7 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     # Daemon proxy loaders
     "LunaDaemonVAELoader": "Luna Daemon VAE Loader",
     "LunaDaemonCLIPLoader": "Luna Daemon CLIP Loader",
+    # Batch prompt utilities
+    "LunaBatchPromptExtractor": "Luna Batch Prompt Extractor",
+    "LunaBatchPromptLoader": "Luna Batch Prompt Loader",
 })

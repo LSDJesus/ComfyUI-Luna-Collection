@@ -32,13 +32,14 @@ class LunaMultiSaver:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "save_path": ("STRING", {"default": "", "tooltip": "Custom save path relative to output directory (e.g., 'prompt_list/test'). Leave empty to use model_name based paths."}),
+                "save_path": ("STRING", {"default": "", "tooltip": "Path relative to output dir. Supports: %model_path% (full path like Illustrious/3DCG/model), %model_name% (just model name), %time:FORMAT% (e.g. %time:YYYY-mm-dd%). Empty = output root."}),
+                "filename": ("STRING", {"default": "%time:YYYY_mm_dd.HH.MM.SS%_%model_name%", "tooltip": "Filename template. Supports: %model_name%, %time:FORMAT% (e.g. %time:YYYY-mm-dd.HH.MM.SS%). Affix is always appended."}),
                 "save_mode": (["parallel", "sequential"], {"default": "parallel", "tooltip": "Parallel saves asynchronously, sequential saves one by one"}),
                 "quality_gate": (["disabled", "variance", "edge_density", "both"], {"default": "disabled", "tooltip": "Quality check mode: variance detects flat/blank images, edge_density detects blurry images, both requires passing both checks"}),
                 "min_quality_threshold": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05, "tooltip": "Minimum quality score required for saving (0.3 recommended for filtering obviously bad images)"}),
             },
             "optional": {
-                "model_name": ("STRING", {"tooltip": "Model name from LunaLoadParameters (used for folder structure)"}),
+                "model_name": ("STRING", {"tooltip": "Full model path/name from checkpoint loader (e.g. Illustrious/3DCG/hsUltrahdCG_v60.safetensors)"}),
                 "image_1": ("IMAGE", {"tooltip": "First image"}),
                 "image_2": ("IMAGE", {"tooltip": "Second image"}),
                 "image_3": ("IMAGE", {"tooltip": "Third image"}),
@@ -63,8 +64,7 @@ class LunaMultiSaver:
                 "lossy_quality": ("INT", {"default": 90, "min": 70, "max": 100, "tooltip": "Quality for JPEG and lossy WebP (70-100). Below 70 produces visible artifacts."}),
                 "lossless_webp": ("BOOLEAN", {"default": False, "label_on": "Lossless", "label_off": "Lossy", "tooltip": "Use lossless compression for WebP files (ignores lossy_quality setting)"}),
                 "embed_workflow": ("BOOLEAN", {"default": True, "label_on": "Embed", "label_off": "Skip", "tooltip": "Embed workflow metadata in saved images"}),
-                "filename": ("STRING", {"default": "", "tooltip": "Filename from LunaTextProcessor (without extension)"}),
-                "filename_index": ("INT", {"default": 0, "min": 0, "max": 10000, "tooltip": "Index from LunaTextProcessor"}),
+                "filename_index": ("INT", {"default": 0, "min": 0, "max": 10000, "tooltip": "Optional index appended to filename"}),
                 "custom_metadata": ("STRING", {"multiline": True, "default": "", "tooltip": "Custom metadata added to all images"}),
                 "metadata": ("METADATA", {"tooltip": "Metadata from LunaLoadParameters node (overrides custom_metadata)"}),
             },
@@ -78,6 +78,89 @@ class LunaMultiSaver:
         self.output_dir = folder_paths.get_output_directory()
         self.save_threads = []
         self.save_results = []
+
+    def _parse_model_info(self, model_name_raw):
+        """
+        Parse model name into components.
+        Input: 'Illustrious/3DCG/hsUltrahdCG_v60.safetensors' or 'Illustrious\\3DCG\\hsUltrahdCG_v60.safetensors'
+        Returns: (model_path='Illustrious/3DCG/hsUltrahdCG_v60', model_name='hsUltrahdCG_v60', model_dir='Illustrious/3DCG')
+        """
+        if not model_name_raw:
+            return '', 'UnknownModel', ''
+        
+        # Normalize path separators to forward slash
+        normalized = model_name_raw.replace('\\', '/')
+        
+        # Remove trailing slashes
+        normalized = normalized.rstrip('/')
+        
+        # Get basename and remove extension
+        basename = os.path.basename(normalized)
+        model_name = basename
+        for ext in ('.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.gguf'):
+            if model_name.lower().endswith(ext):
+                model_name = model_name[:-len(ext)]
+                break
+        
+        # Get directory portion (model path without filename)
+        dirname = os.path.dirname(normalized)
+        
+        # Full model path = dir + model_name (without extension)
+        if dirname:
+            model_path = f"{dirname}/{model_name}"
+        else:
+            model_path = model_name
+        
+        return model_path, model_name, dirname
+
+    def _process_time_template(self, template_str, timestamp=None):
+        """
+        Process %time:FORMAT% templates.
+        FORMAT uses: YYYY=year, mm=month, dd=day, HH=hour, MM=minute, SS=second
+        Example: %time:YYYY-mm-dd.HH.MM.SS% -> 2025-12-02.23.36.42
+        """
+        if timestamp is None:
+            timestamp = datetime.now()
+        
+        import re
+        pattern = r'%time:([^%]+)%'
+        
+        def replace_time(match):
+            fmt = match.group(1)
+            # Convert our format tokens to Python strftime
+            fmt = fmt.replace('YYYY', '%Y')
+            fmt = fmt.replace('mm', '%m')
+            fmt = fmt.replace('dd', '%d')
+            fmt = fmt.replace('HH', '%H')
+            fmt = fmt.replace('MM', '%M')
+            fmt = fmt.replace('SS', '%S')
+            return timestamp.strftime(fmt)
+        
+        return re.sub(pattern, replace_time, template_str)
+
+    def _process_template(self, template_str, model_path, model_name, model_dir, timestamp=None):
+        """
+        Process all template variables in a string.
+        Supports: %model_path%, %model_name%, %time:FORMAT%
+        """
+        if not template_str:
+            return ''
+        
+        result = template_str
+        
+        # Process model templates
+        result = result.replace('%model_path%', model_path)
+        result = result.replace('%model_name%', model_name)
+        result = result.replace('%model_dir%', model_dir)
+        
+        # Process time templates
+        result = self._process_time_template(result, timestamp)
+        
+        # Normalize path separators and remove trailing slashes
+        result = result.replace('\\', '/')
+        result = result.rstrip('/')
+        
+        return result
 
     def check_variance(self, image, threshold):
         """Check if image has enough variance (not flat/blank)"""
@@ -135,47 +218,63 @@ class LunaMultiSaver:
         
         return True, 1.0, "unknown"
 
-    def save_single_image(self, image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, batch_counter=0, filename="", filename_index=0, extension="png", lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
+    def save_single_image(self, image, affix_name, use_subdir, model_name_raw, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, batch_counter=0, filename_template="", filename_index=0, extension="png", lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
         """Save a single image with custom filename format and folder structure"""
         try:
             # Normalize extension
             ext = extension.lower()
             if ext == "jpeg":
                 ext = "jpg"
-
-            # Determine save path based on model name and subdirectory setting
-            if custom_path:
-                # Use custom path
-                if use_subdir and model_name:
-                    save_dir = os.path.join(self.output_dir, custom_path, model_name, affix_name)
-                else:
-                    save_dir = os.path.join(self.output_dir, custom_path)
-            elif model_name:
-                # Use model-based structure
+            
+            # Parse timestamp for consistent time across templates
+            try:
+                timestamp = datetime.strptime(batch_timestamp, "%Y_%m_%d_%H%M%S")
+            except:
+                timestamp = datetime.now()
+            
+            # Parse model info from raw model name
+            model_path, model_name, model_dir = self._parse_model_info(model_name_raw)
+            
+            # Process save_path template
+            processed_path = self._process_template(custom_path, model_path, model_name, model_dir, timestamp)
+            
+            # Build final save directory
+            if processed_path:
                 if use_subdir:
-                    save_dir = os.path.join(self.output_dir, model_name, affix_name)
+                    save_dir = os.path.join(self.output_dir, processed_path, affix_name)
                 else:
-                    save_dir = os.path.join(self.output_dir, model_name)
+                    save_dir = os.path.join(self.output_dir, processed_path)
             else:
-                # Fallback to default
-                save_dir = self.output_dir
+                # Empty path = output root
+                if use_subdir:
+                    save_dir = os.path.join(self.output_dir, affix_name)
+                else:
+                    save_dir = self.output_dir
 
             # Create directory if it doesn't exist
             os.makedirs(save_dir, exist_ok=True)
 
             results = []
+            print(f"[LunaMultiSaver] Processing {len(image)} image(s) for {affix_name}, format={ext}")
+            
             for (batch_number, img) in enumerate(image):
                 i = 255. * img.cpu().numpy()
                 pil_img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
 
-                # Generate filename: YYYY_MM_DD_HHMMSS_MODELNAME_AFFIX[_FILENAME][_INDEX][_BATCH#].ext
-                model_part = model_name if model_name else "UnknownModel"
-                filename_part = f"_{filename}" if filename else ""
+                # Process filename template
+                processed_filename = self._process_template(filename_template, model_path, model_name, model_dir, timestamp)
+                
+                # If no template provided, use default format
+                if not processed_filename:
+                    processed_filename = f"{batch_timestamp}_{model_name}"
+                
+                # Build final filename with affix and optional parts
                 index_part = f"_{filename_index}" if filename_index > 0 else ""
                 batch_part = f"_{batch_number}" if len(image) > 1 else ""
-                final_filename = f"{batch_timestamp}_{model_part}_{affix_name}{filename_part}{index_part}{batch_part}.{ext}"
+                final_filename = f"{processed_filename}_{affix_name}{index_part}{batch_part}.{ext}"
 
                 file_path = os.path.join(save_dir, final_filename)
+                print(f"[LunaMultiSaver] Saving to: {file_path}")
 
                 # Handle metadata based on format
                 if ext == 'png':
@@ -199,7 +298,8 @@ class LunaMultiSaver:
                             png_metadata.add_text("custom_metadata", custom_metadata)
 
                         png_metadata.add_text("image_type", affix_name)
-                        png_metadata.add_text("model_name", model_name or "Unknown")
+                        png_metadata.add_text("model_name", model_name)
+                        png_metadata.add_text("model_path", model_path)
                         png_metadata.add_text("save_timestamp", batch_timestamp)
                         png_metadata.add_text("batch_index", str(batch_number))
 
@@ -207,17 +307,28 @@ class LunaMultiSaver:
 
                 elif ext == 'webp':
                     # WebP format
+                    # Note: PIL WebP support for EXIF is limited, we embed as XMP or skip
+                    save_kwargs = {
+                        'lossless': lossless_webp,
+                    }
+                    if not lossless_webp:
+                        save_kwargs['quality'] = lossy_quality
+                    
+                    # Try to embed EXIF if piexif is available
                     if embed_workflow and HAS_PIEXIF and piexif is not None and not args.disable_metadata:
-                        exif_bytes = self._build_exif_metadata(affix_name, model_name, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo)
-                        if lossless_webp:
-                            pil_img.save(file_path, exif=exif_bytes, lossless=True)
-                        else:
-                            pil_img.save(file_path, exif=exif_bytes, quality=lossy_quality, lossless=False)
-                    else:
-                        if lossless_webp:
-                            pil_img.save(file_path, lossless=True)
-                        else:
-                            pil_img.save(file_path, quality=lossy_quality, lossless=False)
+                        try:
+                            exif_bytes = self._build_exif_metadata(affix_name, model_name, model_path, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo)
+                            save_kwargs['exif'] = exif_bytes
+                        except Exception as exif_error:
+                            print(f"[LunaMultiSaver] Warning: Could not embed EXIF in WebP: {exif_error}")
+                    
+                    try:
+                        pil_img.save(file_path, 'WEBP', **save_kwargs)
+                    except Exception as webp_error:
+                        # Fallback: try without exif if it failed
+                        print(f"[LunaMultiSaver] WebP save error, retrying without EXIF: {webp_error}")
+                        save_kwargs.pop('exif', None)
+                        pil_img.save(file_path, 'WEBP', **save_kwargs)
 
                 else:  # jpg/jpeg
                     # JPEG format - convert to RGB if needed (no alpha)
@@ -225,7 +336,7 @@ class LunaMultiSaver:
                         pil_img = pil_img.convert('RGB')
                     
                     if embed_workflow and HAS_PIEXIF and piexif is not None and not args.disable_metadata:
-                        exif_bytes = self._build_exif_metadata(affix_name, model_name, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo)
+                        exif_bytes = self._build_exif_metadata(affix_name, model_name, model_path, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo)
                         pil_img.save(file_path, exif=exif_bytes, quality=lossy_quality)
                     else:
                         pil_img.save(file_path, quality=lossy_quality)
@@ -241,7 +352,7 @@ class LunaMultiSaver:
             print(f"[LunaMultiSaver] Error saving {affix_name} image: {e}")
             return []
     
-    def _build_exif_metadata(self, affix_name, model_name, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo):
+    def _build_exif_metadata(self, affix_name, model_name, model_path, batch_timestamp, batch_number, metadata, custom_metadata, prompt, extra_pnginfo):
         """Build EXIF metadata for JPEG/WebP files"""
         pnginfo_json = {}
         prompt_json = {}
@@ -255,7 +366,7 @@ class LunaMultiSaver:
             } if pnginfo_json or prompt_json else {}) | ({
             "Exif": {
                 piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(
-                    f"Image Type: {affix_name}, Model: {model_name or 'Unknown'}, Timestamp: {batch_timestamp}, Batch: {batch_number}" +
+                    f"Image Type: {affix_name}, Model: {model_name}, Model Path: {model_path}, Timestamp: {batch_timestamp}, Batch: {batch_number}" +
                     (f", Generation Metadata: {json.dumps(metadata, separators=(',', ':'))}" if metadata is not None else "") +
                     (f", Custom: {custom_metadata}" if custom_metadata and metadata is None else ""),
                     encoding="unicode"
@@ -265,7 +376,7 @@ class LunaMultiSaver:
 
         return piexif.dump(exif_dict)
 
-    def save_images_parallel(self, images_data, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename="", filename_index=0, lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
+    def save_images_parallel(self, images_data, model_name_raw, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename_template="", filename_index=0, lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
         """Save images in parallel threads"""
         self.save_results = []
         self.save_threads = []
@@ -274,7 +385,7 @@ class LunaMultiSaver:
         def save_worker(image_data, idx):
             image, affix_name, use_subdir, fmt = image_data
             if image is not None:
-                results = self.save_single_image(image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, idx, filename, filename_index, fmt, lossless_webp, lossy_quality, png_compression, embed_workflow)
+                results = self.save_single_image(image, affix_name, use_subdir, model_name_raw, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, idx, filename_template, filename_index, fmt, lossless_webp, lossy_quality, png_compression, embed_workflow)
                 with results_lock:
                     self.save_results.extend(results)
 
@@ -292,30 +403,27 @@ class LunaMultiSaver:
 
         return self.save_results
 
-    def save_images_sequential(self, images_data, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename="", filename_index=0, lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
+    def save_images_sequential(self, images_data, model_name_raw, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename_template="", filename_index=0, lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
         """Save images sequentially"""
         results = []
         for idx, (image, affix_name, use_subdir, fmt) in enumerate(images_data):
             if image is not None:
-                batch_results = self.save_single_image(image, affix_name, use_subdir, model_name, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, idx, filename, filename_index, fmt, lossless_webp, lossy_quality, png_compression, embed_workflow)
+                batch_results = self.save_single_image(image, affix_name, use_subdir, model_name_raw, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, idx, filename_template, filename_index, fmt, lossless_webp, lossy_quality, png_compression, embed_workflow)
                 results.extend(batch_results)
 
         return results
 
-    def save_images(self, save_path, save_mode, quality_gate, min_quality_threshold,
-                   model_name=None, image_1=None, image_2=None, image_3=None, image_4=None, image_5=None,
+    def save_images(self, save_path, filename, save_mode, quality_gate, min_quality_threshold,
+                   model_name=None, model_path_raw=None, image_1=None, image_2=None, image_3=None, image_4=None, image_5=None,
                    affix_1="RAW", affix_2="UPSCALED", affix_3="DETAILED", affix_4="IMAGE4", affix_5="IMAGE5",
                    format_1="png", format_2="png", format_3="png", format_4="png", format_5="png",
                    subdir_1=True, subdir_2=True, subdir_3=True, subdir_4=True, subdir_5=True,
                    png_compression=4, lossy_quality=90, lossless_webp=False, embed_workflow=True,
-                   filename="", filename_index=0, custom_metadata="", metadata=None, prompt=None, extra_pnginfo=None):
+                   filename_index=0, custom_metadata="", metadata=None, prompt=None, extra_pnginfo=None):
 
-        # Strip common model file extensions from model_name
-        if model_name:
-            for ext in ('.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.gguf'):
-                if model_name.lower().endswith(ext):
-                    model_name = model_name[:-len(ext)]
-                    break
+        # Use model_name as the raw model path for template processing
+        # model_name input contains the full path like "Illustrious/3DCG/hsUltrahdCG_v60.safetensors"
+        model_name_raw = model_name
 
         # Generate single timestamp for all images in this batch
         batch_timestamp = datetime.now().strftime("%Y_%m_%d_%H%M%S")
@@ -348,9 +456,9 @@ class LunaMultiSaver:
         # Save passed images to normal location
         if filtered_images:
             if save_mode == "parallel":
-                results = self.save_images_parallel(filtered_images, model_name, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+                results = self.save_images_parallel(filtered_images, model_name_raw, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
             else:
-                results = self.save_images_sequential(filtered_images, model_name, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+                results = self.save_images_sequential(filtered_images, model_name_raw, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
             all_results.extend(results)
         
         # Save discarded images to _discarded subfolder for review
@@ -359,9 +467,9 @@ class LunaMultiSaver:
             discarded_data = [(img, affix, subdir, fmt) for img, affix, subdir, fmt, score, mode in discarded_images]
             
             if save_mode == "parallel":
-                discarded_results = self.save_images_parallel(discarded_data, model_name, discarded_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+                discarded_results = self.save_images_parallel(discarded_data, model_name_raw, discarded_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
             else:
-                discarded_results = self.save_images_sequential(discarded_data, model_name, discarded_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+                discarded_results = self.save_images_sequential(discarded_data, model_name_raw, discarded_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
             
             # Mark discarded results for UI distinction (optional)
             for r in discarded_results:

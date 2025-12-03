@@ -25,11 +25,12 @@ class LunaConfigGateway:
     CATEGORY = "Luna/Parameters"
     RETURN_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT",
                     "INT", "INT", "INT", "INT", "INT", "FLOAT", "FLOAT", "INT",
-                    "STRING", "STRING", "STRING", "STRING", "STRING",
+                    comfy.samplers.KSampler.SAMPLERS, comfy.samplers.KSampler.SCHEDULERS,
+                    "STRING", "STRING", "STRING",
                     "LORA_STACK", "METADATA")
     RETURN_NAMES = ("model", "clip", "vae", "positive", "negative", "latent",
                     "width", "height", "batch_size", "seed", "steps", "cfg", "denoise", "clip_skip",
-                    "sampler", "scheduler", "model_name", "positive_prompt", "negative_prompt",
+                    "sampler_name", "scheduler", "model_name", "positive_prompt", "negative_prompt",
                     "lora_stack", "metadata")
     FUNCTION = "process"
 
