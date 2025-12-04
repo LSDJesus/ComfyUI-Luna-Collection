@@ -200,12 +200,16 @@ def quantize_tensor_q4_0(tensor: torch.Tensor) -> bytes:
     
     blocks = tensor.reshape(n_blocks, block_size)
     
-    # Scale based on max absolute value, mapping to [-8, 7] for 4-bit signed
-    scales = blocks.abs().max(dim=1).values / 7.0
+    # Scale based on max absolute value, mapping to [0, 15] for unsigned 4-bit
+    # We use unsigned representation: 0-15 maps to -8 to +7
+    max_abs = blocks.abs().max(dim=1).values
+    scales = max_abs / 7.0
     scales = scales.clamp(min=1e-10)
     
-    # Quantize to 4-bit range [-8, 7]
-    quantized = (blocks / scales.unsqueeze(1)).round().clamp(-8, 7).to(torch.int8)
+    # Quantize to range [-8, 7], then shift to [0, 15] for packing
+    quantized = (blocks / scales.unsqueeze(1)).round().clamp(-8, 7)
+    # Shift to unsigned: -8 -> 0, 0 -> 8, 7 -> 15
+    quantized_unsigned = (quantized + 8).to(torch.uint8)
     
     output = bytearray()
     for i in range(n_blocks):
@@ -214,11 +218,12 @@ def quantize_tensor_q4_0(tensor: torch.Tensor) -> bytes:
         output.extend(scale_f16.numpy().tobytes())
         
         # Pack pairs of 4-bit values into bytes
-        q = quantized[i].numpy()
+        q = quantized_unsigned[i].numpy()
         for j in range(0, 32, 2):
-            low = (q[j] + 8) & 0x0F
-            high = (q[j + 1] + 8) & 0x0F
-            output.append(low | (high << 4))
+            low = int(q[j]) & 0x0F
+            high = int(q[j + 1]) & 0x0F
+            packed = low | (high << 4)
+            output.append(packed)
     
     return bytes(output)
 
