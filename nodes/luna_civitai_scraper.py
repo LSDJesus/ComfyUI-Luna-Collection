@@ -18,12 +18,15 @@ import hashlib
 import asyncio
 import base64
 import io
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
 import urllib.request
 import urllib.error
 import ssl
+import time
 
 import folder_paths
 
@@ -66,6 +69,40 @@ CIVITAI_API_BASE = "https://civitai.com/api/v1"
 
 # SSL context for HTTPS requests
 SSL_CONTEXT = ssl.create_default_context()
+
+# File locks for safe parallel writing (keyed by filepath)
+_file_locks: Dict[str, threading.Lock] = {}
+_file_locks_lock = threading.Lock()
+
+
+def get_file_lock(filepath: str) -> threading.Lock:
+    """Get or create a lock for a specific file path."""
+    with _file_locks_lock:
+        if filepath not in _file_locks:
+            _file_locks[filepath] = threading.Lock()
+        return _file_locks[filepath]
+
+
+class RateLimiter:
+    """Simple thread-safe rate limiter for API requests."""
+    
+    def __init__(self, requests_per_second: float = 5.0):
+        self.min_interval = 1.0 / requests_per_second
+        self.last_request = 0.0
+        self.lock = threading.Lock()
+    
+    def wait(self):
+        """Wait if necessary to respect rate limit."""
+        with self.lock:
+            now = time.time()
+            elapsed = now - self.last_request
+            if elapsed < self.min_interval:
+                time.sleep(self.min_interval - elapsed)
+            self.last_request = time.time()
+
+
+# Global rate limiter for CivitAI API (5 requests/second default)
+_rate_limiter = RateLimiter(5.0)
 
 
 def strip_html_tags(text: str) -> str:
@@ -221,11 +258,20 @@ def compute_tensor_hash(filepath: str) -> Optional[str]:
         return None
 
 
-def fetch_civitai_by_hash(tensor_hash: str, api_key: str = "") -> Optional[Dict]:
+def fetch_civitai_by_hash(tensor_hash: str, api_key: str = "", 
+                          use_rate_limit: bool = True) -> Optional[Dict]:
     """
     Fetch Civitai metadata using the tensor hash.
     Returns the model version data if found.
+    
+    Args:
+        tensor_hash: SHA256 hash of tensor data
+        api_key: Optional CivitAI API key
+        use_rate_limit: Whether to apply rate limiting (for parallel requests)
     """
+    if use_rate_limit:
+        _rate_limiter.wait()
+    
     # Civitai uses first 12 chars of hash (without 0x prefix)
     short_hash = tensor_hash.replace("0x", "")[:12].upper()
     url = f"{CIVITAI_API_BASE}/model-versions/by-hash/{short_hash}"
@@ -241,7 +287,11 @@ def fetch_civitai_by_hash(tensor_hash: str, api_key: str = "") -> Optional[Dict]
                 return json.loads(response.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            print(f"LunaCivitai: Model not found on Civitai for hash {short_hash}")
+            pass  # Silently skip not found (too noisy in batch mode)
+        elif e.code == 429:
+            print(f"LunaCivitai: Rate limited! Waiting...")
+            time.sleep(5)  # Back off on rate limit
+            return fetch_civitai_by_hash(tensor_hash, api_key, use_rate_limit)
         else:
             print(f"LunaCivitai: HTTP error {e.code} fetching {url}")
     except Exception as e:
@@ -250,10 +300,19 @@ def fetch_civitai_by_hash(tensor_hash: str, api_key: str = "") -> Optional[Dict]
     return None
 
 
-def fetch_civitai_model_info(model_id: int, api_key: str = "") -> Optional[Dict]:
+def fetch_civitai_model_info(model_id: int, api_key: str = "",
+                              use_rate_limit: bool = True) -> Optional[Dict]:
     """
     Fetch full model info from Civitai by model ID.
+    
+    Args:
+        model_id: CivitAI model ID
+        api_key: Optional CivitAI API key
+        use_rate_limit: Whether to apply rate limiting (for parallel requests)
     """
+    if use_rate_limit:
+        _rate_limiter.wait()
+    
     url = f"{CIVITAI_API_BASE}/models/{model_id}"
     
     headers = {"User-Agent": "ComfyUI-Luna-Collection/1.0"}
@@ -265,6 +324,11 @@ def fetch_civitai_model_info(model_id: int, api_key: str = "") -> Optional[Dict]
         with urllib.request.urlopen(req, context=SSL_CONTEXT, timeout=30) as response:
             if response.status == 200:
                 return json.loads(response.read().decode('utf-8'))
+    except urllib.error.HTTPError as e:
+        if e.code == 429:
+            print(f"LunaCivitai: Rate limited! Waiting...")
+            time.sleep(5)
+            return fetch_civitai_model_info(model_id, api_key, use_rate_limit)
     except Exception as e:
         print(f"LunaCivitai: Error fetching model {model_id}: {e}")
     
@@ -417,6 +481,7 @@ def write_safetensors_header(filepath: str, new_metadata: Dict,
     
     Uses journaling (temp file swap) for safety, like SwarmUI does.
     Adds spacer padding to allow future in-place updates.
+    Thread-safe via per-file locking for parallel batch operations.
     
     Args:
         filepath: Path to the safetensors file
@@ -426,94 +491,98 @@ def write_safetensors_header(filepath: str, new_metadata: Dict,
     Returns:
         True if successful
     """
-    try:
-        # Read existing header
-        with open(filepath, 'rb') as f:
-            header_len_bytes = f.read(8)
-            old_header_len = struct.unpack('<Q', header_len_bytes)[0]
-            
-            header_bytes = f.read(old_header_len)
-            header = json.loads(header_bytes.decode('utf-8'))
-            
-            # Get or create __metadata__ section
-            meta = header.get("__metadata__", {})
-            
-            # Update with new metadata
-            for key, value in new_metadata.items():
-                if value is not None and value != "":
-                    meta[key] = str(value) if not isinstance(value, str) else value
-            
-            # Add spacer for future updates
-            meta["__spacer"] = " " * (spacer_kb * 1024)
-            
-            header["__metadata__"] = meta
-            
-            # Encode new header
-            new_header_bytes = json.dumps(header, separators=(',', ':')).encode('utf-8')
-            new_header_len = len(new_header_bytes)
-            
-            # Check if we can do in-place update
-            if new_header_len <= old_header_len:
-                # Pad to match old length
-                padding_needed = old_header_len - new_header_len
-                meta["__spacer"] = " " * padding_needed
+    # Get lock for this specific file to prevent parallel writes
+    file_lock = get_file_lock(filepath)
+    
+    with file_lock:
+        try:
+            # Read existing header
+            with open(filepath, 'rb') as f:
+                header_len_bytes = f.read(8)
+                old_header_len = struct.unpack('<Q', header_len_bytes)[0]
+                
+                header_bytes = f.read(old_header_len)
+                header = json.loads(header_bytes.decode('utf-8'))
+                
+                # Get or create __metadata__ section
+                meta = header.get("__metadata__", {})
+                
+                # Update with new metadata
+                for key, value in new_metadata.items():
+                    if value is not None and value != "":
+                        meta[key] = str(value) if not isinstance(value, str) else value
+                
+                # Add spacer for future updates
+                meta["__spacer"] = " " * (spacer_kb * 1024)
+                
                 header["__metadata__"] = meta
+                
+                # Encode new header
                 new_header_bytes = json.dumps(header, separators=(',', ':')).encode('utf-8')
+                new_header_len = len(new_header_bytes)
                 
-                # Direct in-place update
-                f.seek(0)
-                
-        # For in-place update
-        if len(new_header_bytes) <= old_header_len:
-            with open(filepath, 'r+b') as f:
-                f.seek(8)
-                f.write(new_header_bytes)
-                # Pad remainder with spaces if needed
-                remaining = old_header_len - len(new_header_bytes)
-                if remaining > 0:
-                    f.write(b' ' * remaining)
-            print(f"LunaCivitai: Updated metadata in-place for {Path(filepath).name}")
-            return True
-        
-        # Need to rewrite entire file (header grew)
-        temp_path = filepath + ".tmp"
-        with open(filepath, 'rb') as src:
-            # Skip old header
-            src.seek(8 + old_header_len)
+                # Check if we can do in-place update
+                if new_header_len <= old_header_len:
+                    # Pad to match old length
+                    padding_needed = old_header_len - new_header_len
+                    meta["__spacer"] = " " * padding_needed
+                    header["__metadata__"] = meta
+                    new_header_bytes = json.dumps(header, separators=(',', ':')).encode('utf-8')
+                    
+                    # Direct in-place update
+                    f.seek(0)
+                    
+            # For in-place update
+            if len(new_header_bytes) <= old_header_len:
+                with open(filepath, 'r+b') as f:
+                    f.seek(8)
+                    f.write(new_header_bytes)
+                    # Pad remainder with spaces if needed
+                    remaining = old_header_len - len(new_header_bytes)
+                    if remaining > 0:
+                        f.write(b' ' * remaining)
+                print(f"LunaCivitai: Updated metadata in-place for {Path(filepath).name}")
+                return True
             
-            with open(temp_path, 'wb') as dst:
-                # Write new header length
-                dst.write(struct.pack('<Q', new_header_len))
-                # Write new header
-                dst.write(new_header_bytes)
-                # Copy tensor data
-                while chunk := src.read(8192):
-                    dst.write(chunk)
-        
-        # Journaling swap
-        backup_path = filepath + ".tmp2"
-        creation_time = os.path.getctime(filepath)
-        
-        os.rename(filepath, backup_path)
-        os.rename(temp_path, filepath)
-        os.remove(backup_path)
-        
-        # Preserve creation time
-        os.utime(filepath, (creation_time, os.path.getmtime(filepath)))
-        
-        print(f"LunaCivitai: Rewrote {Path(filepath).name} with expanded header")
-        return True
-        
-    except Exception as e:
-        print(f"LunaCivitai: Error writing header to {filepath}: {e}")
-        # Cleanup temp files
-        for ext in [".tmp", ".tmp2"]:
-            if os.path.exists(filepath + ext):
-                try:
-                    os.remove(filepath + ext)
-                except:
-                    pass
-        return False
+            # Need to rewrite entire file (header grew)
+            temp_path = filepath + ".tmp"
+            with open(filepath, 'rb') as src:
+                # Skip old header
+                src.seek(8 + old_header_len)
+                
+                with open(temp_path, 'wb') as dst:
+                    # Write new header length
+                    dst.write(struct.pack('<Q', new_header_len))
+                    # Write new header
+                    dst.write(new_header_bytes)
+                    # Copy tensor data
+                    while chunk := src.read(8192):
+                        dst.write(chunk)
+            
+            # Journaling swap
+            backup_path = filepath + ".tmp2"
+            creation_time = os.path.getctime(filepath)
+            
+            os.rename(filepath, backup_path)
+            os.rename(temp_path, filepath)
+            os.remove(backup_path)
+            
+            # Preserve creation time
+            os.utime(filepath, (creation_time, os.path.getmtime(filepath)))
+            
+            print(f"LunaCivitai: Rewrote {Path(filepath).name} with expanded header")
+            return True
+            
+        except Exception as e:
+            print(f"LunaCivitai: Error writing header to {filepath}: {e}")
+            # Cleanup temp files
+            for ext in [".tmp", ".tmp2"]:
+                if os.path.exists(filepath + ext):
+                    try:
+                        os.remove(filepath + ext)
+                    except:
+                        pass
+            return False
 
 
 def write_swarm_json_sidecar(filepath: str, metadata: Dict) -> bool:
@@ -703,6 +772,9 @@ class LunaCivitaiBatchScraper:
     
     Processes all LoRAs or Embeddings in a folder, skipping those
     that already have metadata (unless force_refresh is enabled).
+    
+    Parallel mode (5 workers) is automatically enabled when an API key is provided.
+    Without an API key, models are processed sequentially to avoid rate limits.
     """
     
     CATEGORY = "Luna/Utilities"
@@ -733,24 +805,96 @@ class LunaCivitaiBatchScraper:
                     "tooltip": "Skip models that already have metadata"
                 }),
                 "max_models": ("INT", {
-                    "default": 10,
+                    "default": 50,
                     "min": 1,
-                    "max": 100,
-                    "tooltip": "Maximum number of models to process (rate limiting)"
+                    "max": 500,
+                    "tooltip": "Maximum number of models to process"
                 }),
             },
             "optional": {
                 "civitai_api_key": ("STRING", {
-                    "default": ""
+                    "default": "",
+                    "tooltip": "CivitAI API key - enables parallel processing (5 workers)"
+                }),
+                "parallel_workers": ("INT", {
+                    "default": 5,
+                    "min": 1,
+                    "max": 10,
+                    "tooltip": "Number of parallel workers (only with API key)"
                 }),
             }
         }
     
+    def _process_single_model(self, model_name: str, model_path: str, model_type: str,
+                               write_to_file: bool, write_sidecar: bool,
+                               civitai_api_key: str) -> Dict[str, Any]:
+        """
+        Process a single model - designed for parallel execution.
+        Returns a result dict with status and details.
+        """
+        result = {
+            'model_name': model_name,
+            'status': 'unknown',
+            'title': '',
+            'triggers': '',
+            'error': None
+        }
+        
+        try:
+            # Compute hash
+            tensor_hash = compute_tensor_hash(model_path)
+            if not tensor_hash:
+                result['status'] = 'hash_failed'
+                return result
+            
+            # Query CivitAI
+            version_data = fetch_civitai_by_hash(tensor_hash, civitai_api_key)
+            if not version_data:
+                result['status'] = 'not_found'
+                return result
+            
+            # Get full info
+            model_id = version_data.get("modelId")
+            model_data = fetch_civitai_model_info(model_id, civitai_api_key) if model_id else None
+            
+            # Parse metadata (includes thumbnail download)
+            metadata = parse_civitai_metadata(version_data, model_data, api_key=civitai_api_key)
+            metadata["modelspec.hash_sha256"] = tensor_hash
+            
+            # Write to file (thread-safe via file locking)
+            success = True
+            if write_to_file:
+                success = write_safetensors_header(model_path, metadata)
+            if write_sidecar:
+                write_swarm_json_sidecar(model_path, metadata)
+            
+            # Store in database (thread-safe via per-thread connections)
+            if HAS_METADATA_DB:
+                try:
+                    db_model_type = "lora" if model_type == "LoRA" else "embedding"
+                    store_civitai_metadata(model_name, db_model_type, metadata, tensor_hash)
+                except Exception as e:
+                    print(f"LunaCivitai: DB write failed for {model_name}: {e}")
+            
+            if success:
+                result['status'] = 'success'
+                result['title'] = metadata.get("modelspec.title", model_name)
+                result['triggers'] = metadata.get("modelspec.trigger_phrase", "")[:50]
+            else:
+                result['status'] = 'write_failed'
+                
+        except Exception as e:
+            result['status'] = 'error'
+            result['error'] = str(e)
+        
+        return result
+    
     def batch_scrape(self, model_type: str, folder_filter: str,
                      write_to_file: bool, write_sidecar: bool,
                      skip_existing: bool, max_models: int,
-                     civitai_api_key: str = "") -> Tuple[str, int, int]:
-        """Batch process multiple models."""
+                     civitai_api_key: str = "",
+                     parallel_workers: int = 5) -> Tuple[str, int, int]:
+        """Batch process multiple models with optional parallelism."""
         
         # Get model list
         if model_type == "LoRA":
@@ -767,12 +911,19 @@ class LunaCivitaiBatchScraper:
         # Filter to safetensors only
         models = [m for m in models if m.endswith(".safetensors")]
         
+        # Determine if parallel mode should be used
+        use_parallel = bool(civitai_api_key and len(civitai_api_key) > 10)
+        
         report_lines = [f"Luna Civitai Batch Scraper - {model_type}s"]
         report_lines.append(f"Found {len(models)} models matching filter")
+        if use_parallel:
+            report_lines.append(f"Mode: PARALLEL ({parallel_workers} workers)")
+        else:
+            report_lines.append("Mode: SERIAL (provide API key for parallel)")
         report_lines.append("=" * 50)
         
-        processed = 0
-        failed = 0
+        # Build list of models to process
+        to_process = []
         skipped = 0
         
         for model_name in models[:max_models]:
@@ -791,55 +942,76 @@ class LunaCivitaiBatchScraper:
                 except:
                     pass
             
-            # Compute hash and query
-            tensor_hash = compute_tensor_hash(model_path)
-            if not tensor_hash:
-                report_lines.append(f"SKIP {model_name}: Hash failed")
-                failed += 1
-                continue
+            to_process.append((model_name, model_path))
+        
+        processed = 0
+        failed = 0
+        results = []
+        
+        if use_parallel and len(to_process) > 1:
+            # PARALLEL MODE
+            print(f"LunaCivitai: Starting parallel batch with {parallel_workers} workers...")
             
-            version_data = fetch_civitai_by_hash(tensor_hash, civitai_api_key)
-            if not version_data:
+            with ThreadPoolExecutor(max_workers=parallel_workers) as executor:
+                # Submit all tasks
+                future_to_model = {
+                    executor.submit(
+                        self._process_single_model,
+                        model_name, model_path, model_type,
+                        write_to_file, write_sidecar, civitai_api_key
+                    ): model_name
+                    for model_name, model_path in to_process
+                }
+                
+                # Collect results as they complete
+                for future in as_completed(future_to_model):
+                    result = future.result()
+                    results.append(result)
+                    
+                    # Log progress
+                    if result['status'] == 'success':
+                        processed += 1
+                    else:
+                        failed += 1
+                    
+                    print(f"LunaCivitai: [{processed + failed}/{len(to_process)}] {result['model_name']}: {result['status']}")
+        else:
+            # SERIAL MODE
+            for model_name, model_path in to_process:
+                result = self._process_single_model(
+                    model_name, model_path, model_type,
+                    write_to_file, write_sidecar, civitai_api_key
+                )
+                results.append(result)
+                
+                if result['status'] == 'success':
+                    processed += 1
+                else:
+                    failed += 1
+        
+        # Build report from results
+        for result in results:
+            model_name = result['model_name']
+            status = result['status']
+            
+            if status == 'success':
+                report_lines.append(f"OK   {model_name}: {result['title']}")
+                if result['triggers']:
+                    report_lines.append(f"     Triggers: {result['triggers']}...")
+            elif status == 'not_found':
                 report_lines.append(f"MISS {model_name}: Not on Civitai")
-                failed += 1
-                continue
-            
-            # Get full info
-            model_id = version_data.get("modelId")
-            model_data = fetch_civitai_model_info(model_id, civitai_api_key) if model_id else None
-            
-            # Parse metadata (includes thumbnail download)
-            metadata = parse_civitai_metadata(version_data, model_data, api_key=civitai_api_key)
-            metadata["modelspec.hash_sha256"] = tensor_hash
-            
-            # Write
-            success = True
-            if write_to_file:
-                success = write_safetensors_header(model_path, metadata)
-            if write_sidecar:
-                write_swarm_json_sidecar(model_path, metadata)
-            
-            # Store in database
-            if HAS_METADATA_DB:
-                try:
-                    db_model_type = "lora" if model_type == "LoRA" else "embedding"
-                    store_civitai_metadata(model_name, db_model_type, metadata, tensor_hash)
-                except Exception as e:
-                    print(f"LunaCivitai: DB write failed for {model_name}: {e}")
-            
-            if success:
-                title = metadata.get("modelspec.title", model_name)
-                triggers = metadata.get("modelspec.trigger_phrase", "")[:50]
-                report_lines.append(f"OK   {model_name}: {title}")
-                if triggers:
-                    report_lines.append(f"     Triggers: {triggers}...")
-                processed += 1
-            else:
+            elif status == 'hash_failed':
+                report_lines.append(f"SKIP {model_name}: Hash failed")
+            elif status == 'write_failed':
                 report_lines.append(f"FAIL {model_name}: Write error")
-                failed += 1
+            else:
+                report_lines.append(f"ERR  {model_name}: {result.get('error', 'Unknown error')}")
         
         report_lines.append("=" * 50)
         report_lines.append(f"Processed: {processed}, Failed: {failed}, Skipped: {skipped}")
+        
+        if use_parallel:
+            report_lines.append(f"(Parallel mode with {parallel_workers} workers)")
         
         return ("\n".join(report_lines), processed, failed)
 

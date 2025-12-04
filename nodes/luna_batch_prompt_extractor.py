@@ -9,6 +9,7 @@ import json
 import re
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
+from PIL.ExifTags import TAGS, IFD
 from typing import Tuple, Dict, List, Any, Optional
 
 try:
@@ -221,7 +222,16 @@ class LunaBatchPromptExtractor:
             return None
     
     def extract_a1111_metadata(self, image_path: str) -> Optional[Dict[str, Any]]:
-        """Extract metadata from A1111/Forge parameters"""
+        """Extract metadata from A1111/Forge parameters
+        
+        A1111 format:
+        positive prompt (may be multi-line)
+        Negative prompt: negative prompt (may be multi-line)
+        Steps: X, Sampler: Y, CFG scale: Z, Seed: N, Size: WxH, ...
+        
+        Everything before 'Negative prompt:' is positive.
+        Everything between 'Negative prompt:' and 'Steps:' is negative.
+        """
         try:
             img = Image.open(image_path)
             metadata = {
@@ -233,55 +243,87 @@ class LunaBatchPromptExtractor:
             }
             
             # A1111 stores in 'parameters' key
-            if 'parameters' in img.info:
-                params = img.info['parameters']
-                
-                # Format: "positive prompt\nNegative prompt: negative prompt\nSteps: X, Sampler: Y, ..."
-                lines = params.split('\n')
-                metadata["positive_prompt"] = lines[0].strip()
-                
-                for line in lines[1:]:
-                    if line.startswith('Negative prompt:'):
-                        metadata["negative_prompt"] = line.replace('Negative prompt:', '').strip()
-                    elif ':' in line:
-                        # Parse other parameters
-                        parts = line.split(',')
-                        for part in parts:
-                            if ':' in part:
-                                key, value = part.split(':', 1)
-                                key_lower = key.strip().lower()
-                                value_stripped = value.strip()
-                                metadata["extra"][key_lower] = value_stripped
-                                
-                                # Convert seed to int for consistency
-                                if key_lower == 'seed':
-                                    try:
-                                        metadata["extra"]["seed"] = int(value_stripped)
-                                    except ValueError:
-                                        pass
-                
-                # Parse LoRAs from prompts
-                metadata["positive_prompt"], loras_pos = self.parse_loras_from_prompt(metadata["positive_prompt"])
-                metadata["negative_prompt"], loras_neg = self.parse_loras_from_prompt(metadata["negative_prompt"])
-                metadata["loras"] = loras_pos + loras_neg
-                
-                # Remove duplicate LoRAs
-                seen = set()
-                unique_loras = []
-                for lora in metadata["loras"]:
-                    if lora["name"] not in seen:
-                        seen.add(lora["name"])
-                        unique_loras.append(lora)
-                metadata["loras"] = unique_loras
-                
-                return metadata
+            if 'parameters' not in img.info:
+                return None
             
-            return None
-        except:
+            params = img.info['parameters']
+            
+            # Find the positions of key markers
+            neg_marker = "Negative prompt:"
+            steps_marker = "Steps:"
+            
+            neg_pos = params.find(neg_marker)
+            steps_pos = params.find(steps_marker)
+            
+            # Extract positive prompt (everything before Negative prompt: or Steps:)
+            if neg_pos != -1:
+                metadata["positive_prompt"] = params[:neg_pos].strip()
+            elif steps_pos != -1:
+                metadata["positive_prompt"] = params[:steps_pos].strip()
+            else:
+                # No markers found, treat entire thing as positive prompt
+                metadata["positive_prompt"] = params.strip()
+            
+            # Extract negative prompt (between Negative prompt: and Steps:)
+            if neg_pos != -1:
+                neg_start = neg_pos + len(neg_marker)
+                if steps_pos != -1 and steps_pos > neg_pos:
+                    metadata["negative_prompt"] = params[neg_start:steps_pos].strip()
+                else:
+                    # No Steps marker, take everything after Negative prompt:
+                    metadata["negative_prompt"] = params[neg_start:].strip()
+            
+            # Extract other parameters (after Steps:)
+            if steps_pos != -1:
+                params_section = params[steps_pos:]
+                
+                # Parse key: value pairs separated by commas
+                # Handle multi-value keys like "Lora hashes" that contain colons
+                param_pattern = r'([A-Za-z][A-Za-z0-9 _-]*?):\s*([^,]+(?:,(?![A-Za-z][A-Za-z0-9 _-]*?:)[^,]*)*)'
+                
+                for match in re.finditer(param_pattern, params_section):
+                    key = match.group(1).strip()
+                    value = match.group(2).strip()
+                    key_lower = key.lower()
+                    
+                    # Store all extra parameters
+                    metadata["extra"][key_lower] = value
+                    
+                    # Special handling for seed
+                    if key_lower == 'seed':
+                        try:
+                            metadata["extra"]["seed"] = int(value)
+                        except ValueError:
+                            pass
+                    
+                    # Special handling for size -> extract width/height
+                    if key_lower == 'size':
+                        size_match = re.match(r'(\d+)x(\d+)', value)
+                        if size_match:
+                            metadata["extra"]["width"] = int(size_match.group(1))
+                            metadata["extra"]["height"] = int(size_match.group(2))
+            
+            # Parse LoRAs from prompts
+            metadata["positive_prompt"], loras_pos = self.parse_loras_from_prompt(metadata["positive_prompt"])
+            metadata["negative_prompt"], loras_neg = self.parse_loras_from_prompt(metadata["negative_prompt"])
+            metadata["loras"] = loras_pos + loras_neg
+            
+            # Remove duplicate LoRAs
+            seen = set()
+            unique_loras = []
+            for lora in metadata["loras"]:
+                if lora["name"] not in seen:
+                    seen.add(lora["name"])
+                    unique_loras.append(lora)
+            metadata["loras"] = unique_loras
+            
+            return metadata
+        except Exception as e:
+            print(f"[LunaBatchPromptExtractor] Error extracting A1111 metadata from {image_path}: {e}")
             return None
     
     def extract_generic_metadata(self, image_path: str) -> Optional[Dict[str, Any]]:
-        """Try to extract metadata from any text metadata"""
+        """Try to extract metadata from any text metadata including EXIF"""
         try:
             img = Image.open(image_path)
             metadata = {
@@ -317,6 +359,134 @@ class LunaBatchPromptExtractor:
             return metadata if (metadata["positive_prompt"] or metadata["negative_prompt"]) else None
             
         except:
+            return None
+    
+    def extract_exif_metadata(self, image_path: str) -> Optional[Dict[str, Any]]:
+        """Extract metadata from EXIF data (JPEG, WebP, TIFF)
+        
+        Many AI tools store prompts in EXIF UserComment or ImageDescription fields.
+        Some use custom EXIF tags or XMP metadata.
+        """
+        try:
+            img = Image.open(image_path)
+            metadata = {
+                "positive_prompt": "",
+                "negative_prompt": "",
+                "loras": [],
+                "embeddings": [],
+                "extra": {}
+            }
+            
+            # Try to get EXIF data
+            exif_data = None
+            if hasattr(img, '_getexif') and img._getexif():
+                exif_data = img._getexif()
+            elif 'exif' in img.info:
+                # Try to parse raw EXIF bytes
+                try:
+                    from PIL.ExifTags import TAGS
+                    exif_bytes = img.info['exif']
+                    # Use getexif() method which handles the parsing
+                    exif_data = img.getexif()
+                except:
+                    pass
+            
+            if not exif_data:
+                return None
+            
+            # Common EXIF tags that might contain prompts
+            # 270 = ImageDescription
+            # 37510 = UserComment  
+            # 40092 = XPComment (Windows)
+            # 40091 = XPTitle (Windows)
+            
+            prompt_text = ""
+            
+            # Check ImageDescription (tag 270)
+            if 270 in exif_data:
+                desc = exif_data[270]
+                if isinstance(desc, bytes):
+                    desc = desc.decode('utf-8', errors='ignore')
+                if desc and len(desc) > 10:
+                    prompt_text = desc
+            
+            # Check UserComment (tag 37510) - often has charset prefix
+            if 37510 in exif_data and not prompt_text:
+                comment = exif_data[37510]
+                if isinstance(comment, bytes):
+                    # UserComment often starts with charset marker like "UNICODE\x00\x00"
+                    if comment.startswith(b'UNICODE\x00'):
+                        comment = comment[8:].decode('utf-16-le', errors='ignore')
+                    elif comment.startswith(b'ASCII\x00\x00\x00'):
+                        comment = comment[8:].decode('ascii', errors='ignore')
+                    else:
+                        comment = comment.decode('utf-8', errors='ignore')
+                if comment and len(comment) > 10:
+                    prompt_text = comment
+            
+            # Check for IFD.Exif sub-IFD (newer PIL approach)
+            try:
+                exif_ifd = img.getexif().get_ifd(IFD.Exif)
+                if exif_ifd:
+                    # 37510 = UserComment in Exif IFD
+                    if 37510 in exif_ifd:
+                        comment = exif_ifd[37510]
+                        if isinstance(comment, bytes):
+                            if comment.startswith(b'UNICODE\x00'):
+                                comment = comment[8:].decode('utf-16-le', errors='ignore')
+                            elif comment.startswith(b'ASCII\x00\x00\x00'):
+                                comment = comment[8:].decode('ascii', errors='ignore')
+                            else:
+                                # Try UTF-8, ignore errors
+                                comment = comment.decode('utf-8', errors='ignore')
+                        if comment and len(comment) > 10:
+                            prompt_text = comment
+            except:
+                pass
+            
+            if not prompt_text:
+                return None
+            
+            # Clean up the prompt text
+            prompt_text = prompt_text.strip().strip('\x00')
+            
+            # Check if it looks like A1111 format
+            if "Negative prompt:" in prompt_text or "Steps:" in prompt_text:
+                # Parse as A1111 format
+                neg_marker = "Negative prompt:"
+                steps_marker = "Steps:"
+                
+                neg_pos = prompt_text.find(neg_marker)
+                steps_pos = prompt_text.find(steps_marker)
+                
+                if neg_pos != -1:
+                    metadata["positive_prompt"] = prompt_text[:neg_pos].strip()
+                    neg_start = neg_pos + len(neg_marker)
+                    if steps_pos != -1 and steps_pos > neg_pos:
+                        metadata["negative_prompt"] = prompt_text[neg_start:steps_pos].strip()
+                    else:
+                        metadata["negative_prompt"] = prompt_text[neg_start:].strip()
+                elif steps_pos != -1:
+                    metadata["positive_prompt"] = prompt_text[:steps_pos].strip()
+                else:
+                    metadata["positive_prompt"] = prompt_text
+            else:
+                # Just treat the whole thing as positive prompt
+                metadata["positive_prompt"] = prompt_text
+            
+            # Parse LoRAs from prompts
+            if metadata["positive_prompt"]:
+                metadata["positive_prompt"], loras = self.parse_loras_from_prompt(metadata["positive_prompt"])
+                metadata["loras"].extend(loras)
+            
+            if metadata["negative_prompt"]:
+                metadata["negative_prompt"], loras = self.parse_loras_from_prompt(metadata["negative_prompt"])
+                metadata["loras"].extend(loras)
+            
+            return metadata if (metadata["positive_prompt"] or metadata["negative_prompt"]) else None
+            
+        except Exception as e:
+            print(f"[LunaBatchPromptExtractor] Error extracting EXIF from {image_path}: {e}")
             return None
     
     def extract_metadata(
@@ -363,19 +533,23 @@ class LunaBatchPromptExtractor:
         metadata_list = []
         images_scanned = 0
         metadata_extracted = 0
+        no_metadata_files = []
         
         for image_path in image_files:
             images_scanned += 1
             
-            # Try different extraction methods
+            # Try different extraction methods in order of specificity
             metadata = self.extract_comfyui_metadata(image_path)
             if not metadata:
                 metadata = self.extract_a1111_metadata(image_path)
+            if not metadata:
+                metadata = self.extract_exif_metadata(image_path)
             if not metadata:
                 metadata = self.extract_generic_metadata(image_path)
             
             # Skip if no metadata found
             if not metadata:
+                no_metadata_files.append(os.path.basename(image_path))
                 continue
             
             # Add image file information
@@ -400,14 +574,21 @@ class LunaBatchPromptExtractor:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(metadata_list, f, indent=2, ensure_ascii=False)
             
-            status = (
-                f"Success!\n"
-                f"Scanned: {images_scanned} images\n"
-                f"Extracted: {metadata_extracted} with metadata\n"
+            status_lines = [
+                "Success!",
+                f"Scanned: {images_scanned} images",
+                f"Extracted: {metadata_extracted} with metadata",
                 f"Saved to: {output_path}"
-            )
+            ]
             
-            return (status, images_scanned, metadata_extracted)
+            if no_metadata_files:
+                status_lines.append(f"\nNo metadata found in {len(no_metadata_files)} files:")
+                for fname in no_metadata_files[:10]:  # Limit to first 10
+                    status_lines.append(f"  - {fname}")
+                if len(no_metadata_files) > 10:
+                    status_lines.append(f"  ... and {len(no_metadata_files) - 10} more")
+            
+            return ("\n".join(status_lines), images_scanned, metadata_extracted)
             
         except Exception as e:
             return (f"Error writing JSON file: {e}", images_scanned, 0)
