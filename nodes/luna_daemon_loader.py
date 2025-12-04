@@ -288,15 +288,153 @@ class LunaCheckpointTunnel:
         return (model, proxy_clip, proxy_vae, status)
 
 
+class LunaUNetTunnel:
+    """
+    Connect a UNet/MODEL (from GGUF loader or similar) to Luna Daemon's CLIP/VAE.
+    
+    Perfect for GGUF workflow where you only have UNet weights:
+    1. Load GGUF UNet with ComfyUI-GGUF or similar
+    2. Connect MODEL output to this node
+    3. Get daemon's shared CLIP and VAE automatically
+    
+    No CLIP/VAE inputs needed - daemon provides them!
+    
+    Workflow:
+    ┌─────────────────┐     ┌──────────────────┐
+    │ GGUF UNet Loader│────▶│ Luna UNet Tunnel │────▶ MODEL
+    └─────────────────┘     │                  │────▶ CLIP (from daemon)
+                            │                  │────▶ VAE (from daemon)
+                            └──────────────────┘
+    """
+    
+    CATEGORY = "Luna/Daemon"
+    RETURN_TYPES = ("MODEL", "CLIP", "VAE", "STRING")
+    RETURN_NAMES = ("model", "clip", "vae", "status")
+    FUNCTION = "tunnel"
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        # Model type hints for daemon to know which CLIP/VAE to provide
+        model_types = ["sdxl", "sd15", "flux", "sd3", "auto"]
+        
+        return {
+            "required": {
+                "model": ("MODEL", {
+                    "tooltip": "MODEL/UNet from GGUF loader or other UNet-only source"
+                }),
+                "model_type": (model_types, {
+                    "default": "sdxl",
+                    "tooltip": "Model architecture - determines which CLIP/VAE to use from daemon"
+                }),
+            },
+            "optional": {
+                "clip": ("CLIP", {
+                    "tooltip": "Optional CLIP override - if not connected, uses daemon's CLIP"
+                }),
+                "vae": ("VAE", {
+                    "tooltip": "Optional VAE override - if not connected, uses daemon's VAE"
+                }),
+            }
+        }
+    
+    def tunnel(self, model, model_type: str, clip=None, vae=None) -> Tuple:
+        """
+        Route UNet model with daemon CLIP/VAE.
+        
+        If clip/vae are provided, they're passed through.
+        If not provided, daemon's shared CLIP/VAE are used.
+        """
+        status_parts = []
+        
+        # Check daemon availability
+        if not DAEMON_AVAILABLE:
+            if clip is None or vae is None:
+                status = "ERROR: Daemon not available and no CLIP/VAE provided!"
+                print(f"[LunaUNetTunnel] {status}")
+                raise RuntimeError(status)
+            return (model, clip, vae, "Passthrough (daemon unavailable)")
+        
+        if not daemon_client.is_daemon_running():
+            if clip is None or vae is None:
+                status = "ERROR: Daemon not running and no CLIP/VAE provided!"
+                print(f"[LunaUNetTunnel] {status}")
+                raise RuntimeError(status)
+            return (model, clip, vae, "Passthrough (daemon not running)")
+        
+        # Get daemon info
+        try:
+            info = daemon_client.get_daemon_info()
+        except Exception as e:
+            if clip is None or vae is None:
+                raise RuntimeError(f"Daemon error: {e}")
+            return (model, clip, vae, f"Passthrough (daemon error: {e})")
+        
+        loaded_vaes = info.get('loaded_vaes', {})
+        loaded_clips = info.get('loaded_clip_components', {})
+        
+        # Handle VAE
+        if vae is not None:
+            # User provided VAE - pass through
+            output_vae = vae
+            status_parts.append("VAE: user-provided")
+        else:
+            # Use daemon VAE
+            vae_type_map = {
+                'sdxl': 'sdxl_vae',
+                'sd15': 'sd15_vae', 
+                'flux': 'flux_vae',
+                'sd3': 'sd3_vae',
+                'auto': 'sdxl_vae',  # Default to SDXL
+            }
+            vae_type = vae_type_map.get(model_type, 'sdxl_vae')
+            
+            if vae_type not in loaded_vaes and 'sdxl_vae' not in loaded_vaes:
+                raise RuntimeError(f"Daemon has no VAE loaded for {model_type}. Load VAE in daemon first.")
+            
+            # Use available VAE (prefer exact match, fall back to sdxl)
+            use_vae_type = vae_type if vae_type in loaded_vaes else 'sdxl_vae'
+            output_vae = DaemonVAE(source_vae=None, vae_type=use_vae_type, use_existing=True)
+            status_parts.append(f"VAE: daemon ({use_vae_type})")
+        
+        # Handle CLIP
+        if clip is not None:
+            # User provided CLIP - pass through
+            output_clip = clip
+            status_parts.append("CLIP: user-provided")
+        else:
+            # Use daemon CLIP
+            clip_components_needed = {
+                'sd15': ['clip_l'],
+                'sdxl': ['clip_l', 'clip_g'],
+                'flux': ['clip_l', 't5xxl'],
+                'sd3': ['clip_l', 'clip_g', 't5xxl'],
+                'auto': ['clip_l', 'clip_g'],  # Default to SDXL
+            }.get(model_type, ['clip_l', 'clip_g'])
+            
+            missing = [c for c in clip_components_needed if c not in loaded_clips]
+            if missing:
+                raise RuntimeError(f"Daemon missing CLIP components for {model_type}: {missing}")
+            
+            output_clip = DaemonCLIP(source_clip=None, clip_type=model_type, use_existing=True)
+            status_parts.append(f"CLIP: daemon ({model_type})")
+        
+        status = " | ".join(status_parts)
+        print(f"[LunaUNetTunnel] {status}")
+        
+        return (model, output_clip, output_vae, status)
+
+
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "LunaDaemonVAELoader": LunaDaemonVAELoader,
     "LunaDaemonCLIPLoader": LunaDaemonCLIPLoader,
     "LunaCheckpointTunnel": LunaCheckpointTunnel,
+    "LunaUNetTunnel": LunaUNetTunnel,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "LunaDaemonVAELoader": "Luna Daemon VAE Loader",
     "LunaDaemonCLIPLoader": "Luna Daemon CLIP Loader",
     "LunaCheckpointTunnel": "Luna Checkpoint Tunnel",
+    "LunaUNetTunnel": "Luna UNet Tunnel (GGUF)",
 }

@@ -65,6 +65,42 @@ def setup_nodes():
 # Run the setup
 setup_nodes()
 
+# Register API routes after PromptServer is available
+def register_api_routes():
+    """Register all API routes for Luna nodes that need them"""
+    try:
+        # Import and register daemon API routes
+        from nodes.luna_daemon_api import register_routes as register_daemon_routes
+        register_daemon_routes()
+    except Exception as e:
+        pass  # Silently fail if daemon API not available
+    
+    try:
+        # Import and register other API routes if needed
+        from nodes.luna_civitai_scraper import register_routes as register_civitai_routes
+        if callable(register_civitai_routes):
+            register_civitai_routes()
+    except (ImportError, AttributeError):
+        pass
+    
+    try:
+        from nodes.luna_wildcard_connections import register_routes as register_wildcard_routes
+        if callable(register_wildcard_routes):
+            register_wildcard_routes()
+    except (ImportError, AttributeError):
+        pass
+
+# Try to register routes now (may work if PromptServer already initialized)
+register_api_routes()
+
+# Also hook into PromptServer setup if possible
+try:
+    from server import PromptServer
+    if hasattr(PromptServer, 'instance') and PromptServer.instance:
+        register_api_routes()
+except ImportError:
+    pass
+
 # Standard ComfyUI registration
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']
 

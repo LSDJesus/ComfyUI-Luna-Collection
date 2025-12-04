@@ -361,6 +361,82 @@ class LunaBatchPromptExtractor:
         except:
             return None
     
+    def decode_exif_user_comment(self, comment) -> str:
+        """Decode EXIF UserComment field which has an 8-byte charset prefix.
+        
+        Format: 8-byte charset identifier + data
+        Charsets: 'ASCII\x00\x00\x00', 'JIS\x00\x00\x00\x00\x00', 'UNICODE\x00', or 8 null bytes (undefined)
+        
+        Note: Despite the EXIF spec, some tools (like CivitAI) write UNICODE data as UTF-16BE,
+        not UTF-16LE. We detect this by checking if the first byte after the marker is null.
+        """
+        if comment is None:
+            return ""
+        
+        # If already a string, return it
+        if isinstance(comment, str):
+            return comment.strip().strip('\x00')
+        
+        if not isinstance(comment, bytes):
+            return str(comment)
+        
+        # EXIF UserComment has 8-byte charset prefix
+        if len(comment) <= 8:
+            return ""
+        
+        charset_marker = comment[:8]
+        data = comment[8:]
+        
+        # Try to decode based on charset marker
+        try:
+            if charset_marker.startswith(b'ASCII'):
+                return data.decode('ascii', errors='ignore').strip().strip('\x00')
+            elif charset_marker.startswith(b'UNICODE'):
+                # UNICODE can be UTF-16LE or UTF-16BE depending on the writer
+                # Detect by checking if first byte is null (BE) or second byte is null (LE)
+                if len(data) >= 2:
+                    if data[0] == 0 and data[1] != 0:
+                        # First byte is null, second is not -> UTF-16BE (e.g., \x00m for 'm')
+                        decoded = data.decode('utf-16-be', errors='ignore')
+                    elif data[0] != 0 and data[1] == 0:
+                        # First byte is char, second is null -> UTF-16LE (e.g., m\x00 for 'm')
+                        decoded = data.decode('utf-16-le', errors='ignore')
+                    else:
+                        # Try both, pick the one that looks like ASCII text
+                        try:
+                            be = data.decode('utf-16-be', errors='ignore')
+                            le = data.decode('utf-16-le', errors='ignore')
+                            # Prefer the one with more printable ASCII chars
+                            be_ascii = sum(1 for c in be[:50] if 32 <= ord(c) <= 126)
+                            le_ascii = sum(1 for c in le[:50] if 32 <= ord(c) <= 126)
+                            decoded = be if be_ascii >= le_ascii else le
+                        except:
+                            decoded = data.decode('utf-16', errors='ignore')
+                else:
+                    decoded = data.decode('utf-16', errors='ignore')
+                return decoded.strip().strip('\x00')
+            elif charset_marker.startswith(b'JIS'):
+                return data.decode('shift_jis', errors='ignore').strip().strip('\x00')
+            elif charset_marker == b'\x00\x00\x00\x00\x00\x00\x00\x00':
+                # Undefined - try UTF-8, then latin-1
+                try:
+                    return data.decode('utf-8').strip().strip('\x00')
+                except:
+                    return data.decode('latin-1', errors='ignore').strip().strip('\x00')
+            else:
+                # Unknown marker - might not have a proper prefix
+                # Try decoding the whole thing as UTF-8 or ASCII
+                try:
+                    return comment.decode('utf-8').strip().strip('\x00')
+                except:
+                    return comment.decode('latin-1', errors='ignore').strip().strip('\x00')
+        except Exception as e:
+            # Last resort - try to decode as-is
+            try:
+                return comment.decode('utf-8', errors='ignore').strip().strip('\x00')
+            except:
+                return comment.decode('latin-1', errors='ignore').strip().strip('\x00')
+    
     def extract_exif_metadata(self, image_path: str) -> Optional[Dict[str, Any]]:
         """Extract metadata from EXIF data (JPEG, WebP, TIFF)
         
@@ -410,17 +486,9 @@ class LunaBatchPromptExtractor:
                 if desc and len(desc) > 10:
                     prompt_text = desc
             
-            # Check UserComment (tag 37510) - often has charset prefix
+            # Check UserComment (tag 37510) - uses helper for proper charset decoding
             if 37510 in exif_data and not prompt_text:
-                comment = exif_data[37510]
-                if isinstance(comment, bytes):
-                    # UserComment often starts with charset marker like "UNICODE\x00\x00"
-                    if comment.startswith(b'UNICODE\x00'):
-                        comment = comment[8:].decode('utf-16-le', errors='ignore')
-                    elif comment.startswith(b'ASCII\x00\x00\x00'):
-                        comment = comment[8:].decode('ascii', errors='ignore')
-                    else:
-                        comment = comment.decode('utf-8', errors='ignore')
+                comment = self.decode_exif_user_comment(exif_data[37510])
                 if comment and len(comment) > 10:
                     prompt_text = comment
             
@@ -430,15 +498,7 @@ class LunaBatchPromptExtractor:
                 if exif_ifd:
                     # 37510 = UserComment in Exif IFD
                     if 37510 in exif_ifd:
-                        comment = exif_ifd[37510]
-                        if isinstance(comment, bytes):
-                            if comment.startswith(b'UNICODE\x00'):
-                                comment = comment[8:].decode('utf-16-le', errors='ignore')
-                            elif comment.startswith(b'ASCII\x00\x00\x00'):
-                                comment = comment[8:].decode('ascii', errors='ignore')
-                            else:
-                                # Try UTF-8, ignore errors
-                                comment = comment.decode('utf-8', errors='ignore')
+                        comment = self.decode_exif_user_comment(exif_ifd[37510])
                         if comment and len(comment) > 10:
                             prompt_text = comment
             except:

@@ -17,13 +17,18 @@ from pathlib import Path
 import folder_paths
 
 # Try to import PromptServer for web endpoints
+PromptServer = None
 try:
-    from server import PromptServer
-    from aiohttp import web
-    HAS_PROMPT_SERVER = True
+    from server import PromptServer as _PromptServer
+    PromptServer = _PromptServer
 except ImportError:
-    HAS_PROMPT_SERVER = False
-    print("LunaConnections: PromptServer not available, web endpoints disabled")
+    pass
+
+try:
+    from aiohttp import web
+    HAS_AIOHTTP = True
+except ImportError:
+    HAS_AIOHTTP = False
 
 # =============================================================================
 # CONNECTIONS DATABASE
@@ -1030,7 +1035,22 @@ Categories: {', '.join(all_cats[:10])}..."""
 # WEB ENDPOINTS FOR INTERACTIVE EDITING
 # =============================================================================
 
-if HAS_PROMPT_SERVER:
+_routes_registered = False
+
+def register_routes():
+    """Register API routes - called when PromptServer.instance is available"""
+    global _routes_registered
+    
+    if _routes_registered:
+        return
+    
+    if not PromptServer or not hasattr(PromptServer, 'instance') or PromptServer.instance is None:
+        return
+    
+    if not HAS_AIOHTTP:
+        return
+    
+    _routes_registered = True
     
     @PromptServer.instance.routes.get("/luna/connections/list")
     async def list_connections(request):
@@ -1185,6 +1205,10 @@ if HAS_PROMPT_SERVER:
                 
         except Exception as e:
             return web.Response(status=500, text=str(e))
+
+
+# Try to register routes now
+register_routes()
 
 
 # =============================================================================

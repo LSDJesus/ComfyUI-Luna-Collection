@@ -50,16 +50,30 @@ try:
     from utils.luna_metadata_db import get_db, store_civitai_metadata
     HAS_METADATA_DB = True
 except ImportError:
-    HAS_METADATA_DB = False
-    print("LunaCivitai: Metadata database not available")
+    try:
+        # Fallback for standalone execution
+        from ..utils.luna_metadata_db import get_db, store_civitai_metadata
+        HAS_METADATA_DB = True
+    except ImportError:
+        HAS_METADATA_DB = False
+        # Only print warning when NOT running as daemon
+        import os
+        if not os.environ.get('LUNA_DAEMON_MODE'):
+            print("LunaCivitai: Metadata database not available")
 
 # Try to import PromptServer for web endpoints
+PromptServer = None
 try:
-    from server import PromptServer
-    from aiohttp import web
-    HAS_PROMPT_SERVER = True
+    from server import PromptServer as _PromptServer
+    PromptServer = _PromptServer
 except ImportError:
-    HAS_PROMPT_SERVER = False
+    pass
+
+try:
+    from aiohttp import web
+    HAS_AIOHTTP = True
+except ImportError:
+    HAS_AIOHTTP = False
 
 # =============================================================================
 # CIVITAI API UTILITIES
@@ -807,7 +821,7 @@ class LunaCivitaiBatchScraper:
                 "max_models": ("INT", {
                     "default": 50,
                     "min": 1,
-                    "max": 500,
+                    "max": 1000,
                     "tooltip": "Maximum number of models to process"
                 }),
             },
@@ -1020,7 +1034,22 @@ class LunaCivitaiBatchScraper:
 # WEB ENDPOINTS FOR FRONTEND INTEGRATION
 # =============================================================================
 
-if HAS_PROMPT_SERVER:
+_routes_registered = False
+
+def register_routes():
+    """Register API routes - called when PromptServer.instance is available"""
+    global _routes_registered
+    
+    if _routes_registered:
+        return
+    
+    if not PromptServer or not hasattr(PromptServer, 'instance') or PromptServer.instance is None:
+        return
+    
+    if not HAS_AIOHTTP:
+        return
+    
+    _routes_registered = True
     
     @PromptServer.instance.routes.post("/luna/civitai/scrape")
     async def scrape_single_model(request):
@@ -1107,6 +1136,10 @@ if HAS_PROMPT_SERVER:
             })
         except Exception as e:
             return web.json_response({"error": str(e)})
+
+
+# Try to register routes now
+register_routes()
 
 
 # =============================================================================

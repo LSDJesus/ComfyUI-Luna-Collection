@@ -5,15 +5,21 @@ HTTP endpoints for the Luna Daemon panel in ComfyUI.
 
 import os
 import json
-from aiohttp import web
+
+# Try to import aiohttp
+try:
+    from aiohttp import web
+    HAS_AIOHTTP = True
+except ImportError:
+    HAS_AIOHTTP = False
 
 # Try to import PromptServer for web endpoints
+PromptServer = None
 try:
-    from server import PromptServer
-    HAS_SERVER = True
+    from server import PromptServer as _PromptServer
+    PromptServer = _PromptServer
 except ImportError:
-    HAS_SERVER = False
-    print("LunaDaemon: PromptServer not available, web endpoints disabled")
+    pass
 
 # Try to import daemon client
 try:
@@ -31,7 +37,24 @@ except ImportError:
     MAX_WORKERS = 4
 
 
-if HAS_SERVER:
+# Track if routes have been registered
+_routes_registered = False
+
+
+def register_routes():
+    """Register API routes - called when PromptServer.instance is available"""
+    global _routes_registered
+    
+    if _routes_registered:
+        return
+    
+    if not PromptServer or not hasattr(PromptServer, 'instance') or PromptServer.instance is None:
+        return
+    
+    if not HAS_AIOHTTP:
+        return
+    
+    _routes_registered = True
     
     @PromptServer.instance.routes.get("/luna/daemon/status")
     async def get_daemon_status(request):
@@ -167,6 +190,10 @@ if HAS_SERVER:
                 
         except Exception as e:
             return web.json_response({"status": "error", "message": str(e)})
+
+
+# Try to register routes immediately if PromptServer.instance exists
+register_routes()
 
 
 # Empty mappings since this file just registers routes
