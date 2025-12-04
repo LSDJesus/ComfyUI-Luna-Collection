@@ -4,6 +4,11 @@ __pycache__/
 *$py.class
 *.pyo
 *.pyc
+_narrates_fun/
+*.code-workspace
+.github/
+embedding_metadata/
+lora_metadata/
 
 # Byte-compiled / optimized / DLL files
 .Python
