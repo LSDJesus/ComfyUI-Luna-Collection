@@ -48,6 +48,9 @@ from .luna_batch_prompt_extractor import (
 # Import LoRA validator
 from .luna_lora_validator import LunaLoRAValidator
 
+# Import LoRA trigger injector
+from .luna_trigger_injector import LunaLoRATriggerInjector
+
 # Combine all node mappings
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -93,6 +96,8 @@ NODE_CLASS_MAPPINGS.update({
     "LunaDimensionScaler": LunaDimensionScaler,
     # LoRA validation
     "LunaLoRAValidator": LunaLoRAValidator,
+    # LoRA trigger injection
+    "LunaLoRATriggerInjector": LunaLoRATriggerInjector,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -128,4 +133,6 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "LunaDimensionScaler": "Luna Dimension Scaler",
     # LoRA validation
     "LunaLoRAValidator": "Luna LoRA Validator",
+    # LoRA trigger injection
+    "LunaLoRATriggerInjector": "Luna LoRA Trigger Injector",
 })

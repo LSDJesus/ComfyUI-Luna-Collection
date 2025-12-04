@@ -72,7 +72,7 @@ def get_database_path() -> Path:
 # DATABASE SCHEMA
 # =============================================================================
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA_SQL = """
 -- Model metadata table
@@ -96,12 +96,15 @@ CREATE TABLE IF NOT EXISTS models (
     title TEXT,                        -- "Model Name - Version Name"
     author TEXT,                       -- Creator username
     description TEXT,                  -- Full description
+    thumbnail TEXT,                    -- Base64 encoded JPEG thumbnail (max 256px)
+    cover_image_url TEXT,              -- Original cover image URL from Civitai
     
     -- Usage info
     trigger_phrase TEXT,               -- Comma-separated trigger words
     tags TEXT,                         -- Comma-separated tags
     base_model TEXT,                   -- "SDXL 1.0", "Pony", "Illustrious", etc.
     usage_hint TEXT,                   -- Additional usage notes
+    nsfw INTEGER DEFAULT 0,            -- NSFW flag from Civitai
     
     -- Weights and settings
     default_weight REAL DEFAULT 1.0,   -- Suggested model weight
@@ -279,8 +282,24 @@ class LunaMetadataDB:
         """Run schema migrations."""
         print(f"LunaMetadataDB: Migrating schema from v{from_version} to v{to_version}")
         
-        # Add migration logic here as needed
-        # For now, just update version
+        # Migration v1 -> v2: Add thumbnail, cover_image_url, nsfw columns
+        if from_version < 2:
+            print("LunaMetadataDB: Adding thumbnail, cover_image_url, nsfw columns...")
+            try:
+                conn.execute("ALTER TABLE models ADD COLUMN thumbnail TEXT")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+            try:
+                conn.execute("ALTER TABLE models ADD COLUMN cover_image_url TEXT")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                conn.execute("ALTER TABLE models ADD COLUMN nsfw INTEGER DEFAULT 0")
+            except sqlite3.OperationalError:
+                pass
+            print("LunaMetadataDB: Migration to v2 complete")
+        
+        # Update version
         conn.execute(
             "UPDATE schema_info SET value = ? WHERE key = 'version'",
             (str(to_version),)
@@ -640,12 +659,27 @@ def store_civitai_metadata(file_path: str, model_type: str,
         'file_path': file_path,
         'model_type': model_type,
         'tensor_hash': tensor_hash or civitai_data.get('modelspec.hash_sha256'),
+        
+        # IDs for linking back to Civitai
+        'civitai_model_id': int(civitai_data['modelspec.civitai_model_id']) if civitai_data.get('modelspec.civitai_model_id') else None,
+        'civitai_version_id': int(civitai_data['modelspec.civitai_version_id']) if civitai_data.get('modelspec.civitai_version_id') else None,
+        
+        # Display info
         'title': civitai_data.get('modelspec.title'),
         'author': civitai_data.get('modelspec.author'),
         'description': civitai_data.get('modelspec.description'),
+        'thumbnail': civitai_data.get('modelspec.thumbnail'),
+        'cover_image_url': civitai_data.get('modelspec.cover_image_url'),
+        
+        # Usage info
         'trigger_phrase': civitai_data.get('modelspec.trigger_phrase'),
         'tags': civitai_data.get('modelspec.tags'),
         'base_model': civitai_data.get('modelspec.usage_hint'),
+        'nsfw': 1 if civitai_data.get('modelspec.nsfw') == 'true' else 0,
+        
+        # Weights
+        'default_weight': float(civitai_data['modelspec.default_weight']) if civitai_data.get('modelspec.default_weight') else None,
+        'default_clip_weight': float(civitai_data['modelspec.default_clip_weight']) if civitai_data.get('modelspec.default_clip_weight') else None,
     }
     
     # Remove None values

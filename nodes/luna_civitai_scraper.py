@@ -16,6 +16,8 @@ import re
 import struct
 import hashlib
 import asyncio
+import base64
+import io
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 from datetime import datetime
@@ -24,6 +26,14 @@ import urllib.error
 import ssl
 
 import folder_paths
+
+# Try to import PIL for image processing
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError:
+    HAS_PIL = False
+    print("LunaCivitai: PIL not available - thumbnail generation disabled")
 
 # Try to import aiohttp for async requests, fall back to urllib
 try:
@@ -56,6 +66,129 @@ CIVITAI_API_BASE = "https://civitai.com/api/v1"
 
 # SSL context for HTTPS requests
 SSL_CONTEXT = ssl.create_default_context()
+
+
+def strip_html_tags(text: str) -> str:
+    """
+    Remove HTML tags from text and clean up the result.
+    
+    Handles common HTML elements from CivitAI descriptions:
+    - Removes all HTML tags
+    - Converts <br>, <br/>, </p>, </li> to newlines
+    - Converts &nbsp; and other HTML entities
+    - Collapses multiple whitespace/newlines
+    """
+    if not text:
+        return ""
+    
+    # Convert block-level elements to newlines before stripping
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'</p>', '\n\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'</li>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'</div>', '\n', text, flags=re.IGNORECASE)
+    text = re.sub(r'</h[1-6]>', '\n\n', text, flags=re.IGNORECASE)
+    
+    # Remove all remaining HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # Decode common HTML entities
+    html_entities = {
+        '&nbsp;': ' ',
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&quot;': '"',
+        '&#39;': "'",
+        '&apos;': "'",
+        '&ndash;': '–',
+        '&mdash;': '—',
+        '&hellip;': '...',
+        '&copy;': '©',
+        '&reg;': '®',
+        '&trade;': '™',
+    }
+    for entity, char in html_entities.items():
+        text = text.replace(entity, char)
+    
+    # Handle numeric entities (&#123; or &#x1F; format)
+    text = re.sub(r'&#(\d+);', lambda m: chr(int(m.group(1))), text)
+    text = re.sub(r'&#x([0-9a-fA-F]+);', lambda m: chr(int(m.group(1), 16)), text)
+    
+    # Clean up whitespace
+    # Collapse multiple spaces to single space
+    text = re.sub(r'[ \t]+', ' ', text)
+    # Collapse multiple newlines to max 2
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    # Strip leading/trailing whitespace from each line
+    text = '\n'.join(line.strip() for line in text.split('\n'))
+    # Final strip
+    text = text.strip()
+    
+    return text
+
+
+def download_and_resize_thumbnail(image_url: str, max_size: int = 256, 
+                                   api_key: str = "") -> Optional[str]:
+    """
+    Download an image from URL and resize to thumbnail, returning base64 encoded JPEG.
+    
+    Args:
+        image_url: URL of the image to download
+        max_size: Maximum dimension (width or height) for the thumbnail
+        api_key: Optional CivitAI API key for authenticated requests
+        
+    Returns:
+        Base64 encoded JPEG string, or None on failure
+    """
+    if not HAS_PIL:
+        print("LunaCivitai: PIL not available for thumbnail generation")
+        return None
+    
+    if not image_url:
+        return None
+    
+    try:
+        headers = {"User-Agent": "ComfyUI-Luna-Collection/1.0"}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        
+        req = urllib.request.Request(image_url, headers=headers)
+        with urllib.request.urlopen(req, context=SSL_CONTEXT, timeout=30) as response:
+            image_data = response.read()
+        
+        # Open image with PIL
+        img = Image.open(io.BytesIO(image_data))
+        
+        # Convert to RGB if necessary (handles RGBA, P mode, etc.)
+        if img.mode not in ('RGB', 'L'):
+            img = img.convert('RGB')
+        
+        # Calculate new size maintaining aspect ratio
+        width, height = img.size
+        if width > height:
+            new_width = max_size
+            new_height = int(height * (max_size / width))
+        else:
+            new_height = max_size
+            new_width = int(width * (max_size / height))
+        
+        # Resize with high-quality resampling
+        img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        # Save to bytes as JPEG
+        buffer = io.BytesIO()
+        img.save(buffer, format='JPEG', quality=85, optimize=True)
+        buffer.seek(0)
+        
+        # Encode to base64
+        b64_data = base64.b64encode(buffer.read()).decode('ascii')
+        
+        print(f"LunaCivitai: Generated {new_width}x{new_height} thumbnail ({len(b64_data)} chars)")
+        return b64_data
+        
+    except Exception as e:
+        print(f"LunaCivitai: Error downloading/resizing thumbnail: {e}")
+        return None
 
 
 def compute_tensor_hash(filepath: str) -> Optional[str]:
@@ -138,10 +271,22 @@ def fetch_civitai_model_info(model_id: int, api_key: str = "") -> Optional[Dict]
     return None
 
 
-def parse_civitai_metadata(version_data: Dict, model_data: Optional[Dict] = None) -> Dict:
+def parse_civitai_metadata(version_data: Dict, model_data: Optional[Dict] = None,
+                           api_key: str = "", download_thumbnail: bool = True) -> Dict:
     """
     Parse Civitai API response into modelspec format.
     This matches SwarmUI's metadata format for compatibility.
+    
+    All text fields are sanitized to remove HTML tags.
+    
+    Args:
+        version_data: Response from /model-versions/by-hash endpoint
+        model_data: Optional response from /models/{id} endpoint
+        api_key: Optional API key for authenticated thumbnail downloads
+        download_thumbnail: Whether to download and embed cover image thumbnail
+        
+    Returns:
+        Dict with modelspec.* keys for embedding in safetensors header
     """
     metadata = {}
     
@@ -149,22 +294,30 @@ def parse_civitai_metadata(version_data: Dict, model_data: Optional[Dict] = None
     if version_data:
         metadata["modelspec.sai_model_spec"] = "1.0.0"
         
+        # CivitAI IDs for linking back
+        if version_data.get("id"):
+            metadata["modelspec.civitai_version_id"] = str(version_data["id"])
+        if version_data.get("modelId"):
+            metadata["modelspec.civitai_model_id"] = str(version_data["modelId"])
+        
         # Title: "Model Name - Version Name"
         model_name = version_data.get("model", {}).get("name", "")
         version_name = version_data.get("name", "")
         if model_name and version_name:
-            metadata["modelspec.title"] = f"{model_name} - {version_name}"
+            metadata["modelspec.title"] = strip_html_tags(f"{model_name} - {version_name}")
         elif model_name:
-            metadata["modelspec.title"] = model_name
+            metadata["modelspec.title"] = strip_html_tags(model_name)
         
-        # Trigger words
+        # Trigger words (usually clean, but sanitize anyway)
         trained_words = version_data.get("trainedWords", [])
         if trained_words:
-            metadata["modelspec.trigger_phrase"] = ", ".join(trained_words)
+            # Clean each trigger word individually
+            clean_words = [strip_html_tags(w) for w in trained_words if w]
+            metadata["modelspec.trigger_phrase"] = ", ".join(clean_words)
         
-        # Base model (for usage hints)
+        # Base model (for usage hints) - accept all base models, not just a subset
         base_model = version_data.get("baseModel", "")
-        if base_model in ["Illustrious", "Pony", "SDXL 1.0", "SD 1.5"]:
+        if base_model:
             metadata["modelspec.usage_hint"] = base_model
         
         # Date
@@ -172,30 +325,72 @@ def parse_civitai_metadata(version_data: Dict, model_data: Optional[Dict] = None
         if created_at:
             metadata["modelspec.date"] = created_at
         
-        # Description (version-level)
+        # Description (version-level) - SANITIZE HTML
         if version_data.get("description"):
-            metadata["modelspec.description"] = version_data["description"]
+            metadata["modelspec.description"] = strip_html_tags(version_data["description"])
+        
+        # Recommended weight from version settings
+        # CivitAI stores this in different places depending on model type
+        # Check for explicit weight settings
+        if version_data.get("settings"):
+            settings = version_data["settings"]
+            if settings.get("weight") is not None:
+                metadata["modelspec.default_weight"] = str(settings["weight"])
+            if settings.get("strength") is not None:
+                metadata["modelspec.default_weight"] = str(settings["strength"])
+            if settings.get("clipStrength") is not None:
+                metadata["modelspec.default_clip_weight"] = str(settings["clipStrength"])
+        
+        # Cover image thumbnail (first image from version)
+        if download_thumbnail:
+            images = version_data.get("images", [])
+            if images:
+                # Find first SFW image, or just use first image
+                cover_image = None
+                for img in images:
+                    if img.get("nsfw") in [None, "None", "Soft", False]:
+                        cover_image = img
+                        break
+                if not cover_image:
+                    cover_image = images[0]
+                
+                if cover_image and cover_image.get("url"):
+                    thumbnail_b64 = download_and_resize_thumbnail(
+                        cover_image["url"], 
+                        max_size=256,
+                        api_key=api_key
+                    )
+                    if thumbnail_b64:
+                        metadata["modelspec.thumbnail"] = thumbnail_b64
+                        # Also store original URL for reference
+                        metadata["modelspec.cover_image_url"] = cover_image["url"]
     
     # From model data (if available)
     if model_data:
         # Author
         creator = model_data.get("creator", {})
         if creator.get("username"):
-            metadata["modelspec.author"] = creator["username"]
+            metadata["modelspec.author"] = strip_html_tags(creator["username"])
         
-        # Tags
+        # Tags (usually clean, but sanitize anyway)
         tags = model_data.get("tags", [])
         if tags:
-            metadata["modelspec.tags"] = ", ".join(tags)
+            clean_tags = [strip_html_tags(t) for t in tags if t]
+            metadata["modelspec.tags"] = ", ".join(clean_tags)
         
-        # Full description (combine model + version)
+        # NSFW flag
+        if model_data.get("nsfw") is not None:
+            metadata["modelspec.nsfw"] = "true" if model_data["nsfw"] else "false"
+        
+        # Full description (combine model + version) - SANITIZE HTML
         model_desc = model_data.get("description", "")
         if model_desc:
+            clean_desc = strip_html_tags(model_desc)
             existing_desc = metadata.get("modelspec.description", "")
             if existing_desc:
-                metadata["modelspec.description"] = f"{existing_desc}\n\n{model_desc}"
+                metadata["modelspec.description"] = f"{existing_desc}\n\n{clean_desc}"
             else:
-                metadata["modelspec.description"] = model_desc
+                metadata["modelspec.description"] = clean_desc
     
     return metadata
 
@@ -461,8 +656,8 @@ class LunaCivitaiScraper:
         if model_id:
             model_data = fetch_civitai_model_info(model_id, civitai_api_key)
         
-        # Parse metadata
-        metadata = parse_civitai_metadata(version_data, model_data)
+        # Parse metadata (includes thumbnail download)
+        metadata = parse_civitai_metadata(version_data, model_data, api_key=civitai_api_key)
         
         # Add hash to metadata
         metadata["modelspec.hash_sha256"] = tensor_hash
@@ -613,7 +808,8 @@ class LunaCivitaiBatchScraper:
             model_id = version_data.get("modelId")
             model_data = fetch_civitai_model_info(model_id, civitai_api_key) if model_id else None
             
-            metadata = parse_civitai_metadata(version_data, model_data)
+            # Parse metadata (includes thumbnail download)
+            metadata = parse_civitai_metadata(version_data, model_data, api_key=civitai_api_key)
             metadata["modelspec.hash_sha256"] = tensor_hash
             
             # Write
@@ -691,7 +887,8 @@ if HAS_PROMPT_SERVER:
             model_id = version_data.get("modelId")
             model_data = fetch_civitai_model_info(model_id, api_key) if model_id else None
             
-            metadata = parse_civitai_metadata(version_data, model_data)
+            # Parse metadata (includes thumbnail download)
+            metadata = parse_civitai_metadata(version_data, model_data, api_key=api_key)
             metadata["modelspec.hash_sha256"] = tensor_hash
             
             # Write if requested

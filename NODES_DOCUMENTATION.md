@@ -13,6 +13,8 @@ A comprehensive reference for all nodes in the Luna Collection.
 2. [Batch Processing](#batch-processing)
    - [LunaBatchPromptExtractor](#lunabatchpromptextractor)
    - [LunaBatchPromptLoader](#lunabatchpromptloader)
+   - [LunaLoRAValidator](#lunaloravalidator)
+   - [LunaDimensionScaler](#lunadimensionscaler)
 3. [Configuration & Parameters](#configuration--parameters)
    - [LunaConfigGateway](#lunaconfiggateway)
 4. [Image Upscaling](#image-upscaling)
@@ -213,6 +215,8 @@ Reads JSON files created by LunaBatchPromptExtractor and outputs prompts one at 
 | current_index | INT | Actual index after modulo |
 | total_entries | INT | Total entries in JSON |
 | list_complete | BOOLEAN | True when at last entry |
+| width | INT | Original image width |
+| height | INT | Original image height |
 
 #### Features
 - **File selector dropdown**: Like Load Image node
@@ -223,6 +227,108 @@ Reads JSON files created by LunaBatchPromptExtractor and outputs prompts one at 
 
 #### Why It Exists
 Enables batch regeneration workflows - load 1000 prompts and run them through your pipeline automatically, or recreate images from your favorites folder.
+
+---
+
+### LunaLoRAValidator
+**Category:** `Luna/Utils`  
+**Purpose:** Validate LoRAs in prompt JSON and search CivitAI for missing ones.
+
+#### What It Does
+Scans a prompt metadata JSON file, checks which LoRAs exist locally, and optionally searches CivitAI for download links to missing ones.
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| json_file | COMBO | JSON file from input directory |
+| search_civitai | BOOLEAN | Search CivitAI for missing LoRAs |
+| civitai_api_key | STRING | Optional API key for better rate limits |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| report | STRING | Formatted validation report |
+| missing_loras | STRING | Comma-separated missing LoRA names |
+| civitai_links | STRING | Newline-separated download links |
+| found_count | INT | Number of LoRAs found locally |
+| missing_count | INT | Number of missing LoRAs |
+
+#### Report Format
+```
+╔══════════════════════════════════════════════════════════════╗
+║           LUNA LORA VALIDATION REPORT                        ║
+╠══════════════════════════════════════════════════════════════╣
+║  JSON File: my_prompts.json                                  ║
+║  Unique LoRAs: 12                                            ║
+╠══════════════════════════════════════════════════════════════╣
+║ ✓ detail_slider                              (x15)           ║
+║   └─ Found as: SDXL/detail_slider_v2.safetensors             ║
+║ ✗ some_missing_lora                          (x3)            ║
+╠══════════════════════════════════════════════════════════════╣
+║           CIVITAI SEARCH RESULTS                             ║
+╠══════════════════════════════════════════════════════════════╣
+║ some_missing_lora                                            ║
+║   └─ Some Missing LoRA XL                                    ║
+║      by ArtistName            ⭐4.9 ⬇12345                   ║
+║      https://civitai.com/models/12345                        ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+#### Features
+- **Usage count**: Shows how many times each LoRA appears
+- **Path resolution**: Finds LoRAs in subdirectories
+- **CivitAI search**: Finds best match with rating/download stats
+- **Direct links**: Copy-paste links to download missing LoRAs
+
+#### Why It Exists
+Before running a batch job, validate that all required LoRAs are available. Saves time discovering missing assets after generating hundreds of images.
+
+---
+
+### LunaDimensionScaler
+**Category:** `Luna/Utils`  
+**Purpose:** Scale dimensions to model-native resolutions.
+
+#### What It Does
+Takes input width/height and scales them down to fit within a model's native resolution, maintaining aspect ratio. Outputs are rounded to multiples of 8 for latent space compatibility.
+
+#### Inputs
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| width | INT | 1024 | Input width |
+| height | INT | 1024 | Input height |
+| model_type | ENUM | SDXL | Target model type |
+| custom_max_size | INT | 1024 | Custom size (when type=Custom) |
+| round_to | INT | 8 | Round to nearest multiple |
+
+#### Supported Model Types
+| Model Type | Native Max Size |
+|------------|-----------------|
+| SD 1.5 | 512 |
+| SD 2.1 | 768 |
+| SDXL | 1024 |
+| SD 3.5 | 1024 |
+| Flux | 1024 |
+| Illustrious | 1024 |
+| Pony | 1024 |
+| Cascade | 1024 |
+| Custom | (user-defined) |
+
+#### Scaling Logic
+1. Identify larger dimension (width or height)
+2. If larger > max_size: scale both proportionally
+3. Round both to nearest multiple of `round_to`
+
+#### Example
+| Input | Model | Output |
+|-------|-------|--------|
+| 1920×1080 | SDXL (1024) | 1024×576 |
+| 1080×1920 | SDXL (1024) | 576×1024 |
+| 800×600 | SD 1.5 (512) | 512×384 |
+| 512×512 | SDXL (1024) | 512×512 (unchanged) |
+
+#### Why It Exists
+Source images have varied resolutions. This node ensures generation happens at model-optimal dimensions while preserving aspect ratio. Connect to LunaBatchPromptLoader's width/height outputs for automatic scaling.
 
 ---
 
@@ -383,7 +489,15 @@ Save up to 5 images simultaneously with:
 | `%model_path%` | Full model path | Illustrious/3DCG/model |
 | `%model_name%` | Just model name | model |
 | `%model_dir%` | Directory portion | Illustrious/3DCG |
+| `%index%` | Filename index value | 42 |
 | `%time:FORMAT%` | Timestamp | %time:YYYY-mm-dd.HH.MM.SS% |
+
+#### Index Integration
+Connect `LunaBatchPromptLoader`'s `current_index` output to `filename_index` input, then use `%index%` in your filename template:
+```
+%time:YYYY-mm-dd%_%model_name%_%index%
+→ 2025-12-03_myModel_42_RAW.png
+```
 
 #### Quality Gating
 | Mode | Detects |
@@ -549,6 +663,8 @@ Managing LoRA trigger words manually is error-prone. This node automates metadat
 ### Batch Workflows
 - **LunaBatchPromptExtractor**: Harvest prompts from images
 - **LunaBatchPromptLoader**: Iterate through prompt datasets
+- **LunaLoRAValidator**: Validate LoRAs, find missing on CivitAI
+- **LunaDimensionScaler**: Scale to model-native resolutions
 
 ### Configuration
 - **LunaConfigGateway**: Central settings hub
@@ -563,6 +679,70 @@ Managing LoRA trigger words manually is error-prone. This node automates metadat
 ### Infrastructure
 - **Luna Daemon nodes**: Multi-instance VRAM sharing
 - **LunaCivitaiScraper**: Model metadata management
+
+---
+
+## Recommended Batch Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    LUNA BATCH PROCESSING PIPELINE                   │
+└─────────────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────┐
+  │ Image Source Folder  │
+  └──────────┬───────────┘
+             │
+             ▼
+  ┌──────────────────────┐     ┌──────────────────────┐
+  │ Luna Batch Prompt    │────▶│ prompts_metadata.json│
+  │ Extractor            │     └──────────┬───────────┘
+  └──────────────────────┘                │
+                                          │
+                                          ▼
+                               ┌──────────────────────┐
+                               │ Luna LoRA Validator  │──▶ CivitAI Links
+                               └──────────┬───────────┘
+                                          │ (verify all LoRAs exist)
+                                          ▼
+  ┌──────────────────────┐     ┌──────────────────────┐
+  │ Luna Checkpoint      │────▶│ Luna Batch Prompt    │
+  │ Loader               │     │ Loader               │
+  └──────────────────────┘     └──────────┬───────────┘
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    │                     │                     │
+                    ▼                     ▼                     ▼
+            ┌───────────┐         ┌───────────┐         ┌───────────┐
+            │ positive  │         │ lora_stack│         │ width     │
+            │ negative  │         │           │         │ height    │
+            └─────┬─────┘         └─────┬─────┘         └─────┬─────┘
+                  │                     │                     │
+                  │                     │                     ▼
+                  │                     │           ┌──────────────────┐
+                  │                     │           │ Luna Dimension   │
+                  │                     │           │ Scaler           │
+                  │                     │           └────────┬─────────┘
+                  │                     │                    │
+                  └─────────────────────┼────────────────────┘
+                                        │
+                                        ▼
+                              ┌──────────────────────┐
+                              │ Luna Config Gateway  │
+                              │ (apply LoRAs, encode)│
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │ KSampler / Generate  │
+                              └──────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌──────────────────────┐
+                              │ Luna Multi Saver     │
+                              │ %time%_%model%_%index%│
+                              └──────────────────────┘
+```
 
 ---
 
