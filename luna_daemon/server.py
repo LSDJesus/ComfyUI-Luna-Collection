@@ -14,6 +14,7 @@ import os
 import sys
 import socket
 import pickle
+import struct
 import threading
 import time
 import logging
@@ -335,21 +336,26 @@ class VAECLIPDaemon:
         return info
     
     def handle_request(self, conn: socket.socket, addr: Tuple[str, int]):
-        """Handle incoming request from ComfyUI node"""
+        """Handle incoming request from ComfyUI node using Length-Prefix Protocol"""
         try:
-            # Receive data with end marker
-            data = b""
-            while True:
-                chunk = conn.recv(1048576)  # 1MB chunks
+            # Read 4-byte length header
+            header = b""
+            while len(header) < 4:
+                chunk = conn.recv(4 - len(header))
                 if not chunk:
-                    break
-                data += chunk
-                if b"<<END>>" in data:
-                    data = data.replace(b"<<END>>", b"")
-                    break
+                    return  # Connection closed
+                header += chunk
             
-            if not data:
-                return
+            request_len = struct.unpack('>I', header)[0]
+            
+            # Read exact payload
+            data = b""
+            while len(data) < request_len:
+                chunk_size = min(request_len - len(data), 1048576)  # 1MB chunks
+                chunk = conn.recv(chunk_size)
+                if not chunk:
+                    return  # Connection closed
+                data += chunk
             
             request = pickle.loads(data)
             cmd = request.get("cmd", "unknown")
@@ -370,9 +376,9 @@ class VAECLIPDaemon:
             elif cmd == "shutdown":
                 logger.info("Shutdown requested")
                 result = {"status": "ok", "message": "Shutting down"}
-                # Send response before shutdown
+                # Send response before shutdown (with length prefix)
                 response = pickle.dumps(result)
-                conn.sendall(response)
+                conn.sendall(struct.pack('>I', len(response)) + response)
                 conn.close()
                 # Exit the process
                 import sys
@@ -413,20 +419,22 @@ class VAECLIPDaemon:
             else:
                 result = {"error": f"Unknown command: {cmd}"}
             
-            # Send response
+            # Send response with length prefix
             response = pickle.dumps(result)
-            conn.sendall(response)
+            conn.sendall(struct.pack('>I', len(response)) + response)
             
         except ModelMismatchError as e:
             logger.warning(f"Model mismatch: {e}")
             try:
-                conn.sendall(pickle.dumps({"error": str(e), "type": "model_mismatch"}))
+                error_response = pickle.dumps({"error": str(e), "type": "model_mismatch"})
+                conn.sendall(struct.pack('>I', len(error_response)) + error_response)
             except:
                 pass
         except Exception as e:
             logger.error(f"Error handling request: {e}")
             try:
-                conn.sendall(pickle.dumps({"error": str(e)}))
+                error_response = pickle.dumps({"error": str(e)})
+                conn.sendall(struct.pack('>I', len(error_response)) + error_response)
             except:
                 pass
         finally:

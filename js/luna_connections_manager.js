@@ -358,25 +358,20 @@ const LUNA_CONNECTIONS_STYLES = `
 }
 
 .luna-toggle-btn {
-    position: fixed;
-    right: 10px;
-    top: 55px;
-    width: 40px;
-    height: 40px;
+    /* Toolbar-docked button style */
     background: linear-gradient(135deg, #4a9eff 0%, #2d5aa8 100%);
     border: none;
-    border-radius: 50%;
+    border-radius: 4px;
     color: #fff;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
-    z-index: 9998;
-    box-shadow: 0 2px 10px rgba(74, 158, 255, 0.4);
+    padding: 6px 10px;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .luna-toggle-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 15px rgba(74, 158, 255, 0.6);
+    transform: scale(1.05);
+    box-shadow: 0 2px 10px rgba(74, 158, 255, 0.4);
 }
 
 .luna-toast {
@@ -460,6 +455,7 @@ class LunaConnectionsManager {
         this.allTags = [];
         this.allCategories = [];
         this.modelFilter = 'all';
+        this.usingSidebar = false;
         
         this.init();
     }
@@ -470,23 +466,177 @@ class LunaConnectionsManager {
         styleEl.textContent = LUNA_CONNECTIONS_STYLES;
         document.head.appendChild(styleEl);
         
-        // Create toggle button
-        this.createToggleButton();
-        
-        // Create panel
-        this.createPanel();
+        // Try to register with ComfyUI sidebar first
+        if (this.registerSidebarTab()) {
+            this.usingSidebar = true;
+        } else {
+            // Fallback: Add to ComfyUI menu/toolbar
+            this.createToolbarButton();
+            this.createPanel();
+        }
         
         // Load initial data
         await this.loadData();
     }
     
-    createToggleButton() {
+    registerSidebarTab() {
+        // Try ComfyUI's sidebar API
+        if (app.extensionManager?.registerSidebarTab) {
+            try {
+                app.extensionManager.registerSidebarTab({
+                    id: "luna-connections",
+                    icon: "🔗",
+                    title: "Luna Connections",
+                    tooltip: "Manage LoRA & Embedding Connections",
+                    type: "custom",
+                    render: (container) => {
+                        this.renderSidebarContent(container);
+                    }
+                });
+                console.log("[Luna Connections] Registered with sidebar API");
+                return true;
+            } catch (e) {
+                console.log("[Luna Connections] Sidebar registration failed:", e);
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    // Get the active container (sidebar body or panel content)
+    getActiveContainer() {
+        if (this.usingSidebar) {
+            return document.querySelector('#luna-sidebar-body');
+        }
+        return this.panel?.querySelector('#luna-panel-content') || this.panel;
+    }
+    
+    renderSidebarContent(container) {
+        // Create sidebar-friendly content
+        container.innerHTML = "";
+        container.style.cssText = "padding: 0; height: 100%; display: flex; flex-direction: column;";
+        
+        const content = document.createElement("div");
+        content.className = "luna-sidebar-content";
+        content.innerHTML = `
+            <style>
+                .luna-sidebar-content {
+                    display: flex;
+                    flex-direction: column;
+                    height: 100%;
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    font-size: 13px;
+                    color: var(--fg-color, #ddd);
+                }
+                .luna-sidebar-content .luna-panel-tabs {
+                    display: flex;
+                    border-bottom: 1px solid var(--border-color, #333);
+                    flex-shrink: 0;
+                }
+                .luna-sidebar-content .luna-tab {
+                    flex: 1;
+                    padding: 10px;
+                    background: transparent;
+                    border: none;
+                    color: var(--fg-color, #888);
+                    cursor: pointer;
+                    font-size: 12px;
+                    transition: all 0.2s;
+                }
+                .luna-sidebar-content .luna-tab:hover {
+                    background: var(--comfy-input-bg, #333);
+                }
+                .luna-sidebar-content .luna-tab.active {
+                    color: #4a9eff;
+                    border-bottom: 2px solid #4a9eff;
+                    background: var(--comfy-input-bg, #252525);
+                }
+                .luna-sidebar-content .luna-panel-body {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 10px;
+                }
+            </style>
+            <div class="luna-panel-tabs">
+                <button class="luna-tab active" data-tab="loras">LoRAs</button>
+                <button class="luna-tab" data-tab="embeddings">Embeds</button>
+                <button class="luna-tab" data-tab="stats">Stats</button>
+            </div>
+            <div class="luna-panel-body" id="luna-sidebar-body">
+                <!-- Content injected dynamically -->
+            </div>
+        `;
+        
+        container.appendChild(content);
+        
+        // Tab click handlers
+        content.querySelectorAll('.luna-tab').forEach(tab => {
+            tab.onclick = () => {
+                content.querySelectorAll('.luna-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                this.currentTab = tab.dataset.tab;
+                this.selectedItem = null;
+                this.renderSidebarTabContent(content.querySelector('#luna-sidebar-body'));
+            };
+        });
+        
+        // Initial render
+        this.renderSidebarTabContent(content.querySelector('#luna-sidebar-body'));
+    }
+    
+    renderSidebarTabContent(container) {
+        switch (this.currentTab) {
+            case 'loras':
+                container.innerHTML = this.renderLorasTab();
+                break;
+            case 'embeddings':
+                container.innerHTML = this.renderEmbeddingsTab();
+                break;
+            case 'stats':
+                container.innerHTML = this.renderStatsTab();
+                break;
+        }
+        this.attachEventListeners(container);
+    }
+    
+    createToolbarButton() {
+        // Try to find ComfyUI's menu/toolbar
+        const menu = document.querySelector(".comfy-menu");
+        const queue = document.querySelector("#queue-button");
+        
         this.toggleBtn = document.createElement('button');
         this.toggleBtn.className = 'luna-toggle-btn';
         this.toggleBtn.innerHTML = '🔗';
         this.toggleBtn.title = 'Luna Connections Manager';
         this.toggleBtn.onclick = () => this.togglePanel();
-        document.body.appendChild(this.toggleBtn);
+        
+        if (queue && queue.parentElement) {
+            // Insert near queue button in toolbar
+            queue.parentElement.insertBefore(this.toggleBtn, queue.nextSibling);
+            console.log("[Luna Connections] Added to toolbar");
+        } else if (menu) {
+            // Fallback to menu
+            menu.appendChild(this.toggleBtn);
+            console.log("[Luna Connections] Added to menu");
+        } else {
+            // Last resort: fixed position button
+            this.toggleBtn.style.cssText = `
+                position: fixed;
+                right: 10px;
+                top: 55px;
+                z-index: 9998;
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+            `;
+            document.body.appendChild(this.toggleBtn);
+            console.log("[Luna Connections] Using floating button fallback");
+        }
+    }
+    
+    createToggleButton() {
+        // Deprecated - now using createToolbarButton or sidebar
+        this.createToolbarButton();
     }
     
     createPanel() {
@@ -795,44 +945,55 @@ class LunaConnectionsManager {
         `;
     }
     
-    attachEventListeners() {
+    attachEventListeners(container = null) {
+        const root = container || this.panel;
+        if (!root) return;
+        
         // Model filter chips
-        this.panel.querySelectorAll('.luna-model-chip').forEach(chip => {
+        root.querySelectorAll('.luna-model-chip').forEach(chip => {
             chip.onclick = () => {
                 this.modelFilter = chip.dataset.filter;
-                this.renderCurrentTab();
+                if (this.usingSidebar && container) {
+                    this.renderSidebarTabContent(container);
+                } else {
+                    this.renderCurrentTab();
+                }
             };
         });
         
         // Item selection
-        this.panel.querySelectorAll('.luna-item').forEach(item => {
+        root.querySelectorAll('.luna-item').forEach(item => {
             item.onclick = () => {
                 this.selectedItem = item.dataset.name;
-                this.renderCurrentTab();
+                if (this.usingSidebar && container) {
+                    this.renderSidebarTabContent(container);
+                } else {
+                    this.renderCurrentTab();
+                }
             };
         });
         
         // Search
-        const loraSearch = this.panel.querySelector('#lora-search');
+        const loraSearch = root.querySelector('#lora-search');
         if (loraSearch) {
-            loraSearch.oninput = (e) => this.filterList('lora-list', e.target.value, this.allLoras);
+            loraSearch.oninput = (e) => this.filterList('lora-list', e.target.value, this.allLoras, root);
         }
         
-        const embSearch = this.panel.querySelector('#emb-search');
+        const embSearch = root.querySelector('#emb-search');
         if (embSearch) {
-            embSearch.oninput = (e) => this.filterList('emb-list', e.target.value, this.allEmbeddings);
+            embSearch.oninput = (e) => this.filterList('emb-list', e.target.value, this.allEmbeddings, root);
         }
         
         // Weight slider
-        const weightSlider = this.panel.querySelector('#conn-weight');
+        const weightSlider = root.querySelector('#conn-weight');
         if (weightSlider) {
             weightSlider.oninput = () => {
-                this.panel.querySelector('#weight-display').textContent = weightSlider.value;
+                root.querySelector('#weight-display').textContent = weightSlider.value;
             };
         }
         
         // Tag input
-        const tagInput = this.panel.querySelector('#new-tag');
+        const tagInput = root.querySelector('#new-tag');
         if (tagInput) {
             tagInput.onkeypress = (e) => {
                 if (e.key === 'Enter' && tagInput.value.trim()) {
@@ -843,7 +1004,7 @@ class LunaConnectionsManager {
         }
         
         // Tag removal
-        this.panel.querySelectorAll('.luna-tag .remove').forEach(btn => {
+        root.querySelectorAll('.luna-tag .remove').forEach(btn => {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const tag = btn.parentElement.dataset.tag;
@@ -852,32 +1013,35 @@ class LunaConnectionsManager {
         });
         
         // Save button
-        const saveBtn = this.panel.querySelector('#save-connection');
+        const saveBtn = root.querySelector('#save-connection');
         if (saveBtn) {
             saveBtn.onclick = () => this.saveConnection();
         }
         
         // Delete button
-        const deleteBtn = this.panel.querySelector('#delete-connection');
+        const deleteBtn = root.querySelector('#delete-connection');
         if (deleteBtn) {
             deleteBtn.onclick = () => this.deleteConnection();
         }
         
         // Refresh button
-        const refreshBtn = this.panel.querySelector('#refresh-data');
+        const refreshBtn = root.querySelector('#refresh-data');
         if (refreshBtn) {
             refreshBtn.onclick = () => this.loadData();
         }
         
         // Export button
-        const exportBtn = this.panel.querySelector('#export-json');
+        const exportBtn = root.querySelector('#export-json');
         if (exportBtn) {
             exportBtn.onclick = () => this.exportConnections();
         }
     }
     
-    filterList(listId, query, items) {
-        const list = this.panel.querySelector(`#${listId}`);
+    filterList(listId, query, items, container = null) {
+        const root = container || this.panel;
+        const list = root.querySelector(`#${listId}`);
+        if (!list) return;
+        
         const filtered = items.filter(item => 
             item.toLowerCase().includes(query.toLowerCase())
         ).slice(0, 50);
@@ -906,7 +1070,9 @@ class LunaConnectionsManager {
     }
     
     addTag(tag) {
-        const container = this.panel.querySelector('#tag-container');
+        const container = this.getActiveContainer()?.querySelector('#tag-container');
+        if (!container) return;
+        
         const tagEl = document.createElement('span');
         tagEl.className = 'luna-tag selected';
         tagEl.dataset.tag = tag;
@@ -917,24 +1083,26 @@ class LunaConnectionsManager {
     
     async saveConnection() {
         const type = this.currentTab === 'loras' ? 'lora' : 'embedding';
+        const root = this.getActiveContainer();
+        if (!root) return;
         
         // Gather form data
-        const triggers = this.panel.querySelector('#conn-triggers').value
-            .split(',').map(t => t.trim()).filter(t => t);
+        const triggers = root.querySelector('#conn-triggers')?.value
+            .split(',').map(t => t.trim()).filter(t => t) || [];
         
-        const categories = this.panel.querySelector('#conn-categories').value
-            .split('\n').map(c => c.trim()).filter(c => c);
+        const categories = root.querySelector('#conn-categories')?.value
+            .split('\n').map(c => c.trim()).filter(c => c) || [];
         
-        const tags = Array.from(this.panel.querySelectorAll('#tag-container .luna-tag'))
+        const tags = Array.from(root.querySelectorAll('#tag-container .luna-tag'))
             .map(el => el.dataset.tag);
         
         const config = {
             triggers,
             categories,
             tags,
-            model_type: this.panel.querySelector('#conn-model-type').value,
-            weight_default: parseFloat(this.panel.querySelector('#conn-weight').value),
-            notes: this.panel.querySelector('#conn-notes').value
+            model_type: root.querySelector('#conn-model-type')?.value || 'any',
+            weight_default: parseFloat(root.querySelector('#conn-weight')?.value || '1.0'),
+            notes: root.querySelector('#conn-notes')?.value || ''
         };
         
         try {

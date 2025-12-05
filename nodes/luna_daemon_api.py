@@ -29,12 +29,28 @@ try:
     )
     DAEMON_AVAILABLE = True
 except ImportError:
-    daemon_client = None
-    DAEMON_AVAILABLE = False
-    DAEMON_HOST = "127.0.0.1"
-    DAEMON_PORT = 19283
-    SHARED_DEVICE = "cuda:1"
-    MAX_WORKERS = 4
+    # Fallback: try absolute import path
+    try:
+        import os
+        import sys
+        # Add parent directory to path for direct import
+        _daemon_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'luna_daemon'))
+        if _daemon_dir not in sys.path:
+            sys.path.insert(0, os.path.dirname(_daemon_dir))
+        
+        from luna_daemon import client as daemon_client
+        from luna_daemon.config import (
+            DAEMON_HOST, DAEMON_PORT, SHARED_DEVICE, MAX_WORKERS
+        )
+        DAEMON_AVAILABLE = True
+    except ImportError as e:
+        print(f"[LunaDaemonAPI] Failed to import daemon client: {e}")
+        daemon_client = None
+        DAEMON_AVAILABLE = False
+        DAEMON_HOST = "127.0.0.1"
+        DAEMON_PORT = 19283
+        SHARED_DEVICE = "cuda:1"
+        MAX_WORKERS = 4
 
 
 # Track if routes have been registered
