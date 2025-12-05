@@ -1,27 +1,83 @@
 # 🌙 ComfyUI Luna Collection
 
-![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 
-**A comprehensive suite of ComfyUI custom nodes for advanced image processing, model management, and workflow automation.**
+**A production-grade ComfyUI infrastructure for advanced model management, multi-instance VRAM sharing, and workflow automation.**
 
-Luna Collection provides a modular set of tools for image upscaling, LoRA stacking, YAML wildcards, multi-instance VRAM sharing, and more. Each node is designed to be intuitive and integrate seamlessly into your ComfyUI workflows.
+Luna Collection is a vertically integrated image generation stack designed for high-throughput workflows. It provides smart model loading with automatic precision conversion, multi-GPU daemon architecture for shared VAE/CLIP, hierarchical YAML wildcards, and comprehensive prompt engineering tools.
 
 ---
 
 ## ✨ Features
 
-### 🔧 **Core Capabilities**
-- **Advanced Upscaling**: Multiple upscaling nodes with model-based and resampling methods
+### 🔧 **Core Infrastructure**
+- **Luna Daemon v1.3**: Multi-instance VRAM sharing with split CLIP/VAE architecture
+- **Dynamic Model Loader**: JIT precision conversion with smart lazy evaluation
+- **CUDA IPC**: Zero-copy tensor transfer for same-GPU VAE operations
+- **F-150 LoRA Support**: Transient LoRA injection for shared CLIP models
 
-- **LoRA Management**: Advanced LoRA stacking with individual strength controls
-- **YAML Wildcards**: Hierarchical prompt templates with nested path resolution
-- **Luna Daemon**: Multi-instance VRAM sharing for VAE/CLIP across ComfyUI instances
-- **Civitai Integration**: Automatic metadata scraping with local SQLite database
-- **Prompt Processing**: Comprehensive text preprocessing and enhancement tools
-- **TensorRT Support**: High-performance inference with TensorRT engines
-- **Input Validation**: Pydantic-based validation for all node inputs
+### 📦 **Model Management**
+- **Smart Precision Loading**: bf16, fp8, GGUF Q8_0/Q4_K_M with automatic conversion
+- **Hybrid Checkpoint Loading**: CLIP/VAE from source + optimized UNet from NVMe
+- **Checkpoint Tunnel**: Separate MODEL routing from CLIP/VAE for daemon integration
+- **GGUF Converter**: Convert any checkpoint to quantized GGUF format
+
+### 🎲 **Prompt Engineering**
+- **YAML Wildcards**: Hierarchical templates with nested path resolution
+- **Prompt List Loader**: CSV/JSON/YAML import with pos/neg/seed/lora_stack outputs
+- **Batch Prompt Extractor**: Extract prompts from image EXIF (UTF-16BE support)
+- **Config Gateway**: Centralized workflow parameter management
+
+### 🖼️ **Image Processing**
+- **Advanced Upscaling**: Model-based, tile-based, and multi-stage upscaling
+- **MediaPipe Detailing**: Face/hand detection and segmentation
+- **Multi-Image Saver**: Batch output with naming templates and EXIF embedding
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          LUNA COLLECTION v1.3                                   │
+│              "Production Image Generation Infrastructure"                       │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════════
+                              DAEMON LAYER (Multi-Instance VRAM Sharing)
+═══════════════════════════════════════════════════════════════════════════════════
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│  Luna Daemon v1.3                                                               │
+│  ├── Split Architecture: CLIP (cuda:1 socket) + VAE (cuda:0 IPC)               │
+│  ├── F-150 LoRA: TransientLoRAContext + LoRARegistry LRU (2GB cache)           │
+│  ├── Length-Prefix Protocol: 4-byte header, O(n) transport                     │
+│  └── CUDA IPC: Zero-copy tensor sharing for same-GPU VAE operations            │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════════
+                              MODEL MANAGEMENT LAYER
+═══════════════════════════════════════════════════════════════════════════════════
+┌────────────────────────────┐  ┌────────────────────────────┐  ┌─────────────────┐
+│  Luna Dynamic Loader       │  │  Luna Checkpoint Tunnel    │  │  GGUF Converter │
+│  ├── Smart lazy eval       │  │  ├── Pass-through MODEL    │  │  ├── Q8_0       │
+│  ├── JIT UNet conversion   │  │  └── Separate CLIP/VAE     │  │  ├── Q4_K_M     │
+│  ├── bf16/fp8/Q8_0/Q4_K_M  │  │      routing               │  │  └── Q4_0       │
+│  └── HDD source→NVMe opt   │  └────────────────────────────┘  └─────────────────┘
+└────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════════
+                              PROMPT ENGINEERING LAYER
+═══════════════════════════════════════════════════════════════════════════════════
+┌────────────────────────────┐  ┌────────────────────────────┐  ┌─────────────────┐
+│  Luna YAML Wildcard        │  │  Luna Prompt List Loader   │  │  Batch Prompt   │
+│  ├── {file:path.to.items}  │  │  ├── CSV/JSON/YAML import  │  │  Extractor      │
+│  ├── [inline.substitution] │  │  ├── pos/neg/seed outputs  │  │  ├── EXIF read  │
+│  ├── {1-10} numeric ranges │  │  ├── lora_stack output     │  │  ├── Batch proc │
+│  └── __legacy/txt__ compat │  │  └── index iteration       │  │  └── UTF-16BE   │
+└────────────────────────────┘  └────────────────────────────┘  └─────────────────┘
+```
 
 ---
 
@@ -30,208 +86,271 @@ Luna Collection provides a modular set of tools for image upscaling, LoRA stacki
 ### Prerequisites
 - ComfyUI (latest version recommended)
 - Python 3.10+
-- PyTorch with CUDA support (for GPU acceleration)
+- PyTorch with CUDA support
+- (Optional) Multi-GPU setup for daemon architecture
 
 ### Quick Install
-1. **Clone the repository:**
-   ```bash
-   cd ComfyUI/custom_nodes/
-   git clone https://github.com/LSDJesus/ComfyUI-Luna-Collection.git
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   cd ComfyUI-Luna-Collection
-   pip install -r requirements.txt
-   ```
-
-3. **Restart ComfyUI**
-
-The nodes will be available under the **`Luna Collection`** or **`Luna/`** categories.
-
----
-
-## 🎯 Available Nodes
-
-### 🖼️ **Image Processing & Upscaling**
-| Node | Description | Key Features |
-|------|-------------|--------------|
-| **Luna Simple Upscaler** | Clean, lightweight upscaling | Model-based scaling, multiple resampling methods |
-| **Luna Advanced Upscaler** | Professional-grade upscaling | Supersampling, modulus rounding, advanced controls |
-| **Luna Ultimate SD Upscale** | Multi-stage SD upscaling | Tile-based processing, seam blending |
-
-### 🎨 **Detailing**
-| Node | Description | Key Features |
-|------|-------------|--------------|
-| **Luna Detailer** | Face/body detailing with inpainting | Conditional detailing, mask generation |
-| **TensorRT Face Detailer** | High-performance TensorRT detailing | Dynamic engine support, bbox detection, SAM integration |
-
-### 📁 **Model Management**
-| Node | Description | Key Features |
-|------|-------------|--------------|
-| **Luna Checkpoint Loader** | Checkpoint loading with metadata | Model info display, efficient loading |
-| **Luna LoRA Stacker** | Multi-LoRA management | Up to 4 LoRAs, individual strength/toggle controls |
-| **Luna LoRA Stacker Random** | Randomized LoRA selection | Automatic variation generation |
-| **Luna Embedding Manager** | Textual inversion management | Multiple embedding support |
-| **Luna Embedding Manager Random** | Randomized embedding selection | Variation and experimentation |
-
-### 📝 **Text & Prompt Processing**
-| Node | Description | Key Features |
-|------|-------------|--------------|
-| **Luna Unified Prompt Processor** | All-in-one prompt enhancement | Multiple processing modes, wildcard support |
-| **Luna Prompt Preprocessor** | Advanced prompt preprocessing | Style enhancement, quality boosting |
-| **Luna Text Processor** | Text manipulation and filtering | Length control, content filtering |
-| **Luna Wildcard Prompt Generator** | Dynamic prompt generation | Random wildcard expansion |
-| **Luna Load Preprocessed** | Load saved prompts | Prompt library management |
-| **Luna Save Negative Prompt** | Save negative prompts | Reusable negative prompt templates |
-
-### 🎲 **YAML Wildcards**
-| Node | Description | Key Features |
-|------|-------------|--------------|
-| **Luna YAML Wildcard** | Hierarchical YAML wildcard expansion | Nested path resolution, templates, numeric ranges |
-| **Luna YAML Wildcard Batch** | Generate multiple prompts at once | Batch processing, variation generation |
-| **Luna YAML Wildcard Explorer** | Browse and preview wildcards | Interactive exploration of YAML files |
-| **Luna Wildcard Builder** | Construct prompts with wildcards | Visual prompt building |
-| **Luna LoRA Randomizer** | Random LoRA selection from YAML | Weighted random selection |
-| **Luna Wildcard CSV Injector** | Import CSV data into YAML | Batch data import |
-
-### 🔗 **Luna Daemon (Multi-Instance VRAM Sharing)**
-| Node | Description | Key Features |
-|------|-------------|--------------|
-| **Luna Shared VAE Encode** | Encode via daemon's shared VAE | Offload VAE to separate GPU |
-| **Luna Shared VAE Decode** | Decode via daemon's shared VAE | Free VRAM on main GPU |
-| **Luna Shared VAE Encode (Tiled)** | Tiled encoding for large images | Memory-efficient encoding |
-| **Luna Shared VAE Decode (Tiled)** | Tiled decoding for large images | Memory-efficient decoding |
-| **Luna Shared CLIP Encode** | Encode via daemon's shared CLIP | Offload CLIP to separate GPU |
-| **Luna Shared CLIP Encode (SDXL)** | SDXL dual CLIP encoding | SDXL-specific encoding |
-| **Luna Daemon Status** | Check daemon connection status | Health monitoring |
-
-### 🌐 **Civitai Integration**
-| Node | Description | Key Features |
-|------|-------------|--------------|
-| **Luna Civitai Metadata Scraper** | Fetch metadata from Civitai | Trigger words, tags, descriptions |
-| **Luna Civitai Batch Scraper** | Bulk scrape multiple models | Folder-based batch processing |
-
-### 🔧 **Workflow & Utilities**
-| Node | Description | Key Features |
-|------|-------------|--------------|
-| **Luna Sampler** | Advanced KSampler | Custom sampling with enhanced controls |
-| **Luna Multi Saver** | Batch image saving | Multiple format support, organized output |
-| **Luna Parameters Bridge** | Parameter passing between nodes | Workflow organization |
-| **Luna Load Parameters** | Load saved parameters | Reusable configurations |
-| **Luna Image Caption** | Automated image captioning | AI-powered descriptions |
-| **Luna YOLO Annotation Exporter** | YOLO format export | Object detection workflow integration |
-| **Luna Performance Monitor** | Workflow performance tracking | Execution time monitoring |
-| **Luna Cache Manager** | Cache management | Memory optimization |
-
----
-
-## 📚 Key Features by Node
-
-### Luna LoRA Stacker
-- Stack up to 4 LoRAs with individual controls
-- Dropdown selection from your `models/loras` directory
-- Individual enable/disable toggles per LoRA
-- Separate strength controls for fine-tuning
-- Compatible with ComfyUI-Impact-Pack's Apply LoRA Stack nodes
-
-### TensorRT Face Detailer
-- High-performance inference using TensorRT engines
-- Dynamic engine support (min: 768, max: 1280, opt: 1024)
-- ONNX bbox detector compatibility
-- SAM (Segment Anything Model) integration for refinement
-- Automatic region cropping and resizing
-
-### Luna Ultimate SD Upscale
-- Multi-stage upscaling with SD inpainting
-- Tile-based processing for large images
-- Seam blending for seamless results
-- Configurable tile size and overlap
-- Support for various upscaling models
-
-### 🎲 Luna YAML Wildcard System
-A powerful hierarchical wildcard system using YAML files for organized prompt generation.
-
-**Prompt Syntax:**
-- `{filename}` - Random template from `filename.yaml`'s `templates` section
-- `{filename:path.to.items}` - Random item from nested path
-- `{filename: text with [path.to.item] substitutions}` - Inline template
-- `{1-10}` - Random integer range
-- `{0.5-1.5:0.1}` - Random float with step resolution
-- `__path/file__` - Legacy .txt wildcard reference
-
-**Example YAML structure:**
-```yaml
-templates:
-  full:
-    - "a [category.item] with [another.path]"
-category:
-  item:
-    - option_one
-    - option_two
+```bash
+cd ComfyUI/custom_nodes/
+git clone https://github.com/LSDJesus/ComfyUI-Luna-Collection.git
+cd ComfyUI-Luna-Collection
+pip install -r requirements.txt
 ```
 
-### 🔗 Luna Daemon (Multi-Instance VRAM Sharing)
-Share VAE and CLIP models across multiple ComfyUI instances to save VRAM.
+Restart ComfyUI. Nodes appear under **`Luna/`** categories.
 
-**Architecture:**
+---
+
+## 🎯 Node Reference
+
+### 🔗 **Luna Daemon (Multi-Instance VRAM Sharing)**
+
+The daemon allows multiple ComfyUI instances to share VAE/CLIP models loaded on a separate GPU.
+
+| Node | Description |
+|------|-------------|
+| **Luna Shared VAE Encode** | Encode via daemon's shared VAE |
+| **Luna Shared VAE Decode** | Decode via daemon's shared VAE |
+| **Luna Shared VAE Encode (Tiled)** | Memory-efficient tiled encoding |
+| **Luna Shared VAE Decode (Tiled)** | Memory-efficient tiled decoding |
+| **Luna Shared CLIP Encode** | Encode via daemon's shared CLIP |
+| **Luna Shared CLIP Encode (SDXL)** | SDXL dual CLIP encoding with LoRA support |
+| **Luna Daemon Status** | Check daemon connection and model info |
+
+**v1.3 Split Architecture:**
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   GPU 1 (cuda:1)                        │
 │  ┌─────────────────────────────────────────────────┐   │
-│  │           Luna VAE/CLIP Daemon                   │   │
-│  │  • VAE + CLIP loaded once                       │   │
-│  │  • Serves encode/decode via local socket        │   │
+│  │           CLIP Daemon (:19283)                   │   │
+│  │  • CLIP_L + CLIP_G loaded once                  │   │
+│  │  • F-150 LoRA: transient injection per-request  │   │
+│  │  • LoRARegistry LRU cache (2GB)                 │   │
 │  └─────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────┘
-                          ▲ Socket (127.0.0.1:19283)
-        ┌─────────────────┼─────────────────┐
-        ▼                 ▼                 ▼
-┌───────────────┐ ┌───────────────┐ ┌───────────────┐
-│ ComfyUI :8188 │ │ ComfyUI :8189 │ │ ComfyUI :8190 │
-│ UNet only     │ │ UNet only     │ │ UNet only     │
-└───────────────┘ └───────────────┘ └───────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                   GPU 0 (cuda:0)                        │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │           VAE Daemon (:19284)                    │   │
+│  │  • Same GPU as UNet = CUDA IPC zero-copy        │   │
+│  │  • No socket serialization overhead             │   │
+│  └─────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  ComfyUI Instances (UNet only)                  │   │
+│  │  :8188, :8189, :8190...                         │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
 ```
 
-**Usage:**
-1. Start the daemon: `python luna_daemon/server.py`
-2. Use `Luna Shared VAE Encode/Decode` nodes instead of standard VAE nodes
-3. Multiple ComfyUI instances share the same VAE/CLIP on a separate GPU
+**Starting the Daemon:**
+```bash
+# Full daemon (CLIP + VAE on one GPU)
+python luna_daemon/server_v2.py
 
-### 🌐 Luna Metadata Database
-Local SQLite database for LoRA/embedding metadata storage.
+# Split mode - CLIP on cuda:1
+python luna_daemon/server_v2.py --service-type clip --device cuda:1 --port 19283
 
-**Location:** `{ComfyUI}/user/default/ComfyUI-Luna-Collection/metadata.db`
+# Split mode - VAE on cuda:0 with IPC
+python luna_daemon/server_v2.py --service-type vae --device cuda:0 --port 19284
+```
 
-**Features:**
-- Fast hash-based lookups (Civitai tensor hash format)
-- Full-text search across trigger words, tags, descriptions
-- User customization: favorites, ratings, custom tags, notes
-- Usage tracking: use count, last used timestamp
-- Query by base model (SDXL, Pony, Illustrious, etc.)
+### 📦 **Model Management**
+
+| Node | Description |
+|------|-------------|
+| **Luna Dynamic Model Loader** | Smart checkpoint loading with JIT precision conversion |
+| **Luna Checkpoint Tunnel** | Pass MODEL through, route CLIP/VAE to daemon |
+| **Luna GGUF Converter** | Convert checkpoints to quantized GGUF format |
+| **Luna Optimized Weights Manager** | Manage local optimized UNet files |
+
+**Luna Dynamic Model Loader** - The centerpiece of model management:
+
+```
+┌────────────────────────────────────────────────────────┐
+│             8TB HDD (Source Library)                   │
+│  358 FP16 Checkpoints (6.5GB each)                     │
+└────────────────────────────────────────────────────────┘
+                          │
+                          ▼ First use: extract UNet + convert
+┌────────────────────────────────────────────────────────┐
+│             NVMe (Local Optimized Weights)             │
+│  models/unet/optimized/                                │
+│  • illustriousXL_Q8_0.gguf (3.2GB)                     │
+│  • ponyV6_fp8_e4m3fn_unet.safetensors (2.1GB)          │
+└────────────────────────────────────────────────────────┘
+                          │
+                          ▼ Smart lazy evaluation
+┌────────────────────────────────────────────────────────┐
+│  • MODEL always loads optimized UNet                   │
+│  • CLIP/VAE only load if outputs are connected         │
+│  • No mode selection needed - just wire what you need  │
+└────────────────────────────────────────────────────────┘
+```
+
+**Supported Precisions:**
+| Precision | Best For | Size Reduction |
+|-----------|----------|----------------|
+| `bf16` | Universal, fast | ~50% |
+| `fp8_e4m3fn` | Ada/Blackwell GPUs | ~75% |
+| `gguf_Q8_0` | Ampere INT8 tensor cores | ~50% |
+| `gguf_Q4_K_M` | Blackwell INT4 tensor cores | ~75% |
+
+### 🎲 **YAML Wildcards**
+
+| Node | Description |
+|------|-------------|
+| **Luna YAML Wildcard** | Hierarchical wildcard expansion |
+| **Luna YAML Wildcard Batch** | Generate multiple prompts with seeds |
+| **Luna Wildcard Builder** | Visual prompt composition |
+| **Luna LoRA Randomizer** | Random LoRA selection from YAML |
+
+**Prompt Syntax:**
+```
+{filename}                    → Random template from templates section
+{filename:path.to.items}      → Random item from nested path
+{filename: text [path.sub]}   → Inline template with substitutions
+{1-10}                        → Random integer
+{0.5-1.5:0.1}                 → Random float with step
+__path/file__                 → Legacy .txt wildcard
+```
+
+**Example YAML (`models/wildcards/characters.yaml`):**
+```yaml
+templates:
+  hero:
+    - "a [appearance.build] [species.humanoid] with [features.eyes]"
+    
+appearance:
+  build:
+    - muscular
+    - slender
+    - athletic
+    
+species:
+  humanoid:
+    - elf
+    - human
+    - tiefling
+    
+features:
+  eyes:
+    - glowing blue eyes
+    - heterochromatic eyes
+```
+
+### 📝 **Prompt Engineering**
+
+| Node | Description |
+|------|-------------|
+| **Luna Prompt List Loader** | Load prompts from CSV/JSON/YAML files |
+| **Luna Batch Prompt Extractor** | Extract prompts from image EXIF metadata |
+| **Luna Config Gateway** | Centralized workflow parameters |
+| **Luna Trigger Injector** | Auto-inject LoRA trigger words |
+
+**Luna Prompt List Loader** outputs:
+- `positive` - Positive prompt string
+- `negative` - Negative prompt string  
+- `seed` - Per-prompt seed (or -1 for random)
+- `lora_stack` - LoRA stack tuple for Apply LoRA Stack
+- `index` - Current iteration index
+
+### 📁 **LoRA & Embedding Management**
+
+| Node | Description |
+|------|-------------|
+| **Luna LoRA Stacker** | Stack up to 4 LoRAs with strength controls |
+| **Luna LoRA Stacker Random** | Randomized LoRA selection |
+| **Luna Embedding Manager** | Textual inversion management |
+| **Luna Embedding Manager Random** | Randomized embedding selection |
+| **Luna LoRA Validator** | Validate LoRA files and extract metadata |
+
+### 🖼️ **Image Processing**
+
+| Node | Description |
+|------|-------------|
+| **Luna Simple Upscaler** | Clean model-based upscaling |
+| **Luna Advanced Upscaler** | Supersampling, modulus rounding |
+| **Luna Ultimate SD Upscale** | Tile-based SD upscaling |
+| **Luna Multi Saver** | Batch saving with templates |
+
+### 🔧 **Utilities**
+
+| Node | Description |
+|------|-------------|
+| **Luna Civitai Metadata Scraper** | Fetch LoRA metadata from Civitai |
+| **Luna Performance Monitor** | Execution time tracking |
+| **Luna Expression Pack** | Logic and math expressions |
 
 ---
 
-## 🔧 Dependencies
+## 📚 Technical Deep Dives
 
-### Core Requirements
-- **ComfyUI** - Latest version recommended
-- **PyTorch** - With CUDA support for GPU acceleration
+### Luna Daemon Protocol
 
-- **OpenCV** - Image processing
-- **NumPy** - Numerical operations
-
-### Optional Dependencies
-- **TensorRT** - For TensorRT Face Detailer node
-- **Polygraphy** - TensorRT engine utilities
-- **SAM Models** - For segmentation refinement
-- **Impact Pack** - For bbox detection integration
-- **Pydantic** - For input validation (v2.0+)
-
-Install all dependencies with:
-```bash
-pip install -r requirements.txt
+**Length-Prefix Protocol (v1.3):**
 ```
+┌──────────────────┬─────────────────────────────────┐
+│ 4-byte uint32    │ JSON payload (exact length)     │
+│ payload length   │                                 │
+└──────────────────┴─────────────────────────────────┘
+```
+
+Replaces the old `<<END>>` sentinel pattern which required O(n²) string scanning.
+
+**F-150 LoRA Architecture:**
+```python
+# TransientLoRAContext - thread-safe LoRA injection
+with TransientLoRAContext(clip_model, lora_stack, registry):
+    # 1. Lock acquired
+    # 2. LoRA weights loaded from registry (LRU cached)
+    # 3. Weights injected via add_patches()
+    # 4. Encode happens here
+    # 5. Weights restored on exit
+    # 6. Lock released
+```
+
+### Dynamic Loader Smart Evaluation
+
+The loader uses ComfyUI's `check_lazy_status` to detect connected outputs:
+
+```python
+def check_lazy_status(self, ckpt_name, precision, ...):
+    # Always need MODEL and unet_path
+    needed = [0, 3]
+    
+    # Check graph for CLIP/VAE connections
+    if self._is_output_connected(graph, node_id, 1):  # CLIP
+        needed.append(1)
+    if self._is_output_connected(graph, node_id, 2):  # VAE
+        needed.append(2)
+    
+    return needed
+```
+
+This means:
+- **MODEL only connected**: Just loads optimized UNet (~2-4GB)
+- **MODEL + CLIP**: Loads UNet + extracts CLIP from source
+- **MODEL + VAE**: Loads UNet + extracts VAE from source
+- **All connected**: Full hybrid load
+
+### CUDA IPC Zero-Copy
+
+When VAE daemon runs on the same GPU as ComfyUI:
+
+```python
+# Client side
+tensor.share_memory_()  # Move to shared memory
+handle = tensor.storage()._share_cuda_()
+
+# Send handle via socket (tiny metadata, not tensor data)
+response = send_ipc_request(handle, shape, dtype)
+
+# Server side - reconstructs tensor from handle
+tensor = torch.zeros(shape, dtype=dtype, device=device)
+tensor.storage()._set_from_cuda_ipc_handle_(handle)
+```
+
+Result: 13 VAE operations per iteration with zero serialization overhead.
 
 ---
 
@@ -239,96 +358,101 @@ pip install -r requirements.txt
 
 ```
 ComfyUI-Luna-Collection/
-├── nodes/                          # All node implementations
-│   ├── loaders/                    # Model loading nodes
-│   ├── upscaling/                  # Image upscaling nodes
-│   ├── preprocessing/              # Text/prompt processing nodes
-│   ├── detailing/                  # Detailing nodes
-│   ├── performance/                # Performance monitoring nodes
+├── nodes/                          # Node implementations
+│   ├── promptcraft/                # Prompt engineering nodes
+│   │   ├── engine.py               # YAML parser engine
+│   │   └── nodes.py                # Wildcard nodes
+│   ├── upscaling/                  # Upscaler nodes
+│   ├── luna_dynamic_loader.py      # Smart precision loader
 │   ├── luna_yaml_wildcard.py       # YAML wildcard system
-│   ├── luna_shared_vae.py          # Shared VAE nodes (daemon)
-│   ├── luna_shared_clip.py         # Shared CLIP nodes (daemon)
-│   ├── luna_civitai_scraper.py     # Civitai metadata scraper
-│   └── ...                         # Other node files
-├── luna_daemon/                    # Multi-instance VRAM sharing daemon
-│   ├── server.py                   # Daemon server
-│   ├── client.py                   # Client utilities
-│   └── config.py                   # Daemon configuration
+│   ├── luna_batch_prompt_extractor.py
+│   ├── luna_config_gateway.py
+│   ├── luna_multi_saver.py
+│   └── ...
+├── luna_daemon/                    # Multi-instance daemon
+│   ├── server_v2.py                # v1.3 daemon server
+│   ├── client.py                   # Client library
+│   ├── proxy.py                    # DaemonVAE/DaemonCLIP proxies
+│   └── config.py                   # Configuration
 ├── utils/                          # Shared utilities
-│   ├── luna_metadata_db.py         # SQLite metadata database
-
-│   ├── trt_engine.py               # TensorRT engine wrapper
-│   ├── luna_performance_monitor.py # Performance tracking
-│   └── ...                         # Other utilities
-├── validation/                     # Pydantic input validation
-│   └── __init__.py                 # Validators and models
+│   ├── luna_metadata_db.py         # SQLite metadata
+│   └── ...
 ├── js/                             # Frontend JavaScript
-├── tests/                          # Unit and integration tests
-├── scripts/                        # Utility scripts
-└── __init__.py                     # Package initialization
+├── tests/                          # Test suite
+└── __init__.py
 ```
 
 ---
 
-## 🤝 Contributing
+## 🔧 Configuration
 
-Contributions are welcome! If you'd like to add features, fix bugs, or improve documentation:
+### Daemon Configuration (`luna_daemon/config.py`)
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+```python
+# Service type for split architecture
+class ServiceType(Enum):
+    FULL = "full"           # CLIP + VAE on same GPU
+    CLIP_ONLY = "clip"      # CLIP daemon only
+    VAE_ONLY = "vae"        # VAE daemon only
 
-Please ensure your code follows the existing style and includes appropriate comments.
+# Network
+DAEMON_HOST = "127.0.0.1"
+DAEMON_PORT = 19283         # CLIP daemon
+DAEMON_VAE_PORT = 19284     # VAE daemon (split mode)
+
+# GPU Assignment
+SHARED_DEVICE = "cuda:1"    # For CLIP
+VAE_DEVICE = "cuda:0"       # For VAE (same as UNet = IPC eligible)
+
+# Model Paths
+VAE_PATH = "models/vae/sdxl_vae.safetensors"
+CLIP_L_PATH = "models/clip/clip_l.safetensors"
+CLIP_G_PATH = "models/clip/clip_g.safetensors"
+
+# LoRA Cache
+LORA_CACHE_MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2GB LRU
+```
+
+### Dynamic Loader Configuration
+
+The loader stores optimized UNets in `models/unet/optimized/` by default.
+Override with the `local_weights_dir` input.
 
 ---
 
 ## 📈 Changelog
 
-### v1.2.0 - Current (2025-11-29)
-- ✅ **YAML Wildcard System**: Hierarchical wildcards with templates, nested paths, numeric ranges
-- ✅ **Luna Daemon**: Multi-instance VRAM sharing for VAE/CLIP across ComfyUI instances
-- ✅ **Shared VAE/CLIP Nodes**: Encode/decode via daemon's shared models
-- ✅ **Civitai Integration**: Automatic metadata scraping and embedding
-- ✅ **SQLite Metadata Database**: Local storage for model metadata with full-text search
-- ✅ **Input Validation**: Pydantic-based validation system for all node inputs
-- ✅ **Performance Monitoring**: Execution time tracking and optimization tools
-- ✅ **Project Cleanup**: Removed redundant code, fixed imports, improved structure
+### v1.3.0 - Current (2025-12)
+- ✅ **Split Daemon Architecture**: Separate CLIP/VAE daemons for optimal GPU placement
+- ✅ **CUDA IPC**: Zero-copy tensor transfer for same-GPU VAE operations
+- ✅ **F-150 LoRA**: Transient LoRA injection for shared CLIP with LRU cache
+- ✅ **Length-Prefix Protocol**: O(n) transport replacing O(n²) sentinel scanning
+- ✅ **Luna Dynamic Model Loader**: JIT precision conversion with smart lazy evaluation
+- ✅ **Smart Output Detection**: CLIP/VAE only load when outputs are connected
+- ✅ **Hybrid Loading**: CLIP/VAE from FP16 source + optimized UNet from NVMe
+- ✅ **GGUF Support**: Q8_0 and Q4_K_M quantization for Ampere/Blackwell
+
+### v1.2.0 (2025-11-29)
+- ✅ **YAML Wildcard System**: Hierarchical wildcards with templates
+- ✅ **Luna Daemon**: Multi-instance VRAM sharing
+- ✅ **Civitai Integration**: Automatic metadata scraping
+- ✅ **SQLite Metadata Database**: Local storage with full-text search
+- ✅ **Batch Prompt Extractor**: EXIF parsing with UTF-16BE support
 
 ### v1.1.0 (2025-09-21)
-- ✅ **TensorRT Integration**: High-performance TensorRT Face Detailer node
-- ✅ **Enhanced LoRA Stacker**: Dropdown selection, individual toggles, proper tuple format
+- ✅ **TensorRT Integration**: High-performance detailing
+- ✅ **Enhanced LoRA Stacker**: Individual toggles, proper tuple format
 
-- ✅ **Utility Functions**: Local impact_core and trt_engine utilities
-- ✅ **Bug Fixes**: Fixed LoRA stack format
-
-### v1.0.0 - Initial Release (2025-08-22)
-- 🎯 **Core Nodes**: Simple, Advanced, and Ultimate SD upscalers
-
-- 🎯 **LoRA Management**: Stacking and random selection
-- 🎯 **Prompt Processing**: Preprocessing and enhancement tools
-- 🎯 **Workflow Tools**: Multi-saver, parameter bridge, sampler
-
----
-
-## 🙏 Acknowledgments
-
-This project builds upon the excellent work of the ComfyUI community. Special thanks to:
-
-- **ComfyUI Team** - For the incredible platform and architecture
-
-- **Impact Pack** - For bbox detection and segmentation utilities
-- **ComfyUI-Impact-Pack** - For LoRA stack compatibility and detailing tools
-- **TensorRT Community** - For high-performance inference optimization
+### v1.0.0 (2025-08-22)
+- 🎯 Initial release with upscalers, LoRA management, prompt processing
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built with ❤️ by the Luna Collective*
+*Built with ❤️ for high-throughput image generation*
 

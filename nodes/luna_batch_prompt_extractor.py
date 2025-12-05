@@ -455,17 +455,22 @@ class LunaBatchPromptExtractor:
             
             # Try to get EXIF data
             exif_data = None
-            if hasattr(img, '_getexif') and img._getexif():
-                exif_data = img._getexif()
-            elif 'exif' in img.info:
-                # Try to parse raw EXIF bytes
-                try:
-                    from PIL.ExifTags import TAGS
-                    exif_bytes = img.info['exif']
-                    # Use getexif() method which handles the parsing
-                    exif_data = img.getexif()
-                except:
-                    pass
+            # Use getexif() which is the modern PIL API
+            try:
+                exif_data = img.getexif()
+                if not exif_data:
+                    exif_data = None
+            except Exception:
+                pass
+            
+            # Fallback: try legacy _getexif if available
+            if exif_data is None:
+                _getexif = getattr(img, '_getexif', None)
+                if _getexif is not None:
+                    try:
+                        exif_data = _getexif()
+                    except Exception:
+                        pass
             
             if not exif_data:
                 return None

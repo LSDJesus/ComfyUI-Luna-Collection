@@ -4,16 +4,22 @@ Extracts trigger words from LoRAs (via CivitAI metadata or embedded modelspec)
 and optionally injects them into prompts.
 """
 
+from __future__ import annotations
+
 import os
 import re
 import json
 import struct
-from typing import Dict, List, Optional, Tuple, Any
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Any
+
+if TYPE_CHECKING:
+    import folder_paths
 
 try:
     import folder_paths
     HAS_FOLDER_PATHS = True
 except ImportError:
+    folder_paths = None  # type: ignore
     HAS_FOLDER_PATHS = False
 
 
@@ -196,8 +202,8 @@ class LunaLoRATriggerInjector:
         """Look up triggers from CivitAI metadata cache"""
         # Check if we have the Luna metadata database
         try:
-            from utils.luna_metadata_db import get_lora_metadata
-            metadata = get_lora_metadata(lora_name)
+            from utils.luna_metadata_db import get_model_metadata
+            metadata = get_model_metadata(lora_name, model_type='lora')
             if metadata and 'trigger_words' in metadata:
                 return metadata['trigger_words']
         except ImportError:

@@ -1,0 +1,25 @@
+{
+    "include": [
+        "nodes",
+        "luna_daemon",
+        "utils"
+    ],
+    "exclude": [
+        "**/__pycache__",
+        "**/node_modules",
+        ".git",
+        "test",
+        "tests"
+    ],
+    "stubPath": "stubs",
+    "reportMissingImports": false,
+    "reportMissingModuleSource": false,
+    "reportMissingTypeStubs": false,
+    "reportOptionalMemberAccess": false,
+    "reportOptionalCall": false,
+    "reportUnknownMemberType": false,
+    "reportUnknownArgumentType": false,
+    "reportUnknownVariableType": false,
+    "pythonVersion": "3.10",
+    "typeCheckingMode": "basic"
+}

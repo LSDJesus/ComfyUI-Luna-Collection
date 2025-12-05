@@ -13,10 +13,20 @@ The daemon loads models on-demand from the first workflow request, then
 shares components across all ComfyUI instances for maximum VRAM savings.
 """
 
-import os
-from typing import Tuple, List
+from __future__ import annotations
 
-import folder_paths
+import os
+from typing import TYPE_CHECKING, Tuple, List, Any
+
+if TYPE_CHECKING:
+    import folder_paths
+    from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP
+    from ..luna_daemon import client as daemon_client
+
+try:
+    import folder_paths
+except ImportError:
+    folder_paths = None  # type: ignore
 
 # Import proxy classes
 try:
@@ -27,11 +37,14 @@ try:
 except ImportError:
     DAEMON_AVAILABLE = False
     DaemonConnectionError = Exception
+    DaemonVAE = None  # type: ignore
+    DaemonCLIP = None  # type: ignore
+    daemon_client = None  # type: ignore
     
     # Dummy functions for when daemon is not available
-    def detect_vae_type(vae):
+    def detect_vae_type(vae: Any) -> str:
         return 'unknown'
-    def detect_clip_type(clip):
+    def detect_clip_type(clip: Any) -> str:
         return 'unknown'
 
 

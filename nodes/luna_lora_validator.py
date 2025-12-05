@@ -4,6 +4,8 @@ Scans a prompt JSON file and validates which LoRAs exist locally.
 Optionally searches CivitAI for missing LoRAs and provides download links.
 """
 
+from __future__ import annotations
+
 import os
 import json
 import urllib.request
@@ -11,12 +13,16 @@ import urllib.error
 import urllib.parse
 import ssl
 import time
-from typing import Dict, List, Optional, Tuple, Any
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Any
+
+if TYPE_CHECKING:
+    import folder_paths
 
 try:
     import folder_paths
     HAS_FOLDER_PATHS = True
 except ImportError:
+    folder_paths = None  # type: ignore
     HAS_FOLDER_PATHS = False
 
 # SSL context for HTTPS requests

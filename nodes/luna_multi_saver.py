@@ -3,6 +3,7 @@ import json
 import threading
 import time
 from datetime import datetime
+from typing import Dict, Any
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 import numpy as np
@@ -311,7 +312,7 @@ class LunaMultiSaver:
                 elif ext == 'webp':
                     # WebP format
                     # Note: PIL WebP support for EXIF is limited, we embed as XMP or skip
-                    save_kwargs = {
+                    save_kwargs: Dict[str, Any] = {
                         'lossless': lossless_webp,
                     }
                     if not lossless_webp:
