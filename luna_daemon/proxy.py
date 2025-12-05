@@ -19,10 +19,18 @@ Architecture:
     - CLIP components (clip_l, clip_g, t5xxl) can be shared across model families
     - VAE components are family-specific (sdxl_vae, flux_vae, etc.)
     
+    LoRA Support (F-150 Architecture):
+    - DaemonCLIP intercepts add_patches() calls from LoraLoader
+    - Extracts CLIP-specific LoRA weights and hashes them
+    - Uploads unique LoRAs to daemon's LoRARegistry
+    - Carries lora_stack with encode requests
+    - Daemon applies LoRAs transiently per-request
+    
     This allows maximum VRAM sharing across ComfyUI instances.
 """
 
 import torch
+import hashlib
 from typing import Optional, Dict, Any, List, Tuple, Union
 
 from . import client as daemon_client
@@ -314,6 +322,16 @@ class DaemonCLIP:
         
         The daemon tracks which components are loaded and shares them.
     
+    LoRA Support (F-150 Architecture):
+        When add_patches() is called (e.g., by LoraLoader), this proxy:
+        1. Extracts CLIP-specific weights from the patches
+        2. Computes a deterministic hash of the weights
+        3. Uploads to daemon if not already cached
+        4. Stores {hash, strength} in lora_stack
+        5. Sends lora_stack with encode requests
+        
+        The daemon applies LoRAs transiently per-request using locking.
+    
     Usage:
         # From LunaCheckpointTunnel - wrapping an actual CLIP
         proxy_clip = DaemonCLIP(actual_clip_object, clip_type='sdxl')
@@ -340,6 +358,9 @@ class DaemonCLIP:
         self.use_existing = use_existing
         self._registered = False
         self._layer_idx = None
+        
+        # LoRA stack: list of {"hash": str, "strength": float}
+        self.lora_stack: List[Dict[str, Any]] = []
         
         # Auto-detect type if not provided
         if clip_type is None and source_clip is not None:
@@ -421,7 +442,11 @@ class DaemonCLIP:
             )
         
         try:
-            cond, pooled, _, _ = daemon_client.clip_encode(text, "", clip_type)
+            # Pass lora_stack to daemon for transient application
+            cond, pooled, _, _ = daemon_client.clip_encode(
+                text, "", clip_type, 
+                lora_stack=self.lora_stack
+            )
             
             if return_dict:
                 return {"cond": cond, "pooled_output": pooled}
@@ -462,7 +487,11 @@ class DaemonCLIP:
             )
         
         try:
-            cond, pooled, _, _ = daemon_client.clip_encode(text, "", clip_type)
+            # Pass lora_stack to daemon for transient application
+            cond, pooled, _, _ = daemon_client.clip_encode(
+                text, "", clip_type,
+                lora_stack=self.lora_stack
+            )
             
             # Return in ComfyUI conditioning format
             cond_dict = {"pooled_output": pooled}
@@ -486,7 +515,7 @@ class DaemonCLIP:
         # TODO: Send layer preference to daemon
     
     def clone(self):
-        """Create a copy of this CLIP proxy."""
+        """Create a copy of this CLIP proxy, preserving lora_stack."""
         new_clip = DaemonCLIP(
             source_clip=self.source_clip,
             clip_type=self.clip_type,
@@ -494,6 +523,8 @@ class DaemonCLIP:
         )
         new_clip._layer_idx = self._layer_idx
         new_clip._registered = self._registered
+        # Copy the lora_stack so patches accumulate correctly
+        new_clip.lora_stack = self.lora_stack.copy()
         return new_clip
     
     def load_model(self):
@@ -508,12 +539,126 @@ class DaemonCLIP:
         """Get patches for model - not applicable."""
         return {}
     
-    def add_patches(self, patches, strength_patch=1.0, strength_model=1.0):
-        """Add patches (e.g., LoRA) - not supported in daemon mode."""
-        raise RuntimeError(
-            "LoRA patches cannot be applied to DaemonCLIP.\n"
-            "Apply LoRAs to the main model instead, or use local CLIP."
-        )
+    def add_patches(self, patches: Dict, strength_patch: float = 1.0, strength_model: float = 1.0):
+        """
+        Add patches (e.g., LoRA) to CLIP - routes to daemon.
+        
+        F-150 Architecture:
+        1. Extract CLIP-specific weights from patches
+        2. Hash the weights for cache key
+        3. Upload to daemon if not cached
+        4. Add {hash, strength} to lora_stack
+        5. Return cloned self with updated stack
+        
+        Args:
+            patches: Dict of model patches (from LoraLoader)
+            strength_patch: LoRA strength
+            strength_model: Model strength (usually 1.0)
+        
+        Returns:
+            New DaemonCLIP instance with LoRA added to stack
+        """
+        # Extract CLIP-specific patches
+        clip_patches = self._extract_clip_patches(patches)
+        
+        if not clip_patches:
+            print("[DaemonCLIP] No CLIP patches found in LoRA, skipping")
+            return self.clone()
+        
+        # Compute deterministic hash
+        lora_hash = self._compute_lora_hash(clip_patches)
+        
+        # Check if daemon has this LoRA cached
+        try:
+            if not daemon_client.has_lora(lora_hash):
+                # Upload to daemon
+                print(f"[DaemonCLIP] Uploading LoRA {lora_hash[:12]}... to daemon")
+                daemon_client.upload_lora(lora_hash, clip_patches)
+            else:
+                print(f"[DaemonCLIP] LoRA {lora_hash[:12]}... already cached in daemon")
+        except DaemonConnectionError as e:
+            print(f"[DaemonCLIP] Warning: Could not upload LoRA to daemon: {e}")
+            print("[DaemonCLIP] LoRA will be ignored for this encoding")
+            return self.clone()
+        
+        # Clone self and add to lora_stack
+        new_clip = self.clone()
+        new_clip.lora_stack.append({
+            "hash": lora_hash,
+            "strength": strength_patch * strength_model
+        })
+        
+        print(f"[DaemonCLIP] Added LoRA to stack (strength={strength_patch:.2f}), "
+              f"stack size: {len(new_clip.lora_stack)}")
+        
+        return new_clip
+    
+    def _extract_clip_patches(self, patches: Dict) -> Dict[str, torch.Tensor]:
+        """
+        Extract CLIP-specific patches from LoRA patch dict.
+        
+        LoRA patches use keys like:
+        - 'clip_l.transformer.text_model...'
+        - 'clip_g.transformer.text_model...'
+        - 'lora_te1_...' (CLIP text encoder 1)
+        - 'lora_te2_...' (CLIP text encoder 2)
+        
+        We filter for these and return flattened tensors.
+        """
+        clip_patches = {}
+        
+        for key, patch_data in patches.items():
+            # Check if this is a CLIP-related key
+            is_clip = any(pattern in key.lower() for pattern in [
+                'clip_l', 'clip_g', 'te1', 'te2', 'text_encoder',
+                'text_model', 'lora_te', 'clip.'
+            ])
+            
+            if not is_clip:
+                continue
+            
+            # patch_data format varies:
+            # - Could be (tensor,) tuple
+            # - Could be tensor directly
+            # - Could be (tensor, function) for alpha
+            if isinstance(patch_data, tuple):
+                tensor = patch_data[0] if patch_data else None
+            elif isinstance(patch_data, torch.Tensor):
+                tensor = patch_data
+            else:
+                continue
+            
+            if tensor is not None and isinstance(tensor, torch.Tensor):
+                # Store on CPU for transport
+                clip_patches[key] = tensor.cpu().clone()
+        
+        return clip_patches
+    
+    def _compute_lora_hash(self, weights: Dict[str, torch.Tensor]) -> str:
+        """
+        Compute deterministic hash of LoRA weights.
+        
+        Uses SHA256 of concatenated tensor bytes for uniqueness.
+        """
+        hasher = hashlib.sha256()
+        
+        # Sort keys for deterministic ordering
+        for key in sorted(weights.keys()):
+            tensor = weights[key]
+            # Hash key name
+            hasher.update(key.encode('utf-8'))
+            # Hash tensor shape
+            hasher.update(str(tensor.shape).encode('utf-8'))
+            # Hash tensor data (sample for speed if large)
+            if tensor.numel() > 10000:
+                # Sample every Nth element for large tensors
+                step = tensor.numel() // 10000
+                sample = tensor.flatten()[::step]
+                hasher.update(sample.numpy().tobytes())
+            else:
+                hasher.update(tensor.numpy().tobytes())
+        
+        return hasher.hexdigest()
     
     def load_sd(self, sd, full_model=False):
         """Load state dict - not applicable."""

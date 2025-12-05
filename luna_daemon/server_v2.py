@@ -45,21 +45,23 @@ if daemon_path not in sys.path:
 # Try relative import first (when used as module), fall back to direct import
 try:
     from .config import (
-        DAEMON_HOST, DAEMON_PORT, DAEMON_WS_PORT, SHARED_DEVICE,
+        DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, DAEMON_WS_PORT, SHARED_DEVICE, VAE_DEVICE,
         VAE_PATH, CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
         MAX_WORKERS, LOG_LEVEL, MODEL_PRECISION,
         VRAM_LIMIT_GB, VRAM_SAFETY_MARGIN_GB,
         MAX_VAE_WORKERS, MAX_CLIP_WORKERS, MIN_VAE_WORKERS, MIN_CLIP_WORKERS,
-        QUEUE_THRESHOLD, SCALE_UP_DELAY_SEC, IDLE_TIMEOUT_SEC
+        QUEUE_THRESHOLD, SCALE_UP_DELAY_SEC, IDLE_TIMEOUT_SEC,
+        ServiceType, SERVICE_TYPE, ENABLE_CUDA_IPC
     )
 except ImportError:
     from config import (
-        DAEMON_HOST, DAEMON_PORT, DAEMON_WS_PORT, SHARED_DEVICE,
+        DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, DAEMON_WS_PORT, SHARED_DEVICE, VAE_DEVICE,
         VAE_PATH, CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
         MAX_WORKERS, LOG_LEVEL, MODEL_PRECISION,
         VRAM_LIMIT_GB, VRAM_SAFETY_MARGIN_GB,
         MAX_VAE_WORKERS, MAX_CLIP_WORKERS, MIN_VAE_WORKERS, MIN_CLIP_WORKERS,
-        QUEUE_THRESHOLD, SCALE_UP_DELAY_SEC, IDLE_TIMEOUT_SEC
+        QUEUE_THRESHOLD, SCALE_UP_DELAY_SEC, IDLE_TIMEOUT_SEC,
+        ServiceType, SERVICE_TYPE, ENABLE_CUDA_IPC
     )
 
 # Setup logging
@@ -109,6 +111,332 @@ class WorkerType(Enum):
 
 
 # ============================================================================
+# LoRA Registry - F-150 Architecture (Reliable, Locking-Based)
+# ============================================================================
+
+@dataclass
+class LoRAEntry:
+    """A cached LoRA in the registry"""
+    lora_hash: str
+    weights: Dict[str, torch.Tensor]  # layer_key -> delta tensor
+    size_bytes: int
+    created_at: float = field(default_factory=time.time)
+    last_used: float = field(default_factory=time.time)
+    use_count: int = 0
+
+
+class LoRARegistry:
+    """
+    LRU cache for LoRA weights on the daemon.
+    
+    Stores LoRA CLIP weights (deltas) keyed by content hash.
+    Implements LRU eviction when VRAM budget exceeded.
+    
+    F-150 Philosophy: Simple, reliable, thread-safe.
+    """
+    
+    def __init__(self, max_size_mb: float = 2048.0, device: str = "cuda"):
+        self.max_size_bytes = int(max_size_mb * 1024 * 1024)
+        self.device = device
+        self.entries: Dict[str, LoRAEntry] = {}
+        self.lock = threading.Lock()
+        self.total_size_bytes = 0
+        
+        logger.info(f"[LoRARegistry] Initialized with {max_size_mb:.0f}MB cache limit")
+    
+    def _compute_size(self, weights: Dict[str, torch.Tensor]) -> int:
+        """Compute total size of weight tensors in bytes"""
+        return sum(t.numel() * t.element_size() for t in weights.values())
+    
+    def has(self, lora_hash: str) -> bool:
+        """Check if LoRA is in registry"""
+        with self.lock:
+            return lora_hash in self.entries
+    
+    def get(self, lora_hash: str) -> Optional[Dict[str, torch.Tensor]]:
+        """Get LoRA weights by hash, updating LRU timestamp"""
+        with self.lock:
+            if lora_hash not in self.entries:
+                return None
+            
+            entry = self.entries[lora_hash]
+            entry.last_used = time.time()
+            entry.use_count += 1
+            return entry.weights
+    
+    def put(self, lora_hash: str, weights: Dict[str, torch.Tensor]) -> bool:
+        """
+        Store LoRA weights in registry.
+        
+        Moves tensors to device and evicts old entries if needed.
+        Returns True if stored successfully.
+        """
+        with self.lock:
+            # Already exists
+            if lora_hash in self.entries:
+                self.entries[lora_hash].last_used = time.time()
+                return True
+            
+            # Move weights to device
+            device_weights = {}
+            for key, tensor in weights.items():
+                device_weights[key] = tensor.to(self.device)
+            
+            size = self._compute_size(device_weights)
+            
+            # Evict if needed
+            while self.total_size_bytes + size > self.max_size_bytes and self.entries:
+                self._evict_lru()
+            
+            # Check if single LoRA is too large
+            if size > self.max_size_bytes:
+                logger.warning(f"[LoRARegistry] LoRA {lora_hash[:12]}... too large ({size/1024/1024:.1f}MB)")
+                return False
+            
+            # Store entry
+            entry = LoRAEntry(
+                lora_hash=lora_hash,
+                weights=device_weights,
+                size_bytes=size
+            )
+            self.entries[lora_hash] = entry
+            self.total_size_bytes += size
+            
+            logger.info(f"[LoRARegistry] Cached {lora_hash[:12]}... ({size/1024/1024:.1f}MB, "
+                       f"total: {self.total_size_bytes/1024/1024:.1f}MB)")
+            return True
+    
+    def _evict_lru(self):
+        """Evict least recently used entry"""
+        if not self.entries:
+            return
+        
+        # Find oldest entry
+        oldest_hash = min(self.entries.keys(), 
+                         key=lambda h: self.entries[h].last_used)
+        entry = self.entries.pop(oldest_hash)
+        
+        # Free tensors
+        for tensor in entry.weights.values():
+            del tensor
+        
+        self.total_size_bytes -= entry.size_bytes
+        logger.info(f"[LoRARegistry] Evicted {oldest_hash[:12]}... (freed {entry.size_bytes/1024/1024:.1f}MB)")
+    
+    def clear(self):
+        """Clear all cached LoRAs"""
+        with self.lock:
+            for entry in self.entries.values():
+                for tensor in entry.weights.values():
+                    del tensor
+            self.entries.clear()
+            self.total_size_bytes = 0
+            torch.cuda.empty_cache()
+            logger.info("[LoRARegistry] Cleared all cached LoRAs")
+    
+    def get_stats(self) -> dict:
+        """Get registry statistics"""
+        with self.lock:
+            return {
+                "cached_loras": len(self.entries),
+                "total_size_mb": self.total_size_bytes / 1024 / 1024,
+                "max_size_mb": self.max_size_bytes / 1024 / 1024,
+                "entries": [
+                    {
+                        "hash": h[:12] + "...",
+                        "size_mb": e.size_bytes / 1024 / 1024,
+                        "use_count": e.use_count,
+                        "age_seconds": time.time() - e.created_at
+                    }
+                    for h, e in sorted(self.entries.items(), 
+                                      key=lambda x: x[1].last_used, reverse=True)
+                ]
+            }
+
+
+class TransientLoRAContext:
+    """
+    Context manager for transient LoRA injection (F-150 Method).
+    
+    Applies LoRA weights as forward hooks, runs inference, removes hooks.
+    Uses locking to ensure only one request modifies the model at a time.
+    
+    Usage:
+        with TransientLoRAContext(model, lora_stack, registry):
+            output = model.encode(text)
+    """
+    
+    def __init__(
+        self,
+        model: Any,
+        lora_stack: List[Dict[str, Any]],  # [{"hash": str, "strength": float}, ...]
+        registry: LoRARegistry
+    ):
+        self.model = model
+        self.lora_stack = lora_stack
+        self.registry = registry
+        self.hooks: List[Any] = []
+        self.original_weights: Dict[str, torch.Tensor] = {}
+    
+    def __enter__(self):
+        """Apply LoRA weights to model"""
+        if not self.lora_stack:
+            return self
+        
+        # Get the actual model to patch
+        cond_model = getattr(self.model, 'cond_stage_model', None)
+        if cond_model is None:
+            logger.warning("[TransientLoRA] No cond_stage_model found, skipping LoRA")
+            return self
+        
+        # Collect all LoRA deltas
+        for lora_item in self.lora_stack:
+            lora_hash = lora_item.get("hash")
+            strength = lora_item.get("strength", 1.0)
+            
+            if not lora_hash:
+                continue
+            
+            weights = self.registry.get(lora_hash)
+            if weights is None:
+                logger.warning(f"[TransientLoRA] LoRA {lora_hash[:12]}... not in registry")
+                continue
+            
+            # Apply weights to matching layers
+            self._apply_lora_weights(cond_model, weights, strength)
+        
+        return self
+    
+    def _apply_lora_weights(self, model: Any, weights: Dict[str, torch.Tensor], strength: float):
+        """
+        Apply LoRA weights to model layers.
+        
+        LoRA weights are typically named like:
+        - lora_te1_text_model_encoder_layers_0_self_attn_q_proj.lora_down.weight
+        - lora_te1_text_model_encoder_layers_0_self_attn_q_proj.lora_up.weight
+        
+        We need to find the corresponding layer and add (up @ down) * strength to it.
+        """
+        # Group by layer (remove .lora_down/.lora_up suffix)
+        lora_pairs = {}
+        for key, tensor in weights.items():
+            # Extract base key (remove lora_down/lora_up)
+            if '.lora_down.' in key:
+                base_key = key.replace('.lora_down.', '.')
+                if base_key not in lora_pairs:
+                    lora_pairs[base_key] = {}
+                lora_pairs[base_key]['down'] = tensor
+            elif '.lora_up.' in key:
+                base_key = key.replace('.lora_up.', '.')
+                if base_key not in lora_pairs:
+                    lora_pairs[base_key] = {}
+                lora_pairs[base_key]['up'] = tensor
+            elif '.alpha' in key:
+                # LoRA alpha scaling factor
+                base_key = key.replace('.alpha', '.weight')
+                if base_key not in lora_pairs:
+                    lora_pairs[base_key] = {}
+                lora_pairs[base_key]['alpha'] = tensor
+        
+        # Apply each LoRA pair
+        for base_key, pair in lora_pairs.items():
+            if 'down' not in pair or 'up' not in pair:
+                continue
+            
+            down = pair['down']
+            up = pair['up']
+            alpha = pair.get('alpha', torch.tensor(down.shape[0]))
+            
+            # Find the target layer
+            target_layer = self._find_layer(model, base_key)
+            if target_layer is None:
+                continue
+            
+            # Compute delta: (up @ down) * scale
+            # LoRA scale = alpha / rank * strength
+            rank = down.shape[0]
+            scale = (alpha.item() / rank) * strength
+            
+            # Compute the weight delta
+            if down.dim() == 2 and up.dim() == 2:
+                delta = (up @ down) * scale
+            else:
+                # For conv layers or other shapes
+                delta = torch.einsum('o...,i...->oi...', up, down) * scale
+            
+            # Store original and apply delta
+            if hasattr(target_layer, 'weight'):
+                weight = target_layer.weight
+                weight_key = f"{id(target_layer)}_weight"
+                
+                if weight_key not in self.original_weights:
+                    self.original_weights[weight_key] = (target_layer, weight.data.clone())
+                
+                # Apply delta (in-place add)
+                if delta.shape == weight.shape:
+                    weight.data.add_(delta.to(weight.dtype))
+    
+    def _find_layer(self, model: Any, key: str) -> Optional[Any]:
+        """Find a layer in the model by LoRA key name"""
+        # Convert LoRA key format to attribute path
+        # e.g., "lora_te1_text_model_encoder_layers_0_self_attn_q_proj.weight"
+        # -> model.text_model.encoder.layers[0].self_attn.q_proj
+        
+        # Remove common prefixes
+        key = key.replace('lora_te1_', '').replace('lora_te2_', '')
+        key = key.replace('lora_te_', '')
+        key = key.replace('.weight', '')
+        
+        # Split and traverse
+        parts = key.split('_')
+        current = model
+        
+        i = 0
+        while i < len(parts):
+            part = parts[i]
+            
+            # Handle numeric indices (layers_0 -> layers[0])
+            if i + 1 < len(parts) and parts[i + 1].isdigit():
+                attr_name = part
+                idx = int(parts[i + 1])
+                if hasattr(current, attr_name):
+                    container = getattr(current, attr_name)
+                    if hasattr(container, '__getitem__'):
+                        try:
+                            current = container[idx]
+                            i += 2
+                            continue
+                        except (IndexError, KeyError):
+                            pass
+                i += 1
+            else:
+                if hasattr(current, part):
+                    current = getattr(current, part)
+                    i += 1
+                else:
+                    # Try joining with next part (e.g., self_attn -> self.attn doesn't exist)
+                    if i + 1 < len(parts):
+                        combined = f"{part}_{parts[i + 1]}"
+                        if hasattr(current, combined):
+                            current = getattr(current, combined)
+                            i += 2
+                            continue
+                    return None
+        
+        return current
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Restore original weights"""
+        # Restore all modified weights
+        for weight_key, (layer, original) in self.original_weights.items():
+            if hasattr(layer, 'weight'):
+                layer.weight.data.copy_(original)
+        
+        self.original_weights.clear()
+        return False  # Don't suppress exceptions
+
+
+# ============================================================================
 # Worker Classes
 # ============================================================================
 
@@ -122,7 +450,8 @@ class ModelWorker:
         device: str,
         precision: str,
         request_queue: queue.Queue,
-        result_queues: Dict[int, queue.Queue]
+        result_queues: Dict[int, queue.Queue],
+        lora_registry: Optional[LoRARegistry] = None
     ):
         self.worker_id = worker_id
         self.worker_type = worker_type
@@ -130,6 +459,7 @@ class ModelWorker:
         self.precision = precision
         self.request_queue = request_queue
         self.result_queues = result_queues
+        self.lora_registry = lora_registry  # For CLIP LoRA injection (F-150)
         
         self.model = None
         self.is_running = False
@@ -222,15 +552,37 @@ class ModelWorker:
         pixels = self.model.decode(latents)
         return pixels.cpu()
     
-    def process_clip_encode(self, positive: str, negative: str = "") -> Tuple:
-        """Encode text to CLIP conditioning"""
-        tokens_pos = self.model.tokenize(positive)
-        cond, pooled = self.model.encode_from_tokens(tokens_pos, return_pooled=True)
+    def process_clip_encode(
+        self, 
+        positive: str, 
+        negative: str = "",
+        lora_stack: Optional[List[Dict[str, Any]]] = None
+    ) -> Tuple:
+        """
+        Encode text to CLIP conditioning.
         
-        tokens_neg = self.model.tokenize(negative if negative else "")
-        uncond, pooled_neg = self.model.encode_from_tokens(tokens_neg, return_pooled=True)
-        
-        return (cond.cpu(), pooled.cpu(), uncond.cpu(), pooled_neg.cpu())
+        If lora_stack is provided and lora_registry is available, applies LoRA
+        weights transiently using the F-150 pattern (lock-based).
+        """
+        with self.lock:  # F-150: serialize LoRA application per-worker
+            # Apply LoRAs if provided
+            ctx = TransientLoRAContext(self.model, lora_stack or [], self.lora_registry) \
+                  if lora_stack and self.lora_registry else None
+            
+            try:
+                if ctx:
+                    ctx.__enter__()
+                
+                tokens_pos = self.model.tokenize(positive)
+                cond, pooled = self.model.encode_from_tokens(tokens_pos, return_pooled=True)
+                
+                tokens_neg = self.model.tokenize(negative if negative else "")
+                uncond, pooled_neg = self.model.encode_from_tokens(tokens_neg, return_pooled=True)
+                
+                return (cond.cpu(), pooled.cpu(), uncond.cpu(), pooled_neg.cpu())
+            finally:
+                if ctx:
+                    ctx.__exit__(None, None, None)
     
     def process_clip_encode_sdxl(
         self,
@@ -241,42 +593,60 @@ class ModelWorker:
         crop_w: int = 0,
         crop_h: int = 0,
         target_width: int = 1024,
-        target_height: int = 1024
+        target_height: int = 1024,
+        lora_stack: Optional[List[Dict[str, Any]]] = None
     ) -> Tuple[list, list]:
-        """Encode text with SDXL-specific size conditioning"""
-        tokens_pos = self.model.tokenize(positive)
-        tokens_neg = self.model.tokenize(negative if negative else "")
+        """
+        Encode text with SDXL-specific size conditioning.
         
-        cond, pooled = self.model.encode_from_tokens(tokens_pos, return_pooled=True)
-        uncond, pooled_neg = self.model.encode_from_tokens(tokens_neg, return_pooled=True)
-        
-        positive_out = [[
-            cond.cpu(),
-            {
-                "pooled_output": pooled.cpu(),
-                "width": width,
-                "height": height,
-                "crop_w": crop_w,
-                "crop_h": crop_h,
-                "target_width": target_width,
-                "target_height": target_height
-            }
-        ]]
-        
-        negative_out = [[
-            uncond.cpu(),
-            {
-                "pooled_output": pooled_neg.cpu(),
-                "width": width,
-                "height": height,
-                "crop_w": crop_w,
-                "crop_h": crop_h,
-                "target_width": target_width,
-                "target_height": target_height
-            }
-        ]]
-        
-        return (positive_out, negative_out)
+        If lora_stack is provided and lora_registry is available, applies LoRA
+        weights transiently using the F-150 pattern (lock-based).
+        """
+        with self.lock:  # F-150: serialize LoRA application per-worker
+            # Apply LoRAs if provided
+            ctx = TransientLoRAContext(self.model, lora_stack or [], self.lora_registry) \
+                  if lora_stack and self.lora_registry else None
+            
+            try:
+                if ctx:
+                    ctx.__enter__()
+                
+                tokens_pos = self.model.tokenize(positive)
+                tokens_neg = self.model.tokenize(negative if negative else "")
+                
+                cond, pooled = self.model.encode_from_tokens(tokens_pos, return_pooled=True)
+                uncond, pooled_neg = self.model.encode_from_tokens(tokens_neg, return_pooled=True)
+                
+                positive_out = [[
+                    cond.cpu(),
+                    {
+                        "pooled_output": pooled.cpu(),
+                        "width": width,
+                        "height": height,
+                        "crop_w": crop_w,
+                        "crop_h": crop_h,
+                        "target_width": target_width,
+                        "target_height": target_height
+                    }
+                ]]
+                
+                negative_out = [[
+                    uncond.cpu(),
+                    {
+                        "pooled_output": pooled_neg.cpu(),
+                        "width": width,
+                        "height": height,
+                        "crop_w": crop_w,
+                        "crop_h": crop_h,
+                        "target_width": target_width,
+                        "target_height": target_height
+                    }
+                ]]
+                
+                return (positive_out, negative_out)
+            finally:
+                if ctx:
+                    ctx.__exit__(None, None, None)
     
     def run(self):
         """Main worker loop - process requests from queue"""
@@ -304,10 +674,14 @@ class ModelWorker:
                             result = {"error": f"Unknown VAE command: {cmd}"}
                     
                     elif self.worker_type == WorkerType.CLIP:
+                        # Extract lora_stack from data (F-150)
+                        lora_stack = data.get("lora_stack")
+                        
                         if cmd == "clip_encode":
                             result = self.process_clip_encode(
                                 data["positive"],
-                                data.get("negative", "")
+                                data.get("negative", ""),
+                                lora_stack=lora_stack
                             )
                         elif cmd == "clip_encode_sdxl":
                             result = self.process_clip_encode_sdxl(
@@ -318,7 +692,8 @@ class ModelWorker:
                                 data.get("crop_w", 0),
                                 data.get("crop_h", 0),
                                 data.get("target_width", 1024),
-                                data.get("target_height", 1024)
+                                data.get("target_height", 1024),
+                                lora_stack=lora_stack
                             )
                         else:
                             result = {"error": f"Unknown CLIP command: {cmd}"}
@@ -371,13 +746,15 @@ class WorkerPool:
         device: str,
         precision: str,
         config: ScalingConfig,
-        on_scale_event: Optional[Callable[[str, dict], None]] = None
+        on_scale_event: Optional[Callable[[str, dict], None]] = None,
+        lora_registry: Optional[LoRARegistry] = None
     ):
         self.worker_type = worker_type
         self.device = device
         self.precision = precision
         self.config = config
         self.on_scale_event = on_scale_event  # Callback for scaling events
+        self.lora_registry = lora_registry  # For CLIP LoRA support (F-150)
         
         self.workers: List[ModelWorker] = []
         self.request_queue: queue.Queue = queue.Queue()
@@ -441,7 +818,8 @@ class WorkerPool:
                 device=self.device,
                 precision=self.precision,
                 request_queue=self.request_queue,
-                result_queues=self.result_queues
+                result_queues=self.result_queues,
+                lora_registry=self.lora_registry  # F-150: pass registry to CLIP workers
             )
             
             worker.start()
@@ -855,16 +1233,36 @@ class WebSocketServer:
 # ============================================================================
 
 class DynamicDaemon:
-    """Main daemon server with dynamic worker scaling"""
+    """
+    Main daemon server with dynamic worker scaling.
     
-    def __init__(self, device: str = SHARED_DEVICE, precision: str = MODEL_PRECISION):
+    v1.3 Split Daemon Architecture:
+    - ServiceType.FULL: Both CLIP and VAE (default, legacy mode)
+    - ServiceType.CLIP_ONLY: Just CLIP encoding (for secondary GPU)
+    - ServiceType.VAE_ONLY: Just VAE encode/decode (for primary GPU with IPC)
+    """
+    
+    def __init__(
+        self, 
+        device: str = SHARED_DEVICE, 
+        precision: str = MODEL_PRECISION,
+        service_type: ServiceType = SERVICE_TYPE,
+        port: Optional[int] = None
+    ):
         self.device = device
         self.precision = precision
+        self.service_type = service_type
+        self.port = port or DAEMON_PORT
         self.config = ScalingConfig()
+        
+        # LoRA Registry (F-150) - only needed for CLIP
+        if service_type in (ServiceType.FULL, ServiceType.CLIP_ONLY):
+            self.lora_registry = LoRARegistry(max_size_mb=2048.0, device=device)
+        else:
+            self.lora_registry = None
         
         # Adjust model sizes based on precision
         if precision == "bf16" or precision == "fp16":
-            # Half the fp32 sizes
             self.config.vae_size_gb = 0.082  # 164MB / 2
             self.config.clip_size_gb = 1.6   # (2.72GB + 483MB) / 2
         else:
@@ -877,6 +1275,8 @@ class DynamicDaemon:
         
         self.start_time = time.time()
         self.request_count = 0
+        
+        logger.info(f"Daemon mode: {service_type.value}")
     
     def _on_scale_event(self, event_type: str, data: dict):
         """Callback for worker pool scaling events - broadcasts to WebSocket clients"""
@@ -887,28 +1287,37 @@ class DynamicDaemon:
             })
     
     def start_pools(self):
-        """Initialize and start worker pools"""
+        """Initialize and start worker pools based on service type"""
         logger.info(f"Starting worker pools on {self.device} ({self.precision})...")
         
-        self.vae_pool = WorkerPool(
-            worker_type=WorkerType.VAE,
-            device=self.device,
-            precision=self.precision,
-            config=self.config,
-            on_scale_event=self._on_scale_event
-        )
+        # VAE pool - only for FULL or VAE_ONLY modes
+        if self.service_type in (ServiceType.FULL, ServiceType.VAE_ONLY):
+            self.vae_pool = WorkerPool(
+                worker_type=WorkerType.VAE,
+                device=self.device,
+                precision=self.precision,
+                config=self.config,
+                on_scale_event=self._on_scale_event
+            )
+            logger.info("VAE pool configured")
         
-        self.clip_pool = WorkerPool(
-            worker_type=WorkerType.CLIP,
-            device=self.device,
-            precision=self.precision,
-            config=self.config,
-            on_scale_event=self._on_scale_event
-        )
+        # CLIP pool - only for FULL or CLIP_ONLY modes
+        if self.service_type in (ServiceType.FULL, ServiceType.CLIP_ONLY):
+            self.clip_pool = WorkerPool(
+                worker_type=WorkerType.CLIP,
+                device=self.device,
+                precision=self.precision,
+                config=self.config,
+                on_scale_event=self._on_scale_event,
+                lora_registry=self.lora_registry  # F-150: enable LoRA for CLIP workers
+            )
+            logger.info("CLIP pool configured")
         
-        # Start pools (loads initial workers)
-        self.clip_pool.start()  # CLIP first (larger)
-        self.vae_pool.start()   # Then VAE
+        # Start pools (CLIP first if present, as it's larger)
+        if self.clip_pool:
+            self.clip_pool.start()
+        if self.vae_pool:
+            self.vae_pool.start()
         
         # Report VRAM usage
         if 'cuda' in self.device:
@@ -921,7 +1330,8 @@ class DynamicDaemon:
         """Get daemon status info"""
         info = {
             "status": "ok",
-            "version": "2.0-dynamic",
+            "version": "2.1-split",
+            "service_type": self.service_type.value,
             "device": self.device,
             "precision": self.precision,
             "uptime_seconds": time.time() - self.start_time,
@@ -933,6 +1343,10 @@ class DynamicDaemon:
         if self.clip_pool:
             info["clip_pool"] = self.clip_pool.get_stats()
         
+        # Add LoRA registry stats
+        if self.lora_registry:
+            info["lora_registry"] = self.lora_registry.get_stats()
+        
         if 'cuda' in self.device:
             device_idx = int(self.device.split(':')[1]) if ':' in self.device else 0
             info["vram_used_gb"] = torch.cuda.memory_allocated(device_idx) / 1024**3
@@ -940,49 +1354,165 @@ class DynamicDaemon:
         
         return info
     
-    def handle_request(self, conn: socket.socket, addr: Tuple[str, int]):
-        """Handle incoming request from ComfyUI node"""
+    def _get_gpu_id(self) -> Optional[int]:
+        """Get the GPU index this daemon is using."""
+        if 'cuda' not in self.device:
+            return None
         try:
-            # Receive data with end marker
-            data = b""
-            while True:
-                chunk = conn.recv(1048576)  # 1MB chunks
+            if ':' in self.device:
+                return int(self.device.split(':')[1])
+            return 0
+        except:
+            return None
+    
+    def handle_request(self, conn: socket.socket, addr: Tuple[str, int]):
+        """Handle incoming request with Length-Prefix Protocol (Optimized)"""
+        try:
+            # 1. Read the Header (4 bytes = uint32 length)
+            header = b""
+            while len(header) < 4:
+                chunk = conn.recv(4 - len(header))
                 if not chunk:
-                    break
-                data += chunk
-                if b"<<END>>" in data:
-                    data = data.replace(b"<<END>>", b"")
-                    break
+                    return
+                header += chunk
             
-            if not data:
-                return
+            data_len = struct.unpack('>I', header)[0]
             
+            # 2. Read exact payload (collect chunks, join once - no slow accumulator)
+            chunks = []
+            bytes_recd = 0
+            while bytes_recd < data_len:
+                chunk_size = min(data_len - bytes_recd, 1048576)  # 1MB chunks
+                chunk = conn.recv(chunk_size)
+                if not chunk:
+                    raise ConnectionError("Socket closed mid-stream")
+                chunks.append(chunk)
+                bytes_recd += len(chunk)
+            
+            data = b"".join(chunks)
+            
+            # 3. Unpickle
             request = pickle.loads(data)
             cmd = request.get("cmd", "unknown")
             
             self.request_count += 1
-            logger.debug(f"Request #{self.request_count}: {cmd}")
+            # logger.debug commented out for throughput - stdout is blocking on Windows
+            # logger.debug(f"Request #{self.request_count}: {cmd}")
             
             # Route command
             if cmd == "health":
-                result = {"status": "ok"}
+                result = {"status": "ok", "service_type": self.service_type.value}
             elif cmd == "info":
                 result = self.get_info()
+            
+            # VAE commands - only available in FULL or VAE_ONLY mode
             elif cmd in ("vae_encode", "vae_decode"):
-                result = self.vae_pool.submit(cmd, request)
+                if self.vae_pool is None:
+                    result = {"error": f"VAE not available in {self.service_type.value} mode"}
+                else:
+                    result = self.vae_pool.submit(cmd, request)
+            
+            # CLIP commands - only available in FULL or CLIP_ONLY mode
             elif cmd in ("clip_encode", "clip_encode_sdxl"):
-                result = self.clip_pool.submit(cmd, request)
+                if self.clip_pool is None:
+                    result = {"error": f"CLIP not available in {self.service_type.value} mode"}
+                else:
+                    # lora_stack is passed in request dict, workers have registry reference
+                    result = self.clip_pool.submit(cmd, request)
+            
+            # LoRA commands (F-150) - only available when CLIP is loaded
+            elif cmd == "has_lora":
+                if self.lora_registry is None:
+                    result = {"error": "LoRA registry not available in VAE-only mode"}
+                else:
+                    lora_hash = request.get("lora_hash", "")
+                    result = {"exists": self.lora_registry.has(lora_hash)}
+            elif cmd == "upload_lora":
+                if self.lora_registry is None:
+                    result = {"error": "LoRA registry not available in VAE-only mode"}
+                else:
+                    lora_hash = request.get("lora_hash", "")
+                    weights = request.get("weights", {})
+                    success = self.lora_registry.put(lora_hash, weights)
+                    result = {"success": success, "hash": lora_hash}
+            elif cmd == "lora_stats":
+                if self.lora_registry is None:
+                    result = {"cached_loras": 0, "total_size_mb": 0}
+                else:
+                    result = self.lora_registry.get_stats()
+            elif cmd == "clear_loras":
+                if self.lora_registry:
+                    self.lora_registry.clear()
+                result = {"success": True}
+            
+            # IPC Negotiation (v1.3)
+            elif cmd == "negotiate_ipc":
+                client_gpu_id = request.get("client_gpu_id")
+                daemon_gpu_id = self._get_gpu_id()
+                
+                # Check if we can use IPC (same GPU)
+                can_ipc = (
+                    ENABLE_CUDA_IPC and
+                    client_gpu_id is not None and
+                    daemon_gpu_id is not None and
+                    client_gpu_id == daemon_gpu_id
+                )
+                
+                result = {
+                    "ipc_enabled": can_ipc,
+                    "daemon_gpu_id": daemon_gpu_id,
+                    "client_gpu_id": client_gpu_id
+                }
+                
+                if can_ipc:
+                    logger.info(f"IPC enabled for client on GPU {client_gpu_id}")
+            
+            # VAE IPC commands (zero-copy for same GPU)
+            elif cmd == "vae_encode_ipc":
+                if self.vae_pool is None:
+                    result = {"error": f"VAE not available in {self.service_type.value} mode"}
+                else:
+                    # Reconstruct tensor from shared storage
+                    storage = request.get("pixels_storage")
+                    shape = request.get("pixels_shape")
+                    dtype_str = request.get("pixels_dtype")
+                    
+                    dtype = getattr(torch, dtype_str.replace("torch.", ""))
+                    pixels = torch.tensor(storage, dtype=dtype).reshape(shape)
+                    
+                    # Process via pool (tensor is already on CUDA)
+                    request["pixels"] = pixels
+                    result = self.vae_pool.submit("vae_encode", request)
+            
+            elif cmd == "vae_decode_ipc":
+                if self.vae_pool is None:
+                    result = {"error": f"VAE not available in {self.service_type.value} mode"}
+                else:
+                    # Reconstruct tensor from shared storage
+                    storage = request.get("latents_storage")
+                    shape = request.get("latents_shape")
+                    dtype_str = request.get("latents_dtype")
+                    
+                    dtype = getattr(torch, dtype_str.replace("torch.", ""))
+                    latents = torch.tensor(storage, dtype=dtype).reshape(shape)
+                    
+                    # Process via pool (tensor is already on CUDA)
+                    request["latents"] = latents
+                    result = self.vae_pool.submit("vae_decode", request)
+            
             else:
                 result = {"error": f"Unknown command: {cmd}"}
             
-            # Send response
-            response = pickle.dumps(result)
-            conn.sendall(response)
+            # Send response with Length-Prefix
+            response_data = pickle.dumps(result)
+            conn.sendall(struct.pack('>I', len(response_data)) + response_data)
             
         except Exception as e:
             logger.error(f"Error handling request: {e}")
             try:
-                conn.sendall(pickle.dumps({"error": str(e)}))
+                # Send error with length-prefix
+                err_data = pickle.dumps({"error": str(e)})
+                conn.sendall(struct.pack('>I', len(err_data)) + err_data)
             except:
                 pass
         finally:
@@ -1002,14 +1532,17 @@ class DynamicDaemon:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         
         try:
-            server.bind((DAEMON_HOST, DAEMON_PORT))
+            server.bind((DAEMON_HOST, self.port))
             server.listen(MAX_WORKERS * 2)
             
-            logger.info(f"Socket server: {DAEMON_HOST}:{DAEMON_PORT}")
+            logger.info(f"Socket server: {DAEMON_HOST}:{self.port}")
             logger.info(f"WebSocket monitor: ws://{DAEMON_HOST}:{DAEMON_WS_PORT}")
-            logger.info("Dynamic scaling enabled:")
-            logger.info(f"  VAE: {self.config.min_vae_workers}-{self.config.max_vae_workers} workers")
-            logger.info(f"  CLIP: {self.config.min_clip_workers}-{self.config.max_clip_workers} workers")
+            logger.info(f"Service type: {self.service_type.value}")
+            
+            if self.vae_pool:
+                logger.info(f"  VAE: {self.config.min_vae_workers}-{self.config.max_vae_workers} workers")
+            if self.clip_pool:
+                logger.info(f"  CLIP: {self.config.min_clip_workers}-{self.config.max_clip_workers} workers")
             logger.info(f"  Idle timeout: {self.config.idle_timeout_sec}s")
             logger.info("Ready to accept connections!")
             logger.info("Press Ctrl+C to stop")
@@ -1036,17 +1569,73 @@ class DynamicDaemon:
 
 
 def main():
-    """Entry point"""
+    """Entry point with CLI argument support"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Luna VAE/CLIP Daemon v2.1")
+    parser.add_argument(
+        "--service-type", "-t",
+        choices=["full", "clip", "vae"],
+        default="full",
+        help="Service type: full (both), clip (CLIP only), vae (VAE only)"
+    )
+    parser.add_argument(
+        "--device", "-d",
+        default=None,
+        help=f"CUDA device (default: {SHARED_DEVICE} for clip, {VAE_DEVICE} for vae)"
+    )
+    parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=None,
+        help=f"Port to listen on (default: {DAEMON_PORT} for clip, {DAEMON_VAE_PORT} for vae)"
+    )
+    parser.add_argument(
+        "--precision",
+        choices=["bf16", "fp16", "fp32"],
+        default=MODEL_PRECISION,
+        help=f"Model precision (default: {MODEL_PRECISION})"
+    )
+    
+    args = parser.parse_args()
+    
+    # Map string to ServiceType
+    service_map = {
+        "full": ServiceType.FULL,
+        "clip": ServiceType.CLIP_ONLY,
+        "vae": ServiceType.VAE_ONLY
+    }
+    service_type = service_map[args.service_type]
+    
+    # Set defaults based on service type
+    if args.device is None:
+        device = VAE_DEVICE if service_type == ServiceType.VAE_ONLY else SHARED_DEVICE
+    else:
+        device = args.device
+    
+    if args.port is None:
+        port = DAEMON_VAE_PORT if service_type == ServiceType.VAE_ONLY else DAEMON_PORT
+    else:
+        port = args.port
+    
+    # Print banner
     print("=" * 60)
-    print("  Luna VAE/CLIP Daemon v2")
-    print("  Dynamic Worker Scaling + WebSocket Monitoring")
-    print(f"  Device: {SHARED_DEVICE} | Precision: {MODEL_PRECISION}")
-    print(f"  Socket: {DAEMON_HOST}:{DAEMON_PORT}")
+    print("  Luna VAE/CLIP Daemon v2.1 - Split Architecture")
+    print("=" * 60)
+    print(f"  Service Type: {service_type.value.upper()}")
+    print(f"  Device: {device}")
+    print(f"  Precision: {args.precision}")
+    print(f"  Socket: {DAEMON_HOST}:{port}")
     print(f"  WebSocket: ws://{DAEMON_HOST}:{DAEMON_WS_PORT}")
     print("=" * 60)
     print()
     
-    daemon = DynamicDaemon()
+    daemon = DynamicDaemon(
+        device=device,
+        precision=args.precision,
+        service_type=service_type,
+        port=port
+    )
     daemon.run()
 
 

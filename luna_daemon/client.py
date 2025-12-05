@@ -8,13 +8,20 @@ then shares them across all ComfyUI instances.
 Component-based architecture:
 - CLIP components (clip_l, clip_g, t5xxl) can be shared across model families
 - VAE components are family-specific (sdxl_vae, flux_vae, etc.)
+
+v1.3 Features:
+- Split daemon support (separate CLIP and VAE daemons)
+- CUDA IPC for same-GPU zero-copy tensor transfer
+- Length-prefix protocol for efficient serialization
 """
 
 import socket
 import pickle
+import struct
 import torch
+import os
 from typing import Tuple, Optional, Any, List, Dict
-from .config import DAEMON_HOST, DAEMON_PORT, CLIENT_TIMEOUT
+from .config import DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, CLIENT_TIMEOUT, ENABLE_CUDA_IPC
 
 
 class DaemonConnectionError(Exception):
@@ -27,6 +34,17 @@ class ModelMismatchError(Exception):
     pass
 
 
+def get_local_gpu_id() -> Optional[int]:
+    """Get the GPU ID that the current process is using, if any."""
+    if not torch.cuda.is_available():
+        return None
+    try:
+        # Get the current CUDA device
+        return torch.cuda.current_device()
+    except:
+        return None
+
+
 class DaemonClient:
     """Client for communicating with Luna VAE/CLIP Daemon"""
     
@@ -34,26 +52,45 @@ class DaemonClient:
         self.host = host
         self.port = port
         self.timeout = CLIENT_TIMEOUT
+        
+        # IPC state (negotiated per-connection for VAE)
+        self._ipc_enabled = False
+        self._daemon_gpu_id: Optional[int] = None
+        self._local_gpu_id: Optional[int] = None
     
     def _send_request(self, request: dict) -> Any:
-        """Send request to daemon and get response"""
+        """Send request to daemon with Length-Prefix Protocol (Optimized)"""
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(self.timeout)
             sock.connect((self.host, self.port))
             
-            # Serialize and send with end marker
-            data = pickle.dumps(request) + b"<<END>>"
-            sock.sendall(data)
+            # Serialize and send with length prefix
+            data = pickle.dumps(request)
+            sock.sendall(struct.pack('>I', len(data)) + data)
             
-            # Receive response
-            response_data = b""
-            while True:
-                chunk = sock.recv(1048576)  # 1MB chunks
+            # Receive response header (4 bytes = uint32 length)
+            header = b""
+            while len(header) < 4:
+                chunk = sock.recv(4 - len(header))
                 if not chunk:
-                    break
-                response_data += chunk
+                    raise DaemonConnectionError("Connection closed while reading header")
+                header += chunk
             
+            response_len = struct.unpack('>I', header)[0]
+            
+            # Receive exact response payload (no slow accumulator)
+            chunks = []
+            bytes_recd = 0
+            while bytes_recd < response_len:
+                chunk_size = min(response_len - bytes_recd, 1048576)  # 1MB chunks
+                chunk = sock.recv(chunk_size)
+                if not chunk:
+                    raise DaemonConnectionError("Connection closed while reading response")
+                chunks.append(chunk)
+                bytes_recd += len(chunk)
+            
+            response_data = b"".join(chunks)
             sock.close()
             
             result = pickle.loads(response_data)
@@ -90,6 +127,43 @@ class DaemonClient:
     def get_info(self) -> dict:
         """Get daemon info (device, VRAM usage, loaded models/components)"""
         return self._send_request({"cmd": "info"})
+    
+    def negotiate_ipc(self) -> bool:
+        """
+        Negotiate CUDA IPC mode with daemon.
+        
+        If both client and daemon are on the same GPU, enables zero-copy
+        tensor transfer using CUDA shared memory.
+        
+        Returns:
+            True if IPC mode was enabled, False otherwise
+        """
+        if not ENABLE_CUDA_IPC:
+            return False
+        
+        self._local_gpu_id = get_local_gpu_id()
+        if self._local_gpu_id is None:
+            return False
+        
+        try:
+            result = self._send_request({
+                "cmd": "negotiate_ipc",
+                "client_gpu_id": self._local_gpu_id
+            })
+            
+            if result.get("ipc_enabled"):
+                self._daemon_gpu_id = result.get("daemon_gpu_id")
+                self._ipc_enabled = True
+                return True
+        except:
+            pass
+        
+        return False
+    
+    @property
+    def ipc_enabled(self) -> bool:
+        """Check if IPC mode is active."""
+        return self._ipc_enabled
     
     def unload_models(self) -> dict:
         """Unload all models from daemon to allow loading different ones"""
@@ -183,6 +257,8 @@ class DaemonClient:
         """
         Encode image pixels to latent space via daemon.
         
+        Uses CUDA IPC if available (same GPU), otherwise falls back to pickle.
+        
         Args:
             pixels: Image tensor in ComfyUI format (B, H, W, C), float32, 0-1 range
             vae_type: VAE type string ('sdxl', 'flux', etc.)
@@ -190,19 +266,70 @@ class DaemonClient:
         Returns:
             Latent tensor
         """
+        if self._ipc_enabled and pixels.is_cuda:
+            return self._vae_encode_ipc(pixels, vae_type)
+        
         return self._send_request({
             "cmd": "vae_encode",
             "pixels": pixels.cpu(),
             "vae_type": vae_type
         })
     
+    def _vae_encode_ipc(self, pixels: torch.Tensor, vae_type: str) -> torch.Tensor:
+        """VAE encode using CUDA IPC (zero-copy for same-GPU)."""
+        # Move to shared memory
+        pixels_shared = pixels.share_memory_()
+        
+        # Send just the metadata + storage handle
+        result = self._send_request({
+            "cmd": "vae_encode_ipc",
+            "pixels_storage": pixels_shared.storage(),
+            "pixels_shape": list(pixels.shape),
+            "pixels_dtype": str(pixels.dtype),
+            "vae_type": vae_type
+        })
+        
+        # Result is already a CUDA tensor from shared memory
+        return result
+    
     def vae_decode(self, latents: torch.Tensor, vae_type: str) -> torch.Tensor:
         """
         Decode latents to image pixels via daemon.
         
+        Uses CUDA IPC if available (same GPU), otherwise falls back to pickle.
+        
         Args:
             latents: Latent tensor
             vae_type: VAE type string ('sdxl', 'flux', etc.)
+        
+        Returns:
+            Image tensor in ComfyUI format (B, H, W, C), float32, 0-1 range
+        """
+        if self._ipc_enabled and latents.is_cuda:
+            return self._vae_decode_ipc(latents, vae_type)
+        
+        return self._send_request({
+            "cmd": "vae_decode",
+            "latents": latents.cpu(),
+            "vae_type": vae_type
+        })
+    
+    def _vae_decode_ipc(self, latents: torch.Tensor, vae_type: str) -> torch.Tensor:
+        """VAE decode using CUDA IPC (zero-copy for same-GPU)."""
+        # Move to shared memory
+        latents_shared = latents.share_memory_()
+        
+        # Send just the metadata + storage handle
+        result = self._send_request({
+            "cmd": "vae_decode_ipc",
+            "latents_storage": latents_shared.storage(),
+            "latents_shape": list(latents.shape),
+            "latents_dtype": str(latents.dtype),
+            "vae_type": vae_type
+        })
+        
+        # Result is already a CUDA tensor from shared memory
+        return result
         
         Returns:
             Image tensor in ComfyUI format (B, H, W, C), float32, 0-1 range
@@ -221,7 +348,8 @@ class DaemonClient:
         self, 
         positive: str, 
         negative: str,
-        clip_type: str
+        clip_type: str,
+        lora_stack: Optional[List[Dict]] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Encode text prompts to CLIP conditioning via daemon.
@@ -230,16 +358,21 @@ class DaemonClient:
             positive: Positive prompt text
             negative: Negative prompt text
             clip_type: CLIP type string ('sdxl', 'flux', 'sd3', 'sd15')
+            lora_stack: Optional list of {"hash": str, "strength": float} for LoRA application
         
         Returns:
             Tuple of (cond, pooled, uncond, pooled_neg)
         """
-        return self._send_request({
+        request = {
             "cmd": "clip_encode",
             "positive": positive,
             "negative": negative,
             "clip_type": clip_type
-        })
+        }
+        if lora_stack:
+            request["lora_stack"] = lora_stack
+        
+        return self._send_request(request)
     
     def clip_encode_sdxl(
         self,
@@ -251,7 +384,8 @@ class DaemonClient:
         crop_w: int = 0,
         crop_h: int = 0,
         target_width: int = 1024,
-        target_height: int = 1024
+        target_height: int = 1024,
+        lora_stack: Optional[List[Dict]] = None
     ) -> Tuple[list, list]:
         """
         Encode text prompts with SDXL-specific conditioning (includes size embeddings).
@@ -263,11 +397,12 @@ class DaemonClient:
             width, height: Original image dimensions
             crop_w, crop_h: Crop coordinates
             target_width, target_height: Target generation size
+            lora_stack: Optional list of {"hash": str, "strength": float} for LoRA application
         
         Returns:
             Tuple of (positive_conditioning, negative_conditioning) ready for KSampler
         """
-        return self._send_request({
+        request = {
             "cmd": "clip_encode_sdxl",
             "positive": positive,
             "negative": negative,
@@ -278,7 +413,51 @@ class DaemonClient:
             "crop_h": crop_h,
             "target_width": target_width,
             "target_height": target_height
+        }
+        if lora_stack:
+            request["lora_stack"] = lora_stack
+        
+        return self._send_request(request)
+    
+    # =========================================================================
+    # LoRA Operations (F-150 Architecture)
+    # =========================================================================
+    
+    def has_lora(self, lora_hash: str) -> bool:
+        """Check if a LoRA is cached in the daemon's registry."""
+        result = self._send_request({
+            "cmd": "has_lora",
+            "lora_hash": lora_hash
         })
+        return result.get("exists", False)
+    
+    def upload_lora(self, lora_hash: str, weights: Dict[str, torch.Tensor]) -> dict:
+        """
+        Upload LoRA weights to daemon's registry.
+        
+        Args:
+            lora_hash: Unique hash identifying this LoRA
+            weights: Dict of layer_key -> tensor
+        
+        Returns:
+            Dict with upload status
+        """
+        # Convert tensors to CPU for transport
+        cpu_weights = {k: v.cpu() for k, v in weights.items()}
+        
+        return self._send_request({
+            "cmd": "upload_lora",
+            "lora_hash": lora_hash,
+            "weights": cpu_weights
+        })
+    
+    def get_lora_stats(self) -> dict:
+        """Get statistics about cached LoRAs in daemon."""
+        return self._send_request({"cmd": "lora_stats"})
+    
+    def clear_lora_cache(self) -> dict:
+        """Clear all cached LoRAs from daemon."""
+        return self._send_request({"cmd": "clear_loras"})
 
 
 # =============================================================================
@@ -335,11 +514,79 @@ def vae_decode(latents: torch.Tensor, vae_type: str) -> torch.Tensor:
     return get_client().vae_decode(latents, vae_type)
 
 
-def clip_encode(positive: str, negative: str, clip_type: str) -> Tuple:
+def clip_encode(positive: str, negative: str, clip_type: str, lora_stack: Optional[List[Dict]] = None) -> Tuple:
     """Encode text via daemon"""
-    return get_client().clip_encode(positive, negative, clip_type)
+    return get_client().clip_encode(positive, negative, clip_type, lora_stack=lora_stack)
 
 
-def clip_encode_sdxl(positive: str, negative: str, clip_type: str = "sdxl", **kwargs) -> Tuple[list, list]:
+def clip_encode_sdxl(positive: str, negative: str, clip_type: str = "sdxl", lora_stack: Optional[List[Dict]] = None, **kwargs) -> Tuple[list, list]:
     """Encode text with SDXL conditioning via daemon"""
-    return get_client().clip_encode_sdxl(positive, negative, clip_type, **kwargs)
+    return get_client().clip_encode_sdxl(positive, negative, clip_type, lora_stack=lora_stack, **kwargs)
+
+
+def has_lora(lora_hash: str) -> bool:
+    """Check if LoRA is cached in daemon"""
+    return get_client().has_lora(lora_hash)
+
+
+def upload_lora(lora_hash: str, weights: Dict[str, torch.Tensor]) -> dict:
+    """Upload LoRA weights to daemon"""
+    return get_client().upload_lora(lora_hash, weights)
+
+
+def get_lora_stats() -> dict:
+    """Get LoRA cache statistics"""
+    return get_client().get_lora_stats()
+
+
+def clear_lora_cache() -> dict:
+    """Clear LoRA cache"""
+    return get_client().clear_lora_cache()
+
+
+# =============================================================================
+# Split Daemon Clients (v1.3)
+# =============================================================================
+
+_vae_client: Optional[DaemonClient] = None
+_clip_client: Optional[DaemonClient] = None
+
+
+def get_vae_client(port: int = DAEMON_VAE_PORT, host: str = DAEMON_HOST) -> DaemonClient:
+    """
+    Get a client specifically for VAE operations.
+    
+    In split daemon mode, VAE runs on primary GPU with CUDA IPC support.
+    Auto-negotiates IPC on first use.
+    """
+    global _vae_client
+    if _vae_client is None:
+        _vae_client = DaemonClient(host=host, port=port)
+        # Try to negotiate IPC for same-GPU zero-copy
+        if ENABLE_CUDA_IPC:
+            try:
+                if _vae_client.negotiate_ipc():
+                    print(f"[LunaClient] VAE IPC enabled (GPU {_vae_client._daemon_gpu_id})")
+            except:
+                pass
+    return _vae_client
+
+
+def get_clip_client(port: int = DAEMON_PORT, host: str = DAEMON_HOST) -> DaemonClient:
+    """
+    Get a client specifically for CLIP operations.
+    
+    In split daemon mode, CLIP runs on secondary GPU.
+    """
+    global _clip_client
+    if _clip_client is None:
+        _clip_client = DaemonClient(host=host, port=port)
+    return _clip_client
+
+
+def reset_clients():
+    """Reset all client instances (for testing or reconnection)."""
+    global _client, _vae_client, _clip_client
+    _client = None
+    _vae_client = None
+    _clip_client = None
