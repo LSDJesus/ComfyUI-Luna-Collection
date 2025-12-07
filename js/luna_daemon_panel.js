@@ -11,6 +11,7 @@ import { api } from "/scripts/api.js";
 // Panel state
 let panelState = {
     running: false,
+    error: null,
     device: "unknown",
     vramUsed: 0,
     vramTotal: 0,
@@ -54,6 +55,15 @@ function createPanelContent() {
             .luna-daemon-panel .status-indicator.stopped {
                 background: #f87171;
                 box-shadow: 0 0 6px #f87171;
+            }
+            .luna-daemon-panel .error-message {
+                color: #f87171;
+                font-size: 11px;
+                margin-top: 4px;
+                padding: 4px;
+                background: rgba(248, 113, 113, 0.1);
+                border-radius: 4px;
+                word-break: break-word;
             }
             .luna-daemon-panel .section {
                 background: var(--comfy-input-bg);
@@ -163,6 +173,8 @@ function createPanelContent() {
             Luna Daemon
         </h3>
         
+        ${panelState.error ? `<div class="error-message">${panelState.error}</div>` : ''}
+        
         <div class="section">
             <div class="section-title">Status</div>
             <div class="stat-row">
@@ -214,6 +226,7 @@ function createPanelContent() {
                 ? '<button class="btn btn-stop" id="luna-toggle">Stop</button>'
                 : '<button class="btn btn-start" id="luna-toggle">Start</button>'
             }
+            ${panelState.error ? '<button class="btn btn-refresh" id="luna-reconnect" style="margin-left: auto;">⚡ Fix</button>' : ''}
         </div>
     `;
     
@@ -239,6 +252,7 @@ async function fetchDaemonStatus() {
         if (response.ok) {
             const data = await response.json();
             panelState.running = data.running || false;
+            panelState.error = data.error || null;
             panelState.device = data.device || "unknown";
             panelState.vramUsed = data.vram_used_gb || 0;
             panelState.vramTotal = data.vram_total_gb || 0;
@@ -249,9 +263,31 @@ async function fetchDaemonStatus() {
             panelState.clipLoaded = data.clip_loaded || false;
         } else {
             panelState.running = false;
+            panelState.error = "API Error: " + response.status;
         }
     } catch (e) {
         panelState.running = false;
+        panelState.error = "Connection Failed";
+    }
+}
+
+async function reconnectDaemon() {
+    try {
+        panelState.error = "Attempting reconnect...";
+        updatePanelUI();
+        
+        const response = await api.fetchApi("/luna/daemon/reconnect", { method: "POST" });
+        const data = await response.json();
+        
+        if (data.status === "ok") {
+            await fetchDaemonStatus();
+        } else {
+            panelState.error = data.message || "Reconnect failed";
+        }
+        updatePanelUI();
+    } catch (e) {
+        panelState.error = "Reconnect failed: " + e.message;
+        updatePanelUI();
     }
 }
 
@@ -377,6 +413,7 @@ app.registerExtension({
                     
                     container.querySelector("#luna-toggle")?.addEventListener("click", toggleDaemon);
                     container.querySelector("#luna-unload")?.addEventListener("click", unloadModels);
+                    container.querySelector("#luna-reconnect")?.addEventListener("click", reconnectDaemon);
                 }
             });
         } else {
@@ -456,6 +493,7 @@ function showFloatingPanel() {
     
     panel.querySelector("#luna-toggle")?.addEventListener("click", toggleDaemon);
     panel.querySelector("#luna-unload")?.addEventListener("click", unloadModels);
+    panel.querySelector("#luna-reconnect")?.addEventListener("click", reconnectDaemon);
     
     // Make draggable
     let isDragging = false;

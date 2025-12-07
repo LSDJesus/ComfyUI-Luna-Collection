@@ -5,6 +5,7 @@ HTTP endpoints for the Luna Daemon panel in ComfyUI.
 
 import os
 import json
+import importlib
 
 # Try to import aiohttp
 try:
@@ -186,6 +187,47 @@ def register_routes():
             return web.json_response({"status": "error", "message": str(e)})
     
     
+    @PromptServer.instance.routes.post("/luna/daemon/reconnect")
+    async def reconnect_daemon(request):
+        """Force reconnect to daemon and reload client"""
+        global daemon_client, DAEMON_AVAILABLE
+        
+        try:
+            # If client was never loaded, try to load it
+            if daemon_client is None:
+                try:
+                    from ..luna_daemon import client as dc
+                    daemon_client = dc
+                    DAEMON_AVAILABLE = True
+                except ImportError:
+                    # Try fallback path
+                    try:
+                        import sys
+                        _daemon_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'luna_daemon'))
+                        if _daemon_dir not in sys.path:
+                            sys.path.insert(0, os.path.dirname(_daemon_dir))
+                        from luna_daemon import client as dc
+                        daemon_client = dc
+                        DAEMON_AVAILABLE = True
+                    except Exception as e:
+                        return web.json_response({"status": "error", "message": f"Import failed: {str(e)}"})
+            
+            # Reload the module to pick up any config changes
+            if daemon_client:
+                importlib.reload(daemon_client)
+                if hasattr(daemon_client, 'reset_clients'):
+                    daemon_client.reset_clients()
+            
+            # Check connection
+            if daemon_client and daemon_client.is_daemon_running():
+                return web.json_response({"status": "ok", "message": "Reconnected successfully"})
+            else:
+                return web.json_response({"status": "error", "message": "Client reloaded but daemon not reachable"})
+                
+        except Exception as e:
+            return web.json_response({"status": "error", "message": str(e)})
+
+
     @PromptServer.instance.routes.post("/luna/daemon/unload")
     async def unload_models(request):
         """Unload all models from daemon to allow loading different ones"""
