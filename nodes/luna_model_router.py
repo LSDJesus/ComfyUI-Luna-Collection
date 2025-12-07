@@ -116,20 +116,36 @@ try:
     ]
     UnetLoaderGGUF = None
     CLIPLoaderGGUF = None
+    gguf_sd_loader = None
+    GGMLOps = None
+    GGUFModelPatcher = None
+    
     for path in GGUF_NODE_PATHS:
         try:
-            module = __import__(path, fromlist=['UnetLoaderGGUF', 'CLIPLoaderGGUF'])
+            module = __import__(path, fromlist=['UnetLoaderGGUF', 'CLIPLoaderGGUF', 'GGMLOps', 'GGUFModelPatcher'])
             UnetLoaderGGUF = getattr(module, 'UnetLoaderGGUF', None)
             CLIPLoaderGGUF = getattr(module, 'CLIPLoaderGGUF', None)
+            GGMLOps = getattr(module, 'GGMLOps', None)
+            GGUFModelPatcher = getattr(module, 'GGUFModelPatcher', None)
             if UnetLoaderGGUF:
+                # Also get the loader function
+                loader_path = path.replace('.nodes', '.loader')
+                try:
+                    loader_module = __import__(loader_path, fromlist=['gguf_sd_loader'])
+                    gguf_sd_loader = getattr(loader_module, 'gguf_sd_loader', None)
+                except:
+                    pass
                 break
         except:
             continue
-    HAS_GGUF = UnetLoaderGGUF is not None
+    HAS_GGUF = UnetLoaderGGUF is not None and gguf_sd_loader is not None
 except:
     HAS_GGUF = False
     UnetLoaderGGUF = None
     CLIPLoaderGGUF = None
+    gguf_sd_loader = None
+    GGMLOps = None
+    GGUFModelPatcher = None
 
 # Daemon support
 try:
@@ -563,31 +579,73 @@ class LunaModelRouter:
         precision: str,
         local_weights_dir: str
     ) -> Any:
-        """Load model with precision conversion (cached)."""
+        """Load model with precision conversion (cached).
+        
+        Output locations:
+        - GGUF: models/unet/unet-converted/<relative_subfolders>/filename_Q4_K_M.gguf
+          (preserves folder hierarchy from checkpoints, unet-converted is typically symlinked to NVMe)
+        - bf16/fp8: models/checkpoints/checkpoints_converted/filename_fp8.safetensors
+          (flat structure, typically on fast NVMe via symlink)
+        """
         from safetensors.torch import load_file, save_file
         
         is_gguf = "gguf" in precision
         
-        # Build cache path
-        if local_weights_dir and os.path.isdir(local_weights_dir):
-            weights_root = local_weights_dir
-        else:
-            weights_root = os.path.join(folder_paths.models_dir, "unet", "optimized")
-        os.makedirs(weights_root, exist_ok=True)
-        
+        # Get the base filename
         base_name = os.path.splitext(os.path.basename(model_path))[0]
         
+        # Determine relative subfolder path from checkpoints root
+        # e.g., "Illustrious/Realistic" from ".../checkpoints/Illustrious/Realistic/model.safetensors"
+        checkpoints_root = folder_paths.get_folder_paths("checkpoints")[0] if folder_paths.get_folder_paths("checkpoints") else None
+        relative_subpath = ""
+        
+        if checkpoints_root:
+            # Normalize paths for comparison
+            norm_model_path = os.path.normpath(model_path)
+            norm_checkpoints = os.path.normpath(checkpoints_root)
+            
+            if norm_model_path.startswith(norm_checkpoints):
+                # Extract relative path (e.g., "Illustrious/Realistic/model.safetensors")
+                rel_path = os.path.relpath(norm_model_path, norm_checkpoints)
+                # Get just the folder part (e.g., "Illustrious/Realistic")
+                relative_subpath = os.path.dirname(rel_path)
+        
+        # Build output path based on conversion type
         if is_gguf:
+            # GGUF → models/unet/unet-converted/<relative_subpath>/filename_Q4_K_M.gguf
             quant_type = precision.replace("gguf_", "")
             cache_filename = f"{base_name}_{quant_type}.gguf"
+            
+            unet_root = folder_paths.get_folder_paths("unet")[0] if folder_paths.get_folder_paths("unet") else os.path.join(folder_paths.models_dir, "unet")
+            
+            # Always put in unet-converted subfolder, then mirror the checkpoint hierarchy
+            if relative_subpath:
+                cache_dir = os.path.join(unet_root, "unet-converted", relative_subpath)
+            else:
+                cache_dir = os.path.join(unet_root, "unet-converted")
         else:
+            # bf16/fp8 → models/checkpoints/checkpoints_converted/<relative_subpath>/filename_fp8.safetensors
             cache_filename = f"{base_name}_{precision}_unet.safetensors"
+            
+            if checkpoints_root:
+                if relative_subpath:
+                    cache_dir = os.path.join(checkpoints_root, "checkpoints_converted", relative_subpath)
+                else:
+                    cache_dir = os.path.join(checkpoints_root, "checkpoints_converted")
+            else:
+                cache_dir = os.path.join(folder_paths.models_dir, "checkpoints", "checkpoints_converted")
         
-        cache_path = os.path.join(weights_root, cache_filename)
+        # Override with explicit local_weights_dir if provided
+        if local_weights_dir and os.path.isdir(local_weights_dir):
+            cache_dir = local_weights_dir
+        
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_path = os.path.join(cache_dir, cache_filename)
         
         # Convert if not cached
         if not os.path.exists(cache_path):
             print(f"[LunaModelRouter] Converting to {precision}...")
+            print(f"[LunaModelRouter] Output: {cache_path}")
             
             try:
                 from .luna_dynamic_loader import convert_to_precision, convert_to_gguf
@@ -597,14 +655,14 @@ class LunaModelRouter:
                 else:
                     convert_to_precision(model_path, cache_path, precision, strip_components=True)
                     
-                print(f"[LunaModelRouter] Saved to: {cache_path}")
+                print(f"[LunaModelRouter] Conversion complete!")
             except ImportError:
                 raise RuntimeError(
                     "Dynamic precision conversion requires luna_dynamic_loader module.\n"
                     "Set precision to 'None' to load without conversion."
                 )
         else:
-            print(f"[LunaModelRouter] Using cached: {cache_filename}")
+            print(f"[LunaModelRouter] Using cached: {cache_path}")
         
         # Load converted model
         if is_gguf:
@@ -613,16 +671,41 @@ class LunaModelRouter:
             return comfy.sd.load_unet(cache_path)
     
     def _load_gguf_model(self, path: str) -> Any:
-        """Load GGUF model file."""
-        if not HAS_GGUF or UnetLoaderGGUF is None:
+        """Load GGUF model file directly from path.
+        
+        Uses the underlying gguf_sd_loader directly to support custom paths,
+        rather than going through folder_paths which only searches standard dirs.
+        """
+        if not HAS_GGUF or gguf_sd_loader is None:
             raise ImportError(
                 "ComfyUI-GGUF required for .gguf files.\n"
                 "Install from: https://github.com/city96/ComfyUI-GGUF"
             )
         
-        loader = UnetLoaderGGUF()
-        result = loader.load_unet(unet_name=os.path.basename(path))
-        return result[0]
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"GGUF model not found: {path}")
+        
+        print(f"[LunaModelRouter] Loading GGUF from: {path}")
+        
+        # Create ops with default settings
+        ops = GGMLOps()
+        
+        # Load state dict directly from path
+        sd = gguf_sd_loader(path)
+        
+        # Create model with GGML ops
+        model = comfy.sd.load_diffusion_model_state_dict(
+            sd, model_options={"custom_operations": ops}
+        )
+        
+        if model is None:
+            raise RuntimeError(f"Could not detect model type of: {path}")
+        
+        # Wrap with GGUF patcher
+        if GGUFModelPatcher is not None:
+            model = GGUFModelPatcher.clone(model)
+        
+        return model
     
     def _load_standard_clip(
         self,
