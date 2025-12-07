@@ -44,7 +44,7 @@ CLIP Requirements by Model Type:
   Flux:         clip_1 (CLIP-L) + clip_2 (CLIP-G) + clip_3 (T5-XXL)
   Flux+Vision:  clip_1 (CLIP-L) + clip_2 (CLIP-G) + clip_3 (T5-XXL) + clip_4 (SigLIP)
   SD3:          clip_1 (CLIP-L) + clip_2 (CLIP-G) + clip_3 (T5-XXL)
-  Z-IMAGE:      clip_1 (Full Qwen3-VL) → Full model required for hidden state extraction
+  Z-IMAGE:      clip_1 (Qwen2-VL) → Uses full Qwen model as text encoder (no CLIP/T5)
 
 Smart Loading (Z-IMAGE):
 ========================
@@ -195,7 +195,7 @@ CLIP_TYPE_MAP = {
     "Flux": "flux",
     "Flux + Vision": "flux",
     "SD3": "sd3",
-    "Z-IMAGE": "lumina2",            # Qwen3-VL uses Lumina2 CLIP type
+    "Z-IMAGE": "lumina2",            # Workflow uses 'lumina2' type in CLIPLoader for Qwen model
 }
 
 
@@ -259,9 +259,9 @@ CLIP_REQUIREMENTS = {
         "required": ["clip_1"],
         "optional": [],
         "descriptions": {
-            "clip_1": "Full Qwen3-VL model (.safetensors/.gguf) - entire model needed for hidden state extraction",
+            "clip_1": "Qwen2-VL Model (loaded as Lumina2 CLIP)",
         },
-        "notes": "For vision features, mmproj loads automatically if in same folder as Qwen3 model."
+        "notes": "Loads Qwen2-VL using Lumina2 CLIP type, which extracts hidden states for generation."
     },
 }
 
@@ -863,11 +863,28 @@ class LunaModelRouter:
         
         # Local-only Z-IMAGE loading
         try:
-            clip = comfy.sd.load_clip(
-                ckpt_paths=[full_path],
-                embedding_directory=folder_paths.get_folder_paths("embeddings")
-            )
+            # Handle GGUF loading if needed
+            if full_path.lower().endswith(".gguf") and HAS_GGUF and CLIPLoaderGGUF is not None:
+                print(f"[LunaModelRouter] Loading GGUF CLIP: {full_path}")
+                # Instantiate loader and call load_clip
+                loader = CLIPLoaderGGUF()
+                # CLIPLoaderGGUF.load_clip returns (CLIP,)
+                clip = loader.load_clip(clip_name=clip_1_path, type="lumina2")[0]
+            else:
+                # Standard loading
+                clip = comfy.sd.load_clip(
+                    ckpt_paths=[full_path],
+                    embedding_directory=folder_paths.get_folder_paths("embeddings"),
+                    clip_type=comfy.sd.CLIPType.LUMINA2 if hasattr(comfy.sd, 'CLIPType') else None
+                )
+            
+            # Create LLM reference (finds mmproj)
             llm = self._create_llm_reference(full_path, daemon_running=False)
+            
+            # Attach paths to CLIP object for downstream nodes (LunaZImageEncoder)
+            clip.model_path = full_path
+            clip.mmproj_path = llm.get("mmproj_path")
+            
             return clip, llm
         except Exception as e:
             raise RuntimeError(f"Failed to load Qwen3 model: {e}")

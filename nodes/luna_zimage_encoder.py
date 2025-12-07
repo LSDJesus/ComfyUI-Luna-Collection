@@ -61,6 +61,18 @@ except ImportError:
     HAS_NODE_HELPERS = False
     node_helpers = None
 
+# llama-cpp-python for GGUF model support
+try:
+    from llama_cpp import Llama
+    from llama_cpp.llama_chat_format import Llava15ChatHandler
+    HAS_LLAMA_CPP = True
+except ImportError:
+    HAS_LLAMA_CPP = False
+    Llama = None
+    Llava15ChatHandler = None
+    HAS_NODE_HELPERS = False
+    node_helpers = None
+
 
 # =============================================================================
 # AI ENHANCEMENT PROMPTS
@@ -274,6 +286,7 @@ class LunaZImageEncoder:
             try:
                 final_prompt = self._ai_enhance(
                     prompt=final_prompt,
+                    clip=clip,
                     enable_enhancement=enable_ai_enhancement,
                     enhancement_mode=enhancement_mode,
                     custom_instruction=custom_instruction,
@@ -330,6 +343,7 @@ class LunaZImageEncoder:
     def _ai_enhance(
         self,
         prompt: str,
+        clip: Any,
         enable_enhancement: bool,
         enhancement_mode: str,
         custom_instruction: str,
@@ -343,32 +357,18 @@ class LunaZImageEncoder:
     ) -> str:
         """
         Use Qwen3-VL for AI prompt enhancement or vision-based generation.
-        Uses the transformers pattern from ComfyUI-QwenVL.
+        Supports both transformers (safetensors) and llama-cpp-python (GGUF).
         """
         from PIL import Image as PILImage
         
-        try:
-            from transformers import AutoModelForVision2Seq, AutoProcessor, AutoTokenizer
-        except ImportError:
-            raise RuntimeError(
-                "transformers package required for AI enhancement.\n"
-                "Install with: pip install transformers"
-            )
+        # Get or load model - returns different types based on model format
+        model_or_llm, processor, tokenizer = self._get_generation_model(clip, keep_model_loaded)
         
-        # Get or load model
-        model, processor, tokenizer = self._get_generation_model(keep_model_loaded)
+        # Detect if this is GGUF (processor/tokenizer will be None)
+        is_gguf = processor is None
         
         # Set seed
         torch.manual_seed(seed)
-        
-        # Build conversation
-        conversation = [{"role": "user", "content": []}]
-        
-        # Add image if vision enabled
-        pil_image = None
-        if enable_vision and image is not None:
-            pil_image = self._tensor_to_pil(image)
-            conversation[0]["content"].append({"type": "image", "image": pil_image})
         
         # Build the prompt text
         if enable_vision and image is not None:
@@ -387,14 +387,110 @@ class LunaZImageEncoder:
         else:
             prompt_text = prompt
         
-        conversation[0]["content"].append({"type": "text", "text": prompt_text})
+        # Get image as PIL if needed
+        pil_image = None
+        if enable_vision and image is not None:
+            pil_image = self._tensor_to_pil(image)
+        
+        if is_gguf:
+            # GGUF generation via llama-cpp-python
+            result = self._generate_gguf(
+                llm=model_or_llm,
+                prompt=prompt_text,
+                image=pil_image,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+        else:
+            # Transformers generation
+            result = self._generate_transformers(
+                model=model_or_llm,
+                processor=processor,
+                tokenizer=tokenizer,
+                prompt=prompt_text,
+                image=pil_image,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+        
+        # Cleanup if not keeping loaded
+        if not keep_model_loaded:
+            self._clear_generation_model()
+        
+        return result.strip()
+    
+    def _generate_gguf(
+        self,
+        llm: Any,
+        prompt: str,
+        image: Optional[Any],
+        max_tokens: int,
+        temperature: float,
+    ) -> str:
+        """Generate text using GGUF model via llama-cpp-python."""
+        import base64
+        import io
+        
+        # Build system prompt
+        system_prompt = """You are an expert prompt engineer for AI image generation.
+Respond only with the refined/generated prompt text, no explanations."""
+        
+        # Build messages
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        if image is not None:
+            # Convert PIL image to base64
+            buffered = io.BytesIO()
+            image.save(buffered, format="PNG")
+            img_base64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            image_url = f"data:image/png;base64,{img_base64}"
+            
+            messages.append({
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": image_url}},
+                    {"type": "text", "text": prompt}
+                ]
+            })
+        else:
+            messages.append({"role": "user", "content": prompt})
+        
+        # Generate
+        response = llm.create_chat_completion(
+            messages=messages,
+            max_tokens=max_tokens if max_tokens > 0 else None,
+            temperature=temperature if temperature > 0 else 0.0,
+            top_p=0.9,
+            stop=["</s>", "Human:", "Assistant:", "\n\n"],
+        )
+        
+        return response['choices'][0]['message']['content'].strip()
+    
+    def _generate_transformers(
+        self,
+        model: Any,
+        processor: Any,
+        tokenizer: Any,
+        prompt: str,
+        image: Optional[Any],
+        max_tokens: int,
+        temperature: float,
+    ) -> str:
+        """Generate text using transformers model."""
+        # Build conversation
+        conversation = [{"role": "user", "content": []}]
+        
+        if image is not None:
+            conversation[0]["content"].append({"type": "image", "image": image})
+        
+        conversation[0]["content"].append({"type": "text", "text": prompt})
         
         # Process and generate
         chat = processor.apply_chat_template(
             conversation, tokenize=False, add_generation_prompt=True
         )
         
-        images = [pil_image] if pil_image else None
+        images = [image] if image else None
         processed = processor(text=chat, images=images, return_tensors="pt")
         
         model_device = next(model.parameters()).device
@@ -418,16 +514,88 @@ class LunaZImageEncoder:
         
         # Decode
         input_len = model_inputs["input_ids"].shape[-1]
-        result = tokenizer.decode(outputs[0, input_len:], skip_special_tokens=True)
-        
-        # Cleanup if not keeping loaded
-        if not keep_model_loaded:
-            self._clear_generation_model()
-        
-        return result.strip()
+        return tokenizer.decode(outputs[0, input_len:], skip_special_tokens=True)
     
-    def _get_generation_model(self, keep_loaded: bool):
-        """Get or load the Qwen3-VL generation model."""
+    def _get_generation_model(self, clip: Any, keep_loaded: bool):
+        """Get or load the Qwen3-VL generation model (supports both transformers and GGUF)."""
+        global _generation_models
+        
+        # Find model path from CLIP object if available (set by LunaModelRouter)
+        if hasattr(clip, "model_path") and clip.model_path:
+            model_path = clip.model_path
+            print(f"[LunaZImageEncoder] Using model from router: {model_path}")
+        else:
+            model_path = self._find_qwen_model()
+            print(f"[LunaZImageEncoder] Using auto-detected model: {model_path}")
+        
+        # Get mmproj path if available
+        mmproj_path = getattr(clip, "mmproj_path", None)
+        
+        # Check if this is a GGUF model
+        is_gguf = model_path.lower().endswith(".gguf")
+        
+        if is_gguf:
+            return self._get_gguf_generation_model(model_path, mmproj_path, keep_loaded)
+        else:
+            return self._get_transformers_generation_model(model_path, keep_loaded)
+    
+    def _get_gguf_generation_model(self, model_path: str, mmproj_path: Optional[str], keep_loaded: bool):
+        """Load GGUF model with llama-cpp-python for generation."""
+        global _generation_models
+        
+        if not HAS_LLAMA_CPP:
+            raise RuntimeError(
+                "llama-cpp-python is required for GGUF model generation.\n"
+                "Install with: pip install llama-cpp-python\n"
+                "For GPU: CMAKE_ARGS='-DGGML_CUDA=on' pip install llama-cpp-python"
+            )
+        
+        cache_key = f"gguf_generation_{model_path}"
+        
+        if cache_key in _generation_models:
+            cached = _generation_models[cache_key]
+            return cached["llm"], None, None  # GGUF uses different API
+        
+        print(f"[LunaZImageEncoder] Loading GGUF model: {model_path}")
+        
+        # Set up chat handler with mmproj for vision support
+        chat_handler = None
+        if mmproj_path and os.path.exists(mmproj_path):
+            print(f"[LunaZImageEncoder] Loading mmproj: {mmproj_path}")
+            chat_handler = Llava15ChatHandler(clip_model_path=str(mmproj_path))
+        else:
+            print("[LunaZImageEncoder] No mmproj found - vision features disabled")
+        
+        # Determine GPU layers
+        n_gpu_layers = -1  # All layers on GPU by default
+        if torch.cuda.is_available():
+            # Check available VRAM and adjust
+            vram_gb = torch.cuda.get_device_properties(0).total_memory / 1024**3
+            if vram_gb < 8:
+                n_gpu_layers = 20  # Partial offload for low VRAM
+        
+        # Load the model
+        llm = Llama(
+            model_path=str(model_path),
+            chat_handler=chat_handler,
+            n_ctx=4096,  # Context window
+            n_gpu_layers=n_gpu_layers,
+            logits_all=True,
+            verbose=False,
+        )
+        
+        if keep_loaded:
+            _generation_models[cache_key] = {
+                "llm": llm,
+                "chat_handler": chat_handler,
+                "model_path": model_path,
+            }
+        
+        print(f"[LunaZImageEncoder] GGUF model loaded successfully")
+        return llm, None, None
+    
+    def _get_transformers_generation_model(self, model_path: str, keep_loaded: bool):
+        """Load model with transformers for generation."""
         global _generation_models
         
         cache_key = "qwen3_vl_generation"
@@ -441,10 +609,7 @@ class LunaZImageEncoder:
         except ImportError:
             raise RuntimeError("transformers package required")
         
-        # Find Qwen3-VL model path
-        model_path = self._find_qwen_model()
-        
-        print(f"[LunaZImageEncoder] Loading Qwen3-VL from: {model_path}")
+        print(f"[LunaZImageEncoder] Loading transformers model: {model_path}")
         
         # Load with optimal settings
         load_kwargs = {
@@ -513,13 +678,32 @@ class LunaZImageEncoder:
         """Clear cached generation model to free VRAM."""
         global _generation_models
         
+        # Clear transformers model
         cache_key = "qwen3_vl_generation"
         if cache_key in _generation_models:
             del _generation_models[cache_key]
-            gc.collect()
-            if torch.cuda.is_available():
-                torch.cuda.empty_cache()
-            print("[LunaZImageEncoder] Cleared generation model from VRAM")
+            print("[LunaZImageEncoder] Cleared transformers model from VRAM")
+        
+        # Clear any GGUF models
+        gguf_keys = [k for k in _generation_models.keys() if k.startswith("gguf_generation_")]
+        for key in gguf_keys:
+            cached = _generation_models[key]
+            # Close the chat handler exit stack if present
+            if "chat_handler" in cached and cached["chat_handler"] is not None:
+                try:
+                    if hasattr(cached["chat_handler"], '_exit_stack'):
+                        cached["chat_handler"]._exit_stack.close()
+                except Exception as e:
+                    print(f"[LunaZImageEncoder] Error closing chat_handler: {e}")
+            # Delete the LLM
+            if "llm" in cached and cached["llm"] is not None:
+                del cached["llm"]
+            del _generation_models[key]
+            print(f"[LunaZImageEncoder] Cleared GGUF model from VRAM")
+        
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
     
     @staticmethod
     def _tensor_to_pil(tensor: torch.Tensor):
