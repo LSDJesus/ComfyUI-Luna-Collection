@@ -1161,14 +1161,55 @@ class ModelWorker:
             else:
                 # Fallback to static config paths
                 clip_paths = []
-                if os.path.exists(self.clip_l_path):
-                    clip_paths.append(self.clip_l_path)
-                if os.path.exists(self.clip_g_path):
-                    clip_paths.append(self.clip_g_path)
                 
+                # Resolve paths relative to ComfyUI root if needed
+                l_path = self.clip_l_path
+                if not os.path.isabs(l_path) and not os.path.exists(l_path):
+                    l_path = os.path.join(comfy_path, l_path)
+                
+                g_path = self.clip_g_path
+                if not os.path.isabs(g_path) and not os.path.exists(g_path):
+                    g_path = os.path.join(comfy_path, g_path)
+
+                if os.path.exists(l_path):
+                    clip_paths.append(l_path)
+                if os.path.exists(g_path):
+                    clip_paths.append(g_path)
+                
+                logger.info(f"[CLIP-{self.worker_id}] Debug: clip_paths={clip_paths}")
+                
+                if not clip_paths:
+                    logger.error(f"[CLIP-{self.worker_id}] No CLIP models found! Checked: {self.clip_l_path}, {self.clip_g_path}")
+                    # Try to find using folder_paths if available
+                    if HAS_FOLDER_PATHS:
+                        try:
+                            # Try to find standard SDXL clips
+                            l_candidates = folder_paths.get_filename_list("clip")
+                            for c in l_candidates:
+                                if "clip_l" in c.lower():
+                                    p = folder_paths.get_full_path("clip", c)
+                                    if p:
+                                        clip_paths.append(p)
+                                        logger.info(f"[CLIP-{self.worker_id}] Found CLIP-L via folder_paths: {p}")
+                                        break
+                            for c in l_candidates:
+                                if "clip_g" in c.lower():
+                                    p = folder_paths.get_full_path("clip", c)
+                                    if p:
+                                        clip_paths.append(p)
+                                        logger.info(f"[CLIP-{self.worker_id}] Found CLIP-G via folder_paths: {p}")
+                                        break
+                        except:
+                            pass
+                
+                if not clip_paths:
+                    raise RuntimeError("No CLIP models found. Please configure CLIP_L_PATH/CLIP_G_PATH in config.py or ensure models exist in ComfyUI/models/clip/")
+
                 # Get CLIP type string from MODEL_TYPE via CLIP_TYPE_MAP
                 clip_type_str = CLIP_TYPE_MAP.get(MODEL_TYPE, "stable_diffusion")
                 
+                logger.info(f"[CLIP-{self.worker_id}] Debug: MODEL_TYPE={MODEL_TYPE}, clip_type_str={clip_type_str}")
+
                 # Map clip type string to comfy.sd.CLIPType enum
                 clip_type_enum_map = {
                     "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,
@@ -1179,6 +1220,8 @@ class ModelWorker:
                     "lumina2": comfy.sd.CLIPType.LUMINA2,
                 }
                 clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)
+                
+                logger.info(f"[CLIP-{self.worker_id}] Debug: clip_type_enum={clip_type_enum}")
                 
                 emb_dir = self.embeddings_dir if os.path.exists(self.embeddings_dir) else None
                 self.model = comfy.sd.load_clip(
