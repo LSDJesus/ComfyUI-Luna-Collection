@@ -26,7 +26,7 @@ except ImportError:
 try:
     from ..luna_daemon import client as daemon_client
     from ..luna_daemon.config import (
-        DAEMON_HOST, DAEMON_PORT, SHARED_DEVICE, MAX_WORKERS
+        DAEMON_HOST, DAEMON_PORT, CLIP_DEVICE, MAX_WORKERS
     )
     DAEMON_AVAILABLE = True
 except ImportError:
@@ -41,7 +41,7 @@ except ImportError:
         
         from luna_daemon import client as daemon_client
         from luna_daemon.config import (
-            DAEMON_HOST, DAEMON_PORT, SHARED_DEVICE, MAX_WORKERS
+            DAEMON_HOST, DAEMON_PORT, CLIP_DEVICE, MAX_WORKERS
         )
         DAEMON_AVAILABLE = True
     except ImportError as e:
@@ -50,7 +50,7 @@ except ImportError:
         DAEMON_AVAILABLE = False
         DAEMON_HOST = "127.0.0.1"
         DAEMON_PORT = 19283
-        SHARED_DEVICE = "cuda:1"
+        CLIP_DEVICE = "cuda:1"
         MAX_WORKERS = 4
 
 
@@ -104,7 +104,7 @@ def register_routes():
             
             return web.json_response({
                 "running": True,
-                "device": info.get("device", SHARED_DEVICE),
+                "device": info.get("device", CLIP_DEVICE),
                 "vram_used_gb": info.get("vram_used_gb", 0),
                 "vram_total_gb": info.get("vram_total_gb", 0),
                 "request_count": info.get("request_count", 0),
@@ -149,6 +149,8 @@ def register_routes():
                 start_new_session=True,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
+            
+            return web.json_response({"status": "ok", "message": "Daemon starting in background..."})
             
             # Give it a moment to start
             import asyncio

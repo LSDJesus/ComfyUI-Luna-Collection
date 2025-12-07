@@ -41,8 +41,8 @@ CLIP Requirements by Model Type:
   SD1.5:        clip_1 (CLIP-L)
   SDXL:         clip_1 (CLIP-L) + clip_2 (CLIP-G)
   SDXL+Vision:  clip_1 (CLIP-L) + clip_2 (CLIP-G) + clip_4 (SigLIP/CLIP-H)
-  Flux:         clip_1 (CLIP-L) + clip_3 (T5-XXL)
-  Flux+Vision:  clip_1 (CLIP-L) + clip_3 (T5-XXL) + clip_4 (SigLIP)
+  Flux:         clip_1 (CLIP-L) + clip_2 (CLIP-G) + clip_3 (T5-XXL)
+  Flux+Vision:  clip_1 (CLIP-L) + clip_2 (CLIP-G) + clip_3 (T5-XXL) + clip_4 (SigLIP)
   SD3:          clip_1 (CLIP-L) + clip_2 (CLIP-G) + clip_3 (T5-XXL)
   Z-IMAGE:      clip_1 (Full Qwen3-VL) → Full model required for hidden state extraction
 
@@ -735,9 +735,9 @@ class LunaModelRouter:
     ) -> Any:
         """Load and combine standard CLIP encoders."""
         
-        # Collect CLIP paths
-        clip_paths = []
-        clip_types = []
+        # Collect CLIP paths with component mapping
+        clip_components = {}
+        clip_paths = [] # Keep for local fallback
         
         # Map slot to encoder type
         slot_to_type = {
@@ -752,7 +752,8 @@ class LunaModelRouter:
                 full_path = folder_paths.get_full_path("clip", path)
                 if full_path and os.path.exists(full_path):
                     clip_paths.append(full_path)
-                    clip_types.append(slot_to_type.get(slot, "clip_l"))
+                    component_type = slot_to_type.get(slot, "clip_l")
+                    clip_components[component_type] = full_path
         
         if not clip_paths:
             return None
@@ -764,7 +765,8 @@ class LunaModelRouter:
         if daemon_running and use_daemon and DaemonCLIP is not None and daemon_client is not None:
             try:
                 # Register CLIP by path (daemon loads from disk)
-                result = daemon_client.register_clip_by_path(clip_paths, model_type, clip_type_str)
+                # Send dictionary of components for granular reuse
+                result = daemon_client.register_clip_by_path(clip_components, model_type, clip_type_str)
                 
                 if result.get("success"):
                     print(f"[LunaModelRouter] Registered CLIP with daemon: {model_type} -> {clip_type_str}")

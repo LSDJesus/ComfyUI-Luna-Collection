@@ -38,10 +38,12 @@ SERVICE_TYPE = ServiceType.FULL
 # =============================================================================
 
 # Device assignment - which GPU to load shared models on
-SHARED_DEVICE = "cuda:1"  # Secondary GPU for CLIP in split mode
-
-# For VAE daemon, typically same GPU as ComfyUI workers
+CLIP_DEVICE = "cuda:1"    # Secondary GPU for CLIP/Text Encoders
 VAE_DEVICE = "cuda:0"     # Primary GPU for VAE (enables CUDA IPC)
+LLM_DEVICE = "cuda:1"     # GPU for Large Language Models (Qwen3-VL, etc.)
+
+# Legacy alias for backward compatibility
+SHARED_DEVICE = CLIP_DEVICE
 
 # =============================================================================
 # Model Paths
@@ -100,13 +102,17 @@ MODEL_TYPE = "SDXL"
 # Dynamic scaling configuration
 MAX_VAE_WORKERS = 4
 MAX_CLIP_WORKERS = 2
+
+# Minimum workers to keep alive
+# Set to 0 to allow full unloading (True Lazy Loading)
+# Set to 1 to keep at least one worker ready (Hot Cache)
 MIN_VAE_WORKERS = 1
 MIN_CLIP_WORKERS = 1
 
 # Queue management
 QUEUE_THRESHOLD = 3          # Queue depth before considering scale-up
 SCALE_UP_DELAY_SEC = 0.5     # Delay before scaling up
-IDLE_TIMEOUT_SEC = 30.0      # Idle time before scaling down
+IDLE_TIMEOUT_SEC = 60.0      # Idle time before scaling down
 
 # =============================================================================
 # VRAM Management
@@ -126,7 +132,7 @@ LORA_CACHE_SIZE_MB = 2048.0  # 2GB for cached LoRAs
 # Qwen3-VL model for unified text encoding + vision-language
 # Provides Z-IMAGE compatible embeddings AND VLM capabilities
 # Set to HuggingFace model ID or local path
-QWEN3_VL_MODEL = "Qwen/Qwen3-VL-4B-Instruct"  # Default: official 4B instruct
+QWEN3_VL_MODEL = "Qwen3-VL-4B-instruct-abliterated"  # Default: official 4B instruct
 
 # Alternative: local GGUF path (for llama.cpp backend)
 # QWEN3_VL_MODEL = "F:/LLM/Models/huihui/Qwen3-VL-4B-instruct-abliterated/Huihui-Qwen3-VL-4B-Instruct-abliterated.i1-Q4_K_M.gguf"

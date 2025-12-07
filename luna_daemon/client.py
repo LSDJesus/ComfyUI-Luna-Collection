@@ -269,7 +269,7 @@ class DaemonClient:
             "vae_type": vae_type
         })
     
-    def register_clip_by_path(self, clip_paths: list, model_type: str, clip_type: str) -> dict:
+    def register_clip_by_path(self, clip_components: dict, model_type: str, clip_type: str) -> dict:
         """
         Register CLIP by paths for daemon disk loading.
         
@@ -277,7 +277,7 @@ class DaemonClient:
         socket serialization of full state dicts.
         
         Args:
-            clip_paths: List of paths to CLIP files (clip_l, clip_g, t5xxl, etc.)
+            clip_components: Dict of {component_type: path} (e.g. {"clip_l": "path/to/clip_l.safetensors"})
             model_type: Luna model type ("SD1.5", "SDXL", "Flux", etc.)
             clip_type: ComfyUI CLIPType string ("stable_diffusion", "flux", "sd3", etc.)
         
@@ -286,7 +286,7 @@ class DaemonClient:
         """
         return self._send_request({
             "cmd": "register_clip_by_path",
-            "clip_paths": clip_paths,
+            "clip_components": clip_components,
             "model_type": model_type,
             "clip_type": clip_type
         })

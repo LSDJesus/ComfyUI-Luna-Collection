@@ -61,7 +61,8 @@ if daemon_path not in sys.path:
 # Try relative import first (when used as module), fall back to direct import
 try:
     from .config import (
-        DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, DAEMON_WS_PORT, SHARED_DEVICE, VAE_DEVICE,
+        DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, DAEMON_WS_PORT, 
+        CLIP_DEVICE, VAE_DEVICE, LLM_DEVICE, SHARED_DEVICE,
         VAE_PATH, CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
         MAX_WORKERS, LOG_LEVEL, MODEL_PRECISION,
         VRAM_LIMIT_GB, VRAM_SAFETY_MARGIN_GB,
@@ -83,7 +84,8 @@ try:
         MODEL_TYPE = "SDXL"
 except ImportError:
     from config import (
-        DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, DAEMON_WS_PORT, SHARED_DEVICE, VAE_DEVICE,
+        DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, DAEMON_WS_PORT, 
+        CLIP_DEVICE, VAE_DEVICE, LLM_DEVICE, SHARED_DEVICE,
         VAE_PATH, CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
         MAX_WORKERS, LOG_LEVEL, MODEL_PRECISION,
         VRAM_LIMIT_GB, VRAM_SAFETY_MARGIN_GB,
@@ -682,14 +684,14 @@ class ModelRegistry:
         thread.start()
         return thread
     
-    def register_clip_by_path(self, clip_paths: list, model_type: str, clip_type: str) -> dict:
+    def register_clip_by_path(self, clip_components: dict, model_type: str, clip_type: str) -> dict:
         """
         Register CLIP by paths (loads from disk).
         
         This is more efficient than sending state dicts over socket.
         
         Args:
-            clip_paths: List of paths to CLIP files
+            clip_components: Dict of {component_type: path}
             model_type: Luna model type (e.g., "SDXL", "Flux")
             clip_type: ComfyUI CLIPType string (e.g., "stable_diffusion", "flux")
         
@@ -700,19 +702,19 @@ class ModelRegistry:
         import folder_paths
         
         # Validate paths
-        valid_paths = []
-        for path in clip_paths:
+        valid_components = {}
+        for comp_type, path in clip_components.items():
             if os.path.exists(path):
-                valid_paths.append(path)
+                valid_components[comp_type] = path
             else:
                 # Try folder_paths resolution
                 full_path = folder_paths.get_full_path("clip", os.path.basename(path)) if folder_paths else None
                 if full_path and os.path.exists(full_path):
-                    valid_paths.append(full_path)
+                    valid_components[comp_type] = full_path
                 else:
-                    logger.warning(f"[ModelRegistry] CLIP path not found: {path}")
+                    logger.warning(f"[ModelRegistry] CLIP path not found for {comp_type}: {path}")
         
-        if not valid_paths:
+        if not valid_components:
             return {"success": False, "error": "No valid CLIP paths found"}
         
         with self.lock:
@@ -726,21 +728,21 @@ class ModelRegistry:
             self.clip = RegisteredModel(
                 model_type=model_type,
                 clip_type=clip_type,
-                paths=valid_paths,
+                paths=valid_components, # Now a dict
                 loaded=False
             )
             
-            total_size_mb = sum(os.path.getsize(p) / 1024 / 1024 for p in valid_paths)
+            total_size_mb = sum(os.path.getsize(p) / 1024 / 1024 for p in valid_components.values())
             logger.info(f"[ModelRegistry] Registered CLIP by path: {model_type} -> {clip_type} "
-                       f"({len(valid_paths)} files, {total_size_mb:.1f} MB)")
+                       f"({len(valid_components)} files, {total_size_mb:.1f} MB)")
             
             return {
                 "success": True,
                 "model_type": model_type,
                 "clip_type": clip_type,
-                "paths": valid_paths,
+                "components": list(valid_components.keys()),
                 "size_mb": total_size_mb,
-                "message": f"CLIP registered from {len(valid_paths)} path(s)"
+                "message": f"CLIP registered from {len(valid_components)} path(s)"
             }
     
     def load_clip_async(self, precision: str = "bf16"):
@@ -1526,13 +1528,10 @@ class ModelWorker:
         """Main worker loop - process requests from queue"""
         self.is_running = True
         
-        # Try to load model on startup, but don't crash if it fails
-        try:
-            self.load_model()
-        except Exception as e:
-            logger.warning(f"[{self.worker_type.name}-{self.worker_id}] Failed to load model on startup: {e}")
-            logger.warning(f"[{self.worker_type.name}-{self.worker_id}] Worker started in IDLE mode. Waiting for model registration from ComfyUI.")
-            self.is_loaded = False
+        # Lazy loading: Don't load on startup. Wait for first request.
+        # This avoids warnings when config paths are empty.
+        self.is_loaded = False
+        logger.info(f"[{self.worker_type.name}-{self.worker_id}] Worker started in IDLE mode (Lazy Loading)")
         
         while self.is_running:
             try:
@@ -1616,8 +1615,8 @@ class ModelWorker:
     
     def start(self):
         """Start the worker thread"""
-        if not self.is_loaded:
-            self.load_model()
+        # Don't load model here - let the thread handle it in run()
+        # This prevents blocking the main thread and allows lazy loading
         
         self.thread = threading.Thread(
             target=self.run,
@@ -1786,7 +1785,15 @@ class WorkerPool:
             queue_depth = self.request_queue.qsize()
             
             # Scale UP check
-            if queue_depth > self.config.queue_threshold:
+            # 1. Immediate scale up if we have requests but no workers (Lazy Loading)
+            if queue_depth > 0 and len(self.workers) == 0:
+                if self.can_scale_up():
+                    logger.info(f"[{self.worker_type.value.upper()}] Lazy loading triggered by request")
+                    self.scale_up()
+                    last_scale_up_check = now
+            
+            # 2. Standard queue-based scaling
+            elif queue_depth > self.config.queue_threshold:
                 if not queue_was_backed_up:
                     queue_was_backed_up = True
                     last_scale_up_check = now
@@ -1833,9 +1840,9 @@ class WorkerPool:
         """Start the pool with minimum workers"""
         self._running = True
         
-        # Start minimum workers
-        for _ in range(self.min_workers):
-            self.scale_up()
+        # Start minimum workers - DISABLED for lazy loading
+        # for _ in range(self.min_workers):
+        #     self.scale_up()
         
         # Start scaling monitor thread
         self._scaling_thread = threading.Thread(
@@ -2150,7 +2157,7 @@ class DynamicDaemon:
     
     def __init__(
         self, 
-        device: str = SHARED_DEVICE, 
+        device: str = CLIP_DEVICE, 
         precision: str = MODEL_PRECISION,
         clip_precision: Optional[str] = None,
         vae_precision: Optional[str] = None,
@@ -2207,39 +2214,53 @@ class DynamicDaemon:
     
     def start_pools(self):
         """Initialize and start worker pools based on service type"""
-        logger.info(f"Starting worker pools on {self.device}...")
+        logger.info(f"Starting worker pools...")
         logger.info(f"  CLIP precision: {self.clip_precision}, VAE precision: {self.vae_precision}")
         
         # VAE pool - only for FULL or VAE_ONLY modes
         if self.service_type in (ServiceType.FULL, ServiceType.VAE_ONLY):
+            # Use VAE_DEVICE for VAE pool in FULL mode if configured
+            vae_device = self.device
+            if self.service_type == ServiceType.FULL and VAE_DEVICE:
+                vae_device = VAE_DEVICE
+                
             self.vae_pool = WorkerPool(
                 worker_type=WorkerType.VAE,
-                device=self.device,
+                device=vae_device,
                 precision=self.vae_precision,
                 config=self.config,
                 on_scale_event=self._on_scale_event,
                 model_registry=self.model_registry  # Dynamic model registration
             )
-            logger.info(f"VAE pool configured ({self.vae_precision})")
+            logger.info(f"VAE pool configured on {vae_device} ({self.vae_precision})")
         
         # CLIP pool - only for FULL or CLIP_ONLY modes
         if self.service_type in (ServiceType.FULL, ServiceType.CLIP_ONLY):
+            # Use CLIP_DEVICE for CLIP pool
+            clip_device = self.device
+            if self.service_type == ServiceType.FULL and CLIP_DEVICE:
+                clip_device = CLIP_DEVICE
+                
             self.clip_pool = WorkerPool(
                 worker_type=WorkerType.CLIP,
-                device=self.device,
+                device=clip_device,  # CLIP uses the configured CLIP_DEVICE
                 precision=self.clip_precision,
                 config=self.config,
                 on_scale_event=self._on_scale_event,
                 lora_registry=self.lora_registry,  # F-150: enable LoRA for CLIP workers
                 model_registry=self.model_registry  # Dynamic model registration
             )
-            logger.info(f"CLIP pool configured ({self.clip_precision})")
+            logger.info(f"CLIP pool configured on {clip_device} ({self.clip_precision})")
         
         # Start pools (CLIP first if present, as it's larger)
         if self.clip_pool:
             self.clip_pool.start()
+            # Don't scale up immediately - wait for demand
+            # self.clip_pool.scale_up()
         if self.vae_pool:
             self.vae_pool.start()
+            # Don't scale up immediately - wait for demand
+            # self.vae_pool.scale_up()
         
         # Report VRAM usage
         if 'cuda' in self.device:
@@ -2382,10 +2403,16 @@ class DynamicDaemon:
                 if self.service_type == ServiceType.VAE_ONLY:
                     result = {"error": "CLIP registration not available in VAE-only mode"}
                 else:
-                    clip_paths = request.get("clip_paths", [])
+                    clip_components = request.get("clip_components", {})
+                    # Fallback for legacy clients sending list
+                    if not clip_components and "clip_paths" in request:
+                        clip_paths = request.get("clip_paths", [])
+                        # Best effort mapping for legacy list
+                        clip_components = {f"legacy_{i}": p for i, p in enumerate(clip_paths)}
+                        
                     model_type = request.get("model_type", "SDXL")
                     clip_type = request.get("clip_type", "stable_diffusion")
-                    result = self.model_registry.register_clip_by_path(clip_paths, model_type, clip_type)
+                    result = self.model_registry.register_clip_by_path(clip_components, model_type, clip_type)
                     
                     # Immediately start loading in background (non-blocking)
                     if result.get("success"):

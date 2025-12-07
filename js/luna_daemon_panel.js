@@ -383,6 +383,21 @@ app.registerExtension({
         // Fetch initial status
         await fetchDaemonStatus();
         
+        // Auto-start daemon if not running
+        if (!panelState.running) {
+            console.log("[Luna] Auto-starting daemon...");
+            try {
+                await api.fetchApi("/luna/daemon/start", { method: "POST" });
+                // Wait a moment for it to spin up
+                setTimeout(async () => {
+                    await fetchDaemonStatus();
+                    updatePanelUI();
+                }, 2000);
+            } catch (e) {
+                console.error("[Luna] Failed to auto-start daemon:", e);
+            }
+        }
+        
         // Add sidebar tab
         app.ui.settings.addSetting({
             id: "Luna.DaemonPanel.enabled",
