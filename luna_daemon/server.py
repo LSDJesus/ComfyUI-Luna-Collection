@@ -1125,6 +1125,40 @@ class ModelWorker:
                 converted[key] = value
         return converted
     
+    def _resolve_path(self, path_or_name: str, type_name: str) -> Optional[str]:
+        """
+        Resolve a path or filename to a full path.
+        
+        Args:
+            path_or_name: Filename (e.g. "sdxl_vae.safetensors") or full path
+            type_name: Type for folder_paths (e.g. "vae", "clip")
+            
+        Returns:
+            Full path if found, else None
+        """
+        if not path_or_name:
+            return None
+            
+        # 1. Check if it's an absolute path that exists
+        if os.path.isabs(path_or_name) and os.path.exists(path_or_name):
+            return path_or_name
+            
+        # 2. Check if it's relative to ComfyUI root
+        rel_path = os.path.join(comfy_path, path_or_name)
+        if os.path.exists(rel_path):
+            return rel_path
+            
+        # 3. Use folder_paths to find it in standard directories
+        if HAS_FOLDER_PATHS:
+            try:
+                full_path = folder_paths.get_full_path(type_name, path_or_name)
+                if full_path:
+                    return full_path
+            except:
+                pass
+                
+        return None
+
     def load_model(self):
         """
         Load the model for this worker.
@@ -1144,7 +1178,12 @@ class ModelWorker:
                 logger.info(f"[VAE-{self.worker_id}] VAE loaded from registry ({self.precision})")
             else:
                 # Fallback to static config paths
-                sd = comfy.utils.load_torch_file(VAE_PATH)
+                vae_path = self._resolve_path(VAE_PATH, "vae")
+                
+                if not vae_path:
+                    raise RuntimeError(f"VAE model not found: {VAE_PATH}")
+                    
+                sd = comfy.utils.load_torch_file(vae_path)
                 if self.precision != "fp32":
                     sd = self._convert_state_dict_precision(sd)
                 self.model = comfy.sd.VAE(sd=sd)
@@ -1162,42 +1201,33 @@ class ModelWorker:
                 # Fallback to static config paths
                 clip_paths = []
                 
-                # Resolve paths relative to ComfyUI root if needed
-                l_path = self.clip_l_path
-                if not os.path.isabs(l_path) and not os.path.exists(l_path):
-                    l_path = os.path.join(comfy_path, l_path)
-                
-                g_path = self.clip_g_path
-                if not os.path.isabs(g_path) and not os.path.exists(g_path):
-                    g_path = os.path.join(comfy_path, g_path)
-
-                if os.path.exists(l_path):
+                l_path = self._resolve_path(self.clip_l_path, "clip")
+                if l_path:
                     clip_paths.append(l_path)
-                if os.path.exists(g_path):
+                    
+                g_path = self._resolve_path(self.clip_g_path, "clip")
+                if g_path:
                     clip_paths.append(g_path)
                 
                 logger.info(f"[CLIP-{self.worker_id}] Debug: clip_paths={clip_paths}")
                 
                 if not clip_paths:
-                    logger.error(f"[CLIP-{self.worker_id}] No CLIP models found! Checked: {self.clip_l_path}, {self.clip_g_path}")
-                    # Try to find using folder_paths if available
-                    if HAS_FOLDER_PATHS:
+                    # If no paths configured/found, try auto-discovery as last resort
+                    if HAS_FOLDER_PATHS and (not self.clip_l_path and not self.clip_g_path):
+                        logger.info(f"[CLIP-{self.worker_id}] No CLIPs configured, attempting auto-discovery...")
                         try:
-                            # Try to find standard SDXL clips
                             l_candidates = folder_paths.get_filename_list("clip")
                             for c in l_candidates:
                                 if "clip_l" in c.lower():
                                     p = folder_paths.get_full_path("clip", c)
                                     if p:
                                         clip_paths.append(p)
-                                        logger.info(f"[CLIP-{self.worker_id}] Found CLIP-L via folder_paths: {p}")
                                         break
                             for c in l_candidates:
                                 if "clip_g" in c.lower():
                                     p = folder_paths.get_full_path("clip", c)
                                     if p:
                                         clip_paths.append(p)
-                                        logger.info(f"[CLIP-{self.worker_id}] Found CLIP-G via folder_paths: {p}")
                                         break
                         except:
                             pass
@@ -1496,6 +1526,14 @@ class ModelWorker:
         """Main worker loop - process requests from queue"""
         self.is_running = True
         
+        # Try to load model on startup, but don't crash if it fails
+        try:
+            self.load_model()
+        except Exception as e:
+            logger.warning(f"[{self.worker_type.name}-{self.worker_id}] Failed to load model on startup: {e}")
+            logger.warning(f"[{self.worker_type.name}-{self.worker_id}] Worker started in IDLE mode. Waiting for model registration from ComfyUI.")
+            self.is_loaded = False
+        
         while self.is_running:
             try:
                 # Wait for request with timeout (allows checking is_running)
@@ -1506,6 +1544,17 @@ class ModelWorker:
                 
                 self.last_active = time.time()
                 self.request_count += 1
+                
+                # Check if model is loaded before processing
+                if not self.is_loaded:
+                    # Try to load again if registry has been updated
+                    try:
+                        self.load_model()
+                    except Exception as e:
+                        # Still can't load - return error
+                        if request_id:
+                            self.result_queues[request_id].put({"error": f"Model not loaded: {e}"})
+                        continue
                 
                 try:
                     # Process based on command type

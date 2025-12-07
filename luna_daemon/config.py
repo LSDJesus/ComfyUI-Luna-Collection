@@ -47,13 +47,20 @@ VAE_DEVICE = "cuda:0"     # Primary GPU for VAE (enables CUDA IPC)
 # Model Paths
 # =============================================================================
 
-# Default model paths - override per-installation
-VAE_PATH = "D:/AI/SD Models/vae/sdxl_vae.safetensors"
-CLIP_L_PATH = "D:/AI/SD Models/clip/clip_l.safetensors"
-CLIP_G_PATH = "D:/AI/SD Models/clip/clip_g.safetensors"
+# Auto-load Configuration
+# The daemon can automatically load models on startup to be ready for requests.
+# You can provide:
+# 1. A filename (e.g. "sdxl_vae.safetensors") - will be searched in ComfyUI model paths
+# 2. An absolute path (e.g. "C:/Models/vae.safetensors")
+# 3. None or "" - Daemon starts empty and loads models on first request (Lazy Loading)
+
+VAE_PATH = None
+CLIP_L_PATH = None
+CLIP_G_PATH = None
 
 # Embeddings directory for textual inversions
-EMBEDDINGS_DIR = "D:/AI/SD Models/embeddings"
+# Leave None to automatically use ComfyUI's embeddings directory
+EMBEDDINGS_DIR = None
 
 # =============================================================================
 # Client Settings
