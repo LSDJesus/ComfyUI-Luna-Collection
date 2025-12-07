@@ -20,10 +20,62 @@ from typing import Tuple, Optional, Any, Dict, List
 
 try:
     import folder_paths
+    import comfy.model_management
     HAS_COMFY = True
 except ImportError:
     HAS_COMFY = False
     folder_paths = None
+    comfy = None
+
+
+def apply_film_grain(
+    images: torch.Tensor,
+    grain_intensity: float = 0.1,
+    saturation: float = 0.5
+) -> torch.Tensor:
+    """
+    Adds film grain to images as preprocessing for upscaling.
+    
+    This helps diffusion-based upscaling by providing texture to work with,
+    preventing the "plastic" look on smooth gradients.
+    
+    Based on LTXVideo's film_grain implementation.
+    
+    Args:
+        images: (B, H, W, C) tensor in [0, 1] range
+        grain_intensity: Strength of grain effect (0.0 - 1.0)
+        saturation: Color saturation of grain (0.0 = grayscale, 1.0 = full color)
+    
+    Returns:
+        Images with film grain applied
+    """
+    if grain_intensity <= 0:
+        return images
+    
+    device = images.device
+    if HAS_COMFY:
+        device = comfy.model_management.get_torch_device()
+        images = images.to(device)
+    
+    grain = torch.zeros(images[0:1].shape, device=device)
+    
+    # Process images in-place for memory efficiency
+    for i in range(images.shape[0]):
+        # Generate colored grain - red and blue channels get more noise
+        torch.randn(grain.shape, device=device, out=grain)
+        grain[:, :, :, 0] *= 2  # Red channel
+        grain[:, :, :, 2] *= 3  # Blue channel
+        
+        # Blend saturation with luminance
+        grain = grain * saturation + grain[:, :, :, 1:2].expand(-1, -1, -1, 3) * (1 - saturation)
+        
+        # Apply grain to image
+        images[i:i+1] = (images[i:i+1] + grain_intensity * grain).clamp_(0, 1)
+    
+    if HAS_COMFY:
+        images = images.to(comfy.model_management.intermediate_device())
+    
+    return images
 
 # SeedVR2 wrapper
 from .seedvr2_wrapper import (
@@ -144,6 +196,20 @@ class LunaSuperUpscaler:
                     "default": False,
                     "tooltip": "Enable detailed debug logging"
                 }),
+                "film_grain_intensity": ("FLOAT", {
+                    "default": 0.1,
+                    "min": 0.0,
+                    "max": 0.5,
+                    "step": 0.01,
+                    "tooltip": "Film grain preprocessing. Adds texture for better diffusion upscaling. 0 = disabled"
+                }),
+                "film_grain_saturation": ("FLOAT", {
+                    "default": 0.5,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.05,
+                    "tooltip": "Color saturation of film grain. 0 = grayscale, 1 = full color"
+                }),
             }
         }
     
@@ -161,6 +227,8 @@ class LunaSuperUpscaler:
         dit_device: str = "cuda:0",
         vae_device: str = "daemon",
         enable_debug: bool = False,
+        film_grain_intensity: float = 0.1,
+        film_grain_saturation: float = 0.5,
     ) -> Tuple[torch.Tensor]:
         """
         Upscale image using SeedVR2 DiT model.
@@ -196,6 +264,11 @@ class LunaSuperUpscaler:
         print(f"  DiT: {dit_model} on {dit_device}")
         print(f"  VAE: {vae_model} on {'daemon' if use_daemon_vae else actual_vae_device}")
         print(f"  Tiles: {tile_size}px with {tile_overlap}px overlap, batch {tile_batch_size}")
+        
+        # Apply film grain preprocessing
+        if film_grain_intensity > 0:
+            print(f"  Film grain: intensity={film_grain_intensity}, saturation={film_grain_saturation}")
+            image = apply_film_grain(image, film_grain_intensity, film_grain_saturation)
         
         # Process each image in batch
         batch_size = image.shape[0]

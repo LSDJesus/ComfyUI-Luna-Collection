@@ -361,7 +361,11 @@ features:
 | **Luna Simple Upscaler** | Clean model-based upscaling |
 | **Luna Advanced Upscaler** | Supersampling, modulus rounding |
 | **Luna Ultimate SD Upscale** | Tile-based SD upscaling |
+| **Luna Super Upscaler ⚡** | SeedVR2-powered mega-resolution upscaling (3B/7B DiT models) |
+| **Luna Super Upscaler (Simple)** | Streamlined version with minimal inputs |
 | **Luna Multi Saver** | Batch saving with templates |
+
+> **Note:** Luna Super Upscaler requires [SeedVR2](https://github.com/Seed-VR/SeedVR2-Video-Upscaler-ComfyUI) as a dependency. Install it separately in your `custom_nodes/` folder.
 
 ### 🔧 **Utilities**
 
