@@ -75,6 +75,12 @@ try:
     except ImportError:
         CLIP_PRECISION = MODEL_PRECISION
         VAE_PRECISION = MODEL_PRECISION
+
+    # Import MODEL_TYPE setting (ties to CLIP type via CLIP_TYPE_MAP)
+    try:
+        from .config import MODEL_TYPE
+    except ImportError:
+        MODEL_TYPE = "SDXL"
 except ImportError:
     from config import (
         DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, DAEMON_WS_PORT, SHARED_DEVICE, VAE_DEVICE,

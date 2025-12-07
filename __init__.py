@@ -24,13 +24,6 @@ def setup_nodes():
         print("lunaCore: No 'nodes' directory found. Skipping node loading.")
         return
 
-    # Add all subdirectories to sys.path for imports
-    # This allows modules in subdirs to import siblings (e.g., seedvr2_wrapper)
-    for subdir in os.listdir(nodes_root_dir):
-        subdir_path = os.path.join(nodes_root_dir, subdir)
-        if os.path.isdir(subdir_path) and subdir_path not in sys.path:
-            sys.path.insert(0, subdir_path)
-
     # The new, All-Seeing Eye: os.walk()
     # This will traverse the entire directory tree, including subdirectories.
     for root, dirs, files in os.walk(nodes_root_dir):
