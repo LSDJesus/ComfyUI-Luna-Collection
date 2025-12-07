@@ -110,7 +110,7 @@ class LunaVLMPromptGenerator:
     to generate descriptive prompts, extract styles, or create captions.
     """
     
-    CATEGORY = "Luna/Core"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("prompt", "style_tags")
     FUNCTION = "generate"

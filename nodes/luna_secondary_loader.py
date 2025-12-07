@@ -265,7 +265,7 @@ class LunaSecondaryModelLoader:
     - Base model → Specialized model
     """
     
-    CATEGORY = "Luna/Core"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("MODEL", "CLIP", "VAE", "STRING", "STRING")
     RETURN_NAMES = ("model", "clip", "vae", "model_name", "status")
     FUNCTION = "load"
@@ -576,7 +576,7 @@ class LunaModelRestore:
     the primary model for continued use.
     """
     
-    CATEGORY = "Luna/Core"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("*", "MODEL", "STRING")
     RETURN_NAMES = ("passthrough", "restored_model", "status")
     FUNCTION = "restore"

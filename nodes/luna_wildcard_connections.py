@@ -347,7 +347,7 @@ class LunaConnectionMatcher:
     - Civitai classification tags
     """
     
-    CATEGORY = "Luna/Connections"
+    CATEGORY = "Luna/Wildcards"
     RETURN_TYPES = ("STRING", "LORA_STACK", "STRING")
     RETURN_NAMES = ("lora_string", "LORA_STACK", "matched_info")
     FUNCTION = "match_connections"
@@ -545,7 +545,7 @@ class LunaConnectionEditor:
     then save back to connections.json.
     """
     
-    CATEGORY = "Luna/Connections"
+    CATEGORY = "Luna/Wildcards"
     RETURN_TYPES = ("STRING", "BOOLEAN")
     RETURN_NAMES = ("status", "success")
     FUNCTION = "edit_connection"
@@ -714,7 +714,7 @@ class LunaSmartLoRALinker:
     Can auto-detect model type from connected MODEL to filter incompatible LoRAs!
     """
     
-    CATEGORY = "Luna/Connections"
+    CATEGORY = "Luna/Wildcards"
     RETURN_TYPES = ("STRING", "STRING", "LORA_STACK", "STRING", "STRING")
     RETURN_NAMES = ("enhanced_prompt", "lora_string", "LORA_STACK", "detected_type", "match_report")
     FUNCTION = "link_loras"
@@ -982,7 +982,7 @@ class LunaConnectionStats:
     Useful for debugging and exploring what's available.
     """
     
-    CATEGORY = "Luna/Connections"
+    CATEGORY = "Luna/Wildcards"
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("stats",)
     FUNCTION = "get_stats"

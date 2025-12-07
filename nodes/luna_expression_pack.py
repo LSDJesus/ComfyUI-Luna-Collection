@@ -65,7 +65,7 @@ class LunaExpressionPromptBuilder:
     Pass expression names from your workflow (e.g., from a text file or list).
     """
     
-    CATEGORY = "Luna/Character"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("prompt", "filename")
     FUNCTION = "build_prompt"
@@ -147,7 +147,7 @@ class LunaExpressionSlicerSaver:
     Works with SillyTavern folder structure for easy character import.
     """
     
-    CATEGORY = "Luna/Character"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("IMAGE", "STRING", "STRING")
     RETURN_NAMES = ("images", "expression_names", "output_folder")
     OUTPUT_IS_LIST = (True, True, False)

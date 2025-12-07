@@ -58,7 +58,7 @@ class LunaVisionNode:
     image generation (IP-Adapter style or native vision model conditioning).
     """
     
-    CATEGORY = "Luna/Core"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("LUNA_VISION_EMBED",)
     RETURN_NAMES = ("vision_embed",)
     FUNCTION = "encode"

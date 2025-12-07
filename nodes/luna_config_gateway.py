@@ -29,7 +29,7 @@ class LunaConfigGateway:
     - Accepts optional vision_embed for vision-conditioned generation
     - Outputs complete metadata dict
     """
-    CATEGORY = "Luna/Parameters"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT",
                     "INT", "INT", "INT", "INT", "INT", "FLOAT", "FLOAT", "INT",
                     comfy.samplers.KSampler.SAMPLERS, comfy.samplers.KSampler.SCHEDULERS,

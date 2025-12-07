@@ -52,7 +52,7 @@ import folder_paths
 TENSORRT_ENGINE_INSTANCE = None
 
 class Luna_Detailer:
-    CATEGORY = "Luna/Detailing"
+    CATEGORY = "Luna/Utilities"
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -104,7 +104,7 @@ class Luna_Detailer:
     RETURN_NAMES = ("image", "cropped_refined", "cropped_enhanced_alpha", "mask", "cnet_images", "luna_pipe")
     OUTPUT_IS_LIST = (False, True, True, False, True, False)
     FUNCTION = "doit"
-    CATEGORY = "Luna/Detailing"
+    CATEGORY = "Luna/Utilities"
 
     def __init__(self):
         self.engine = None

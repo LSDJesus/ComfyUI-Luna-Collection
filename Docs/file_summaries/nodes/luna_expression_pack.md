@@ -10,8 +10,8 @@ NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 os, pathlib (Path), typing (Tuple), torch, numpy, PIL (Image), folder_paths (optional)
 
 ## ComfyUI Node Configuration
-- LunaExpressionPromptBuilder: CATEGORY="Luna/Character", RETURN_TYPES=("STRING", "STRING"), FUNCTION="build_prompt"
-- LunaExpressionSlicerSaver: CATEGORY="Luna/Character", RETURN_TYPES=("IMAGE", "STRING", "STRING"), OUTPUT_IS_LIST=(True, True, False), FUNCTION="slice_and_save", OUTPUT_NODE=True
+- LunaExpressionPromptBuilder: CATEGORY="Luna", RETURN_TYPES=("STRING", "STRING"), FUNCTION="build_prompt"
+- LunaExpressionSlicerSaver: CATEGORY="Luna", RETURN_TYPES=("IMAGE", "STRING", "STRING"), OUTPUT_IS_LIST=(True, True, False), FUNCTION="slice_and_save", OUTPUT_NODE=True
 
 ## Input Schema
 - LunaExpressionPromptBuilder: character_description (STRING), expression (STRING), model_type (["illustrious", "flux", "sdxl"]), character_name (STRING, optional), additional_prompt (STRING, optional), negative_additions (STRING, optional)

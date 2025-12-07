@@ -10,7 +10,7 @@ NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 os, re, comfy.samplers, comfy.sd, comfy.utils, folder_paths, nodes
 
 ## ComfyUI Node Configuration
-- LunaConfigGateway: CATEGORY="Luna/Parameters", RETURN_TYPES=("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "INT", "INT", "INT", "INT", "INT", "FLOAT", "FLOAT", "INT", comfy.samplers.KSampler.SAMPLERS, comfy.samplers.KSampler.SCHEDULERS, "STRING", "STRING", "STRING", "LORA_STACK", "METADATA"), FUNCTION="process"
+- LunaConfigGateway: CATEGORY="Luna", RETURN_TYPES=("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT", "INT", "INT", "INT", "INT", "INT", "FLOAT", "FLOAT", "INT", comfy.samplers.KSampler.SAMPLERS, comfy.samplers.KSampler.SCHEDULERS, "STRING", "STRING", "STRING", "LORA_STACK", "METADATA"), FUNCTION="process"
 
 ## Input Schema
 - Required: model (MODEL), clip (CLIP), vae (VAE), width/height/batch_size (INT), seed/steps (INT), cfg/denoise (FLOAT), clip_skip (INT), clip_skip_timing (["before_lora", "after_lora"]), sampler/scheduler (from comfy.samplers)

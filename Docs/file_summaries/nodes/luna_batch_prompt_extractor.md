@@ -10,9 +10,9 @@ NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 os, json, re, PIL (Image, PngImagePlugin, ExifTags), typing (Tuple, Dict, List, Any, Optional), folder_paths (optional)
 
 ## ComfyUI Node Configuration
-- LunaBatchPromptExtractor: CATEGORY="Luna/Utils", RETURN_TYPES=("STRING", "INT", "INT"), FUNCTION="extract_metadata", OUTPUT_NODE=True
-- LunaBatchPromptLoader: CATEGORY="Luna/Utils", RETURN_TYPES=("STRING", "STRING", "LORA_STACK", "INT", "INT", "INT", "BOOLEAN", "INT", "INT"), FUNCTION="load_metadata"
-- LunaDimensionScaler: CATEGORY="Luna/Utils", RETURN_TYPES=("INT", "INT"), FUNCTION="scale_dimensions"
+- LunaBatchPromptExtractor: CATEGORY="Luna/Utilities", RETURN_TYPES=("STRING", "INT", "INT"), FUNCTION="extract_metadata", OUTPUT_NODE=True
+- LunaBatchPromptLoader: CATEGORY="Luna/Utilities", RETURN_TYPES=("STRING", "STRING", "LORA_STACK", "INT", "INT", "INT", "BOOLEAN", "INT", "INT"), FUNCTION="load_metadata"
+- LunaDimensionScaler: CATEGORY="Luna/Utilities", RETURN_TYPES=("INT", "INT"), FUNCTION="scale_dimensions"
 
 ## Input Schema
 - LunaBatchPromptExtractor: image_directory (STRING), output_file (STRING), save_to_input_dir (BOOLEAN), output_directory (STRING), overwrite (BOOLEAN), include_path (BOOLEAN)

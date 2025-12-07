@@ -27,26 +27,26 @@ Dynamic LoRA/embedding linking to wildcard categories with interactive connectio
 
 ## ComfyUI Node Configuration
 - **LunaConnectionMatcher**
-  - Category: `Luna/Connections`
+  - Category: `Luna/Wildcards`
   - Display Name: `Luna Connection Matcher`
   - Return Types: `(STRING, LORA_STACK, STRING)`
   - Return Names: `(lora_string, LORA_STACK, matched_info)`
   - Function: `match_connections`
 - **LunaConnectionEditor**
-  - Category: `Luna/Connections`
+  - Category: `Luna/Wildcards`
   - Display Name: `Luna Connection Editor`
   - Return Types: `(STRING, BOOLEAN)`
   - Return Names: `(status, success)`
   - Function: `edit_connection`
   - OUTPUT_NODE: `True`
 - **LunaSmartLoRALinker**
-  - Category: `Luna/Connections`
+  - Category: `Luna/Wildcards`
   - Display Name: `Luna Smart LoRA Linker`
   - Return Types: `(STRING, STRING, LORA_STACK, STRING, STRING)`
   - Return Names: `(enhanced_prompt, lora_string, LORA_STACK, detected_type, match_report)`
   - Function: `link_loras`
 - **LunaConnectionStats**
-  - Category: `Luna/Connections`
+  - Category: `Luna/Wildcards`
   - Display Name: `Luna Connection Stats`
   - Return Types: `(STRING,)`
   - Return Names: `(stats,)`

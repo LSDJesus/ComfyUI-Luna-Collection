@@ -36,7 +36,7 @@ class LunaBatchPromptExtractor:
     - InvokeAI, NovelAI, etc.
     """
     
-    CATEGORY = "Luna/Utils"
+    CATEGORY = "Luna/Utilities"
     RETURN_TYPES = ("STRING", "INT", "INT")
     RETURN_NAMES = ("status", "images_scanned", "images_extracted")
     FUNCTION = "extract_metadata"
@@ -674,7 +674,7 @@ class LunaBatchPromptLoader:
     - Outputs list_complete flag for model switching workflows
     """
     
-    CATEGORY = "Luna/Utils"
+    CATEGORY = "Luna/Utilities"
     RETURN_TYPES = ("STRING", "STRING", "LORA_STACK", "INT", "INT", "INT", "BOOLEAN", "INT", "INT")
     RETURN_NAMES = ("positive", "negative", "lora_stack", "seed", "current_index", "total_entries", "list_complete", "width", "height")
     FUNCTION = "load_metadata"
@@ -1010,7 +1010,7 @@ class LunaDimensionScaler:
     Output dimensions are rounded to the nearest multiple of 8 (required for latent space).
     """
     
-    CATEGORY = "Luna/Utils"
+    CATEGORY = "Luna/Utilities"
     RETURN_TYPES = ("INT", "INT")
     RETURN_NAMES = ("width", "height")
     FUNCTION = "scale_dimensions"

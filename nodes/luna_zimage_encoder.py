@@ -140,7 +140,7 @@ class LunaZImageEncoder:
     and conditioning noise injection into a single streamlined node.
     """
     
-    CATEGORY = "Luna/Z-IMAGE"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("CONDITIONING", "CONDITIONING", "STRING", "STRING")
     RETURN_NAMES = ("positive", "negative", "prompt_text", "status")
     FUNCTION = "encode"

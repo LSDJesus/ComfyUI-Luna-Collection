@@ -284,7 +284,7 @@ class LunaModelRouter:
     - mmproj auto-detection: Loads from same folder as Qwen3 model
     """
     
-    CATEGORY = "Luna/Core"
+    CATEGORY = "Luna"
     RETURN_TYPES = ("MODEL", "CLIP", "VAE", "LLM", "CLIP_VISION", "STRING", "STRING")
     RETURN_NAMES = ("model", "clip", "vae", "llm", "clip_vision", "model_name", "status")
     FUNCTION = "load"

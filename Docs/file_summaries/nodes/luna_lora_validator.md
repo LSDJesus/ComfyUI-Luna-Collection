@@ -10,7 +10,7 @@ NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 os, json, urllib.request/error/parse, ssl, time, typing (TYPE_CHECKING, Dict, List, Optional, Tuple, Any), folder_paths (optional)
 
 ## ComfyUI Node Configuration
-- LunaLoRAValidator: CATEGORY="Luna/Utils", RETURN_TYPES=("STRING", "STRING", "STRING", "INT", "INT"), FUNCTION="validate_loras", OUTPUT_NODE=True
+- LunaLoRAValidator: CATEGORY="Luna/Utilities", RETURN_TYPES=("STRING", "STRING", "STRING", "INT", "INT"), FUNCTION="validate_loras", OUTPUT_NODE=True
 
 ## Input Schema
 - json_file (from _get_json_files()), search_civitai (BOOLEAN), civitai_api_key (STRING)

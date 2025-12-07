@@ -23,7 +23,7 @@ Unified Z-IMAGE prompt input, AI enhancement, and conditioning encoder. Combines
 - `transformers` - Model loading and processing (optional)
 
 ## ComfyUI Node Configuration
-- **Category:** `Luna/Z-IMAGE`
+- **Category:** `Luna`
 - **Display Name:** `Luna Z-IMAGE Encoder 🌙`
 - **Return Types:** `(CONDITIONING, CONDITIONING, STRING, STRING)`
 - **Return Names:** `(positive, negative, prompt_text, status)`

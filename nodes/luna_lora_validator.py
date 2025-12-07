@@ -44,7 +44,7 @@ class LunaLoRAValidator:
     - Outputs formatted report with download links
     """
     
-    CATEGORY = "Luna/Utils"
+    CATEGORY = "Luna/Utilities"
     RETURN_TYPES = ("STRING", "STRING", "STRING", "INT", "INT")
     RETURN_NAMES = ("report", "missing_loras", "civitai_links", "found_count", "missing_count")
     FUNCTION = "validate_loras"
