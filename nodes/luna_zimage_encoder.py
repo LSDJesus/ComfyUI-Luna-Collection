@@ -265,7 +265,7 @@ class LunaZImageEncoder:
         
         # Handle seed
         if seed == -1:
-            seed = torch.randint(0, 0xffffffff, (1,)).item()
+            seed = int(torch.randint(0, 0xffffffff, (1,)).item())
         
         # =================================================================
         # STEP 1: AI Enhancement (if enabled)
