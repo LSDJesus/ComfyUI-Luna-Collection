@@ -79,34 +79,53 @@ except ImportError:
 # WEB API ENDPOINTS (for dynamic model list filtering)
 # =============================================================================
 
-if HAS_COMFY and PromptServer is not None:
-    @PromptServer.instance.routes.get("/luna/model_list/{source}")
-    async def get_model_list_by_source(request):
-        """Return list of models for a specific source folder."""
-        source = request.match_info.get("source", "checkpoints")
-        
-        valid_sources = ["checkpoints", "diffusion_models", "unet"]
-        if source not in valid_sources:
-            return web.json_response({"error": f"Invalid source: {source}"}, status=400)
-        
-        try:
-            models = folder_paths.get_filename_list(source)
-            return web.json_response({"source": source, "models": models})
-        except Exception as e:
-            return web.json_response({"error": str(e), "models": []})
+# Route handlers - registered lazily when PromptServer is available
+async def _get_model_list_by_source(request):
+    """Return list of models for a specific source folder."""
+    source = request.match_info.get("source", "checkpoints")
     
-    @PromptServer.instance.routes.get("/luna/clip_requirements/{model_type}")
-    async def get_clip_requirements(request):
-        """Return CLIP requirements for a model type."""
-        model_type = request.match_info.get("model_type", "SDXL")
-        
-        if model_type in CLIP_REQUIREMENTS:
-            return web.json_response({
-                "model_type": model_type,
-                "requirements": CLIP_REQUIREMENTS[model_type]
-            })
-        else:
-            return web.json_response({"error": f"Unknown model type: {model_type}"}, status=400)
+    valid_sources = ["checkpoints", "diffusion_models", "unet"]
+    if source not in valid_sources:
+        return web.json_response({"error": f"Invalid source: {source}"}, status=400)
+    
+    try:
+        models = folder_paths.get_filename_list(source)
+        return web.json_response({"source": source, "models": models})
+    except Exception as e:
+        return web.json_response({"error": str(e), "models": []})
+
+async def _get_clip_requirements(request):
+    """Return CLIP requirements for a model type."""
+    model_type = request.match_info.get("model_type", "SDXL")
+    
+    if model_type in CLIP_REQUIREMENTS:
+        return web.json_response({
+            "model_type": model_type,
+            "requirements": CLIP_REQUIREMENTS[model_type]
+        })
+    else:
+        return web.json_response({"error": f"Unknown model type: {model_type}"}, status=400)
+
+
+def register_routes():
+    """Register web routes - called after PromptServer is initialized."""
+    if HAS_COMFY and PromptServer is not None:
+        try:
+            server = PromptServer.instance
+            if server is not None:
+                server.routes.get("/luna/model_list/{source}")(_get_model_list_by_source)
+                server.routes.get("/luna/clip_requirements/{model_type}")(_get_clip_requirements)
+                print("[LunaModelRouter] Web routes registered")
+        except Exception as e:
+            print(f"[LunaModelRouter] Failed to register routes: {e}")
+
+
+# Try to register routes now (may work if loaded after server init)
+# Also exported for __init__.py to call after full init
+try:
+    register_routes()
+except:
+    pass  # Will be called later by __init__.py
 
 # GGUF support
 try:

@@ -77,15 +77,31 @@ def apply_film_grain(
     
     return images
 
-# SeedVR2 wrapper
-from .seedvr2_wrapper import (
-    SEEDVR2_AVAILABLE,
-    LunaSeedVR2Pipeline,
-    UpscaleConfig,
-    tile_image,
-    untile_image,
-    batch_tiles
-)
+# SeedVR2 wrapper - try relative import first, then absolute
+try:
+    from .seedvr2_wrapper import (
+        SEEDVR2_AVAILABLE,
+        LunaSeedVR2Pipeline,
+        UpscaleConfig,
+        tile_image,
+        untile_image,
+        batch_tiles
+    )
+except ImportError:
+    # Fallback for when loaded directly or from different context
+    import sys
+    import os
+    _current_dir = os.path.dirname(os.path.abspath(__file__))
+    if _current_dir not in sys.path:
+        sys.path.insert(0, _current_dir)
+    from seedvr2_wrapper import (
+        SEEDVR2_AVAILABLE,
+        LunaSeedVR2Pipeline,
+        UpscaleConfig,
+        tile_image,
+        untile_image,
+        batch_tiles
+    )
 
 
 class LunaSuperUpscaler:

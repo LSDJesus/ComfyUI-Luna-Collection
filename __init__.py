@@ -24,6 +24,13 @@ def setup_nodes():
         print("lunaCore: No 'nodes' directory found. Skipping node loading.")
         return
 
+    # Add all subdirectories to sys.path for imports
+    # This allows modules in subdirs to import siblings (e.g., seedvr2_wrapper)
+    for subdir in os.listdir(nodes_root_dir):
+        subdir_path = os.path.join(nodes_root_dir, subdir)
+        if os.path.isdir(subdir_path) and subdir_path not in sys.path:
+            sys.path.insert(0, subdir_path)
+
     # The new, All-Seeing Eye: os.walk()
     # This will traverse the entire directory tree, including subdirectories.
     for root, dirs, files in os.walk(nodes_root_dir):
@@ -87,6 +94,13 @@ def register_api_routes():
         from nodes.luna_wildcard_connections import register_routes as register_wildcard_routes
         if callable(register_wildcard_routes):
             register_wildcard_routes()
+    except (ImportError, AttributeError):
+        pass
+    
+    try:
+        from nodes.luna_model_router import register_routes as register_model_router_routes
+        if callable(register_model_router_routes):
+            register_model_router_routes()
     except (ImportError, AttributeError):
         pass
 
