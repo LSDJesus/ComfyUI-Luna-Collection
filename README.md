@@ -1,32 +1,37 @@
 # 🌙 ComfyUI Luna Collection
 
-![Version](https://img.shields.io/badge/version-v1.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.5.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 
 **A production-grade ComfyUI infrastructure for advanced model management, multi-instance VRAM sharing, and workflow automation.**
 
-Luna Collection is a vertically integrated image generation stack designed for high-throughput workflows. It provides smart model loading with automatic precision conversion, multi-GPU daemon architecture for shared VAE/CLIP, hierarchical YAML wildcards, comprehensive prompt engineering tools, and deep integration with external tools like LUNA-DiffusionToolkit (a Diffusion Toolkit Fork).
+Luna Collection is a vertically integrated image generation stack designed for high-throughput workflows. It provides smart model loading with automatic precision conversion, unified model routing for all architectures (SD1.5/SDXL/Flux/SD3/Z-IMAGE), multi-GPU daemon architecture for shared VAE/CLIP, hierarchical YAML wildcards, comprehensive prompt engineering tools, and deep integration with external tools like LUNA-DiffusionToolkit (a Diffusion Toolkit Fork).
 
 ---
 
 ## ✨ Features
 
 ### 🔧 **Core Infrastructure**
+- **Luna Model Router**: Unified model loader for all architectures with explicit CLIP configuration
 - **Luna Daemon v1.3**: Multi-instance VRAM sharing with split CLIP/VAE architecture
 - **Dynamic Model Loader**: JIT precision conversion with smart lazy evaluation
+- **Secondary Model Loader**: Multi-model workflows with RAM offloading and CLIP sharing
 - **CUDA IPC**: Zero-copy tensor transfer for same-GPU VAE operations
 - **F-150 LoRA Support**: Transient LoRA injection for shared CLIP models
 - **Connections Manager**: Sidebar UI for LoRA/embedding wildcard linking
 
 ### 📦 **Model Management**
+- **Unified Model Router**: Single node supporting SD1.5, SDXL, Flux, SD3, Z-IMAGE with vision variants
 - **Smart Precision Loading**: bf16, fp8, GGUF Q8_0/Q4_K_M with automatic conversion
 - **Hybrid Checkpoint Loading**: CLIP/VAE from source + optimized UNet from NVMe
-- **Checkpoint Tunnel**: Separate MODEL routing from CLIP/VAE for daemon integration
+- **Multi-Model Workflows**: Secondary model loader with CLIP sharing and RAM offloading
 - **GGUF Converter**: Convert any checkpoint to quantized GGUF format
 
 ### 🎲 **Prompt Engineering**
+- **Z-IMAGE Encoder**: Unified prompt input with AI enhancement, vision, and conditioning noise injection
 - **YAML Wildcards**: Hierarchical templates with nested path resolution
+- **VLM Prompt Generator**: Vision-language model integration for image-guided prompting
 - **PromptCraft Engine**: Constraint/modifier/expander system with LoRA linking
 - **Prompt List Loader**: CSV/JSON/YAML import with pos/neg/seed/lora_stack outputs
 - **Batch Prompt Extractor**: Extract prompts from image EXIF (UTF-16BE support)
@@ -34,8 +39,9 @@ Luna Collection is a vertically integrated image generation stack designed for h
 - **Trigger Injector**: Auto-inject LoRA trigger words into prompts
 
 ### 🖼️ **Image Processing**
+- **Vision Node**: Image-to-embedding for vision-enabled model workflows
 - **Advanced Upscaling**: Model-based, tile-based, and multi-stage upscaling
-- **Ultimate SD Upscale (TensorRT adaptation deprecated)**: Diffusion-enhanced upscaling with seam fixing
+- **Ultimate SD Upscale**: Diffusion-enhanced upscaling with seam fixing
 - **Multi-Image Saver**: Batch output with naming templates and EXIF embedding
 
 ### 🔗 **External Integrations**
@@ -68,12 +74,20 @@ Luna Collection is a vertically integrated image generation stack designed for h
                               MODEL MANAGEMENT LAYER
 ═══════════════════════════════════════════════════════════════════════════════════
 ┌────────────────────────────┐  ┌────────────────────────────┐  ┌─────────────────┐
-│  Luna Dynamic Loader       │  │  Luna Checkpoint Tunnel    │  │  GGUF Converter │
-│  ├── Smart lazy eval       │  │  ├── Pass-through MODEL    │  │  ├── Q8_0       │
-│  ├── JIT UNet conversion   │  │  └── Separate CLIP/VAE     │  │  ├── Q4_K_M     │
-│  ├── bf16/fp8/Q8_0/Q4_K_M  │  │      routing               │  │  └── Q4_0       │
-│  └── HDD source→NVMe opt   │  └────────────────────────────┘  └─────────────────┘
+│  Luna Model Router ⚡      │  │  Luna Secondary Loader 🔄  │  │  GGUF Converter │
+│  ├── All architectures     │  │  ├── Multi-model workflows │  │  ├── Q8_0       │
+│  ├── SD1.5/SDXL/Flux/SD3   │  │  ├── CLIP sharing logic   │  │  ├── Q4_K_M     │
+│  ├── Z-IMAGE + Vision      │  │  ├── RAM offload/restore  │  │  └── Q4_0       │
+│  ├── Explicit CLIP config  │  │  └── Model Restore node   │  └─────────────────┘
+│  └── LLM + CLIP_VISION out │  └────────────────────────────┘
 └────────────────────────────┘
+┌────────────────────────────┐  ┌────────────────────────────┐
+│  Luna Dynamic Loader       │  │  Luna Z-IMAGE Encoder      │
+│  ├── Smart lazy eval       │  │  ├── AI prompt enhancement │
+│  ├── JIT UNet conversion   │  │  ├── Vision-guided prompts │
+│  ├── bf16/fp8/Q8_0/Q4_K_M  │  │  ├── Noise injection       │
+│  └── HDD source→NVMe opt   │  │  └── Qwen3-VL integration  │
+└────────────────────────────┘  └────────────────────────────┘
 
 ═══════════════════════════════════════════════════════════════════════════════════
                               PROMPT ENGINEERING LAYER
@@ -153,25 +167,62 @@ The daemon allows multiple ComfyUI instances to share VAE/CLIP models loaded on 
 **Starting the Daemon:**
 ```bash
 # Full daemon (CLIP + VAE on one GPU)
-python luna_daemon/server_v2.py
+python luna_daemon/server.py
 
 # Split mode - CLIP on cuda:1
-python luna_daemon/server_v2.py --service-type clip --device cuda:1 --port 19283
+python luna_daemon/server.py --service-type clip --device cuda:1 --port 19283
 
 # Split mode - VAE on cuda:0 with IPC
-python luna_daemon/server_v2.py --service-type vae --device cuda:0 --port 19284
+python luna_daemon/server.py --service-type vae --device cuda:0 --port 19284
 ```
 
 ### 📦 **Model Management**
 
 | Node | Description |
 |------|-------------|
+| **Luna Model Router ⚡** | Unified loader for all architectures (SD1.5/SDXL/Flux/SD3/Z-IMAGE) with explicit CLIP config |
+| **Luna Secondary Model Loader 🔄** | Multi-model workflows with CLIP sharing and RAM offloading |
+| **Luna Model Restore 📤** | Restore models offloaded to RAM back to VRAM |
 | **Luna Dynamic Model Loader** | Smart checkpoint loading with JIT precision conversion |
 | **Luna Checkpoint Tunnel** | Pass MODEL through, route CLIP/VAE to daemon |
 | **Luna GGUF Converter** | Convert checkpoints to quantized GGUF format |
 | **Luna Optimized Weights Manager** | Manage local optimized UNet files |
 
-**Luna Dynamic Model Loader** - The centerpiece of model management:
+**Luna Model Router** - The unified model loader:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Luna Model Router ⚡                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  MODEL SOURCE:     [checkpoints ▼] [diffusion_models ▼] [unet (gguf) ▼]    │
+│  MODEL NAME:       [ponyDiffusionV6XL.safetensors ▼]                       │
+│  MODEL TYPE:       [SD1.5] [SDXL] [SDXL+Vision] [Flux] [Flux+Vision] [SD3] [Z-IMAGE] │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  DYNAMIC LOADER:   [✓ Enable] → [fp8_e4m3fn ▼] [gguf_Q8_0 ▼]               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  CLIP 1:          [clip_l.safetensors ▼]     ← Required for all           │
+│  CLIP 2:          [clip_g.safetensors ▼]     ← SDXL, SD3                   │
+│  CLIP 3:          [t5xxl_fp16.safetensors ▼] ← Flux, SD3                   │
+│  CLIP 4:          [siglip_vision.safetensors ▼] ← Vision models            │
+│                                                                             │
+│  Z-IMAGE: clip_1 = Full Qwen3-VL model (hidden state extraction)           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  OUTPUTS: MODEL, CLIP, VAE, LLM, CLIP_VISION, model_name, status           │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**CLIP Requirements by Model Type:**
+| Model Type | clip_1 | clip_2 | clip_3 | clip_4 |
+|------------|--------|--------|--------|--------|
+| SD1.5 | CLIP-L | - | - | - |
+| SDXL | CLIP-L | CLIP-G | - | - |
+| SDXL + Vision | CLIP-L | CLIP-G | - | SigLIP/CLIP-H |
+| Flux | CLIP-L | - | T5-XXL | - |
+| Flux + Vision | CLIP-L | - | T5-XXL | SigLIP |
+| SD3 | CLIP-L | CLIP-G | T5-XXL | - |
+| Z-IMAGE | Full Qwen3-VL | - | - | (auto mmproj) |
+
+**Luna Dynamic Model Loader** - The smart precision loader:
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -250,11 +301,40 @@ features:
 
 | Node | Description |
 |------|-------------|
+| **Luna Z-IMAGE Encoder 🧠** | AI-enhanced encoding with Qwen3-VL, vision modes, noise injection |
+| **Luna Vision Node 👁️** | Describe/extract style from reference images |
+| **Luna VLM Prompt Generator 💬** | Generate prompts from images using vision LLM |
 | **Luna Prompt List Loader** | Load prompts from CSV/JSON/YAML files |
 | **Luna Batch Prompt Extractor** | Extract prompts from image EXIF metadata |
 | **Luna Config Gateway** | Centralized workflow parameters |
 | **Luna Trigger Injector** | Auto-inject LoRA trigger words |
 | **Luna Expression Pack** | Logic and math expressions for workflows |
+
+**Luna Z-IMAGE Encoder** - Unified prompt processing for Z-IMAGE models:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Luna Z-IMAGE Encoder 🧠                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  PROMPT:        "anime girl, detailed, colorful"                           │
+│  AI ENHANCEMENT: [off] [subtle] [moderate] [maximum]                       │
+│                                                                             │
+│  VISION MODE:   [disabled] [describe] [extract_style] [blend]              │
+│  IMAGE INPUT:   [optional reference image]                                 │
+│                                                                             │
+│  NOISE INJECTION: [✓ Enable] strength: 0.02  schedule: start_percent: 0.3  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  OUTPUTS: CONDITIONING (with style/noise), enhanced_prompt                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Vision Modes:**
+| Mode | Description | Best For |
+|------|-------------|----------|
+| `disabled` | Text-only encoding | Pure text2img |
+| `describe` | VLM describes image → expands prompt | Character/scene reference |
+| `extract_style` | Extract artistic style → inject as suffix | Style transfer |
+| `blend` | Fuse text + image embeddings (0.0-1.0) | Image variations |
 
 **Luna Prompt List Loader** outputs:
 - `positive` - Positive prompt string
@@ -419,18 +499,25 @@ Result: 13 VAE operations per iteration with zero serialization overhead.
 ```
 ComfyUI-Luna-Collection/
 ├── nodes/                          # Node implementations
+│   ├── loaders/                    # Model loading nodes
+│   │   ├── luna_model_router.py    # Unified multi-architecture loader
+│   │   ├── luna_secondary_loader.py # Multi-model + RAM offload
+│   │   ├── luna_dynamic_loader.py  # JIT precision conversion
+│   │   └── luna_checkpoint_tunnel.py
 │   ├── promptcraft/                # Prompt engineering nodes
 │   │   ├── engine.py               # YAML parser engine
 │   │   └── nodes.py                # Wildcard nodes
 │   ├── upscaling/                  # Upscaler nodes
-│   ├── luna_dynamic_loader.py      # Smart precision loader
+│   ├── luna_zimage_encoder.py      # Z-IMAGE AI encoder + vision
+│   ├── luna_vision_node.py         # VLM-based image analysis
+│   ├── luna_vlm_prompt_generator.py # Vision → prompt
 │   ├── luna_yaml_wildcard.py       # YAML wildcard system
 │   ├── luna_batch_prompt_extractor.py
 │   ├── luna_config_gateway.py
 │   ├── luna_multi_saver.py
 │   └── ...
 ├── luna_daemon/                    # Multi-instance daemon
-│   ├── server_v2.py                # v1.3 daemon server
+│   ├── server.py                   # Daemon server (dynamic scaling)
 │   ├── client.py                   # Client library
 │   ├── proxy.py                    # DaemonVAE/DaemonCLIP proxies
 │   └── config.py                   # Configuration
@@ -482,7 +569,18 @@ Override with the `local_weights_dir` input.
 
 ## 📈 Changelog
 
-### v1.4.0 - Current (2025-12)
+### v1.5.0 - Current (2025-06)
+- ✅ **Luna Model Router**: Unified loader for ALL architectures (SD1.5/SDXL/Flux/SD3/Z-IMAGE) with explicit 4-slot CLIP configuration
+- ✅ **Luna Secondary Model Loader**: Multi-model workflows with CLIP sharing and RAM offloading via ModelMemoryManager
+- ✅ **Luna Model Restore**: Companion node to restore RAM-offloaded models back to VRAM
+- ✅ **Luna Z-IMAGE Encoder**: AI-enhanced prompt encoding with Qwen3-VL, vision modes (describe/extract_style/blend), built-in noise injection
+- ✅ **Luna Vision Node**: Describe images or extract artistic style using VLM
+- ✅ **Luna VLM Prompt Generator**: Generate prompts from reference images
+- ✅ **Auto-Discovery Node Registration**: `os.walk()` based node discovery from subdirectories
+- ✅ **LLM Output Support**: Model Router outputs LLM for Z-IMAGE (Qwen3-VL) workflows
+- ✅ **CLIP_VISION Output**: Direct CLIP vision model output for vision-enabled architectures
+
+### v1.4.0 (2025-12)
 - ✅ **Connections Manager Sidebar**: LoRA/embedding ↔ wildcard category linking UI
 - ✅ **PromptCraft Engine**: Intelligent prompt generation with constraints/modifiers/expanders
 - ✅ **DynamicPrompt API Update**: Fixed compatibility with latest ComfyUI graph API

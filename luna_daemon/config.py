@@ -69,7 +69,20 @@ CLIENT_TIMEOUT = 120
 # Maximum concurrent requests (legacy, for thread pool)
 MAX_WORKERS = 8
 
-# Model precision: "bf16", "fp16", or "fp32"
+# Model precision settings
+# Options: "bf16", "fp16", "fp32"
+#
+# bf16: Recommended - same range as fp32, native on Ampere+, no overflow risk
+# fp16: Legacy - higher precision but limited range, NaN risk in VAE
+# fp32: Maximum precision, 2x VRAM usage, rarely needed
+#
+# Note: VAE is more sensitive to precision than CLIP due to exp/sigmoid ops.
+# bf16 eliminates fp16 NaN issues while using same VRAM. No visible quality loss.
+
+CLIP_PRECISION = "bf16"   # CLIP text encoder precision
+VAE_PRECISION = "bf16"    # VAE encoder/decoder precision
+
+# Legacy setting (used if CLIP/VAE precision not set)
 MODEL_PRECISION = "bf16"
 
 # Dynamic scaling configuration

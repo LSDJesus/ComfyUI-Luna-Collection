@@ -462,6 +462,26 @@ class DaemonClient:
             "weights": cpu_weights
         })
     
+    def register_lora(self, lora_name: str, clip_strength: float = 1.0) -> dict:
+        """
+        Register a LoRA by name for daemon disk loading.
+        
+        The daemon loads the LoRA from disk using folder_paths, extracts
+        CLIP weights, and caches them. This avoids socket serialization.
+        
+        Args:
+            lora_name: LoRA filename (e.g., "my_lora.safetensors")
+            clip_strength: CLIP weight strength
+        
+        Returns:
+            Dict with: hash (content hash for lora_stack), success, size_mb
+        """
+        return self._send_request({
+            "cmd": "register_lora",
+            "lora_name": lora_name,
+            "clip_strength": clip_strength
+        })
+    
     def get_lora_stats(self) -> dict:
         """Get statistics about cached LoRAs in daemon."""
         return self._send_request({"cmd": "lora_stats"})
@@ -642,6 +662,11 @@ def has_lora(lora_hash: str) -> bool:
 def upload_lora(lora_hash: str, weights: Dict[str, torch.Tensor]) -> dict:
     """Upload LoRA weights to daemon"""
     return get_client().upload_lora(lora_hash, weights)
+
+
+def register_lora(lora_name: str, clip_strength: float = 1.0) -> dict:
+    """Register LoRA by name for daemon disk loading"""
+    return get_client().register_lora(lora_name, clip_strength)
 
 
 def get_lora_stats() -> dict:

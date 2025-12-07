@@ -7,6 +7,12 @@ import folder_paths
 import nodes
 
 
+def is_daemon_clip(clip) -> bool:
+    """Check if clip is a DaemonCLIP proxy (routes to Luna Daemon)."""
+    # Check class name - DaemonCLIP is from luna_daemon.proxy
+    return type(clip).__name__ == "DaemonCLIP"
+
+
 class LunaConfigGateway:
     """
     Central configuration gateway for image generation workflows.
@@ -127,23 +133,58 @@ class LunaConfigGateway:
         return None
 
     def load_loras(self, model, clip, lora_stack: list) -> tuple:
-        """Load and apply LoRAs to model and clip."""
+        """
+        Load and apply LoRAs to model and clip.
+        
+        For standard CLIP: Uses comfy.sd.load_lora_for_models (socket serialization)
+        For DaemonCLIP: Uses add_lora_by_name (daemon loads from disk directly)
+        """
         if not lora_stack:
             return model, clip
+        
+        # Check if using DaemonCLIP (Luna Daemon handles CLIP)
+        use_daemon_clip = is_daemon_clip(clip)
+        
+        if use_daemon_clip:
+            print("[LunaConfigGateway] DaemonCLIP detected - using disk-based LoRA loading")
         
         for lora_name, model_weight, clip_weight in lora_stack:
             lora_file = self.find_lora_file(lora_name)
             if lora_file is None:
-                print(f"[LunaLoadParameters] Warning: LoRA '{lora_name}' not found, skipping")
+                print(f"[LunaConfigGateway] Warning: LoRA '{lora_name}' not found, skipping")
                 continue
             
             try:
-                lora_path = folder_paths.get_full_path("loras", lora_file)
-                lora = comfy.sd.load_lora_for_models(model, clip, comfy.utils.load_torch_file(lora_path), model_weight, clip_weight)
-                model, clip = lora[0], lora[1]
-                print(f"[LunaLoadParameters] Loaded LoRA: {lora_file} (model={model_weight}, clip={clip_weight})")
+                if use_daemon_clip:
+                    # DaemonCLIP: Tell daemon to load LoRA from disk
+                    # The daemon extracts CLIP weights and caches them
+                    clip = clip.add_lora_by_name(lora_file, model_weight, clip_weight)
+                    
+                    # For model, still need to load UNet weights directly
+                    # (DaemonCLIP only handles CLIP, model is local)
+                    lora_path = folder_paths.get_full_path("loras", lora_file)
+                    lora_data = comfy.utils.load_torch_file(lora_path)
+                    # Filter to only UNet/model weights (not CLIP)
+                    model_weights = {k: v for k, v in lora_data.items() 
+                                    if not any(p in k.lower() for p in 
+                                              ['clip_l', 'clip_g', 'te1', 'te2', 'text_encoder', 'lora_te'])}
+                    if model_weights:
+                        model, _ = comfy.sd.load_lora_for_models(
+                            model, None, model_weights, model_weight, 0.0
+                        )
+                    print(f"[LunaConfigGateway] LoRA '{lora_file}' - CLIP via daemon, UNet applied locally")
+                else:
+                    # Standard CLIP: Load normally
+                    lora_path = folder_paths.get_full_path("loras", lora_file)
+                    lora = comfy.sd.load_lora_for_models(
+                        model, clip, comfy.utils.load_torch_file(lora_path), 
+                        model_weight, clip_weight
+                    )
+                    model, clip = lora[0], lora[1]
+                    print(f"[LunaConfigGateway] Loaded LoRA: {lora_file} (model={model_weight}, clip={clip_weight})")
+                    
             except Exception as e:
-                print(f"[LunaLoadParameters] Error loading LoRA '{lora_name}': {e}")
+                print(f"[LunaConfigGateway] Error loading LoRA '{lora_name}': {e}")
         
         return model, clip
 

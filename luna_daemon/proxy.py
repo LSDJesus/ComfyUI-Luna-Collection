@@ -698,6 +698,61 @@ class DaemonCLIP:
         
         return new_clip
     
+    def add_lora_by_name(
+        self, 
+        lora_name: str, 
+        model_strength: float = 1.0, 
+        clip_strength: float = 1.0
+    ) -> "DaemonCLIP":
+        """
+        Add LoRA by filename - daemon loads from disk (no socket serialization).
+        
+        This is the preferred method for Config Gateway workflows. The daemon
+        loads the LoRA directly from disk using folder_paths, extracts CLIP
+        weights, and caches them.
+        
+        Args:
+            lora_name: LoRA filename (e.g., "my_lora.safetensors")
+            model_strength: UNet strength (stored for reference, applied by model)
+            clip_strength: CLIP strength for text encoder
+        
+        Returns:
+            New DaemonCLIP instance with LoRA added to stack
+        """
+        try:
+            # Tell daemon to load LoRA from disk
+            result = daemon_client.register_lora(lora_name, clip_strength)
+            
+            if not result.get("success"):
+                error = result.get("error", "Unknown error")
+                print(f"[DaemonCLIP] Failed to register LoRA '{lora_name}': {error}")
+                return self.clone()
+            
+            lora_hash = result.get("hash")
+            if not lora_hash:
+                print(f"[DaemonCLIP] No hash returned for LoRA '{lora_name}'")
+                return self.clone()
+            
+            # Clone self and add to lora_stack
+            new_clip = self.clone()
+            new_clip.lora_stack.append({
+                "hash": lora_hash,
+                "strength": clip_strength,
+                "name": lora_name  # Keep name for debugging
+            })
+            
+            print(f"[DaemonCLIP] Added LoRA '{lora_name}' (hash={lora_hash[:12]}..., "
+                  f"clip_str={clip_strength:.2f}), stack size: {len(new_clip.lora_stack)}")
+            
+            return new_clip
+            
+        except DaemonConnectionError as e:
+            print(f"[DaemonCLIP] Warning: Could not register LoRA with daemon: {e}")
+            return self.clone()
+        except Exception as e:
+            print(f"[DaemonCLIP] Error adding LoRA by name: {e}")
+            return self.clone()
+    
     def _extract_clip_patches(self, patches: Dict) -> Dict[str, torch.Tensor]:
         """
         Extract CLIP-specific patches from LoRA patch dict.

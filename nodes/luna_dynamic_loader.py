@@ -258,11 +258,16 @@ class LunaDynamicModelLoader:
     FUNCTION = "load_smart"
     
     # Precision options with hardware notes
+    # bf16: Best default - fp32 range, native on Ampere+, stable gradients
+    # fp16: Slightly more precision but limited range, legacy compat
+    # fp8: 75% VRAM reduction, Ada/Blackwell native
+    # GGUF: Integer quantization, GPU-specific tensor core optimization
     PRECISION_OPTIONS = [
-        "bf16 (universal, fast)",
-        "fp8_e4m3fn (Ada/Blackwell native)",
-        "gguf_Q8_0 (Ampere INT8 native)",
-        "gguf_Q4_K_M (Blackwell INT4 native)",
+        "bf16 (recommended, fp32 range)",
+        "fp16 (legacy, more precision)",
+        "fp8_e4m3fn (Ada/Blackwell, 75% smaller)",
+        "gguf_Q8_0 (Ampere INT8 tensor cores)",
+        "gguf_Q4_K_M (Blackwell INT4 tensor cores)",
     ]
     
     @classmethod

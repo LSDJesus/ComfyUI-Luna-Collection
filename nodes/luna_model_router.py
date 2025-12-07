@@ -245,7 +245,12 @@ class LunaModelRouter:
     MODEL_TYPES = ["SD1.5", "SDXL", "SDXL + Vision", "Flux", "Flux + Vision", "SD3", "Z-IMAGE"]
     
     # Precision options for dynamic loading
-    PRECISION_OPTIONS = ["None", "fp8_e4m3fn", "gguf_Q8_0", "gguf_Q4_K_M"]
+    # None: Use source precision as-is
+    # bf16: Recommended default - fp32 range, native on Ampere+, stable
+    # fp16: Legacy - slightly more precision but limited range
+    # fp8: 75% VRAM reduction, native on Ada/Blackwell
+    # GGUF: Integer quantization using GPU tensor cores
+    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "gguf_Q8_0", "gguf_Q4_K_M"]
     
     # Daemon routing modes
     DAEMON_MODES = ["auto", "force_daemon", "force_local"]

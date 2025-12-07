@@ -427,8 +427,7 @@ The following were removed as they belong in Luna Narrates, not ComfyUI:
 
 | File | Purpose |
 |------|---------|
-| `luna_daemon/server.py` | Static daemon (v1) |
-| `luna_daemon/server_v2.py` | Dynamic scaling daemon with WebSocket |
+| `luna_daemon/server.py` | Dynamic scaling daemon with WebSocket |
 | `luna_daemon/client.py` | Client library for nodes |
 | `luna_daemon/config.py` | Configuration |
 | `nodes/loaders/luna_shared_*.py` | Daemon-connected nodes |

@@ -11,6 +11,9 @@ A comprehensive reference for all nodes in the Luna Collection.
    - [LunaPromptCraft](#lunapromptcraft)
    - [LunaWildcardConnections](#lunawildcardconnections)
    - [LunaTriggerInjector](#lunatriggerinjector)
+   - [LunaZImageEncoder](#lunazimageencoder)
+   - [LunaVisionNode](#lunavisionnode)
+   - [LunaVLMPromptGenerator](#lunavlmpromptgenerator)
 2. [Batch Processing](#batch-processing)
    - [LunaBatchPromptExtractor](#lunabatchpromptextractor)
    - [LunaBatchPromptLoader](#lunabatchpromptloader)
@@ -26,11 +29,15 @@ A comprehensive reference for all nodes in the Luna Collection.
 5. [Image Saving](#image-saving)
    - [LunaMultiSaver](#lunamultisaver)
 6. [Model Management & Daemon](#model-management--daemon)
+   - [LunaModelRouter](#lunamodelrouter)
+   - [LunaSecondaryModelLoader](#lunasecondarymodelloader)
+   - [LunaModelRestore](#lunamodelrestore)
    - [LunaDynamicModelLoader](#lunadynamicmodelloader)
    - [LunaDaemonVAELoader](#lunadaemonvaeloader)
    - [LunaDaemonCLIPLoader](#lunadaemoncliploader)
    - [LunaCheckpointTunnel](#lunacheckpointtunnel)
    - [LunaGGUFConverter](#lunaggufconverter)
+   - [LunaOptimizedWeightsManager](#lunaoptimizedweightsmanager)
    - [Luna Daemon API](#luna-daemon-api)
 7. [Civitai Integration](#civitai-integration)
    - [LunaCivitaiScraper](#lunacivitaiscraper)
@@ -179,6 +186,128 @@ Parses incoming LoRA stack, looks up trigger words from metadata (Civitai or emb
 
 #### Why It Exists
 Many LoRAs require specific trigger words. This node eliminates forgetting triggers and keeps prompts clean while ensuring LoRAs activate properly.
+
+---
+
+### LunaZImageEncoder
+**Category:** `Luna/Encoding`  
+**Purpose:** AI-enhanced prompt encoding for Z-IMAGE models with vision modes and noise injection.
+
+#### What It Does
+The unified prompt processing node for Z-IMAGE workflows. Combines multiple capabilities:
+- **AI Enhancement**: Uses Qwen3-VL to enhance and expand prompts
+- **Vision Modes**: Describe images, extract styles, or blend text+image
+- **Noise Injection**: Built-in conditioning noise for better diversity
+
+#### Architecture
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Luna Z-IMAGE Encoder 🧠                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  INPUT:          LLM (Qwen3-VL from Model Router)                          │
+│  PROMPT:         "anime girl, detailed, colorful"                          │
+│  AI ENHANCEMENT: [off] [subtle] [moderate] [maximum]                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  VISION MODE:    [disabled] [describe] [extract_style] [blend]             │
+│  BLEND WEIGHT:   0.5 (for blend mode only)                                 │
+│  IMAGE INPUT:    [optional reference image]                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  NOISE INJECTION: [✓ Enable]                                               │
+│    strength: 0.02    start_percent: 0.0    end_percent: 0.3               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| llm | LLM | Qwen3-VL from Luna Model Router |
+| positive | STRING | Base positive prompt |
+| negative | STRING | Negative prompt |
+| ai_enhancement | COMBO | off/subtle/moderate/maximum |
+| vision_mode | COMBO | disabled/describe/extract_style/blend |
+| image | IMAGE | Optional reference image (for vision modes) |
+| blend_weight | FLOAT | Image/text blend ratio (0.0-1.0) |
+| inject_noise | BOOLEAN | Enable conditioning noise |
+| noise_strength | FLOAT | Noise intensity (0.0-0.1) |
+| noise_start | FLOAT | Start injection percent |
+| noise_end | FLOAT | End injection percent |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| CONDITIONING+ | CONDITIONING | Enhanced positive conditioning with noise |
+| CONDITIONING- | CONDITIONING | Negative conditioning |
+| enhanced_prompt | STRING | AI-enhanced prompt text |
+
+#### Vision Modes
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `disabled` | Text-only encoding | Standard text2img |
+| `describe` | VLM describes image → expands prompt | Character/scene reference |
+| `extract_style` | Extract artistic style as suffix | Style transfer |
+| `blend` | Fuse text + image embeddings | Image variations |
+
+#### AI Enhancement Levels
+| Level | Description |
+|-------|-------------|
+| `off` | Use prompt as-is |
+| `subtle` | Minor detail expansion |
+| `moderate` | Add composition, lighting, style hints |
+| `maximum` | Full artistic expansion with rich details |
+
+#### Why It Exists
+Z-IMAGE models use Qwen3-VL as their text encoder. This node provides the full encoding pipeline: AI-enhanced prompts, vision-aware conditioning, and the noise injection technique that improves generation diversity.
+
+---
+
+### LunaVisionNode
+**Category:** `Luna/Vision`  
+**Purpose:** Describe images or extract artistic style using vision LLM.
+
+#### What It Does
+Analyzes images using Qwen3-VL vision capabilities to generate descriptions or extract style information.
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| llm | LLM | Qwen3-VL from Luna Model Router |
+| image | IMAGE | Reference image to analyze |
+| mode | COMBO | describe/extract_style |
+| max_tokens | INT | Maximum response length |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| description | STRING | Image description or style extraction |
+
+#### Why It Exists
+Provides standalone image analysis for workflows that need VLM capabilities without full encoding pipeline.
+
+---
+
+### LunaVLMPromptGenerator
+**Category:** `Luna/Vision`  
+**Purpose:** Generate generation prompts from reference images.
+
+#### What It Does
+Takes a reference image and generates a complete prompt suitable for recreating similar images. Uses structured output to ensure proper prompt formatting.
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| llm | LLM | Qwen3-VL from Luna Model Router |
+| image | IMAGE | Reference image |
+| style_hint | STRING | Optional style guidance |
+| detail_level | COMBO | minimal/balanced/detailed |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| prompt | STRING | Generated prompt for image recreation |
+| style_tags | STRING | Extracted style tags |
+
+#### Why It Exists
+Useful for creating training prompts, recreating styles from reference images, or generating variations of existing artwork.
 
 ---
 
@@ -603,6 +732,189 @@ Expression sheet workflows need post-processing. This automates the tedious slic
 
 ## Model Management & Daemon
 
+### LunaModelRouter
+**Category:** `Luna/Loaders`  
+**Purpose:** Unified model loader for ALL Stable Diffusion architectures with explicit CLIP configuration.
+
+#### What It Does
+The universal model loader that handles SD1.5, SDXL, Flux, SD3, and Z-IMAGE models with a single node. Features:
+- **Explicit CLIP slots**: 4 dedicated CLIP inputs for full control
+- **Model type detection**: Automatic or manual architecture specification
+- **Dynamic Loader integration**: Optional JIT precision conversion
+- **Vision model support**: Direct CLIP_VISION output for vision-enabled architectures
+- **LLM output**: Qwen3-VL output for Z-IMAGE workflows
+- **Daemon integration**: Optional VAE/CLIP daemon connection
+
+#### Architecture
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Luna Model Router ⚡                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  MODEL SOURCE:     [checkpoints ▼] [diffusion_models ▼] [unet (gguf) ▼]    │
+│  MODEL NAME:       [ponyDiffusionV6XL.safetensors ▼]                       │
+│  MODEL TYPE:       [auto] [SD1.5] [SDXL] [SDXL+Vision] [Flux] [Flux+Vision] [SD3] [Z-IMAGE] │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ENABLE DYNAMIC LOADER: [✓]                                                │
+│    PRECISION:      [bf16 ▼] [fp8_e4m3fn ▼] [gguf_Q8_0 ▼]                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  CLIP 1:          [clip_l.safetensors ▼]        ← Required for all        │
+│  CLIP 2:          [clip_g.safetensors ▼]        ← SDXL, SD3               │
+│  CLIP 3:          [t5xxl_fp16.safetensors ▼]    ← Flux, SD3               │
+│  CLIP 4:          [siglip_vision.safetensors ▼] ← Vision architectures    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Z-IMAGE: clip_1 = Full Qwen3-VL model (hidden state extraction)           │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### CLIP Requirements by Model Type
+| Model Type | clip_1 | clip_2 | clip_3 | clip_4 |
+|------------|--------|--------|--------|--------|
+| SD1.5 | CLIP-L | - | - | - |
+| SDXL | CLIP-L | CLIP-G | - | - |
+| SDXL + Vision | CLIP-L | CLIP-G | - | SigLIP/CLIP-H |
+| Flux | CLIP-L | - | T5-XXL | - |
+| Flux + Vision | CLIP-L | - | T5-XXL | SigLIP |
+| SD3 | CLIP-L | CLIP-G | T5-XXL | - |
+| Z-IMAGE | Full Qwen3-VL | - | - | (auto mmproj) |
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| model_source | COMBO | checkpoints/diffusion_models/unet |
+| ckpt_name | COMBO | Model dropdown (filtered by source) |
+| model_type | COMBO | Architecture selection or auto-detect |
+| enable_dynamic | BOOLEAN | Enable JIT precision conversion |
+| precision | COMBO | bf16/fp8_e4m3fn/gguf_Q8_0/gguf_Q4_K_M |
+| clip_1 | COMBO | Primary CLIP model |
+| clip_2 | COMBO | Secondary CLIP (SDXL/SD3) |
+| clip_3 | COMBO | T5 model (Flux/SD3) |
+| clip_4 | COMBO | Vision CLIP model |
+| use_daemon | BOOLEAN | Connect to Luna Daemon |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| MODEL | MODEL | Loaded/optimized UNet |
+| CLIP | CLIP | Combined CLIP encoder |
+| VAE | VAE | VAE model (or daemon proxy) |
+| LLM | LLM | Qwen3-VL for Z-IMAGE |
+| CLIP_VISION | CLIP_VISION | Vision model (if applicable) |
+| model_name | STRING | Loaded model name |
+| status | STRING | Load status message |
+
+#### Web Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/luna/model_router/models` | GET | List available models by source |
+| `/luna/model_router/clips` | GET | List available CLIP models |
+| `/luna/model_router/status` | GET | Current load status |
+
+#### Why It Exists
+Traditional loaders require different nodes for each architecture. Model Router provides a single unified interface with explicit CLIP control, eliminating the complexity of managing multiple loader types.
+
+---
+
+### LunaSecondaryModelLoader
+**Category:** `Luna/Loaders`  
+**Purpose:** Load additional models for multi-model workflows with CLIP sharing and RAM offloading.
+
+#### What It Does
+Enables complex workflows requiring multiple models:
+- **CLIP Sharing**: Reuse CLIP from primary model when compatible
+- **RAM Offloading**: Offload primary model to RAM when secondary loads
+- **Memory Management**: ModelMemoryManager singleton tracks all loaded models
+- **Smart Restoration**: Models can be restored from RAM to VRAM on demand
+
+#### Architecture
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                  Luna Secondary Model Loader 🔄                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  PRIMARY MODEL:    [← Connect from Model Router]                           │
+│  PRIMARY CLIP:     [← Connect for CLIP sharing check]                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  SECONDARY CKPT:   [animaginexl.safetensors ▼]                             │
+│  SECONDARY TYPE:   [SDXL ▼]                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  CLIP SHARING:     [✓ Auto-detect] → Reuses CLIP if types match           │
+│  OFFLOAD PRIMARY:  [✓ To RAM] → Primary → RAM, Secondary → VRAM            │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### Memory Flow
+```
+Initial State:
+  VRAM: [Primary Model ~12GB]
+  RAM:  [empty]
+
+After Secondary Load (with offload):
+  VRAM: [Secondary Model ~12GB]  
+  RAM:  [Primary Model (offloaded)]
+
+After Model Restore:
+  VRAM: [Primary Model ~12GB]
+  RAM:  [Secondary (if still needed)]
+```
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| primary_model | MODEL | Model from primary loader |
+| primary_clip | CLIP | CLIP from primary loader |
+| ckpt_name | COMBO | Secondary checkpoint |
+| model_type | COMBO | Secondary architecture |
+| clip_sharing | COMBO | auto/force_share/force_separate |
+| offload_primary | BOOLEAN | Offload primary to RAM |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| MODEL | MODEL | Secondary model |
+| CLIP | CLIP | Secondary or shared CLIP |
+| VAE | VAE | Secondary VAE |
+| primary_ref | MODEL_REF | Reference for restoration |
+
+#### CLIP Sharing Logic
+| Primary | Secondary | Action |
+|---------|-----------|--------|
+| SDXL | SDXL | Share CLIP (same architecture) |
+| SD1.5 | SDXL | Separate CLIP (incompatible) |
+| SDXL | SDXL+Vision | Share base, add vision |
+
+#### Why It Exists
+Multi-model workflows (e.g., refiner + base, different styles) typically require loading everything into VRAM simultaneously. This node enables efficient model switching with CLIP reuse and RAM offloading.
+
+---
+
+### LunaModelRestore
+**Category:** `Luna/Loaders`  
+**Purpose:** Restore models offloaded to RAM back to VRAM.
+
+#### What It Does
+Companion node to Secondary Model Loader. Restores models that were offloaded to RAM:
+- Retrieves model from ModelMemoryManager
+- Moves model back to VRAM
+- Optionally offloads currently-loaded model to RAM
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| model_ref | MODEL_REF | Reference from Secondary Loader |
+| target_device | COMBO | cuda:0/cuda:1/auto |
+| offload_current | BOOLEAN | Offload current VRAM model |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| MODEL | MODEL | Restored model |
+| CLIP | CLIP | Associated CLIP |
+| VAE | VAE | Associated VAE |
+
+#### Why It Exists
+After using secondary model, you often need to restore the primary. This node handles the memory choreography automatically.
+
+---
+
 ### LunaDynamicModelLoader
 **Category:** `Luna/Loaders`  
 **Purpose:** Smart checkpoint loading with JIT precision conversion and lazy evaluation.
@@ -680,6 +992,36 @@ Extracts UNet from any checkpoint and converts to GGUF quantization:
 
 #### Why It Exists
 Pre-convert your checkpoint library to optimized formats for faster loading and reduced VRAM usage.
+
+---
+
+### LunaOptimizedWeightsManager
+**Category:** `Luna/Utils`  
+**Purpose:** Manage cached optimized UNet files.
+
+#### What It Does
+Provides UI for managing the local optimized weights cache created by Luna Dynamic Model Loader and Model Router:
+- **List cached files**: View all optimized UNets in cache directory
+- **Delete old versions**: Remove outdated precision conversions
+- **Cache statistics**: Total size, file count, age information
+- **Batch operations**: Clear all caches or select specific files
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| action | COMBO | list/delete/clear_all/stats |
+| file_pattern | STRING | Filter pattern (e.g., "*_Q8_0*") |
+| cache_dir | STRING | Override default cache location |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| result | STRING | Action result/file list |
+| size_gb | FLOAT | Total cache size in GB |
+| file_count | INT | Number of cached files |
+
+#### Why It Exists
+As you test different precision conversions, the cache grows. This node helps manage disk usage without manual file deletion.
 
 ---
 

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 from enum import Enum
 
+import numpy as np
 import torch
 from safetensors.torch import load_file, save_file
 
@@ -147,8 +148,11 @@ def quantize_tensor_q8_0(tensor: torch.Tensor) -> bytes:
     Quantize a tensor to Q8_0 format.
     Q8_0: 8-bit quantization with block size 32.
     Each block: 1 float16 scale + 32 int8 values = 34 bytes per 32 elements.
+    
+    Fully vectorized for GPU acceleration.
     """
-    # Ensure float and flatten
+    # Ensure float and flatten - keep on same device
+    device = tensor.device
     tensor = tensor.float().flatten()
     
     # Pad to block size multiple
@@ -163,23 +167,29 @@ def quantize_tensor_q8_0(tensor: torch.Tensor) -> bytes:
     # Reshape into blocks
     blocks = tensor.reshape(n_blocks, block_size)
     
-    # Compute scale per block (max abs value)
+    # Compute scale per block (max abs value) - vectorized
     scales = blocks.abs().max(dim=1).values / 127.0
     scales = scales.clamp(min=1e-10)  # Avoid division by zero
     
-    # Quantize to int8
+    # Quantize to int8 - fully vectorized
     quantized = (blocks / scales.unsqueeze(1)).round().clamp(-128, 127).to(torch.int8)
     
-    # Pack: scale (float16) + 32 int8 values
-    output = bytearray()
-    for i in range(n_blocks):
-        # Scale as float16
-        scale_f16 = torch.tensor([scales[i]], dtype=torch.float16)
-        output.extend(scale_f16.numpy().tobytes())
-        # Quantized values
-        output.extend(quantized[i].numpy().tobytes())
+    # Convert scales to float16 - vectorized
+    scales_f16 = scales.to(torch.float16)
     
-    return bytes(output)
+    # Move to CPU for final packing
+    scales_f16_cpu = scales_f16.cpu().numpy()
+    quantized_cpu = quantized.cpu().numpy()
+    
+    # Vectorized packing: interleave scales and quantized blocks
+    # Each block: 2 bytes (scale) + 32 bytes (int8) = 34 bytes
+    scales_bytes = scales_f16_cpu.view(np.uint8).reshape(n_blocks, 2)
+    quant_bytes = quantized_cpu.view(np.uint8).reshape(n_blocks, 32)
+    
+    # Concatenate scale + data per block, then flatten
+    packed = np.concatenate([scales_bytes, quant_bytes], axis=1)  # (n_blocks, 34)
+    
+    return packed.tobytes()
 
 
 def quantize_tensor_q4_0(tensor: torch.Tensor) -> bytes:
@@ -187,7 +197,10 @@ def quantize_tensor_q4_0(tensor: torch.Tensor) -> bytes:
     Quantize a tensor to Q4_0 format.
     Q4_0: 4-bit quantization with block size 32.
     Each block: 1 float16 scale + 16 bytes (32 x 4-bit) = 18 bytes per 32 elements.
+    
+    Fully vectorized for GPU acceleration.
     """
+    device = tensor.device
     tensor = tensor.float().flatten()
     
     block_size = 32
@@ -200,32 +213,32 @@ def quantize_tensor_q4_0(tensor: torch.Tensor) -> bytes:
     
     blocks = tensor.reshape(n_blocks, block_size)
     
-    # Scale based on max absolute value, mapping to [0, 15] for unsigned 4-bit
-    # We use unsigned representation: 0-15 maps to -8 to +7
+    # Scale based on max absolute value - vectorized
     max_abs = blocks.abs().max(dim=1).values
     scales = max_abs / 7.0
     scales = scales.clamp(min=1e-10)
     
-    # Quantize to range [-8, 7], then shift to [0, 15] for packing
+    # Quantize to range [-8, 7], then shift to [0, 15] - vectorized
     quantized = (blocks / scales.unsqueeze(1)).round().clamp(-8, 7)
-    # Shift to unsigned: -8 -> 0, 0 -> 8, 7 -> 15
     quantized_unsigned = (quantized + 8).to(torch.uint8)
     
-    output = bytearray()
-    for i in range(n_blocks):
-        # Scale as float16
-        scale_f16 = torch.tensor([scales[i]], dtype=torch.float16)
-        output.extend(scale_f16.numpy().tobytes())
-        
-        # Pack pairs of 4-bit values into bytes
-        q = quantized_unsigned[i].numpy()
-        for j in range(0, 32, 2):
-            low = int(q[j]) & 0x0F
-            high = int(q[j + 1]) & 0x0F
-            packed = low | (high << 4)
-            output.append(packed)
+    # Convert scales to float16 and move to CPU
+    scales_f16 = scales.to(torch.float16).cpu().numpy()
+    quant_cpu = quantized_unsigned.cpu().numpy()  # (n_blocks, 32)
     
-    return bytes(output)
+    # Vectorized 4-bit packing: pair adjacent values into single bytes
+    # low nibble = even indices, high nibble = odd indices
+    low_nibbles = quant_cpu[:, 0::2] & 0x0F  # (n_blocks, 16)
+    high_nibbles = quant_cpu[:, 1::2] & 0x0F  # (n_blocks, 16)
+    packed_nibbles = (low_nibbles | (high_nibbles << 4)).astype(np.uint8)  # (n_blocks, 16)
+    
+    # Prepare scale bytes
+    scales_bytes = scales_f16.view(np.uint8).reshape(n_blocks, 2)  # (n_blocks, 2)
+    
+    # Concatenate: 2 bytes scale + 16 bytes packed = 18 bytes per block
+    packed = np.concatenate([scales_bytes, packed_nibbles], axis=1)  # (n_blocks, 18)
+    
+    return packed.tobytes()
 
 
 def write_gguf_header(f, n_tensors: int, metadata: Dict[str, Any]):
