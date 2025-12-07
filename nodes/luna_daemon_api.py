@@ -130,6 +130,7 @@ def register_routes():
         """Start the daemon process"""
         import subprocess
         import sys
+        import asyncio
         
         try:
             # Get the path to the daemon server module
@@ -150,17 +151,20 @@ def register_routes():
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             
-            return web.json_response({"status": "ok", "message": "Daemon starting in background..."})
-            
             # Give it a moment to start
-            import asyncio
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
             
             # Check if it started
             if DAEMON_AVAILABLE and daemon_client.is_daemon_running():
                 return web.json_response({"status": "ok", "message": "Daemon started"})
             else:
-                return web.json_response({"status": "error", "message": "Daemon failed to start"})
+                # Try a few more times
+                for _ in range(5):
+                    await asyncio.sleep(1)
+                    if DAEMON_AVAILABLE and daemon_client.is_daemon_running():
+                        return web.json_response({"status": "ok", "message": "Daemon started"})
+                
+                return web.json_response({"status": "error", "message": "Daemon process started but not responding. Check logs."})
                 
         except Exception as e:
             return web.json_response({"status": "error", "message": str(e)})
