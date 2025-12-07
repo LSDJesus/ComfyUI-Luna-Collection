@@ -91,6 +91,32 @@ except ImportError:
     except ImportError:
         CLIP_PRECISION = MODEL_PRECISION
         VAE_PRECISION = MODEL_PRECISION
+    
+    # Import MODEL_TYPE setting (ties to CLIP type via CLIP_TYPE_MAP)
+    try:
+        from config import MODEL_TYPE
+    except ImportError:
+        MODEL_TYPE = "SDXL"
+
+# Import CLIP_TYPE_MAP from model router for model_type → clip_type mapping
+try:
+    import sys
+    # Add parent path to find nodes module
+    nodes_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'nodes'))
+    if nodes_path not in sys.path:
+        sys.path.insert(0, nodes_path)
+    from luna_model_router import CLIP_TYPE_MAP
+except ImportError:
+    # Fallback mapping if import fails
+    CLIP_TYPE_MAP = {
+        "SD1.5": "stable_diffusion",
+        "SDXL": "stable_diffusion",
+        "SDXL + Vision": "stable_diffusion",
+        "Flux": "flux",
+        "Flux + Vision": "flux",
+        "SD3": "sd3",
+        "Z-IMAGE": "lumina2",
+    }
 
 # Setup logging
 logging.basicConfig(
@@ -373,6 +399,483 @@ class LoRARegistry:
             }
 
 
+# ============================================================================
+# Model Registry - Dynamic Model Loading from Client Registration
+# ============================================================================
+
+@dataclass
+class RegisteredModel:
+    """Stores a registered model's state dict and metadata"""
+    model_type: str  # e.g., "SDXL", "Flux", "Z-IMAGE"
+    clip_type: str   # e.g., "stable_diffusion", "flux", "lumina2"
+    state_dict: Optional[Dict[str, Any]] = None  # VAE state dict
+    components: Optional[Dict[str, Dict[str, Any]]] = None  # CLIP components
+    path: Optional[str] = None  # Single file path (for VAE)
+    paths: Optional[List[str]] = None  # Multiple file paths (for CLIP)
+    registered_at: float = field(default_factory=time.time)
+    loaded: bool = False
+
+
+class ModelRegistry:
+    """
+    Registry for dynamically registered models from client loader nodes.
+    
+    When a loader node (Model Router, etc.) creates a DaemonCLIP or DaemonVAE,
+    it sends registration data here. Workers then load from this registry
+    instead of static config paths.
+    
+    Thread-safe for concurrent registration and access.
+    """
+    
+    def __init__(self, device: str = "cuda"):
+        self.device = device
+        self.lock = threading.Lock()
+        
+        # Current registered models (only one VAE and one CLIP at a time)
+        self.vae: Optional[RegisteredModel] = None
+        self.clip: Optional[RegisteredModel] = None
+        
+        # Loaded model objects (shared across workers of same type)
+        self._loaded_vae = None
+        self._loaded_clip = None
+        
+        logger.info("[ModelRegistry] Initialized - awaiting model registration from clients")
+    
+    def register_vae(self, vae_type: str, state_dict: Dict[str, Any]) -> dict:
+        """
+        Register a VAE model from client.
+        
+        Args:
+            vae_type: Type string (e.g., "sdxl", "flux")
+            state_dict: The VAE state dict
+        
+        Returns:
+            Registration status dict
+        """
+        with self.lock:
+            # Clear any previously loaded model
+            if self._loaded_vae is not None:
+                del self._loaded_vae
+                self._loaded_vae = None
+                torch.cuda.empty_cache()
+            
+            self.vae = RegisteredModel(
+                model_type=vae_type,
+                clip_type="",  # Not applicable for VAE
+                state_dict=state_dict,
+                loaded=False
+            )
+            
+            size_mb = sum(t.numel() * t.element_size() for t in state_dict.values() 
+                         if isinstance(t, torch.Tensor)) / 1024 / 1024
+            
+            logger.info(f"[ModelRegistry] Registered VAE: {vae_type} ({size_mb:.1f} MB)")
+            
+            return {
+                "success": True,
+                "vae_type": vae_type,
+                "size_mb": size_mb,
+                "message": f"VAE registered, ready for loading"
+            }
+    
+    def register_clip(self, clip_type: str, model_type: str, 
+                      components: Dict[str, Dict[str, Any]]) -> dict:
+        """
+        Register CLIP components from client.
+        
+        Args:
+            clip_type: Type string for ComfyUI CLIPType (e.g., "stable_diffusion", "flux")
+            model_type: Luna model type string (e.g., "SDXL", "Flux")
+            components: Dict of CLIP components (clip_l, clip_g, t5xxl)
+        
+        Returns:
+            Registration status dict
+        """
+        with self.lock:
+            # Clear any previously loaded model
+            if self._loaded_clip is not None:
+                del self._loaded_clip
+                self._loaded_clip = None
+                torch.cuda.empty_cache()
+            
+            self.clip = RegisteredModel(
+                model_type=model_type,
+                clip_type=clip_type,
+                components=components,
+                loaded=False
+            )
+            
+            total_size_mb = 0
+            component_list = []
+            for name, sd in components.items():
+                size_mb = sum(t.numel() * t.element_size() for t in sd.values() 
+                             if isinstance(t, torch.Tensor)) / 1024 / 1024
+                total_size_mb += size_mb
+                component_list.append(name)
+            
+            logger.info(f"[ModelRegistry] Registered CLIP: {model_type} -> {clip_type} "
+                       f"({', '.join(component_list)}, {total_size_mb:.1f} MB total)")
+            
+            return {
+                "success": True,
+                "model_type": model_type,
+                "clip_type": clip_type,
+                "components": component_list,
+                "size_mb": total_size_mb,
+                "message": f"CLIP registered with {len(components)} components"
+            }
+    
+    def get_vae(self, precision: str = "bf16") -> Any:
+        """
+        Get or load the registered VAE model.
+        
+        Loads on first access, returns cached model on subsequent calls.
+        """
+        with self.lock:
+            if self.vae is None:
+                raise RuntimeError("No VAE registered. Call register_vae first.")
+            
+            if self._loaded_vae is not None:
+                return self._loaded_vae
+            
+            # Load the VAE
+            import comfy.sd
+            
+            state_dict = self.vae.state_dict
+            if precision != "fp32":
+                dtype = torch.bfloat16 if precision == "bf16" else torch.float16
+                state_dict = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
+                             for k, v in state_dict.items()}
+            
+            self._loaded_vae = comfy.sd.VAE(sd=state_dict)
+            self.vae.loaded = True
+            
+            logger.info(f"[ModelRegistry] Loaded VAE ({precision})")
+            return self._loaded_vae
+    
+    def get_clip(self, precision: str = "bf16") -> Any:
+        """
+        Get or load the registered CLIP model.
+        
+        Uses the registered clip_type for proper model construction.
+        """
+        with self.lock:
+            if self.clip is None:
+                raise RuntimeError("No CLIP registered. Call register_clip first.")
+            
+            if self._loaded_clip is not None:
+                return self._loaded_clip
+            
+            # Load the CLIP using comfy.sd
+            import comfy.sd
+            
+            clip_type_str = self.clip.clip_type
+            components = self.clip.components
+            
+            # Map clip type string to comfy.sd.CLIPType enum
+            clip_type_enum_map = {
+                "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,
+                "sd3": comfy.sd.CLIPType.SD3,
+                "flux": comfy.sd.CLIPType.FLUX,
+                "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,
+                "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,
+                "lumina2": comfy.sd.CLIPType.LUMINA2,
+            }
+            clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)
+            
+            # Build the CLIP model from components
+            # This uses load_text_encoder_state_dicts which takes state dicts directly
+            clip_data = []
+            for name in ["clip_l", "clip_g", "t5xxl"]:
+                if name in components:
+                    sd = components[name]
+                    if precision != "fp32":
+                        dtype = torch.bfloat16 if precision == "bf16" else torch.float16
+                        sd = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
+                             for k, v in sd.items()}
+                    clip_data.append(sd)
+            
+            self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(
+                state_dicts=clip_data,
+                clip_type=clip_type_enum,
+                model_options={}
+            )
+            self.clip.loaded = True
+            
+            logger.info(f"[ModelRegistry] Loaded CLIP ({precision}, type={clip_type_str})")
+            return self._loaded_clip
+    
+    def has_vae(self) -> bool:
+        """Check if a VAE is registered"""
+        return self.vae is not None
+    
+    def has_clip(self) -> bool:
+        """Check if a CLIP is registered"""
+        return self.clip is not None
+    
+    def register_vae_by_path(self, vae_path: str, vae_type: str) -> dict:
+        """
+        Register a VAE by path (loads from disk).
+        
+        This is more efficient than sending state dict over socket.
+        
+        Args:
+            vae_path: Full path to VAE file (.safetensors)
+            vae_type: Type string (e.g., "sdxl", "flux")
+        
+        Returns:
+            Registration status dict
+        """
+        import os
+        
+        if not os.path.exists(vae_path):
+            return {"success": False, "error": f"VAE file not found: {vae_path}"}
+        
+        with self.lock:
+            # Clear any previously loaded model
+            if self._loaded_vae is not None:
+                del self._loaded_vae
+                self._loaded_vae = None
+                torch.cuda.empty_cache()
+            
+            # Store path for lazy loading
+            self.vae = RegisteredModel(
+                model_type=vae_type,
+                clip_type="",
+                path=vae_path,
+                loaded=False
+            )
+            
+            size_mb = os.path.getsize(vae_path) / 1024 / 1024
+            logger.info(f"[ModelRegistry] Registered VAE by path: {os.path.basename(vae_path)} ({size_mb:.1f} MB)")
+            
+            return {
+                "success": True,
+                "vae_type": vae_type,
+                "vae_path": vae_path,
+                "size_mb": size_mb,
+                "message": "VAE registered from path"
+            }
+    
+    def load_vae_async(self, precision: str = "bf16"):
+        """
+        Load VAE in background thread (non-blocking).
+        
+        Called after registration to pre-warm the model so it's ready
+        when the first encode/decode request comes in.
+        """
+        def _load():
+            try:
+                logger.info("[ModelRegistry] Loading VAE in background...")
+                self.get_vae_model(precision)
+                logger.info("[ModelRegistry] VAE loaded and ready!")
+            except Exception as e:
+                logger.error(f"[ModelRegistry] Background VAE load failed: {e}")
+        
+        thread = threading.Thread(target=_load, daemon=True)
+        thread.start()
+        return thread
+    
+    def register_clip_by_path(self, clip_paths: list, model_type: str, clip_type: str) -> dict:
+        """
+        Register CLIP by paths (loads from disk).
+        
+        This is more efficient than sending state dicts over socket.
+        
+        Args:
+            clip_paths: List of paths to CLIP files
+            model_type: Luna model type (e.g., "SDXL", "Flux")
+            clip_type: ComfyUI CLIPType string (e.g., "stable_diffusion", "flux")
+        
+        Returns:
+            Registration status dict
+        """
+        import os
+        import folder_paths
+        
+        # Validate paths
+        valid_paths = []
+        for path in clip_paths:
+            if os.path.exists(path):
+                valid_paths.append(path)
+            else:
+                # Try folder_paths resolution
+                full_path = folder_paths.get_full_path("clip", os.path.basename(path)) if folder_paths else None
+                if full_path and os.path.exists(full_path):
+                    valid_paths.append(full_path)
+                else:
+                    logger.warning(f"[ModelRegistry] CLIP path not found: {path}")
+        
+        if not valid_paths:
+            return {"success": False, "error": "No valid CLIP paths found"}
+        
+        with self.lock:
+            # Clear any previously loaded model
+            if self._loaded_clip is not None:
+                del self._loaded_clip
+                self._loaded_clip = None
+                torch.cuda.empty_cache()
+            
+            # Store paths for lazy loading
+            self.clip = RegisteredModel(
+                model_type=model_type,
+                clip_type=clip_type,
+                paths=valid_paths,
+                loaded=False
+            )
+            
+            total_size_mb = sum(os.path.getsize(p) / 1024 / 1024 for p in valid_paths)
+            logger.info(f"[ModelRegistry] Registered CLIP by path: {model_type} -> {clip_type} "
+                       f"({len(valid_paths)} files, {total_size_mb:.1f} MB)")
+            
+            return {
+                "success": True,
+                "model_type": model_type,
+                "clip_type": clip_type,
+                "paths": valid_paths,
+                "size_mb": total_size_mb,
+                "message": f"CLIP registered from {len(valid_paths)} path(s)"
+            }
+    
+    def load_clip_async(self, precision: str = "bf16"):
+        """
+        Load CLIP in background thread (non-blocking).
+        
+        Called after registration to pre-warm the model so it's ready
+        when the first encode request comes in.
+        """
+        def _load():
+            try:
+                logger.info("[ModelRegistry] Loading CLIP in background...")
+                self.get_clip_model(precision)
+                logger.info("[ModelRegistry] CLIP loaded and ready!")
+            except Exception as e:
+                logger.error(f"[ModelRegistry] Background CLIP load failed: {e}")
+        
+        thread = threading.Thread(target=_load, daemon=True)
+        thread.start()
+        return thread
+    
+    def get_vae_model(self, precision: str = "bf16") -> Any:
+        """
+        Get or load the registered VAE model.
+        
+        Supports both state_dict and path-based registration.
+        """
+        with self.lock:
+            if self.vae is None:
+                return None
+            
+            if self._loaded_vae is not None:
+                return self._loaded_vae
+            
+            import comfy.sd
+            import comfy.utils
+            
+            # Check if path-based or state_dict-based
+            if hasattr(self.vae, 'path') and self.vae.path:
+                # Load from path
+                state_dict = comfy.utils.load_torch_file(self.vae.path)
+            elif self.vae.state_dict:
+                state_dict = self.vae.state_dict
+            else:
+                return None
+            
+            if precision != "fp32":
+                dtype = torch.bfloat16 if precision == "bf16" else torch.float16
+                state_dict = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
+                             for k, v in state_dict.items()}
+            
+            self._loaded_vae = comfy.sd.VAE(sd=state_dict)
+            self.vae.loaded = True
+            
+            logger.info(f"[ModelRegistry] Loaded VAE ({precision})")
+            return self._loaded_vae
+    
+    def get_clip_model(self, precision: str = "bf16") -> Any:
+        """
+        Get or load the registered CLIP model.
+        
+        Supports both state_dict and path-based registration.
+        """
+        with self.lock:
+            if self.clip is None:
+                return None
+            
+            if self._loaded_clip is not None:
+                return self._loaded_clip
+            
+            import comfy.sd
+            import folder_paths
+            
+            clip_type_str = self.clip.clip_type
+            
+            # Map clip type string to comfy.sd.CLIPType enum
+            clip_type_enum_map = {
+                "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,
+                "sd3": comfy.sd.CLIPType.SD3,
+                "flux": comfy.sd.CLIPType.FLUX,
+                "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,
+                "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,
+                "lumina2": comfy.sd.CLIPType.LUMINA2,
+            }
+            clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)
+            
+            # Check if path-based or state_dict-based
+            if hasattr(self.clip, 'paths') and self.clip.paths:
+                # Load from paths using comfy.sd.load_clip
+                self._loaded_clip = comfy.sd.load_clip(
+                    ckpt_paths=self.clip.paths,
+                    embedding_directory=folder_paths.get_folder_paths("embeddings") if folder_paths else None,
+                    clip_type=clip_type_enum
+                )
+            elif self.clip.components:
+                # Load from state dicts
+                clip_data = []
+                for name in ["clip_l", "clip_g", "t5xxl"]:
+                    if name in self.clip.components:
+                        sd = self.clip.components[name]
+                        if precision != "fp32":
+                            dtype = torch.bfloat16 if precision == "bf16" else torch.float16
+                            sd = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
+                                 for k, v in sd.items()}
+                        clip_data.append(sd)
+                
+                self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(
+                    state_dicts=clip_data,
+                    clip_type=clip_type_enum,
+                    model_options={}
+                )
+            else:
+                return None
+            
+            self.clip.loaded = True
+            logger.info(f"[ModelRegistry] Loaded CLIP ({precision}, type={clip_type_str})")
+            return self._loaded_clip
+    
+    def is_vae_ready(self) -> bool:
+        """Check if VAE is loaded and ready for use"""
+        return self._loaded_vae is not None
+    
+    def is_clip_ready(self) -> bool:
+        """Check if CLIP is loaded and ready for use"""
+        return self._loaded_clip is not None
+    
+    def get_info(self) -> dict:
+        """Get registry status"""
+        return {
+            "vae_registered": self.vae is not None,
+            "vae_type": self.vae.model_type if self.vae else None,
+            "vae_loaded": self._loaded_vae is not None,
+            "vae_path": self.vae.path if self.vae and self.vae.path else None,
+            "clip_registered": self.clip is not None,
+            "clip_model_type": self.clip.model_type if self.clip else None,
+            "clip_type": self.clip.clip_type if self.clip else None,
+            "clip_loaded": self._loaded_clip is not None,
+            "clip_paths": self.clip.paths if self.clip and self.clip.paths else None,
+        }
+
+
 class TransientLoRAContext:
     """
     Context manager for transient LoRA injection (F-150 Method).
@@ -570,7 +1073,8 @@ class ModelWorker:
         precision: str,
         request_queue: queue.Queue,
         result_queues: Dict[int, queue.Queue],
-        lora_registry: Optional[LoRARegistry] = None
+        lora_registry: Optional[LoRARegistry] = None,
+        model_registry: Optional[ModelRegistry] = None
     ):
         self.worker_id = worker_id
         self.worker_type = worker_type
@@ -579,6 +1083,7 @@ class ModelWorker:
         self.request_queue = request_queue
         self.result_queues = result_queues
         self.lora_registry = lora_registry  # For CLIP LoRA injection (F-150)
+        self.model_registry = model_registry  # For dynamic model loading
         
         self.model = None
         self.is_running = False
@@ -588,7 +1093,7 @@ class ModelWorker:
         self.thread: Optional[threading.Thread] = None
         self.lock = threading.Lock()
         
-        # For CLIP, we also need paths
+        # Legacy static paths (fallback if no model_registry)
         self.clip_l_path = CLIP_L_PATH
         self.clip_g_path = CLIP_G_PATH
         self.embeddings_dir = EMBEDDINGS_DIR
@@ -615,37 +1120,72 @@ class ModelWorker:
         return converted
     
     def load_model(self):
-        """Load the model for this worker"""
+        """
+        Load the model for this worker.
+        
+        Uses model_registry if available (dynamic loading from client registration).
+        Falls back to static config paths for backwards compatibility.
+        """
         import comfy.sd
         import comfy.utils
         
         if self.worker_type == WorkerType.VAE:
             logger.info(f"[VAE-{self.worker_id}] Loading VAE model...")
-            sd = comfy.utils.load_torch_file(VAE_PATH)
-            if self.precision != "fp32":
-                sd = self._convert_state_dict_precision(sd)
-            self.model = comfy.sd.VAE(sd=sd)
-            logger.info(f"[VAE-{self.worker_id}] VAE loaded ({self.precision})")
+            
+            # Try model_registry first (dynamic loading)
+            if self.model_registry and self.model_registry.has_vae():
+                self.model = self.model_registry.get_vae(self.precision)
+                logger.info(f"[VAE-{self.worker_id}] VAE loaded from registry ({self.precision})")
+            else:
+                # Fallback to static config paths
+                sd = comfy.utils.load_torch_file(VAE_PATH)
+                if self.precision != "fp32":
+                    sd = self._convert_state_dict_precision(sd)
+                self.model = comfy.sd.VAE(sd=sd)
+                logger.info(f"[VAE-{self.worker_id}] VAE loaded from config path ({self.precision})")
             
         elif self.worker_type == WorkerType.CLIP:
             logger.info(f"[CLIP-{self.worker_id}] Loading CLIP model...")
-            clip_paths = []
-            if os.path.exists(self.clip_l_path):
-                clip_paths.append(self.clip_l_path)
-            if os.path.exists(self.clip_g_path):
-                clip_paths.append(self.clip_g_path)
             
-            emb_dir = self.embeddings_dir if os.path.exists(self.embeddings_dir) else None
-            self.model = comfy.sd.load_clip(
-                ckpt_paths=clip_paths,
-                embedding_directory=emb_dir
-            )
-            
-            # Convert to target precision
-            if self.precision != "fp32" and hasattr(self.model, 'cond_stage_model'):
-                self.model.cond_stage_model.to(self.dtype)
-            
-            logger.info(f"[CLIP-{self.worker_id}] CLIP loaded ({self.precision})")
+            # Try model_registry first (dynamic loading)
+            if self.model_registry and self.model_registry.has_clip():
+                self.model = self.model_registry.get_clip(self.precision)
+                clip_type = self.model_registry.clip.clip_type if self.model_registry.clip else "unknown"
+                logger.info(f"[CLIP-{self.worker_id}] CLIP loaded from registry ({self.precision}, type={clip_type})")
+            else:
+                # Fallback to static config paths
+                clip_paths = []
+                if os.path.exists(self.clip_l_path):
+                    clip_paths.append(self.clip_l_path)
+                if os.path.exists(self.clip_g_path):
+                    clip_paths.append(self.clip_g_path)
+                
+                # Get CLIP type string from MODEL_TYPE via CLIP_TYPE_MAP
+                clip_type_str = CLIP_TYPE_MAP.get(MODEL_TYPE, "stable_diffusion")
+                
+                # Map clip type string to comfy.sd.CLIPType enum
+                clip_type_enum_map = {
+                    "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,
+                    "sd3": comfy.sd.CLIPType.SD3,
+                    "flux": comfy.sd.CLIPType.FLUX,
+                    "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,
+                    "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,
+                    "lumina2": comfy.sd.CLIPType.LUMINA2,
+                }
+                clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)
+                
+                emb_dir = self.embeddings_dir if os.path.exists(self.embeddings_dir) else None
+                self.model = comfy.sd.load_clip(
+                    ckpt_paths=clip_paths,
+                    embedding_directory=emb_dir,
+                    clip_type=clip_type_enum
+                )
+                
+                # Convert to target precision
+                if self.precision != "fp32" and hasattr(self.model, 'cond_stage_model'):
+                    self.model.cond_stage_model.to(self.dtype)
+                
+                logger.info(f"[CLIP-{self.worker_id}] CLIP loaded from config path ({self.precision}, type={clip_type_str})")
         
         self.is_loaded = True
         torch.cuda.empty_cache()
@@ -1012,7 +1552,8 @@ class WorkerPool:
         precision: str,
         config: ScalingConfig,
         on_scale_event: Optional[Callable[[str, dict], None]] = None,
-        lora_registry: Optional[LoRARegistry] = None
+        lora_registry: Optional[LoRARegistry] = None,
+        model_registry: Optional[ModelRegistry] = None
     ):
         self.worker_type = worker_type
         self.device = device
@@ -1020,6 +1561,7 @@ class WorkerPool:
         self.config = config
         self.on_scale_event = on_scale_event  # Callback for scaling events
         self.lora_registry = lora_registry  # For CLIP LoRA support (F-150)
+        self.model_registry = model_registry  # For dynamic model loading
         
         self.workers: List[ModelWorker] = []
         self.request_queue: queue.Queue = queue.Queue()
@@ -1084,7 +1626,8 @@ class WorkerPool:
                 precision=self.precision,
                 request_queue=self.request_queue,
                 result_queues=self.result_queues,
-                lora_registry=self.lora_registry  # F-150: pass registry to CLIP workers
+                lora_registry=self.lora_registry,  # F-150: pass registry to CLIP workers
+                model_registry=self.model_registry  # Dynamic model loading
             )
             
             worker.start()
@@ -1531,6 +2074,9 @@ class DynamicDaemon:
         else:
             self.lora_registry = None
         
+        # Model Registry - for dynamic model loading from client registration
+        self.model_registry = ModelRegistry(device=device)
+        
         # Adjust model sizes based on precision
         # VAE size
         if self.vae_precision in ("bf16", "fp16"):
@@ -1573,7 +2119,8 @@ class DynamicDaemon:
                 device=self.device,
                 precision=self.vae_precision,
                 config=self.config,
-                on_scale_event=self._on_scale_event
+                on_scale_event=self._on_scale_event,
+                model_registry=self.model_registry  # Dynamic model registration
             )
             logger.info(f"VAE pool configured ({self.vae_precision})")
         
@@ -1585,7 +2132,8 @@ class DynamicDaemon:
                 precision=self.clip_precision,
                 config=self.config,
                 on_scale_event=self._on_scale_event,
-                lora_registry=self.lora_registry  # F-150: enable LoRA for CLIP workers
+                lora_registry=self.lora_registry,  # F-150: enable LoRA for CLIP workers
+                model_registry=self.model_registry  # Dynamic model registration
             )
             logger.info(f"CLIP pool configured ({self.clip_precision})")
         
@@ -1680,6 +2228,74 @@ class DynamicDaemon:
                 result = {"status": "ok", "service_type": self.service_type.value}
             elif cmd == "info":
                 result = self.get_info()
+            
+            # Model registration commands (dynamic loading from clients)
+            elif cmd == "register_vae":
+                if self.service_type == ServiceType.CLIP_ONLY:
+                    result = {"error": "VAE registration not available in CLIP-only mode"}
+                else:
+                    vae_type = request.get("vae_type", "sdxl")
+                    state_dict = request.get("state_dict", {})
+                    result = self.model_registry.register_vae(vae_type, state_dict)
+                    
+                    # Immediately start loading in background (non-blocking)
+                    if result.get("success"):
+                        self.model_registry.load_vae_async(self.vae_precision)
+                    
+                    # If pool exists but has no workers, start one now
+                    if self.vae_pool and len(self.vae_pool.workers) == 0:
+                        self.vae_pool.scale_up()
+                        
+            elif cmd == "register_clip":
+                if self.service_type == ServiceType.VAE_ONLY:
+                    result = {"error": "CLIP registration not available in VAE-only mode"}
+                else:
+                    clip_type = request.get("clip_type", "stable_diffusion")
+                    model_type = request.get("model_type", "SDXL")
+                    components = request.get("components", {})
+                    result = self.model_registry.register_clip(clip_type, model_type, components)
+                    
+                    # Immediately start loading in background (non-blocking)
+                    if result.get("success"):
+                        self.model_registry.load_clip_async(self.clip_precision)
+                    
+                    # If pool exists but has no workers, start one now
+                    if self.clip_pool and len(self.clip_pool.workers) == 0:
+                        self.clip_pool.scale_up()
+            
+            # Path-based registration (loads from disk, avoids socket serialization)
+            elif cmd == "register_vae_by_path":
+                if self.service_type == ServiceType.CLIP_ONLY:
+                    result = {"error": "VAE registration not available in CLIP-only mode"}
+                else:
+                    vae_path = request.get("vae_path", "")
+                    vae_type = request.get("vae_type", "sdxl")
+                    result = self.model_registry.register_vae_by_path(vae_path, vae_type)
+                    
+                    # Immediately start loading in background (non-blocking)
+                    if result.get("success"):
+                        self.model_registry.load_vae_async(self.vae_precision)
+                    
+                    # If pool exists but has no workers, start one now
+                    if self.vae_pool and len(self.vae_pool.workers) == 0:
+                        self.vae_pool.scale_up()
+                        
+            elif cmd == "register_clip_by_path":
+                if self.service_type == ServiceType.VAE_ONLY:
+                    result = {"error": "CLIP registration not available in VAE-only mode"}
+                else:
+                    clip_paths = request.get("clip_paths", [])
+                    model_type = request.get("model_type", "SDXL")
+                    clip_type = request.get("clip_type", "stable_diffusion")
+                    result = self.model_registry.register_clip_by_path(clip_paths, model_type, clip_type)
+                    
+                    # Immediately start loading in background (non-blocking)
+                    if result.get("success"):
+                        self.model_registry.load_clip_async(self.clip_precision)
+                    
+                    # If pool exists but has no workers, start one now
+                    if self.clip_pool and len(self.clip_pool.workers) == 0:
+                        self.clip_pool.scale_up()
             
             # VAE commands - only available in FULL or VAE_ONLY mode
             elif cmd in ("vae_encode", "vae_decode"):

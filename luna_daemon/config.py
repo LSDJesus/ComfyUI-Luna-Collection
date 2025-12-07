@@ -85,6 +85,11 @@ VAE_PRECISION = "bf16"    # VAE encoder/decoder precision
 # Legacy setting (used if CLIP/VAE precision not set)
 MODEL_PRECISION = "bf16"
 
+# Model type - determines CLIP type for daemon loading
+# Options: "SD1.5", "SDXL", "SDXL + Vision", "Flux", "Flux + Vision", "SD3", "Z-IMAGE"
+# This maps to the correct ComfyUI CLIPType enum internally
+MODEL_TYPE = "SDXL"
+
 # Dynamic scaling configuration
 MAX_VAE_WORKERS = 4
 MAX_CLIP_WORKERS = 2

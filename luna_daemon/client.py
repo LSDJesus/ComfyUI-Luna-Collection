@@ -249,6 +249,48 @@ class DaemonClient:
             "components": components
         })
     
+    def register_vae_by_path(self, vae_path: str, vae_type: str) -> dict:
+        """
+        Register a VAE by path for daemon disk loading.
+        
+        The daemon loads the VAE from disk directly, avoiding socket 
+        serialization of the full state dict.
+        
+        Args:
+            vae_path: Full path to VAE file (.safetensors)
+            vae_type: Type string ('sdxl', 'flux', 'sd3', 'sd15')
+        
+        Returns:
+            Dict with registration status
+        """
+        return self._send_request({
+            "cmd": "register_vae_by_path",
+            "vae_path": vae_path,
+            "vae_type": vae_type
+        })
+    
+    def register_clip_by_path(self, clip_paths: list, model_type: str, clip_type: str) -> dict:
+        """
+        Register CLIP by paths for daemon disk loading.
+        
+        The daemon loads the CLIP models from disk directly, avoiding 
+        socket serialization of full state dicts.
+        
+        Args:
+            clip_paths: List of paths to CLIP files (clip_l, clip_g, t5xxl, etc.)
+            model_type: Luna model type ("SD1.5", "SDXL", "Flux", etc.)
+            clip_type: ComfyUI CLIPType string ("stable_diffusion", "flux", "sd3", etc.)
+        
+        Returns:
+            Dict with registration status
+        """
+        return self._send_request({
+            "cmd": "register_clip_by_path",
+            "clip_paths": clip_paths,
+            "model_type": model_type,
+            "clip_type": clip_type
+        })
+    
     # =========================================================================
     # VAE Operations
     # =========================================================================
@@ -602,6 +644,16 @@ def register_vae(vae: Any, vae_type: str) -> dict:
 def register_clip(clip: Any, clip_type: str) -> dict:
     """Register CLIP with daemon"""
     return get_client().register_clip(clip, clip_type)
+
+
+def register_vae_by_path(vae_path: str, vae_type: str) -> dict:
+    """Register VAE by path with daemon (loads from disk)"""
+    return get_client().register_vae_by_path(vae_path, vae_type)
+
+
+def register_clip_by_path(clip_paths: list, model_type: str, clip_type: str) -> dict:
+    """Register CLIP by paths with daemon (loads from disk)"""
+    return get_client().register_clip_by_path(clip_paths, model_type, clip_type)
 
 
 def vae_encode(pixels: torch.Tensor, vae_type: str,

@@ -148,6 +148,23 @@ except ImportError:
 
 
 # =============================================================================
+# CLIP Type Mapping (Model Type → ComfyUI CLIPType)
+# =============================================================================
+
+# Maps Luna model types to the clip_type string for ComfyUI's load_clip()
+# These correspond to comfy.sd.CLIPType enum values
+CLIP_TYPE_MAP = {
+    "SD1.5": "stable_diffusion",
+    "SDXL": "stable_diffusion",      # SDXL uses same CLIPType as SD1.5
+    "SDXL + Vision": "stable_diffusion",
+    "Flux": "flux",
+    "Flux + Vision": "flux",
+    "SD3": "sd3",
+    "Z-IMAGE": "lumina2",            # Qwen3-VL uses Lumina2 CLIP type
+}
+
+
+# =============================================================================
 # CLIP Requirements by Model Type
 # =============================================================================
 
@@ -638,7 +655,33 @@ class LunaModelRouter:
         if not clip_paths:
             return None
         
-        # Determine CLIP type for ComfyUI
+        # Get clip_type string for daemon/ComfyUI
+        clip_type_str = CLIP_TYPE_MAP.get(model_type, "stable_diffusion")
+        
+        # Route through daemon if available (path-based for efficiency)
+        if daemon_running and use_daemon and DaemonCLIP is not None and daemon_client is not None:
+            try:
+                # Register CLIP by path (daemon loads from disk)
+                result = daemon_client.register_clip_by_path(clip_paths, model_type, clip_type_str)
+                
+                if result.get("success"):
+                    print(f"[LunaModelRouter] Registered CLIP with daemon: {model_type} -> {clip_type_str}")
+                    # Return DaemonCLIP proxy (no source_clip needed - daemon loads from path)
+                    daemon_clip_type = {
+                        "SD1.5": "sd15",
+                        "SDXL": "sdxl",
+                        "SDXL + Vision": "sdxl",
+                        "Flux": "flux",
+                        "Flux + Vision": "flux",
+                        "SD3": "sd3",
+                    }.get(model_type, "sdxl")
+                    return DaemonCLIP(source_clip=None, clip_type=daemon_clip_type, use_existing=True)
+                else:
+                    print(f"[LunaModelRouter] Daemon CLIP registration failed: {result.get('error')}")
+            except Exception as e:
+                print(f"[LunaModelRouter] Daemon CLIP failed, using local: {e}")
+        
+        # Load locally as fallback
         clip_type_map = {
             "SD1.5": comfy.sd.CLIPType.STABLE_DIFFUSION if hasattr(comfy.sd, 'CLIPType') else None,
             "SDXL": comfy.sd.CLIPType.STABLE_DIFFUSION if hasattr(comfy.sd, 'CLIPType') else None,
@@ -648,37 +691,18 @@ class LunaModelRouter:
             "SD3": comfy.sd.CLIPType.SD3 if hasattr(comfy.sd, 'CLIPType') else None,
         }
         
-        # Load CLIP(s)
         try:
-            # Try loading with multiple paths (for dual/triple CLIP)
             clip = comfy.sd.load_clip(
                 ckpt_paths=clip_paths,
                 embedding_directory=folder_paths.get_folder_paths("embeddings"),
                 clip_type=clip_type_map.get(model_type)
             )
         except Exception as e:
-            # Fallback: load first CLIP only
             print(f"[LunaModelRouter] Multi-CLIP load failed, trying single: {e}")
             clip = comfy.sd.load_clip(
                 ckpt_paths=[clip_paths[0]],
                 embedding_directory=folder_paths.get_folder_paths("embeddings")
             )
-        
-        # Route through daemon if available
-        if daemon_running and use_daemon and DaemonCLIP is not None:
-            daemon_clip_type = {
-                "SD1.5": "sd15",
-                "SDXL": "sdxl",
-                "SDXL + Vision": "sdxl",
-                "Flux": "flux",
-                "Flux + Vision": "flux",
-                "SD3": "sd3",
-            }.get(model_type, "sdxl")
-            
-            try:
-                return DaemonCLIP(source_clip=clip, clip_type=daemon_clip_type, use_existing=False)
-            except Exception as e:
-                print(f"[LunaModelRouter] Daemon CLIP failed, using local: {e}")
         
         return clip
     
@@ -850,7 +874,23 @@ class LunaModelRouter:
         if not vae_path or not os.path.exists(vae_path):
             raise FileNotFoundError(f"VAE not found: {vae_name}")
         
-        # Load VAE
+        # Route through daemon if available (path-based for efficiency)
+        if daemon_running and use_daemon and DaemonVAE is not None and daemon_client is not None:
+            try:
+                # Register VAE by path (daemon loads from disk)
+                vae_type = self._detect_vae_type_from_path(vae_path)
+                result = daemon_client.register_vae_by_path(vae_path, vae_type)
+                
+                if result.get("success"):
+                    print(f"[LunaModelRouter] Registered VAE with daemon: {vae_type}")
+                    # Return DaemonVAE proxy (no source_vae needed - daemon loads from path)
+                    return DaemonVAE(source_vae=None, vae_type=vae_type, use_existing=True)
+                else:
+                    print(f"[LunaModelRouter] Daemon VAE registration failed: {result.get('error')}")
+            except Exception as e:
+                print(f"[LunaModelRouter] Daemon VAE failed, using local: {e}")
+        
+        # Load VAE locally as fallback
         try:
             from nodes import VAELoader
             loader = VAELoader()
@@ -860,15 +900,23 @@ class LunaModelRouter:
             sd = comfy.utils.load_torch_file(vae_path)
             vae = comfy.sd.VAE(sd=sd)
         
-        # Route through daemon if available
-        if daemon_running and use_daemon and DaemonVAE is not None:
-            vae_type = detect_vae_type(vae)
-            try:
-                return DaemonVAE(source_vae=vae, vae_type=vae_type, use_existing=False)
-            except Exception as e:
-                print(f"[LunaModelRouter] Daemon VAE failed, using local: {e}")
-        
         return vae
+    
+    def _detect_vae_type_from_path(self, vae_path: str) -> str:
+        """Detect VAE type from path/filename."""
+        basename = os.path.basename(vae_path).lower()
+        
+        if "flux" in basename:
+            return "flux"
+        elif "sd3" in basename:
+            return "sd3"
+        elif "sdxl" in basename or "xl" in basename:
+            return "sdxl"
+        elif "sd15" in basename or "sd1.5" in basename:
+            return "sd15"
+        else:
+            # Default to SDXL (most common)
+            return "sdxl"
 
 
 # =============================================================================
