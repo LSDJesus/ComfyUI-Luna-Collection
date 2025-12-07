@@ -20,6 +20,7 @@ class LunaConfigGateway:
     - Applies CLIP skip (before or after LoRAs)
     - Encodes prompts to conditioning
     - Creates empty latent
+    - Accepts optional vision_embed for vision-conditioned generation
     - Outputs complete metadata dict
     """
     CATEGORY = "Luna/Parameters"
@@ -69,6 +70,18 @@ class LunaConfigGateway:
                 "negative_prompt": ("STRING", {"default": "", "forceInput": True, "multiline": True, "dynamicPrompts": True}),
                 # Optional LoRA stack from external stacker node
                 "lora_stack": ("LORA_STACK", {"tooltip": "Optional LoRA stack to combine with extracted LoRAs"}),
+                # Optional vision embedding for vision-conditioned generation
+                "vision_embed": ("LUNA_VISION_EMBED", {
+                    "tooltip": "Optional vision embedding from Luna Vision Node. When connected, combines with text conditioning for vision-guided generation."
+                }),
+                # Vision conditioning strength
+                "vision_strength": ("FLOAT", {
+                    "default": 1.0,
+                    "min": 0.0,
+                    "max": 2.0,
+                    "step": 0.05,
+                    "tooltip": "Strength of vision conditioning (0 = text only, 1 = balanced, 2 = vision dominant)"
+                }),
             }
         }
 
@@ -136,7 +149,8 @@ class LunaConfigGateway:
 
     def process(self, model, clip, vae, width, height, batch_size, seed, steps, cfg, denoise,
                 clip_skip, clip_skip_timing, sampler, scheduler,
-                model_name="", positive_prompt="", negative_prompt="", lora_stack=None):
+                model_name="", positive_prompt="", negative_prompt="", lora_stack=None,
+                vision_embed=None, vision_strength=1.0):
         
         # Clean model name
         if model_name:
@@ -180,6 +194,14 @@ class LunaConfigGateway:
         positive_cond = nodes.CLIPTextEncode().encode(clip, clean_positive)[0]
         negative_cond = nodes.CLIPTextEncode().encode(clip, clean_negative)[0]
         
+        # Combine with vision embedding if provided
+        vision_used = False
+        if vision_embed is not None:
+            positive_cond = self._combine_vision_conditioning(
+                positive_cond, vision_embed, vision_strength
+            )
+            vision_used = True
+        
         # Create empty latent
         latent = nodes.EmptyLatentImage().generate(width, height, batch_size)[0]
         
@@ -207,12 +229,91 @@ class LunaConfigGateway:
             "batch_size": batch_size,
             "loras": lora_info,
             "lora_count": len(combined_loras),
+            "vision_conditioning": vision_used,
+            "vision_strength": vision_strength if vision_used else 0.0,
         }
         
         return (model, clip, vae, positive_cond, negative_cond, latent,
                 width, height, batch_size, seed, steps, cfg, denoise, clip_skip,
                 sampler, scheduler, model_name, positive_prompt or "", negative_prompt or "",
                 combined_loras, metadata)
+    
+    def _combine_vision_conditioning(
+        self,
+        text_cond: list,
+        vision_embed: dict,
+        strength: float
+    ) -> list:
+        """
+        Combine text conditioning with vision embedding.
+        
+        The vision embedding is concatenated/combined with the text conditioning
+        based on the model architecture:
+        - For SDXL/Flux + Vision: Concatenate to pooled output
+        - For Z-IMAGE (Qwen3): Combine in the embedding space
+        """
+        import torch
+        
+        if not vision_embed or "embedding" not in vision_embed:
+            return text_cond
+        
+        vision_tensor = vision_embed["embedding"]
+        if isinstance(vision_tensor, (list, tuple)):
+            vision_tensor = torch.tensor(vision_tensor)
+        
+        # Scale by strength
+        vision_tensor = vision_tensor * strength
+        
+        # text_cond is a list of (cond_tensor, cond_dict) tuples
+        new_cond = []
+        for cond_tensor, cond_dict in text_cond:
+            # Create a copy of the dict
+            new_dict = dict(cond_dict)
+            
+            # Add vision embedding to the conditioning
+            # Different strategies based on vision type
+            vision_type = vision_embed.get("type", "unknown")
+            
+            if vision_type in ["clip_vision", "clip_h_or_siglip"]:
+                # Standard CLIP Vision - add to pooled output or concat
+                if "pooled_output" in new_dict:
+                    # Concatenate vision to pooled
+                    pooled = new_dict["pooled_output"]
+                    # Ensure compatible shapes
+                    if vision_tensor.dim() == 2 and pooled.dim() == 2:
+                        if vision_tensor.shape[-1] == pooled.shape[-1]:
+                            # Same dimension - can average or concat
+                            new_dict["pooled_output"] = pooled + vision_tensor * strength
+                        else:
+                            # Different dimensions - store separately
+                            new_dict["vision_embed"] = vision_tensor
+                else:
+                    new_dict["vision_embed"] = vision_tensor
+                    
+            elif vision_type in ["qwen3_vision", "qwen3_mmproj"]:
+                # Qwen3-VL vision - concatenate to conditioning tokens
+                if vision_tensor.dim() == 2:
+                    vision_tensor = vision_tensor.unsqueeze(0)
+                if vision_tensor.shape[0] != cond_tensor.shape[0]:
+                    vision_tensor = vision_tensor.expand(cond_tensor.shape[0], -1, -1)
+                
+                # Concatenate vision tokens to the conditioning sequence
+                # Vision tokens come first (like in LLaVA-style architectures)
+                if vision_tensor.shape[-1] == cond_tensor.shape[-1]:
+                    combined = torch.cat([vision_tensor, cond_tensor], dim=1)
+                    new_cond.append((combined, new_dict))
+                    continue
+                else:
+                    # Incompatible dimensions, store separately
+                    new_dict["vision_embed"] = vision_tensor
+            
+            else:
+                # Unknown type - store for model to handle
+                new_dict["vision_embed"] = vision_tensor
+            
+            new_cond.append((cond_tensor, new_dict))
+        
+        return new_cond
 
 
 NODE_CLASS_MAPPINGS = {

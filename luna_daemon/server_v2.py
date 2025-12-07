@@ -540,17 +540,153 @@ class ModelWorker:
             self.is_loaded = False
             torch.cuda.empty_cache()
     
-    def process_vae_encode(self, pixels: torch.Tensor) -> torch.Tensor:
-        """Encode image pixels to latent space"""
+    def process_vae_encode(self, pixels: torch.Tensor, tiled: bool = False,
+                           tile_size: int = 512, overlap: int = 64) -> torch.Tensor:
+        """
+        Encode image pixels to latent space.
+        
+        Args:
+            pixels: Image tensor (B, H, W, C) or (H, W, C)
+            tiled: If True, use tiled encoding for large images
+            tile_size: Size of tiles for tiled encoding
+            overlap: Overlap between tiles
+            
+        Returns:
+            Latent tensor
+        """
         if pixels.dim() == 3:
             pixels = pixels.unsqueeze(0)
-        latents = self.model.encode(pixels)
+        
+        if tiled:
+            latents = self._encode_tiled(pixels, tile_size, overlap)
+        else:
+            try:
+                latents = self.model.encode(pixels)
+            except RuntimeError as e:
+                if "out of memory" in str(e).lower():
+                    logger.warning(f"[VAE] OOM during encode, falling back to tiled mode")
+                    torch.cuda.empty_cache()
+                    latents = self._encode_tiled(pixels, tile_size, overlap)
+                else:
+                    raise
         return latents.cpu()
     
-    def process_vae_decode(self, latents: torch.Tensor) -> torch.Tensor:
-        """Decode latent space to image pixels"""
-        pixels = self.model.decode(latents)
+    def _encode_tiled(self, pixels: torch.Tensor, tile_size: int = 512, 
+                      overlap: int = 64) -> torch.Tensor:
+        """
+        Tiled VAE encoding for large images.
+        
+        Uses multiple tile configurations and averages results for better seam handling.
+        """
+        import comfy.utils
+        
+        # Get model properties
+        downscale = getattr(self.model, 'downscale_ratio', 8)
+        if callable(downscale):
+            downscale = 8  # Default for SDXL
+        latent_channels = getattr(self.model, 'latent_channels', 4)
+        
+        # Prepare the encoding function
+        def encode_fn(a):
+            # Process input if the model has this method
+            if hasattr(self.model, 'process_input'):
+                a = self.model.process_input(a)
+            vae_dtype = getattr(self.model, 'vae_dtype', torch.float32)
+            device = next(self.model.first_stage_model.parameters()).device
+            return self.model.first_stage_model.encode(a.to(vae_dtype).to(device)).float()
+        
+        # Average multiple tile configurations for better seams
+        output_device = torch.device('cpu')
+        
+        samples = comfy.utils.tiled_scale(
+            pixels, encode_fn, tile_size, tile_size, overlap,
+            upscale_amount=(1.0/downscale), out_channels=latent_channels,
+            output_device=output_device
+        )
+        samples += comfy.utils.tiled_scale(
+            pixels, encode_fn, tile_size * 2, tile_size // 2, overlap,
+            upscale_amount=(1.0/downscale), out_channels=latent_channels,
+            output_device=output_device
+        )
+        samples += comfy.utils.tiled_scale(
+            pixels, encode_fn, tile_size // 2, tile_size * 2, overlap,
+            upscale_amount=(1.0/downscale), out_channels=latent_channels,
+            output_device=output_device
+        )
+        samples /= 3.0
+        
+        return samples
+    
+    def process_vae_decode(self, latents: torch.Tensor, tiled: bool = False,
+                           tile_size: int = 64, overlap: int = 16) -> torch.Tensor:
+        """
+        Decode latent space to image pixels.
+        
+        Args:
+            latents: Latent tensor
+            tiled: If True, use tiled decoding for large latents
+            tile_size: Size of tiles for tiled decoding (in latent space)
+            overlap: Overlap between tiles
+            
+        Returns:
+            Pixel tensor
+        """
+        if tiled:
+            pixels = self._decode_tiled(latents, tile_size, overlap)
+        else:
+            try:
+                pixels = self.model.decode(latents)
+            except RuntimeError as e:
+                if "out of memory" in str(e).lower():
+                    logger.warning(f"[VAE] OOM during decode, falling back to tiled mode")
+                    torch.cuda.empty_cache()
+                    pixels = self._decode_tiled(latents, tile_size, overlap)
+                else:
+                    raise
         return pixels.cpu()
+    
+    def _decode_tiled(self, latents: torch.Tensor, tile_size: int = 64,
+                      overlap: int = 16) -> torch.Tensor:
+        """
+        Tiled VAE decoding for large latents.
+        
+        Uses multiple tile configurations and averages results for better seam handling.
+        """
+        import comfy.utils
+        
+        # Get model properties
+        upscale = getattr(self.model, 'upscale_ratio', 8)
+        if callable(upscale):
+            upscale = 8  # Default for SDXL
+        
+        # Prepare the decoding function
+        def decode_fn(a):
+            vae_dtype = getattr(self.model, 'vae_dtype', torch.float32)
+            device = next(self.model.first_stage_model.parameters()).device
+            return self.model.first_stage_model.decode(a.to(vae_dtype).to(device)).float()
+        
+        output_device = torch.device('cpu')
+        
+        # Average multiple tile configurations for better seams
+        pixels = comfy.utils.tiled_scale(
+            latents, decode_fn, tile_size // 2, tile_size * 2, overlap,
+            upscale_amount=upscale, output_device=output_device
+        )
+        pixels += comfy.utils.tiled_scale(
+            latents, decode_fn, tile_size * 2, tile_size // 2, overlap,
+            upscale_amount=upscale, output_device=output_device
+        )
+        pixels += comfy.utils.tiled_scale(
+            latents, decode_fn, tile_size, tile_size, overlap,
+            upscale_amount=upscale, output_device=output_device
+        )
+        pixels /= 3.0
+        
+        # Process output if model has the method
+        if hasattr(self.model, 'process_output'):
+            pixels = self.model.process_output(pixels)
+        
+        return pixels
     
     def process_clip_encode(
         self, 
@@ -667,9 +803,19 @@ class ModelWorker:
                     # Process based on command type
                     if self.worker_type == WorkerType.VAE:
                         if cmd == "vae_encode":
-                            result = self.process_vae_encode(data["pixels"])
+                            result = self.process_vae_encode(
+                                data["pixels"],
+                                tiled=data.get("tiled", False),
+                                tile_size=data.get("tile_size", 512),
+                                overlap=data.get("overlap", 64)
+                            )
                         elif cmd == "vae_decode":
-                            result = self.process_vae_decode(data["latents"])
+                            result = self.process_vae_decode(
+                                data["latents"],
+                                tiled=data.get("tiled", False),
+                                tile_size=data.get("tile_size", 64),
+                                overlap=data.get("overlap", 16)
+                            )
                         else:
                             result = {"error": f"Unknown VAE command: {cmd}"}
                     

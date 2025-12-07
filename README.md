@@ -1,12 +1,12 @@
 # 🌙 ComfyUI Luna Collection
 
-![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.4.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 
 **A production-grade ComfyUI infrastructure for advanced model management, multi-instance VRAM sharing, and workflow automation.**
 
-Luna Collection is a vertically integrated image generation stack designed for high-throughput workflows. It provides smart model loading with automatic precision conversion, multi-GPU daemon architecture for shared VAE/CLIP, hierarchical YAML wildcards, and comprehensive prompt engineering tools.
+Luna Collection is a vertically integrated image generation stack designed for high-throughput workflows. It provides smart model loading with automatic precision conversion, multi-GPU daemon architecture for shared VAE/CLIP, hierarchical YAML wildcards, comprehensive prompt engineering tools, and deep integration with external tools like LUNA-DiffusionToolkit (a Diffusion Toolkit Fork).
 
 ---
 
@@ -17,6 +17,7 @@ Luna Collection is a vertically integrated image generation stack designed for h
 - **Dynamic Model Loader**: JIT precision conversion with smart lazy evaluation
 - **CUDA IPC**: Zero-copy tensor transfer for same-GPU VAE operations
 - **F-150 LoRA Support**: Transient LoRA injection for shared CLIP models
+- **Connections Manager**: Sidebar UI for LoRA/embedding wildcard linking
 
 ### 📦 **Model Management**
 - **Smart Precision Loading**: bf16, fp8, GGUF Q8_0/Q4_K_M with automatic conversion
@@ -26,14 +27,21 @@ Luna Collection is a vertically integrated image generation stack designed for h
 
 ### 🎲 **Prompt Engineering**
 - **YAML Wildcards**: Hierarchical templates with nested path resolution
+- **PromptCraft Engine**: Constraint/modifier/expander system with LoRA linking
 - **Prompt List Loader**: CSV/JSON/YAML import with pos/neg/seed/lora_stack outputs
 - **Batch Prompt Extractor**: Extract prompts from image EXIF (UTF-16BE support)
 - **Config Gateway**: Centralized workflow parameter management
+- **Trigger Injector**: Auto-inject LoRA trigger words into prompts
 
 ### 🖼️ **Image Processing**
 - **Advanced Upscaling**: Model-based, tile-based, and multi-stage upscaling
-- **MediaPipe Detailing**: Face/hand detection and segmentation
+- **Ultimate SD Upscale (TensorRT adaptation deprecated)**: Diffusion-enhanced upscaling with seam fixing
 - **Multi-Image Saver**: Batch output with naming templates and EXIF embedding
+
+### 🔗 **External Integrations**
+- **DiffusionToolkit Bridge**: API nodes for DT image library integration (planned)
+- **Realtime LoRA Training**: Compatible with comfyUI-Realtime-Lora for in-workflow training
+- **Civitai Metadata**: Automatic LoRA/embedding metadata scraping
 
 ---
 
@@ -246,6 +254,7 @@ features:
 | **Luna Batch Prompt Extractor** | Extract prompts from image EXIF metadata |
 | **Luna Config Gateway** | Centralized workflow parameters |
 | **Luna Trigger Injector** | Auto-inject LoRA trigger words |
+| **Luna Expression Pack** | Logic and math expressions for workflows |
 
 **Luna Prompt List Loader** outputs:
 - `positive` - Positive prompt string
@@ -263,6 +272,7 @@ features:
 | **Luna Embedding Manager** | Textual inversion management |
 | **Luna Embedding Manager Random** | Randomized embedding selection |
 | **Luna LoRA Validator** | Validate LoRA files and extract metadata |
+| **Luna Connections Manager** | Sidebar UI for LoRA/embedding ↔ wildcard linking |
 
 ### 🖼️ **Image Processing**
 
@@ -278,8 +288,58 @@ features:
 | Node | Description |
 |------|-------------|
 | **Luna Civitai Metadata Scraper** | Fetch LoRA metadata from Civitai |
-| **Luna Performance Monitor** | Execution time tracking |
 | **Luna Expression Pack** | Logic and math expressions |
+| **Luna Dimension Scaler** | Scale to model-native resolutions |
+
+---
+
+## 🔗 External Tool Integration
+
+### Realtime LoRA Training (comfyUI-Realtime-Lora)
+
+Luna Collection is designed to work seamlessly with [comfyUI-Realtime-Lora](https://github.com/shootthesound/comfyUI-Realtime-Lora) for in-workflow SDXL LoRA training:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                 REALTIME LORA TRAINING WORKFLOW                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+  ┌──────────────────────┐     ┌──────────────────────────────────────┐
+  │ Luna Batch Prompt    │────▶│ images_path folder with .txt captions│
+  │ Extractor (export)   │     └──────────────────┬───────────────────┘
+  └──────────────────────┘                        │
+                                                  ▼
+                               ┌──────────────────────────────────────┐
+                               │ Realtime LoRA Trainer (SDXL)         │
+                               │ • sd_scripts_path: D:/AI/.../sd-scripts
+                               │ • ckpt_name: illustrious_v1.safetensors
+                               │ • Uses kohya sd-scripts                │
+                               └──────────────────┬───────────────────┘
+                                                  │ lora_path
+                                                  ▼
+                               ┌──────────────────────────────────────┐
+                               │ Apply Trained LoRA                   │
+                               └──────────────────┬───────────────────┘
+                                                  │
+                                                  ▼
+                               ┌──────────────────────────────────────┐
+                               │ KSampler (generate with new LoRA)    │
+                               └──────────────────────────────────────┘
+```
+
+**Setup:** Create a junction so sd-scripts can use ComfyUI's venv:
+```powershell
+New-Item -ItemType Junction -Path "D:\path\to\sd-scripts\.venv" -Target "D:\AI\ComfyUI\venv"
+```
+
+### DiffusionToolkit Bridge (Planned)
+
+See [docs/LUNA_TOOLKIT_BRIDGE_NODES.md](docs/LUNA_TOOLKIT_BRIDGE_NODES.md) for planned integration nodes that enable:
+- Query DT image library from ComfyUI
+- Similar image search via embeddings
+- Cluster-based sampling
+- Caption fetching
+- Metadata writeback
 
 ---
 
@@ -422,7 +482,16 @@ Override with the `local_weights_dir` input.
 
 ## 📈 Changelog
 
-### v1.3.0 - Current (2025-12)
+### v1.4.0 - Current (2025-12)
+- ✅ **Connections Manager Sidebar**: LoRA/embedding ↔ wildcard category linking UI
+- ✅ **PromptCraft Engine**: Intelligent prompt generation with constraints/modifiers/expanders
+- ✅ **DynamicPrompt API Update**: Fixed compatibility with latest ComfyUI graph API
+- ✅ **Realtime LoRA Training Integration**: Documentation for sd-scripts integration
+- ✅ **DiffusionToolkit Bridge Spec**: Planned nodes for DT ↔ ComfyUI communication
+- ✅ **Expression Pack**: Logic and math expression nodes
+- ✅ **Trigger Injector**: Auto-inject LoRA trigger words into prompts
+
+### v1.3.0 (2025-12)
 - ✅ **Split Daemon Architecture**: Separate CLIP/VAE daemons for optimal GPU placement
 - ✅ **CUDA IPC**: Zero-copy tensor transfer for same-GPU VAE operations
 - ✅ **F-150 LoRA**: Transient LoRA injection for shared CLIP with LRU cache

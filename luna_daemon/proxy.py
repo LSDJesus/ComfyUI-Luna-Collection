@@ -221,26 +221,97 @@ class DaemonVAE:
                 "Start it from the Luna Daemon panel or run:\n"
                 "  python -m luna_daemon.server"
             )
+    
+    def _should_tile(self, tensor: torch.Tensor, is_latent: bool = False) -> bool:
+        """
+        Determine if tiling should be used based on tensor size.
         
-    def encode(self, pixel_samples: torch.Tensor) -> torch.Tensor:
-        """Encode pixels to latent space via daemon."""
+        Args:
+            tensor: Input tensor (pixels or latents)
+            is_latent: True if tensor is latent space (smaller dimensions)
+            
+        Returns:
+            True if tiling is recommended
+        """
+        # Get spatial dimensions
+        if is_latent:
+            # Latents: (B, C, H, W) - check H, W
+            if tensor.dim() >= 4:
+                h, w = tensor.shape[2], tensor.shape[3]
+            else:
+                return False
+            # Latent threshold: 96x96 = 768x768 pixel equivalent
+            threshold = 96
+        else:
+            # Pixels: (B, H, W, C) - check H, W
+            if tensor.dim() >= 4:
+                h, w = tensor.shape[1], tensor.shape[2]
+            elif tensor.dim() == 3:
+                h, w = tensor.shape[0], tensor.shape[1]
+            else:
+                return False
+            # Pixel threshold: 1536x1536 (larger than typical 1024x1024)
+            threshold = 1536
+        
+        return h > threshold or w > threshold
+        
+    def encode(self, pixel_samples: torch.Tensor, auto_tile: bool = True) -> torch.Tensor:
+        """
+        Encode pixels to latent space via daemon.
+        
+        Args:
+            pixel_samples: Image tensor (B, H, W, C)
+            auto_tile: If True, automatically use tiled encoding for large images
+            
+        Returns:
+            Latent tensor
+        """
         self._check_daemon()
         self._ensure_registered()
         
+        # Determine if tiling is needed
+        use_tiled = auto_tile and self._should_tile(pixel_samples, is_latent=False)
+        
         try:
-            return daemon_client.vae_encode(pixel_samples, self.vae_type)
+            return daemon_client.vae_encode(
+                pixel_samples, 
+                self.vae_type,
+                tiled=use_tiled,
+                tile_size=512,
+                overlap=64
+            )
         except ModelMismatchError as e:
             raise RuntimeError(str(e))
         except DaemonConnectionError as e:
             raise RuntimeError(f"Daemon error: {e}")
     
-    def decode(self, samples_in: torch.Tensor, vae_options: Optional[Dict] = None) -> torch.Tensor:
-        """Decode latents to pixels via daemon."""
+    def decode(self, samples_in: torch.Tensor, vae_options: Optional[Dict] = None,
+               auto_tile: bool = True) -> torch.Tensor:
+        """
+        Decode latents to pixels via daemon.
+        
+        Args:
+            samples_in: Latent tensor
+            vae_options: Optional VAE options (for compatibility)
+            auto_tile: If True, automatically use tiled decoding for large latents
+            
+        Returns:
+            Pixel tensor
+        """
         self._check_daemon()
         self._ensure_registered()
         
+        # Determine if tiling is needed
+        use_tiled = auto_tile and self._should_tile(samples_in, is_latent=True)
+        
         try:
-            return daemon_client.vae_decode(samples_in, self.vae_type)
+            return daemon_client.vae_decode(
+                samples_in, 
+                self.vae_type,
+                tiled=use_tiled,
+                tile_size=64,
+                overlap=16
+            )
         except ModelMismatchError as e:
             raise RuntimeError(str(e))
         except DaemonConnectionError as e:
@@ -249,16 +320,50 @@ class DaemonVAE:
     def encode_tiled(self, pixel_samples: torch.Tensor, 
                      tile_x: int = 512, tile_y: int = 512, 
                      overlap: int = 64, **kwargs) -> torch.Tensor:
-        """Tiled encoding for large images."""
-        # TODO: Add tiled support to daemon protocol
-        return self.encode(pixel_samples)
+        """
+        Tiled encoding for large images.
+        
+        Explicitly requests tiled encoding from the daemon.
+        """
+        self._check_daemon()
+        self._ensure_registered()
+        
+        try:
+            return daemon_client.vae_encode(
+                pixel_samples,
+                self.vae_type,
+                tiled=True,
+                tile_size=min(tile_x, tile_y),
+                overlap=overlap
+            )
+        except ModelMismatchError as e:
+            raise RuntimeError(str(e))
+        except DaemonConnectionError as e:
+            raise RuntimeError(f"Daemon error: {e}")
     
     def decode_tiled(self, samples: torch.Tensor,
                      tile_x: int = 64, tile_y: int = 64,
                      overlap: int = 16, **kwargs) -> torch.Tensor:
-        """Tiled decoding for large latents."""
-        # TODO: Add tiled support to daemon protocol
-        return self.decode(samples)
+        """
+        Tiled decoding for large latents.
+        
+        Explicitly requests tiled decoding from the daemon.
+        """
+        self._check_daemon()
+        self._ensure_registered()
+        
+        try:
+            return daemon_client.vae_decode(
+                samples,
+                self.vae_type,
+                tiled=True,
+                tile_size=min(tile_x, tile_y),
+                overlap=overlap
+            )
+        except ModelMismatchError as e:
+            raise RuntimeError(str(e))
+        except DaemonConnectionError as e:
+            raise RuntimeError(f"Daemon error: {e}")
     
     def encode_tiled_(self, pixel_samples, tile_x=512, tile_y=512, overlap=64):
         """Legacy tiled encode method."""

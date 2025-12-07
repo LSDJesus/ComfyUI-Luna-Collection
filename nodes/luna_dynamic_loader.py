@@ -301,28 +301,29 @@ class LunaDynamicModelLoader:
         needed = [0, 3]
         
         if dynprompt is not None and unique_id is not None:
-            # Check if CLIP (1) or VAE (2) outputs are connected
-            graph = dynprompt.get_graph()
-            node = graph.get_node(unique_id)
-            
-            if node is not None:
-                # Check downstream connections for each output
+            try:
+                # Check if CLIP (1) or VAE (2) outputs are connected
+                # DynamicPrompt API: use all_node_ids() and get_node() directly
                 for output_idx in [1, 2]:  # CLIP=1, VAE=2
-                    if self._is_output_connected(graph, unique_id, output_idx):
+                    if self._is_output_connected(dynprompt, unique_id, output_idx):
                         needed.append(output_idx)
+            except Exception:
+                # If we can't determine, assume all needed
+                needed = [0, 1, 2, 3]
         else:
             # No graph info - assume all needed
             needed = [0, 1, 2, 3]
         
         return needed
     
-    def _is_output_connected(self, graph, node_id, output_idx):
+    def _is_output_connected(self, dynprompt, node_id, output_idx):
         """Check if a specific output slot is connected to any downstream node."""
         try:
             # Iterate all nodes to find connections from this output
-            for other_id in graph.get_nodes():
-                other_node = graph.get_node(other_id)
-                if other_node is None:
+            for other_id in dynprompt.all_node_ids():
+                try:
+                    other_node = dynprompt.get_node(other_id)
+                except Exception:
                     continue
                 
                 inputs = other_node.get("inputs", {})
@@ -332,7 +333,7 @@ class LunaDynamicModelLoader:
                         if str(input_val[0]) == str(node_id) and input_val[1] == output_idx:
                             return True
             return False
-        except:
+        except Exception:
             # If we can't determine, assume connected
             return True
     

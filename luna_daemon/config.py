@@ -95,6 +95,27 @@ VRAM_SAFETY_MARGIN_GB = 2.0  # Buffer to prevent OOM
 LORA_CACHE_SIZE_MB = 2048.0  # 2GB for cached LoRAs
 
 # =============================================================================
+# Qwen3-VL / Z-IMAGE Configuration
+# =============================================================================
+
+# Qwen3-VL model for unified text encoding + vision-language
+# Provides Z-IMAGE compatible embeddings AND VLM capabilities
+# Set to HuggingFace model ID or local path
+QWEN3_VL_MODEL = "Qwen/Qwen3-VL-4B-Instruct"  # Default: official 4B instruct
+
+# Alternative: local GGUF path (for llama.cpp backend)
+# QWEN3_VL_MODEL = "F:/LLM/Models/huihui/Qwen3-VL-4B-instruct-abliterated/Huihui-Qwen3-VL-4B-Instruct-abliterated.i1-Q4_K_M.gguf"
+
+# Whether to auto-load Qwen3-VL on daemon startup
+# If False, loads on first Z-IMAGE request
+QWEN3_VL_AUTO_LOAD = False
+
+# Qwen3-VL inference settings
+QWEN3_VL_MAX_TEXT_LENGTH = 256   # Max tokens for CLIP-style encoding
+QWEN3_VL_MAX_NEW_TOKENS = 512    # Max tokens for VLM generation
+QWEN3_VL_TEMPERATURE = 0.7       # VLM generation temperature
+
+# =============================================================================
 # Logging
 # =============================================================================
 

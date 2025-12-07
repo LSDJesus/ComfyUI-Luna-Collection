@@ -10,6 +10,7 @@ A comprehensive reference for all nodes in the Luna Collection.
    - [LunaYAMLWildcard](#lunayamlwildcard)
    - [LunaPromptCraft](#lunapromptcraft)
    - [LunaWildcardConnections](#lunawildcardconnections)
+   - [LunaTriggerInjector](#lunatriggerinjector)
 2. [Batch Processing](#batch-processing)
    - [LunaBatchPromptExtractor](#lunabatchpromptextractor)
    - [LunaBatchPromptLoader](#lunabatchpromptloader)
@@ -17,22 +18,25 @@ A comprehensive reference for all nodes in the Luna Collection.
    - [LunaDimensionScaler](#lunadimensionscaler)
 3. [Configuration & Parameters](#configuration--parameters)
    - [LunaConfigGateway](#lunaconfiggateway)
+   - [LunaExpressionPack](#lunaexpressionpack)
 4. [Image Upscaling](#image-upscaling)
    - [Luna Simple Upscaler](#luna-simple-upscaler)
    - [Luna Advanced Upscaler](#luna-advanced-upscaler)
    - [Luna Ultimate SD Upscale](#luna-ultimate-sd-upscale)
 5. [Image Saving](#image-saving)
    - [LunaMultiSaver](#lunamultisaver)
-6. [Character/Expression Generation](#characterexpression-generation)
-   - [LunaExpressionPromptBuilder](#lunaexpressionpromptbuilder)
-   - [LunaExpressionSlicerSaver](#lunaexpressionslicersaver)
-7. [Model Management & Daemon](#model-management--daemon)
+6. [Model Management & Daemon](#model-management--daemon)
+   - [LunaDynamicModelLoader](#lunadynamicmodelloader)
    - [LunaDaemonVAELoader](#lunadaemonvaeloader)
    - [LunaDaemonCLIPLoader](#lunadaemoncliploader)
    - [LunaCheckpointTunnel](#lunacheckpointtunnel)
+   - [LunaGGUFConverter](#lunaggufconverter)
    - [Luna Daemon API](#luna-daemon-api)
-8. [Civitai Integration](#civitai-integration)
+7. [Civitai Integration](#civitai-integration)
    - [LunaCivitaiScraper](#lunacivitaiscraper)
+8. [External Integrations](#external-integrations)
+   - [Realtime LoRA Training](#realtime-lora-training)
+   - [DiffusionToolkit Bridge](#diffusiontoolkit-bridge)
 
 ---
 
@@ -147,6 +151,34 @@ Maintains a connections.json database that links your LoRAs and embeddings to wi
 
 #### Why It Exists
 Managing LoRAs manually in prompts is tedious. Connection linking automates the process - just write `{character:waifu}` and the appropriate LoRA loads automatically.
+
+**UI Access:** The Connections Manager is available in the ComfyUI sidebar (look for the Luna icon) or via the floating toolbar button.
+
+---
+
+### LunaTriggerInjector
+**Category:** `Luna/Prompting`  
+**Purpose:** Automatically inject LoRA trigger words into prompts.
+
+#### What It Does
+Parses incoming LoRA stack, looks up trigger words from metadata (Civitai or embedded), and injects them into the prompt at a configurable position.
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| prompt | STRING | Base prompt text |
+| lora_stack | LORA_STACK | LoRAs to extract triggers from |
+| position | ENUM | start / end / after_quality |
+| separator | STRING | Between triggers (default: ", ") |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| prompt | STRING | Prompt with triggers injected |
+| triggers | STRING | Just the trigger words |
+
+#### Why It Exists
+Many LoRAs require specific trigger words. This node eliminates forgetting triggers and keeps prompts clean while ensuring LoRAs activate properly.
 
 ---
 
@@ -376,6 +408,26 @@ Reduces workflow complexity by combining 5-10 separate nodes into one coherent c
 
 ---
 
+### LunaExpressionPack
+**Category:** `Luna/Logic`  
+**Purpose:** Logic and math expressions for workflow automation.
+
+#### What It Does
+Collection of utility nodes for workflow logic:
+
+| Node | Description |
+|------|-------------|
+| **Luna Compare** | Compare two values (==, !=, <, >, <=, >=) |
+| **Luna Switch** | Conditional output routing |
+| **Luna Math** | Basic math operations |
+| **Luna String Format** | Template-based string formatting |
+| **Luna Random Choice** | Random selection from list |
+
+#### Why It Exists
+Complex workflows need conditional logic. These nodes provide the building blocks for dynamic, data-driven workflows.
+
+---
+
 ## Image Upscaling
 
 ### Luna Simple Upscaler
@@ -551,6 +603,86 @@ Expression sheet workflows need post-processing. This automates the tedious slic
 
 ## Model Management & Daemon
 
+### LunaDynamicModelLoader
+**Category:** `Luna/Loaders`  
+**Purpose:** Smart checkpoint loading with JIT precision conversion and lazy evaluation.
+
+#### What It Does
+The centerpiece of model management. Loads checkpoints with:
+- **Smart lazy evaluation**: Only loads CLIP/VAE when those outputs are connected
+- **JIT UNet conversion**: Converts UNet to optimized precision on first use
+- **Hybrid loading**: CLIP/VAE from source file, UNet from cached optimized version
+- **Automatic caching**: Converted UNets stored on NVMe for instant reloads
+
+#### Architecture
+```
+┌────────────────────────────────────────────────────────┐
+│             8TB HDD (Source Library)                   │
+│  358 FP16 Checkpoints (6.5GB each)                     │
+└────────────────────────────────────────────────────────┘
+                          │
+                          ▼ First use: extract UNet + convert
+┌────────────────────────────────────────────────────────┐
+│             NVMe (Local Optimized Weights)             │
+│  models/unet/optimized/                                │
+│  • illustriousXL_Q8_0.gguf (3.2GB)                     │
+│  • ponyV6_fp8_e4m3fn_unet.safetensors (2.1GB)          │
+└────────────────────────────────────────────────────────┘
+                          │
+                          ▼ Subsequent loads: instant from cache
+┌────────────────────────────────────────────────────────┐
+│  • MODEL always loads optimized UNet                   │
+│  • CLIP/VAE only load if outputs are connected         │
+│  • No mode selection needed - just wire what you need  │
+└────────────────────────────────────────────────────────┘
+```
+
+#### Supported Precisions
+| Precision | Best For | Size Reduction |
+|-----------|----------|----------------|
+| `bf16` | Universal, fast | ~50% |
+| `fp8_e4m3fn` | Ada/Blackwell GPUs | ~75% |
+| `gguf_Q8_0` | Ampere INT8 tensor cores | ~50% |
+| `gguf_Q4_K_M` | Blackwell INT4 tensor cores | ~75% |
+
+#### Inputs
+| Input | Type | Description |
+|-------|------|-------------|
+| ckpt_name | COMBO | Checkpoint dropdown |
+| precision | COMBO | Target UNet precision |
+| local_weights_dir | STRING | Override cache directory |
+
+#### Outputs
+| Output | Type | Description |
+|--------|------|-------------|
+| MODEL | MODEL | Optimized UNet |
+| CLIP | CLIP | Original CLIP (lazy loaded) |
+| VAE | VAE | Original VAE (lazy loaded) |
+| unet_path | STRING | Path to cached UNet file |
+
+#### Why It Exists
+Loading full FP16 checkpoints is slow and memory-intensive. This node enables:
+- Fast iteration with optimized models
+- Large checkpoint libraries without VRAM constraints
+- Seamless daemon integration (CLIP/VAE not loaded when using daemon)
+
+---
+
+### LunaGGUFConverter
+**Category:** `Luna/Utils`  
+**Purpose:** Convert checkpoints to quantized GGUF format.
+
+#### What It Does
+Extracts UNet from any checkpoint and converts to GGUF quantization:
+- Q8_0 (8-bit) - Best for Ampere INT8 tensor cores
+- Q4_K_M (4-bit) - Best for Blackwell INT4 tensor cores
+- Q4_0 (4-bit) - Smaller, slightly lower quality
+
+#### Why It Exists
+Pre-convert your checkpoint library to optimized formats for faster loading and reduced VRAM usage.
+
+---
+
 ### Luna Daemon System Overview
 The Luna Daemon enables **multi-instance VRAM sharing**. A separate process holds VAE/CLIP models on one GPU while multiple ComfyUI instances share them via socket connections.
 
@@ -653,12 +785,87 @@ Managing LoRA trigger words manually is error-prone. This node automates metadat
 
 ---
 
+## External Integrations
+
+### Realtime LoRA Training
+
+Luna Collection integrates with [comfyUI-Realtime-Lora](https://github.com/shootthesound/comfyUI-Realtime-Lora) for in-workflow SDXL LoRA training.
+
+#### Setup
+1. Clone comfyUI-Realtime-Lora to your custom_nodes folder
+2. Install [kohya sd-scripts](https://github.com/kohya-ss/sd-scripts) somewhere
+3. Create a junction so sd-scripts can use ComfyUI's venv:
+```powershell
+New-Item -ItemType Junction -Path "D:\path\to\sd-scripts\.venv" -Target "D:\AI\ComfyUI\venv"
+```
+
+#### Workflow
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                 REALTIME LORA TRAINING WORKFLOW                     │
+└─────────────────────────────────────────────────────────────────────┘
+
+  [Image Folder with .txt captions]
+             │
+             ▼
+  ┌──────────────────────────────────────┐
+  │ Realtime LoRA Trainer (SDXL)         │
+  │ • sd_scripts_path: path/to/sd-scripts│
+  │ • ckpt_name: your_checkpoint.safetensors
+  │ • training_steps: 500                │
+  │ • learning_rate: 0.0005              │
+  │ • lora_rank: 16                      │
+  └──────────────────┬───────────────────┘
+                     │ lora_path
+                     ▼
+  ┌──────────────────────────────────────┐
+  │ Apply Trained LoRA                   │
+  │ • strength: 1.0                      │
+  └──────────────────┬───────────────────┘
+                     │
+                     ▼
+  [KSampler with freshly trained LoRA]
+```
+
+#### Luna Integration Points
+- **Luna Batch Prompt Extractor**: Export captions from existing images
+- **Luna Multi Saver**: Save generated results with metadata
+- **Luna Trigger Injector**: Add trained LoRA triggers to prompts
+
+---
+
+### DiffusionToolkit Bridge
+
+See [docs/LUNA_TOOLKIT_BRIDGE_NODES.md](docs/LUNA_TOOLKIT_BRIDGE_NODES.md) for planned integration nodes.
+
+#### Planned Nodes
+
+| Node | Purpose |
+|------|---------|
+| **LunaDTImageLoader** | Load images from DT by ID or path |
+| **LunaDTSimilarSearch** | Find similar images via DT embeddings |
+| **LunaDTClusterSampler** | Sample from DT image clusters |
+| **LunaDTCaptionFetcher** | Get captions from DT database |
+| **LunaDTMetadataWriter** | Write gen params back to DT |
+| **LunaDTPromptInjector** | Inject DT captions into prompts |
+| **LunaDTControlNetCache** | Cache preprocessor outputs in DT |
+| **LunaDTConnectionStatus** | Check DT API availability |
+
+#### Use Cases
+- Query 500k image library from within ComfyUI
+- Find similar images for img2img workflows
+- Sample from clusters for style consistency
+- Write generation metadata back to central database
+
+---
+
 ## Summary: Node Categories by Use Case
 
 ### Prompt Generation
 - **LunaYAMLWildcard**: Structured random prompts
 - **LunaPromptCraft**: Intelligent prompt generation with rules
 - **LunaWildcardConnections**: LoRA/embedding linking
+- **LunaTriggerInjector**: Auto-inject LoRA triggers
 
 ### Batch Workflows
 - **LunaBatchPromptExtractor**: Harvest prompts from images
@@ -668,13 +875,20 @@ Managing LoRA trigger words manually is error-prone. This node automates metadat
 
 ### Configuration
 - **LunaConfigGateway**: Central settings hub
+- **LunaExpressionPack**: Logic and math operations
+
+### Model Loading
+- **LunaDynamicModelLoader**: Smart lazy loading with precision conversion
+- **LunaGGUFConverter**: Convert to quantized formats
+- **Luna Daemon nodes**: Multi-instance VRAM sharing
 
 ### Post-Processing
 - **Luna Simple/Advanced/Ultimate Upscaler**: Image upscaling
 - **LunaMultiSaver**: Multi-format saving with quality gates
 
-### Character Creation
-- **LunaExpressionPromptBuilder/SlicerSaver**: Expression pack creation
+### External Tools
+- **Realtime LoRA Training**: In-workflow LoRA training via sd-scripts
+- **DiffusionToolkit Bridge**: Image library integration (planned)
 
 ### Infrastructure
 - **Luna Daemon nodes**: Multi-instance VRAM sharing
@@ -746,4 +960,4 @@ Managing LoRA trigger words manually is error-prone. This node automates metadat
 
 ---
 
-*Document generated from source code analysis. Last updated: December 2025*
+*Document generated from source code analysis. Last updated: December 2025 (v1.4.0)*

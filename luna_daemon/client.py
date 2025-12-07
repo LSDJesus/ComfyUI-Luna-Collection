@@ -253,26 +253,36 @@ class DaemonClient:
     # VAE Operations
     # =========================================================================
     
-    def vae_encode(self, pixels: torch.Tensor, vae_type: str) -> torch.Tensor:
+    def vae_encode(self, pixels: torch.Tensor, vae_type: str,
+                   tiled: bool = False, tile_size: int = 512, 
+                   overlap: int = 64) -> torch.Tensor:
         """
         Encode image pixels to latent space via daemon.
         
         Uses CUDA IPC if available (same GPU), otherwise falls back to pickle.
+        Supports tiled encoding for large images with automatic OOM fallback.
         
         Args:
             pixels: Image tensor in ComfyUI format (B, H, W, C), float32, 0-1 range
             vae_type: VAE type string ('sdxl', 'flux', etc.)
+            tiled: If True, use tiled encoding for large images
+            tile_size: Size of tiles for tiled encoding (pixels)
+            overlap: Overlap between tiles (pixels)
         
         Returns:
             Latent tensor
         """
-        if self._ipc_enabled and pixels.is_cuda:
+        if self._ipc_enabled and pixels.is_cuda and not tiled:
+            # IPC mode doesn't support tiling yet - fallback to regular
             return self._vae_encode_ipc(pixels, vae_type)
         
         return self._send_request({
             "cmd": "vae_encode",
             "pixels": pixels.cpu(),
-            "vae_type": vae_type
+            "vae_type": vae_type,
+            "tiled": tiled,
+            "tile_size": tile_size,
+            "overlap": overlap
         })
     
     def _vae_encode_ipc(self, pixels: torch.Tensor, vae_type: str) -> torch.Tensor:
@@ -292,26 +302,36 @@ class DaemonClient:
         # Result is already a CUDA tensor from shared memory
         return result
     
-    def vae_decode(self, latents: torch.Tensor, vae_type: str) -> torch.Tensor:
+    def vae_decode(self, latents: torch.Tensor, vae_type: str,
+                   tiled: bool = False, tile_size: int = 64,
+                   overlap: int = 16) -> torch.Tensor:
         """
         Decode latents to image pixels via daemon.
         
         Uses CUDA IPC if available (same GPU), otherwise falls back to pickle.
+        Supports tiled decoding for large latents with automatic OOM fallback.
         
         Args:
             latents: Latent tensor
             vae_type: VAE type string ('sdxl', 'flux', etc.)
+            tiled: If True, use tiled decoding for large latents
+            tile_size: Size of tiles for tiled decoding (latent space)
+            overlap: Overlap between tiles (latent space)
         
         Returns:
             Image tensor in ComfyUI format (B, H, W, C), float32, 0-1 range
         """
-        if self._ipc_enabled and latents.is_cuda:
+        if self._ipc_enabled and latents.is_cuda and not tiled:
+            # IPC mode doesn't support tiling yet - fallback to regular
             return self._vae_decode_ipc(latents, vae_type)
         
         return self._send_request({
             "cmd": "vae_decode",
             "latents": latents.cpu(),
-            "vae_type": vae_type
+            "vae_type": vae_type,
+            "tiled": tiled,
+            "tile_size": tile_size,
+            "overlap": overlap
         })
     
     def _vae_decode_ipc(self, latents: torch.Tensor, vae_type: str) -> torch.Tensor:
@@ -330,15 +350,6 @@ class DaemonClient:
         
         # Result is already a CUDA tensor from shared memory
         return result
-        
-        Returns:
-            Image tensor in ComfyUI format (B, H, W, C), float32, 0-1 range
-        """
-        return self._send_request({
-            "cmd": "vae_decode",
-            "latents": latents.cpu(),
-            "vae_type": vae_type
-        })
     
     # =========================================================================
     # CLIP Operations
@@ -458,6 +469,75 @@ class DaemonClient:
     def clear_lora_cache(self) -> dict:
         """Clear all cached LoRAs from daemon."""
         return self._send_request({"cmd": "clear_loras"})
+    
+    # =========================================================================
+    # Z-IMAGE / Qwen3-VL Operations
+    # =========================================================================
+    
+    def zimage_encode(self, text: str) -> torch.Tensor:
+        """
+        Encode text using Z-IMAGE's Qwen3 encoder.
+        
+        Routes to daemon's Qwen3-VL service which provides embeddings
+        compatible with Z-IMAGE (vocab_size=151936, hidden_size=2560).
+        
+        Args:
+            text: Input prompt text
+            
+        Returns:
+            Conditioning tensor [B, seq_len, 2560]
+        """
+        return self._send_request({
+            "cmd": "zimage_encode",
+            "text": text
+        })
+    
+    def zimage_encode_batch(self, texts: list) -> torch.Tensor:
+        """
+        Batch encode multiple texts for Z-IMAGE.
+        
+        Args:
+            texts: List of prompt strings
+            
+        Returns:
+            Stacked conditioning tensors [B, seq_len, 2560]
+        """
+        return self._send_request({
+            "cmd": "zimage_encode_batch",
+            "texts": texts
+        })
+    
+    def describe_image(self, image: torch.Tensor, prompt: str = "Describe this image.") -> str:
+        """
+        Generate an image description using Qwen3-VL.
+        
+        Args:
+            image: Image tensor (B, H, W, C) or (H, W, C)
+            prompt: Instruction for the VLM
+            
+        Returns:
+            Generated description text
+        """
+        return self._send_request({
+            "cmd": "describe_image",
+            "image": image.cpu() if isinstance(image, torch.Tensor) else image,
+            "prompt": prompt
+        })
+    
+    def extract_style(self, image: torch.Tensor) -> str:
+        """
+        Extract style descriptors from an image.
+        
+        Args:
+            image: Image tensor
+            
+        Returns:
+            Style description for prompts
+        """
+        return self._send_request({
+            "cmd": "extract_style",
+            "image": image.cpu() if isinstance(image, torch.Tensor) else image
+        })
 
 
 # =============================================================================
@@ -504,14 +584,44 @@ def register_clip(clip: Any, clip_type: str) -> dict:
     return get_client().register_clip(clip, clip_type)
 
 
-def vae_encode(pixels: torch.Tensor, vae_type: str) -> torch.Tensor:
-    """Encode pixels via daemon"""
-    return get_client().vae_encode(pixels, vae_type)
+def vae_encode(pixels: torch.Tensor, vae_type: str,
+               tiled: bool = False, tile_size: int = 512,
+               overlap: int = 64) -> torch.Tensor:
+    """
+    Encode pixels via daemon.
+    
+    Args:
+        pixels: Image tensor (B, H, W, C)
+        vae_type: VAE type string
+        tiled: If True, use tiled encoding for large images
+        tile_size: Tile size in pixels
+        overlap: Overlap between tiles
+        
+    Returns:
+        Latent tensor
+    """
+    return get_client().vae_encode(pixels, vae_type, tiled=tiled, 
+                                    tile_size=tile_size, overlap=overlap)
 
 
-def vae_decode(latents: torch.Tensor, vae_type: str) -> torch.Tensor:
-    """Decode latents via daemon"""
-    return get_client().vae_decode(latents, vae_type)
+def vae_decode(latents: torch.Tensor, vae_type: str,
+               tiled: bool = False, tile_size: int = 64,
+               overlap: int = 16) -> torch.Tensor:
+    """
+    Decode latents via daemon.
+    
+    Args:
+        latents: Latent tensor
+        vae_type: VAE type string
+        tiled: If True, use tiled decoding for large latents
+        tile_size: Tile size in latent space
+        overlap: Overlap between tiles
+        
+    Returns:
+        Image tensor (B, H, W, C)
+    """
+    return get_client().vae_decode(latents, vae_type, tiled=tiled,
+                                    tile_size=tile_size, overlap=overlap)
 
 
 def clip_encode(positive: str, negative: str, clip_type: str, lora_stack: Optional[List[Dict]] = None) -> Tuple:
@@ -542,6 +652,81 @@ def get_lora_stats() -> dict:
 def clear_lora_cache() -> dict:
     """Clear LoRA cache"""
     return get_client().clear_lora_cache()
+
+
+# =============================================================================
+# Z-IMAGE / Qwen3-VL Operations
+# =============================================================================
+
+def zimage_encode(text: str) -> torch.Tensor:
+    """
+    Encode text using Z-IMAGE's Qwen3 encoder (via daemon's Qwen3-VL).
+    
+    This routes to the daemon's Qwen3-VL encoder service, which provides
+    embeddings compatible with Z-IMAGE's Qwen3-4B CLIP.
+    
+    Args:
+        text: Input prompt text
+        
+    Returns:
+        Conditioning tensor [B, seq_len, 2560] compatible with Z-IMAGE
+    """
+    return get_client().zimage_encode(text)
+
+
+def zimage_encode_batch(texts: list) -> torch.Tensor:
+    """
+    Batch encode multiple texts for Z-IMAGE.
+    
+    Efficient when encoding multiple prompts (e.g., for batch generation).
+    
+    Args:
+        texts: List of prompt strings
+        
+    Returns:
+        Stacked conditioning tensors [B, seq_len, 2560]
+    """
+    return get_client().zimage_encode_batch(texts)
+
+
+def describe_image(image: torch.Tensor, prompt: str = "Describe this image in detail.") -> str:
+    """
+    Generate a description of an image using daemon's VLM.
+    
+    Uses Qwen3-VL's vision-language capabilities.
+    
+    Args:
+        image: Image tensor (B, H, W, C) or (H, W, C)
+        prompt: Instruction for the VLM
+        
+    Returns:
+        Generated description text
+    """
+    return get_client().describe_image(image, prompt)
+
+
+def extract_style(image: torch.Tensor) -> str:
+    """
+    Extract style descriptors from an image.
+    
+    Returns a prompt-style description of the image's artistic style.
+    
+    Args:
+        image: Image tensor
+        
+    Returns:
+        Style description suitable for prompts
+    """
+    return get_client().extract_style(image)
+
+
+def is_qwen3_loaded() -> bool:
+    """Check if daemon has Qwen3-VL encoder loaded."""
+    try:
+        info = get_daemon_info()
+        return info.get('qwen3_loaded', False)
+    except:
+        return False
 
 
 # =============================================================================

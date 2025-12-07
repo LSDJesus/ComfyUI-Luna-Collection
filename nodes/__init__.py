@@ -51,6 +51,19 @@ from .luna_lora_validator import LunaLoRAValidator
 # Import LoRA trigger injector
 from .luna_trigger_injector import LunaLoRATriggerInjector
 
+# Import unified model router
+from .luna_model_router import LunaModelRouter
+
+# Import dynamic loader
+from .luna_dynamic_loader import LunaDynamicModelLoader, LunaOptimizedWeightsManager
+
+# Import vision and VLM nodes
+from .luna_vision_node import LunaVisionNode
+from .luna_vlm_prompt_generator import LunaVLMPromptGenerator
+
+# Import secondary model loader for multi-model workflows
+from .luna_secondary_loader import LunaSecondaryModelLoader, LunaModelRestore
+
 # Combine all node mappings
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
@@ -98,6 +111,16 @@ NODE_CLASS_MAPPINGS.update({
     "LunaLoRAValidator": LunaLoRAValidator,
     # LoRA trigger injection
     "LunaLoRATriggerInjector": LunaLoRATriggerInjector,
+    # Model loading
+    "LunaModelRouter": LunaModelRouter,
+    "LunaDynamicModelLoader": LunaDynamicModelLoader,
+    "LunaOptimizedWeightsManager": LunaOptimizedWeightsManager,
+    # Vision and VLM
+    "LunaVisionNode": LunaVisionNode,
+    "LunaVLMPromptGenerator": LunaVLMPromptGenerator,
+    # Multi-model workflows
+    "LunaSecondaryModelLoader": LunaSecondaryModelLoader,
+    "LunaModelRestore": LunaModelRestore,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -135,4 +158,14 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "LunaLoRAValidator": "Luna LoRA Validator",
     # LoRA trigger injection
     "LunaLoRATriggerInjector": "Luna LoRA Trigger Injector",
+    # Model loading
+    "LunaModelRouter": "Luna Model Router ⚡",
+    "LunaDynamicModelLoader": "Luna Dynamic Model Loader",
+    "LunaOptimizedWeightsManager": "Luna Optimized Weights Manager",
+    # Vision and VLM
+    "LunaVisionNode": "Luna Vision Encoder 👁️",
+    "LunaVLMPromptGenerator": "Luna VLM Prompt Generator 🤖",
+    # Multi-model workflows
+    "LunaSecondaryModelLoader": "Luna Secondary Model Loader 🔄",
+    "LunaModelRestore": "Luna Model Restore 📤",
 })

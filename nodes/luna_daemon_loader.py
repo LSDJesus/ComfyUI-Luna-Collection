@@ -8,9 +8,15 @@ nodes like FaceDetailer, UltimateSDUpscale, etc.
 Component-based architecture:
 - CLIP components (clip_l, clip_g, t5xxl) can be shared across model families
 - VAE components are family-specific (sdxl_vae, flux_vae, etc.)
+- Z-IMAGE models use Qwen3-VL for CLIP encoding (auto-detected)
 
 The daemon loads models on-demand from the first workflow request, then
 shares components across all ComfyUI instances for maximum VRAM savings.
+
+Auto-detection:
+- Standard CLIP (SD1.5, SDXL, Flux, SD3) → routes to standard CLIP encoders
+- Z-IMAGE Qwen3-4B CLIP → routes to daemon's Qwen3-VL encoder
+  (Qwen3-VL-4B has identical text architecture: vocab_size=151936, hidden_size=2560)
 """
 
 from __future__ import annotations
@@ -21,6 +27,7 @@ from typing import TYPE_CHECKING, Tuple, List, Any
 if TYPE_CHECKING:
     import folder_paths
     from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP
+    from ..luna_daemon.zimage_proxy import DaemonZImageCLIP
     from ..luna_daemon import client as daemon_client
 
 try:
@@ -31,6 +38,12 @@ except ImportError:
 # Import proxy classes
 try:
     from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP, detect_vae_type, detect_clip_type
+    from ..luna_daemon.zimage_proxy import (
+        DaemonZImageCLIP, 
+        detect_clip_architecture, 
+        is_zimage_clip,
+        create_clip_proxy
+    )
     from ..luna_daemon import client as daemon_client
     from ..luna_daemon.client import DaemonConnectionError
     DAEMON_AVAILABLE = True
@@ -39,6 +52,7 @@ except ImportError:
     DaemonConnectionError = Exception
     DaemonVAE = None  # type: ignore
     DaemonCLIP = None  # type: ignore
+    DaemonZImageCLIP = None  # type: ignore
     daemon_client = None  # type: ignore
     
     # Dummy functions for when daemon is not available
@@ -46,6 +60,12 @@ except ImportError:
         return 'unknown'
     def detect_clip_type(clip: Any) -> str:
         return 'unknown'
+    def detect_clip_architecture(clip: Any) -> dict:
+        return {'type': 'unknown', 'is_qwen': False}
+    def is_zimage_clip(clip: Any) -> bool:
+        return False
+    def create_clip_proxy(source_clip: Any, use_existing: bool = False, force_type: Any = None):
+        return source_clip
 
 
 class LunaDaemonVAELoader:
@@ -198,8 +218,14 @@ class LunaCheckpointTunnel:
     - Daemon running, matching type: Return existing proxies (share!)
     - Daemon running, different type: Load as additional component
     
+    Auto-detection for Z-IMAGE:
+    - Detects Qwen3-4B CLIP (vocab_size=151936, hidden_size=2560)
+    - Routes to daemon's Qwen3-VL encoder for compatible embeddings
+    - Supports both Z-IMAGE and standard CLIP in same daemon
+    
     Component-based sharing:
     - CLIP components (clip_l, clip_g, t5xxl) are shared across model families
+    - Qwen3 components shared for all Z-IMAGE workflows
     - VAE components are family-specific (sdxl_vae, flux_vae, etc.)
     
     Just connect this after your checkpoint loader and it handles everything!
@@ -218,7 +244,7 @@ class LunaCheckpointTunnel:
                     "tooltip": "MODEL from checkpoint loader - passed through unchanged"
                 }),
                 "clip": ("CLIP", {
-                    "tooltip": "CLIP from checkpoint loader - may be proxied to daemon"
+                    "tooltip": "CLIP from checkpoint loader - auto-detects Z-IMAGE vs standard CLIP"
                 }),
                 "vae": ("VAE", {
                     "tooltip": "VAE from checkpoint loader - may be proxied to daemon"
@@ -228,22 +254,33 @@ class LunaCheckpointTunnel:
     
     def tunnel(self, model, clip, vae) -> Tuple:
         """
-        Route VAE/CLIP based on daemon state.
+        Route VAE/CLIP based on daemon state and model architecture.
         MODEL always passes through unchanged.
+        
+        Auto-detection:
+        - Z-IMAGE (Qwen3-4B CLIP) → routes to Qwen3-VL encoder
+        - Standard CLIP → routes to standard CLIP encoders
         """
-        # Detect types using the proxy module's detection functions
+        # Detect VAE type
         vae_type = detect_vae_type(vae)
-        clip_type = detect_clip_type(clip)
+        
+        # Detect CLIP architecture (includes Z-IMAGE detection)
+        clip_arch = detect_clip_architecture(clip)
+        clip_type = clip_arch['type']
+        is_zimage = clip_arch['is_qwen']
+        
+        # Build type string for status
+        type_str = f"Z-IMAGE/Qwen3" if is_zimage else clip_type
         
         # Check if daemon is available
         if not DAEMON_AVAILABLE:
-            status = f"[{clip_type}] Daemon module not available - passthrough mode"
+            status = f"[{type_str}] Daemon module not available - passthrough mode"
             print(f"[LunaCheckpointTunnel] {status}")
             return (model, clip, vae, status)
         
         # Check if daemon is running
         if not daemon_client.is_daemon_running():
-            status = f"[{clip_type}] Daemon not running - passthrough mode"
+            status = f"[{type_str}] Daemon not running - passthrough mode"
             print(f"[LunaCheckpointTunnel] {status}")
             return (model, clip, vae, status)
         
@@ -251,27 +288,17 @@ class LunaCheckpointTunnel:
         try:
             info = daemon_client.get_daemon_info()
         except Exception as e:
-            status = f"[{clip_type}] Daemon error: {e} - passthrough mode"
+            status = f"[{type_str}] Daemon error: {e} - passthrough mode"
             print(f"[LunaCheckpointTunnel] {status}")
             return (model, clip, vae, status)
         
         # Check what's currently loaded
         loaded_vaes = info.get('loaded_vaes', {})
         loaded_clips = info.get('loaded_clip_components', {})
+        qwen3_loaded = info.get('qwen3_loaded', False)
         
         # Determine if we can share or need to load
         vae_already_loaded = vae_type in loaded_vaes
-        
-        # For CLIP, check if all required components are loaded
-        clip_components_needed = {
-            'sd15': ['clip_l'],
-            'sdxl': ['clip_l', 'clip_g'],
-            'flux': ['clip_l', 't5xxl'],
-            'sd3': ['clip_l', 'clip_g', 't5xxl'],
-        }.get(clip_type, ['clip_l'])
-        
-        clip_components_available = [c for c in clip_components_needed if c in loaded_clips]
-        clip_components_missing = [c for c in clip_components_needed if c not in loaded_clips]
         
         # Build status message
         status_parts = []
@@ -284,16 +311,36 @@ class LunaCheckpointTunnel:
             status_parts.append(f"VAE({vae_type}): registering")
             proxy_vae = DaemonVAE(source_vae=vae, vae_type=vae_type, use_existing=False)
         
-        # Create proxy CLIP
-        if clip_components_missing:
-            if clip_components_available:
-                status_parts.append(f"CLIP: sharing [{', '.join(clip_components_available)}], loading [{', '.join(clip_components_missing)}]")
+        # Create proxy CLIP based on architecture
+        if is_zimage:
+            # Z-IMAGE: Use Qwen3-VL encoder
+            if qwen3_loaded:
+                status_parts.append("CLIP(Z-IMAGE/Qwen3): sharing")
+                proxy_clip = DaemonZImageCLIP(source_clip=None, use_existing=True)
             else:
-                status_parts.append(f"CLIP({clip_type}): registering all components")
-            proxy_clip = DaemonCLIP(source_clip=clip, clip_type=clip_type, use_existing=False)
+                status_parts.append("CLIP(Z-IMAGE/Qwen3): loading Qwen3-VL")
+                proxy_clip = DaemonZImageCLIP(source_clip=clip, use_existing=False)
         else:
-            status_parts.append(f"CLIP: sharing all [{', '.join(clip_components_available)}]")
-            proxy_clip = DaemonCLIP(source_clip=None, clip_type=clip_type, use_existing=True)
+            # Standard CLIP: Check components
+            clip_components_needed = {
+                'sd15': ['clip_l'],
+                'sdxl': ['clip_l', 'clip_g'],
+                'flux': ['clip_l', 't5xxl'],
+                'sd3': ['clip_l', 'clip_g', 't5xxl'],
+            }.get(clip_type, ['clip_l'])
+            
+            clip_components_available = [c for c in clip_components_needed if c in loaded_clips]
+            clip_components_missing = [c for c in clip_components_needed if c not in loaded_clips]
+            
+            if clip_components_missing:
+                if clip_components_available:
+                    status_parts.append(f"CLIP: sharing [{', '.join(clip_components_available)}], loading [{', '.join(clip_components_missing)}]")
+                else:
+                    status_parts.append(f"CLIP({clip_type}): registering all components")
+                proxy_clip = DaemonCLIP(source_clip=clip, clip_type=clip_type, use_existing=False)
+            else:
+                status_parts.append(f"CLIP: sharing all [{', '.join(clip_components_available)}]")
+                proxy_clip = DaemonCLIP(source_clip=None, clip_type=clip_type, use_existing=True)
         
         status = " | ".join(status_parts)
         print(f"[LunaCheckpointTunnel] {status}")
