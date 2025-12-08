@@ -387,22 +387,34 @@ class LunaGGUFConverter:
             "luna.unet_only": "true" if extract_unet_only else "false",
         }
         
+        # First pass: collect all valid tensors (skip scalars)
+        valid_tensors = {}
+        for name, tensor in tensors.items():
+            shape = list(tensor.shape)
+            n_dims = len(shape)
+            
+            # Skip 0-dimensional (scalar) tensors - GGUF reader expects at least 1 dimension
+            if n_dims == 0:
+                print(f"[LunaGGUF] Skipping scalar tensor: {name}")
+                continue
+            
+            valid_tensors[name] = tensor
+        
+        print(f"[LunaGGUF] Valid tensors after filtering: {len(valid_tensors)}")
+        
         # Write GGUF file
         with open(output_path, 'wb') as f:
-            # Reserve space for header (we'll rewrite after knowing tensor info)
-            header_pos = f.tell()
-            
-            # Write placeholder header
-            write_gguf_header(f, len(tensors), metadata)
+            # Write header with correct tensor count
+            write_gguf_header(f, len(valid_tensors), metadata)
             
             # Track tensor info for header
             tensor_infos = []
             data_offset = f.tell()
             
             # Process and write tensors
-            for i, (name, tensor) in enumerate(tensors.items()):
+            for i, (name, tensor) in enumerate(valid_tensors.items()):
                 if (i + 1) % 100 == 0:
-                    print(f"[LunaGGUF] Processing tensor {i + 1}/{len(tensors)}...")
+                    print(f"[LunaGGUF] Processing tensor {i + 1}/{len(valid_tensors)}...")
                 
                 # Get tensor info
                 shape = list(tensor.shape)
