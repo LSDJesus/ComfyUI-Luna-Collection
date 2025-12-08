@@ -275,29 +275,54 @@ async function reconnectDaemon() {
     try {
         panelState.error = "Attempting reconnect...";
         updatePanelUI();
+        attachPanelEventListeners();  // Re-attach if error message changed
         
         const response = await api.fetchApi("/luna/daemon/reconnect", { method: "POST" });
         const data = await response.json();
         
-        if (data.status === "ok") {
-            await fetchDaemonStatus();
-        } else {
+        if (!response.ok || data.status !== "ok") {
             panelState.error = data.message || "Reconnect failed";
+        } else {
+            panelState.error = null;
+            await fetchDaemonStatus();
         }
+        
         updatePanelUI();
+        attachPanelEventListeners();  // Re-attach after update
     } catch (e) {
         panelState.error = "Reconnect failed: " + e.message;
         updatePanelUI();
+        attachPanelEventListeners();
+        console.error("Reconnect error:", e);
     }
 }
 
 async function toggleDaemon() {
     try {
         const endpoint = panelState.running ? "/luna/daemon/stop" : "/luna/daemon/start";
-        await api.fetchApi(endpoint, { method: "POST" });
+        const response = await api.fetchApi(endpoint, { method: "POST" });
+        const data = await response.json();
+        
+        if (!response.ok) {
+            panelState.error = data.message || `HTTP ${response.status}`;
+            updatePanelUI();
+            attachPanelEventListeners();  // Re-attach listeners in case error message changed
+            return;
+        }
+        
+        if (data.status === "error") {
+            panelState.error = data.message || "Unknown error";
+        } else {
+            panelState.error = null;  // Clear error on success
+        }
+        
         await fetchDaemonStatus();
         updatePanelUI();
+        attachPanelEventListeners();  // Re-attach after UI update
     } catch (e) {
+        panelState.error = "Request failed: " + e.message;
+        updatePanelUI();
+        attachPanelEventListeners();
         console.error("Failed to toggle daemon:", e);
     }
 }
@@ -305,15 +330,29 @@ async function toggleDaemon() {
 async function unloadModels() {
     try {
         const response = await api.fetchApi("/luna/daemon/unload", { method: "POST" });
+        
+        if (!response.ok) {
+            panelState.error = `Failed to unload: HTTP ${response.status}`;
+            updatePanelUI();
+            attachPanelEventListeners();
+            return;
+        }
+        
         const data = await response.json();
         if (data.status === "ok") {
+            panelState.error = null;  // Clear any previous errors
             await fetchDaemonStatus();
             updatePanelUI();
         } else {
-            console.error("Failed to unload models:", data.message);
+            panelState.error = data.message || "Unload failed";
+            updatePanelUI();
         }
+        attachPanelEventListeners();  // Re-attach after any state change
     } catch (e) {
-        console.error("Failed to unload models:", e);
+        panelState.error = "Failed to unload models: " + e.message;
+        updatePanelUI();
+        attachPanelEventListeners();
+        console.error("Unload error:", e);
     }
 }
 
@@ -321,28 +360,75 @@ function attachPanelEventListeners() {
     const panel = document.querySelector(".luna-daemon-panel");
     if (!panel) return;
     
-    // Attach/re-attach all event listeners
+    // Refresh button
     const refreshBtn = panel.querySelector("#luna-refresh");
     if (refreshBtn) {
+        refreshBtn.onclick = null;  // Clear any existing listener
         refreshBtn.onclick = async () => {
-            await fetchDaemonStatus();
-            updatePanelUI();
+            refreshBtn.disabled = true;
+            const originalText = refreshBtn.textContent;
+            refreshBtn.textContent = "⟳ Refreshing...";
+            try {
+                await fetchDaemonStatus();
+                updatePanelUI();
+                attachPanelEventListeners();  // Re-attach after update
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = originalText;
+            }
         };
     }
     
+    // Toggle (Start/Stop) button
     const toggleBtn = panel.querySelector("#luna-toggle");
     if (toggleBtn) {
-        toggleBtn.onclick = toggleDaemon;
+        toggleBtn.onclick = null;  // Clear existing
+        toggleBtn.onclick = async () => {
+            toggleBtn.disabled = true;
+            const wasRunning = panelState.running;
+            const originalText = toggleBtn.textContent;
+            toggleBtn.textContent = wasRunning ? "Stopping..." : "Starting...";
+            try {
+                await toggleDaemon();
+            } finally {
+                toggleBtn.disabled = false;
+                // Text will be updated by updatePanelUI
+            }
+        };
     }
     
+    // Unload Models button
     const unloadBtn = panel.querySelector("#luna-unload");
     if (unloadBtn) {
-        unloadBtn.onclick = unloadModels;
+        unloadBtn.onclick = null;  // Clear existing
+        unloadBtn.onclick = async () => {
+            unloadBtn.disabled = true;
+            const originalText = unloadBtn.textContent;
+            unloadBtn.textContent = "Unloading...";
+            try {
+                await unloadModels();
+            } finally {
+                unloadBtn.disabled = false;
+                unloadBtn.textContent = originalText;
+            }
+        };
     }
     
+    // Reconnect (Fix) button
     const reconnectBtn = panel.querySelector("#luna-reconnect");
     if (reconnectBtn) {
-        reconnectBtn.onclick = reconnectDaemon;
+        reconnectBtn.onclick = null;  // Clear existing
+        reconnectBtn.onclick = async () => {
+            reconnectBtn.disabled = true;
+            const originalText = reconnectBtn.textContent;
+            reconnectBtn.textContent = "Connecting...";
+            try {
+                await reconnectDaemon();
+            } finally {
+                reconnectBtn.disabled = false;
+                reconnectBtn.textContent = originalText;
+            }
+        };
     }
 }
 

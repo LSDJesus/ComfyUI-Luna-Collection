@@ -68,6 +68,45 @@ except ImportError:
         return source_clip
 
 
+def ensure_daemon_running(node_name: str) -> None:
+    """
+    Helper function to auto-start daemon if not running.
+    Called by loader nodes to ensure daemon is available before use.
+    
+    Args:
+        node_name: Name of calling node for logging (e.g., "LunaDaemonVAELoader")
+        
+    Raises:
+        RuntimeError: If daemon fails to start
+    """
+    if not DAEMON_AVAILABLE or daemon_client is None:
+        raise RuntimeError(
+            "Luna daemon not available. "
+            "Make sure the luna_daemon package is properly installed."
+        )
+    
+    if daemon_client.is_daemon_running():
+        return  # Already running
+    
+    try:
+        print(f"[{node_name}] Starting Luna Daemon...")
+        daemon_client.start_daemon()
+        
+        import time
+        time.sleep(2)  # Give daemon time to start and listen
+        
+        if not daemon_client.is_daemon_running():
+            raise RuntimeError("Daemon started but failed to connect")
+        
+        print(f"[{node_name}] Luna Daemon started successfully!")
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to auto-start Luna Daemon: {e}\n"
+            "You can also start it manually:\n"
+            "  Option 1: Luna Daemon panel in the ComfyUI sidebar\n"
+            "  Option 2: python -m luna_daemon.server"
+        )
+
 class LunaDaemonVAELoader:
     """
     Load a VAE that uses the Luna Daemon for all encode/decode operations.
@@ -101,18 +140,7 @@ class LunaDaemonVAELoader:
         }
     
     def load_vae(self, vae_name: str) -> Tuple:
-        if not DAEMON_AVAILABLE:
-            raise RuntimeError(
-                "Luna daemon not available. "
-                "Make sure the luna_daemon package is properly installed."
-            )
-        
-        if not daemon_client.is_daemon_running():
-            raise RuntimeError(
-                "Luna Daemon is not running!\n"
-                "Start it from the Luna Daemon panel in the sidebar,\n"
-                "or run: python -m luna_daemon.server --gpu 1"
-            )
+        ensure_daemon_running("LunaDaemonVAELoader")
         
         # Get full path to VAE
         vae_path = folder_paths.get_full_path("vae", vae_name)
@@ -170,18 +198,7 @@ class LunaDaemonCLIPLoader:
         }
     
     def load_clip(self, clip_name1: str, clip_name2: str = "None") -> Tuple:
-        if not DAEMON_AVAILABLE:
-            raise RuntimeError(
-                "Luna daemon not available. "
-                "Make sure the luna_daemon package is properly installed."
-            )
-        
-        if not daemon_client.is_daemon_running():
-            raise RuntimeError(
-                "Luna Daemon is not running!\n"
-                "Start it from the Luna Daemon panel in the sidebar,\n"
-                "or run: python -m luna_daemon.server --gpu 1"
-            )
+        ensure_daemon_running("LunaDaemonCLIPLoader")
         
         # Collect CLIP paths
         clip_paths = []

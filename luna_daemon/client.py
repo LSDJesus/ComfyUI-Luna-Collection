@@ -677,6 +677,44 @@ def is_daemon_running() -> bool:
     return get_client().is_running()
 
 
+def start_daemon() -> bool:
+    """Start the Luna Daemon subprocess if not running"""
+    if is_daemon_running():
+        return True
+    
+    try:
+        import subprocess
+        import sys
+        
+        # Start daemon as subprocess in the background
+        daemon_module = os.path.join(
+            os.path.dirname(__file__),
+            "__main__.py"
+        )
+        
+        # Windows: Use CREATE_NEW_WINDOW to start in separate window
+        if sys.platform == "win32":
+            subprocess.Popen(
+                [sys.executable, "-m", "luna_daemon.server"],
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+        else:
+            # Unix: Use nohup to detach from terminal
+            subprocess.Popen(
+                [sys.executable, "-m", "luna_daemon.server"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True
+            )
+        
+        return True
+    except Exception as e:
+        print(f"[LunaDaemon] Error starting daemon: {e}")
+        return False
+
+
 def get_daemon_info() -> dict:
     """Get daemon info including loaded models"""
     return get_client().get_info()
