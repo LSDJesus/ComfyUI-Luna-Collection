@@ -23,6 +23,12 @@ import torch
 from safetensors.torch import load_file, save_file
 
 try:
+    import gguf
+    HAS_GGUF_LIB = True
+except ImportError:
+    HAS_GGUF_LIB = False
+
+try:
     import folder_paths
     HAS_FOLDER_PATHS = True
 except ImportError:
@@ -402,67 +408,127 @@ class LunaGGUFConverter:
         
         print(f"[LunaGGUF] Valid tensors after filtering: {len(valid_tensors)}")
         
-        # Write GGUF file
-        with open(output_path, 'wb') as f:
-            # Write header with correct tensor count
-            write_gguf_header(f, len(valid_tensors), metadata)
-            
-            # Track tensor info for header
-            tensor_infos = []
-            data_offset = f.tell()
-            
-            # Process and write tensors
-            for i, (name, tensor) in enumerate(valid_tensors.items()):
-                if (i + 1) % 100 == 0:
-                    print(f"[LunaGGUF] Processing tensor {i + 1}/{len(valid_tensors)}...")
+        # Write GGUF file using proper format
+        if HAS_GGUF_LIB:
+            # Use official gguf library if available
+            try:
+                writer = gguf.GGUFWriter(output_path, arch="stable-diffusion")
                 
-                # Get tensor info
-                shape = list(tensor.shape)
-                n_dims = len(shape)
+                # Write metadata
+                for key, value in metadata.items():
+                    if isinstance(value, str):
+                        writer.add_string(key, value)
+                    elif isinstance(value, (int, float)):
+                        writer.add_int32(key, int(value))
                 
-                # Quantize based on type
-                if quant_type in ["Q8_0"]:
-                    quantized_data = quantize_tensor_q8_0(tensor)
-                    ggml_type = GGMLType.Q8_0.value
-                elif quant_type in ["Q4_0", "Q4_K_M"]:
-                    quantized_data = quantize_tensor_q4_0(tensor)
-                    ggml_type = GGMLType.Q4_0.value
-                elif quant_type in ["Q5_0", "Q5_K_M"]:
-                    # For now, use Q8 for Q5 variants (proper Q5 is complex)
-                    quantized_data = quantize_tensor_q8_0(tensor)
-                    ggml_type = GGMLType.Q8_0.value
-                else:  # F16
-                    tensor_f16 = tensor.to(torch.float16)
-                    quantized_data = tensor_f16.numpy().tobytes()
-                    ggml_type = GGMLType.F16.value
+                # Process and write tensors
+                print(f"[LunaGGUF] Writing {len(valid_tensors)} tensors with gguf library...")
+                for i, (name, tensor) in enumerate(valid_tensors.items()):
+                    if (i + 1) % 100 == 0:
+                        print(f"[LunaGGUF] Processing tensor {i + 1}/{len(valid_tensors)}...")
+                    
+                    # Quantize based on type
+                    if quant_type in ["Q8_0"]:
+                        quantized_data = quantize_tensor_q8_0(tensor)
+                        ggml_type = gguf.GGMLQuantizationType.Q8_0
+                    elif quant_type in ["Q4_0", "Q4_K_M"]:
+                        quantized_data = quantize_tensor_q4_0(tensor)
+                        ggml_type = gguf.GGMLQuantizationType.Q4_0
+                    elif quant_type in ["Q5_0", "Q5_K_M"]:
+                        quantized_data = quantize_tensor_q8_0(tensor)
+                        ggml_type = gguf.GGMLQuantizationType.Q8_0
+                    else:  # F16
+                        tensor_f16 = tensor.to(torch.float16)
+                        quantized_data = tensor_f16.cpu().numpy()
+                        ggml_type = gguf.GGMLQuantizationType.F16
+                    
+                    # Add tensor to GGUF
+                    writer.add_tensor(name, quantized_data, raw_shape=list(tensor.shape))
                 
-                # Write tensor name
-                name_bytes = name.encode('utf-8')
-                f.write(struct.pack('<Q', len(name_bytes)))
-                f.write(name_bytes)
+                writer.write_header_to_file()
+                writer.write_kv_data_to_file()
+                writer.write_tensors_to_file()
+                writer.close()
+                print("[LunaGGUF] File written successfully with gguf library")
                 
-                # Write dimensions
-                f.write(struct.pack('<I', n_dims))
-                for dim in shape:
-                    f.write(struct.pack('<Q', dim))
+            except Exception as e:
+                print(f"[LunaGGUF] Warning: gguf library write failed ({e}), falling back to manual method")
+                # Fall through to manual write below
+                use_fallback = True
+            else:
+                use_fallback = False
+        else:
+            use_fallback = True
+        
+        # Fallback: Manual GGUF writing if library not available or failed
+        if use_fallback or not HAS_GGUF_LIB:
+            print("[LunaGGUF] Using fallback manual GGUF writing...")
+            with open(output_path, 'wb') as f:
+                # Write header with correct tensor count
+                write_gguf_header(f, len(valid_tensors), metadata)
                 
-                # Write type
-                f.write(struct.pack('<I', ggml_type))
+                # Collect all tensor data first
+                tensor_data_list = []
                 
-                # Write offset (relative to data start)
-                current_offset = f.tell()
-                tensor_data_offset = current_offset - data_offset
-                f.write(struct.pack('<Q', tensor_data_offset))
+                # First pass: quantize all tensors and collect data
+                for i, (name, tensor) in enumerate(valid_tensors.items()):
+                    if (i + 1) % 100 == 0:
+                        print(f"[LunaGGUF] Quantizing tensor {i + 1}/{len(valid_tensors)}...")
+                    
+                    # Quantize based on type
+                    if quant_type in ["Q8_0"]:
+                        quantized_data = quantize_tensor_q8_0(tensor)
+                        ggml_type = GGMLType.Q8_0.value
+                    elif quant_type in ["Q4_0", "Q4_K_M"]:
+                        quantized_data = quantize_tensor_q4_0(tensor)
+                        ggml_type = GGMLType.Q4_0.value
+                    elif quant_type in ["Q5_0", "Q5_K_M"]:
+                        quantized_data = quantize_tensor_q8_0(tensor)
+                        ggml_type = GGMLType.Q8_0.value
+                    else:  # F16
+                        tensor_f16 = tensor.to(torch.float16)
+                        quantized_data = tensor_f16.numpy().tobytes()
+                        ggml_type = GGMLType.F16.value
+                    
+                    tensor_data_list.append({
+                        'name': name,
+                        'shape': list(tensor.shape),
+                        'data': quantized_data,
+                        'type': ggml_type
+                    })
                 
-                # Write data
-                f.write(quantized_data)
+                # Second pass: write all tensor headers first, then all data
+                data_offset = f.tell()
+                offset_accumulator = 0
                 
-                tensor_infos.append({
-                    'name': name,
-                    'shape': shape,
-                    'type': ggml_type,
-                    'size': len(quantized_data)
-                })
+                for tensor_info in tensor_data_list:
+                    name = tensor_info['name']
+                    shape = tensor_info['shape']
+                    ggml_type = tensor_info['type']
+                    data_size = len(tensor_info['data'])
+                    
+                    n_dims = len(shape)
+                    
+                    # Write tensor name
+                    name_bytes = name.encode('utf-8')
+                    f.write(struct.pack('<Q', len(name_bytes)))
+                    f.write(name_bytes)
+                    
+                    # Write dimensions
+                    f.write(struct.pack('<I', n_dims))
+                    for dim in shape:
+                        f.write(struct.pack('<Q', dim))
+                    
+                    # Write type
+                    f.write(struct.pack('<I', ggml_type))
+                    
+                    # Write offset (will be relative to data start)
+                    f.write(struct.pack('<Q', offset_accumulator))
+                    offset_accumulator += data_size
+                
+                # Write all tensor data
+                for tensor_info in tensor_data_list:
+                    f.write(tensor_info['data'])
         
         # Get final size
         converted_size_mb = os.path.getsize(output_path) / (1024 * 1024)
