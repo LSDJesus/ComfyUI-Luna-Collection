@@ -19,7 +19,8 @@ A single node that handles all model loading scenarios with explicit user contro
 │  CLIP 4:          [siglip_vision.safetensors ▼] ← Vision models             │
 │                   Runtime validation based on model_type                    │
 │                                                                             │
-│  Z-IMAGE Note: clip_1 should be full Qwen3-VL model (.safetensors/.gguf)   │
+│  Z-IMAGE Note: clip_1 should be full Qwen3-VL model (.safetensors)         │
+│                GGUF support pending llama-cpp-python stable release         │
 │                For vision, mmproj auto-loads if in same folder as model    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  VAE:             [sdxl_vae.safetensors ▼]                                  │
@@ -216,53 +217,77 @@ def _get_clip_model_list() -> List[str]:
     # Standard clip folder
     try:
         clip_models.update(folder_paths.get_filename_list("clip"))
-    except:
-        pass
+    except Exception as e:
+        print(f"[Luna.ModelRouter] Warning: Could not get standard clip folder: {e}")
     
-    # Try custom folders if they exist in models directory
+    # Find models directory - try multiple methods
     models_dir = None
-    try:
-        # Get the base models directory from folder_paths
-        model_dir_list = folder_paths.get_output_directory() 
-        # This gets output dir, but we need models dir - try to find it
-        if hasattr(folder_paths, 'models_dir'):
-            models_dir = folder_paths.models_dir
-        else:
-            # Fallback: try to find it relative to checkpoints
+    
+    # Method 1: Direct attribute
+    if hasattr(folder_paths, 'models_dir'):
+        models_dir = folder_paths.models_dir
+    
+    # Method 2: From checkpoints folder
+    if not models_dir:
+        try:
             checkpoints_dir = folder_paths.get_full_path("checkpoints", "")
             if checkpoints_dir:
                 models_dir = os.path.dirname(checkpoints_dir)
-    except:
-        pass
+        except:
+            pass
+    
+    # Method 3: Scan common paths
+    if not models_dir:
+        for potential_path in [
+            os.path.join(os.getcwd(), "models"),
+            os.path.join(os.path.dirname(__file__), "..", "..", "models"),
+        ]:
+            if os.path.isdir(potential_path):
+                models_dir = potential_path
+                break
     
     # If we found the models directory, search for additional CLIP folders
     if models_dir and os.path.exists(models_dir):
+        print(f"[Luna.ModelRouter] Scanning models directory: {models_dir}")
         custom_clip_folders = ["clip_gguf", "clip_vision", "LLM"]
         
         for folder in custom_clip_folders:
             folder_path = os.path.join(models_dir, folder)
             if os.path.isdir(folder_path):
                 try:
-                    for filename in os.listdir(folder_path):
-                        file_path = os.path.join(folder_path, filename)
-                        # Include files (not subdirectories)
-                        if os.path.isfile(file_path):
-                            # Prefix with folder name for clarity
-                            clip_models.add(f"{folder}/{filename}")
-                except:
-                    pass
+                    files_found = 0
+                    # Recursively walk the folder to find all model files
+                    for root, dirs, files in os.walk(folder_path):
+                        for filename in files:
+                            # Check for model file extensions
+                            if filename.lower().endswith(('.safetensors', '.gguf', '.ckpt', '.pt', '.pth', '.bin')):
+                                file_path = os.path.join(root, filename)
+                                # Get relative path from the custom folder
+                                rel_path = os.path.relpath(file_path, models_dir)
+                                # Normalize path separators to forward slashes for consistency
+                                rel_path = rel_path.replace(os.sep, '/')
+                                clip_models.add(rel_path)
+                                files_found += 1
+                    if files_found > 0:
+                        print(f"[Luna.ModelRouter] Found {files_found} models in {folder}/ (including subdirs)")
+                except Exception as e:
+                    print(f"[Luna.ModelRouter] Error scanning {folder}: {e}")
+            else:
+                print(f"[Luna.ModelRouter] Folder not found: {folder_path}")
+    else:
+        print(f"[Luna.ModelRouter] Models directory not found")
     
     return ["None"] + sorted(list(clip_models))
 
 
 def _resolve_clip_path(clip_name: str) -> Optional[str]:
     """
-    Resolve a CLIP model name to full path, handling custom folders.
+    Resolve a CLIP model name to full path, handling custom folders and subdirectories.
     
     Examples:
         "clip_l.safetensors" → /path/to/models/clip/clip_l.safetensors
         "clip_gguf/qwen3.gguf" → /path/to/models/clip_gguf/qwen3.gguf
-        "LLM/qwen3-vl.gguf" → /path/to/models/LLM/qwen3-vl.gguf
+        "LLM/Qwen3-VL-4B/model.gguf" → /path/to/models/LLM/Qwen3-VL-4B/model.gguf
     
     Returns:
         Full path to model file, or None if not found
@@ -272,23 +297,43 @@ def _resolve_clip_path(clip_name: str) -> Optional[str]:
     
     # Check if it has a folder prefix
     if "/" in clip_name:
-        folder, filename = clip_name.split("/", 1)
+        parts = clip_name.split("/")
+        folder = parts[0]
+        relative_path = "/".join(parts[1:])
+        
         # Try to find in custom folders
         try:
+            models_dir = None
+            
+            # Method 1: Direct attribute
             if hasattr(folder_paths, 'models_dir'):
                 models_dir = folder_paths.models_dir
-            else:
+            
+            # Method 2: From checkpoints folder
+            if not models_dir:
                 checkpoints_dir = folder_paths.get_full_path("checkpoints", "")
                 if checkpoints_dir:
                     models_dir = os.path.dirname(checkpoints_dir)
-                else:
-                    return None
             
-            full_path = os.path.join(models_dir, folder, filename)
-            if os.path.exists(full_path):
-                return full_path
-        except:
-            pass
+            # Method 3: Scan common paths
+            if not models_dir:
+                for potential_path in [
+                    os.path.join(os.getcwd(), "models"),
+                    os.path.join(os.path.dirname(__file__), "..", "..", "models"),
+                ]:
+                    if os.path.isdir(potential_path):
+                        models_dir = potential_path
+                        break
+            
+            if models_dir:
+                full_path = os.path.join(models_dir, folder, relative_path)
+                if os.path.exists(full_path):
+                    print(f"[Luna.ModelRouter] Resolved {clip_name} → {full_path}")
+                    return full_path
+                else:
+                    print(f"[Luna.ModelRouter] Path not found: {full_path}")
+        except Exception as e:
+            print(f"[Luna.ModelRouter] Error resolving {clip_name}: {e}")
     else:
         # Try standard clip folder first
         try:
@@ -298,6 +343,7 @@ def _resolve_clip_path(clip_name: str) -> Optional[str]:
         except:
             pass
     
+    print(f"[Luna.ModelRouter] Could not resolve CLIP model: {clip_name}")
     return None
 
 
@@ -964,23 +1010,41 @@ class LunaModelRouter:
         
         # Local-only Z-IMAGE loading
         try:
-            # Handle GGUF loading if needed
-            if full_path.lower().endswith(".gguf") and HAS_GGUF and CLIPLoaderGGUF is not None:
+            # Handle GGUF loading via ComfyUI-GGUF loader
+            if full_path.lower().endswith(".gguf"):
+                if not HAS_GGUF or CLIPLoaderGGUF is None:
+                    raise RuntimeError(
+                        "GGUF CLIP loading requires ComfyUI-GGUF extension. "
+                        "Install from: https://github.com/city96/ComfyUI-GGUF"
+                    )
+                
                 print(f"[LunaModelRouter] Loading GGUF CLIP: {full_path}")
-                # Instantiate loader and call load_clip
+                
+                # CLIPLoaderGGUF expects to resolve paths via folder_paths.get_full_path(),
+                # but our custom LLM/ folder isn't registered. So we call the underlying
+                # loader functions directly with the full path.
+                
+                from ComfyUI_GGUF.loader import gguf_clip_loader
+                
+                # Load the GGUF clip data
+                clip_data = [gguf_clip_loader(full_path)]
+                
+                # Create the CLIP patcher using the same method as CLIPLoaderGGUF
                 loader = CLIPLoaderGGUF()
-                # CLIPLoaderGGUF.load_clip returns (CLIP,)
-                clip = loader.load_clip(clip_name=clip_1_path, type="lumina2")[0]
+                clip_type = comfy.sd.CLIPType.LUMINA2 if hasattr(comfy.sd, 'CLIPType') else None
+                clip = loader.load_patcher([full_path], clip_type, clip_data)
+                
             else:
-                # Standard loading
+                # Standard loading for safetensors/other formats
                 clip = comfy.sd.load_clip(
                     ckpt_paths=[full_path],
                     embedding_directory=folder_paths.get_folder_paths("embeddings"),
                     clip_type=comfy.sd.CLIPType.LUMINA2 if hasattr(comfy.sd, 'CLIPType') else None
                 )
             
-            # Create LLM reference (finds mmproj)
-            llm = self._create_llm_reference(full_path, daemon_running=False)
+            # Create LLM reference that shares the CLIP model
+            # The GGUF file contains lm_head weights - we can use them for generation
+            llm = self._create_llm_reference(full_path, daemon_running=False, shared_clip=clip)
             
             # Attach paths to CLIP object for downstream nodes (LunaZImageEncoder)
             clip.model_path = full_path
@@ -990,12 +1054,16 @@ class LunaModelRouter:
         except Exception as e:
             raise RuntimeError(f"Failed to load Qwen3 model: {e}")
     
-    def _create_llm_reference(self, model_path: str, daemon_running: bool) -> Dict[str, Any]:
+    def _create_llm_reference(self, model_path: str, daemon_running: bool, shared_clip: Any = None) -> Dict[str, Any]:
         """
         Create an LLM reference object that can be passed to VLM nodes.
         
-        This doesn't load the full LLM weights immediately - that happens
-        when the VLM Prompt Generator node executes.
+        If shared_clip is provided, the LLM reference will use the same loaded
+        model weights for text generation, avoiding loading the model twice.
+        
+        The GGUF file contains lm_head weights - ComfyUI-GGUF loads them but
+        ComfyUI's llama.py doesn't use them. We can access the state_dict and
+        create a generation-capable wrapper that shares the transformer weights.
         """
         model_dir = os.path.dirname(model_path)
         model_name = os.path.basename(model_path)
@@ -1008,14 +1076,25 @@ class LunaModelRouter:
                 print(f"[LunaModelRouter] Found mmproj: {filename}")
                 break
         
-        return {
+        llm_ref = {
             "type": "qwen3_vl",
             "model_path": model_path,
             "model_name": model_name,
             "mmproj_path": mmproj_path,
             "use_daemon": daemon_running,
-            "loaded": False,  # Will be loaded by VLM node on demand
+            "loaded": shared_clip is not None,
         }
+        
+        # If we have a shared CLIP, attach it for weight sharing
+        # The VLM Prompt Generator can use this instead of loading separately
+        if shared_clip is not None:
+            llm_ref["shared_clip"] = shared_clip
+            llm_ref["generation_mode"] = "shared"  # Use shared weights
+            print(f"[LunaModelRouter] LLM will share weights with CLIP encoder")
+        else:
+            llm_ref["generation_mode"] = "separate"  # Load via llama-cpp
+        
+        return llm_ref
     
     def _load_clip_vision(
         self,

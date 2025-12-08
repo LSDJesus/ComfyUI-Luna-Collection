@@ -600,6 +600,57 @@ class DaemonClient:
             "cmd": "extract_style",
             "image": image.cpu() if isinstance(image, torch.Tensor) else image
         })
+    
+    def register_qwen3(self, model_path: str, mmproj_path: Optional[str] = None) -> dict:
+        """
+        Register a Qwen3-VL model with the daemon.
+        
+        Loads the model once in the daemon for shared use across all
+        Z-IMAGE CLIP encoding and LLM generation operations.
+        
+        Args:
+            model_path: Path to GGUF model file
+            mmproj_path: Optional path to mmproj file for vision
+            
+        Returns:
+            dict with 'success' and 'model_path' keys
+        """
+        request = {
+            "cmd": "register_qwen3",
+            "model_path": model_path
+        }
+        if mmproj_path:
+            request["mmproj_path"] = mmproj_path
+        return self._send_request(request)
+    
+    def llm_generate(self, prompt: str, max_tokens: int = 256, 
+                     temperature: float = 0.7, system_prompt: Optional[str] = None) -> str:
+        """
+        Generate text using the daemon's Qwen3-VL model.
+        
+        Uses the same model instance as CLIP encoding for efficiency.
+        
+        Args:
+            prompt: Input prompt for generation
+            max_tokens: Maximum tokens to generate
+            temperature: Sampling temperature
+            system_prompt: Optional system prompt
+            
+        Returns:
+            Generated text string
+        """
+        request = {
+            "cmd": "llm_generate",
+            "prompt": prompt,
+            "max_tokens": max_tokens,
+            "temperature": temperature
+        }
+        if system_prompt:
+            request["system_prompt"] = system_prompt
+        result = self._send_request(request)
+        if isinstance(result, dict) and "text" in result:
+            return result["text"]
+        return result
 
 
 # =============================================================================
@@ -804,6 +855,41 @@ def is_qwen3_loaded() -> bool:
         return info.get('qwen3_loaded', False)
     except:
         return False
+
+
+def register_qwen3(model_path: str, mmproj_path: Optional[str] = None) -> dict:
+    """
+    Register a Qwen3-VL model with the daemon.
+    
+    Loads the model in the daemon for shared CLIP encoding and LLM generation.
+    
+    Args:
+        model_path: Path to GGUF model file
+        mmproj_path: Optional path to mmproj file for vision
+        
+    Returns:
+        dict with 'success' and 'model_path' keys
+    """
+    return get_client().register_qwen3(model_path, mmproj_path)
+
+
+def llm_generate(prompt: str, max_tokens: int = 256, 
+                 temperature: float = 0.7, system_prompt: Optional[str] = None) -> str:
+    """
+    Generate text using the daemon's Qwen3-VL model.
+    
+    Uses the same model as CLIP encoding - no duplicate loading.
+    
+    Args:
+        prompt: Input prompt for generation
+        max_tokens: Maximum tokens to generate
+        temperature: Sampling temperature
+        system_prompt: Optional system prompt
+        
+    Returns:
+        Generated text string
+    """
+    return get_client().llm_generate(prompt, max_tokens, temperature, system_prompt)
 
 
 # =============================================================================

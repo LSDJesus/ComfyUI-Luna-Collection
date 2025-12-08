@@ -2199,6 +2199,11 @@ class DynamicDaemon:
         self.clip_pool: Optional[WorkerPool] = None
         self.ws_server: Optional[WebSocketServer] = None
         
+        # Qwen3 encoder for Z-IMAGE CLIP + LLM (unified model)
+        # Loads once, serves both CLIP encoding and text generation
+        self.qwen3_encoder = None
+        self.qwen3_lock = threading.Lock()  # Thread-safe access
+        
         self.start_time = time.time()
         self.request_count = 0
         
@@ -2527,6 +2532,141 @@ class DynamicDaemon:
                     # Process via pool (tensor is already on CUDA)
                     request["latents"] = latents
                     result = self.vae_pool.submit("vae_decode", request)
+            
+            # ================================================================
+            # Qwen3/Z-IMAGE Commands - Unified model for CLIP + LLM
+            # ================================================================
+            elif cmd == "register_qwen3":
+                # Register and load Qwen3-VL model (used for both CLIP and LLM)
+                model_path = request.get("model_path", "")
+                device = request.get("device", LLM_DEVICE or self.device)
+                
+                if not model_path:
+                    result = {"error": "model_path is required"}
+                else:
+                    try:
+                        from .qwen3_encoder import Qwen3VLEncoder, Qwen3VLConfig
+                        
+                        with self.qwen3_lock:
+                            # Unload existing model if any
+                            if self.qwen3_encoder is not None:
+                                del self.qwen3_encoder
+                                self.qwen3_encoder = None
+                                torch.cuda.empty_cache()
+                            
+                            # Create and load new encoder
+                            config = Qwen3VLConfig(
+                                model_path=model_path,
+                                device=device
+                            )
+                            self.qwen3_encoder = Qwen3VLEncoder(config)
+                            success = self.qwen3_encoder.load_model(model_path)
+                            
+                            if success:
+                                result = {
+                                    "success": True,
+                                    "model_path": model_path,
+                                    "device": device,
+                                    "zimage_compatible": self.qwen3_encoder.is_zimage_compatible,
+                                    "has_vision": getattr(self.qwen3_encoder, '_has_vision', False),
+                                    "message": "Qwen3-VL loaded for CLIP+LLM"
+                                }
+                                logger.info(f"[Qwen3] Model loaded: {model_path}")
+                            else:
+                                result = {"error": "Failed to load Qwen3 model"}
+                                
+                    except ImportError as e:
+                        result = {"error": f"Qwen3 encoder not available: {e}"}
+                    except Exception as e:
+                        result = {"error": f"Failed to load Qwen3: {e}"}
+            
+            elif cmd == "zimage_encode":
+                # Z-IMAGE CLIP encoding - extracts embeddings from Qwen3
+                if self.qwen3_encoder is None:
+                    result = {"error": "Qwen3 not loaded. Call register_qwen3 first."}
+                else:
+                    text = request.get("text", "")
+                    negative_text = request.get("negative_text", "")
+                    
+                    try:
+                        with self.qwen3_lock:
+                            pos_emb, neg_emb = self.qwen3_encoder.encode_text_for_zimage(
+                                text, negative_text
+                            )
+                        result = {
+                            "success": True,
+                            "positive": pos_emb.cpu(),
+                            "negative": neg_emb.cpu(),
+                            "shape": list(pos_emb.shape)
+                        }
+                    except Exception as e:
+                        result = {"error": f"Z-IMAGE encode failed: {e}"}
+            
+            elif cmd == "llm_generate":
+                # LLM text generation - uses same Qwen3 model as CLIP
+                if self.qwen3_encoder is None:
+                    result = {"error": "Qwen3 not loaded. Call register_qwen3 first."}
+                else:
+                    prompt = request.get("prompt", "")
+                    max_tokens = request.get("max_tokens", 256)
+                    temperature = request.get("temperature", 0.7)
+                    system_prompt = request.get("system_prompt")
+                    
+                    try:
+                        with self.qwen3_lock:
+                            generated = self.qwen3_encoder.generate_text(
+                                prompt=prompt,
+                                max_tokens=max_tokens,
+                                temperature=temperature,
+                                system_prompt=system_prompt
+                            )
+                        result = {
+                            "success": True,
+                            "text": generated
+                        }
+                    except Exception as e:
+                        result = {"error": f"LLM generation failed: {e}"}
+            
+            elif cmd == "vlm_describe":
+                # VLM image description - uses Qwen3 with vision
+                if self.qwen3_encoder is None:
+                    result = {"error": "Qwen3 not loaded. Call register_qwen3 first."}
+                elif not getattr(self.qwen3_encoder, '_has_vision', False):
+                    result = {"error": "Vision not available. Load model with mmproj."}
+                else:
+                    image = request.get("image")  # Tensor [B, H, W, C]
+                    prompt = request.get("prompt", "Describe this image.")
+                    max_tokens = request.get("max_tokens", 256)
+                    
+                    if image is None:
+                        result = {"error": "image is required"}
+                    else:
+                        try:
+                            with self.qwen3_lock:
+                                description = self.qwen3_encoder.describe_image(
+                                    image=image,
+                                    prompt=prompt,
+                                    max_tokens=max_tokens
+                                )
+                            result = {
+                                "success": True,
+                                "text": description
+                            }
+                        except Exception as e:
+                            result = {"error": f"VLM description failed: {e}"}
+            
+            elif cmd == "qwen3_status":
+                # Get status of loaded Qwen3 model
+                if self.qwen3_encoder is None:
+                    result = {"loaded": False}
+                else:
+                    result = {
+                        "loaded": True,
+                        "zimage_compatible": self.qwen3_encoder.is_zimage_compatible,
+                        "has_vision": getattr(self.qwen3_encoder, '_has_vision', False),
+                        "encode_count": self.qwen3_encoder._encode_count,
+                        "vlm_count": self.qwen3_encoder._vlm_count
+                    }
             
             else:
                 result = {"error": f"Unknown command: {cmd}"}

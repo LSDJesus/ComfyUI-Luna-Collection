@@ -150,26 +150,24 @@ def register_routes():
             
             logger.info("Starting Luna Daemon...")
             
-            # Get path to daemon package
+            # Get path to daemon package and __main__.py
             daemon_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'luna_daemon'))
+            daemon_main = os.path.join(daemon_dir, '__main__.py')
             
             # Python executable
             python_exe = sys.executable
             
-            # Build command to run daemon as module
-            # Use the daemon directory as the starting point
-            cmd = [python_exe, "-m", "luna_daemon"]
+            # Build command to run daemon directly with full path to __main__.py
+            cmd = [python_exe, daemon_main]
             
-            # Set working directory to ComfyUI root (where custom_nodes is)
-            comfyui_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-            
+            # Set working directory to the daemon directory so relative imports work
             logger.info(f"Command: {' '.join(cmd)}")
-            logger.info(f"Working directory: {comfyui_root}")
+            logger.info(f"Working directory: {daemon_dir}")
             
             # Start as subprocess in background
             process = subprocess.Popen(
                 cmd,
-                cwd=comfyui_root,
+                cwd=daemon_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 start_new_session=True if os.name != 'nt' else False,
