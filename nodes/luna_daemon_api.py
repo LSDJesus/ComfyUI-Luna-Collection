@@ -6,6 +6,16 @@ HTTP endpoints for the Luna Daemon panel in ComfyUI.
 import os
 import json
 import importlib
+import logging
+
+# Set up logging for this module
+logger = logging.getLogger("Luna.DaemonAPI")
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('[%(name)s] %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
 # Try to import aiohttp
 try:
@@ -45,7 +55,7 @@ except ImportError:
         )
         DAEMON_AVAILABLE = True
     except ImportError as e:
-        print(f"[LunaDaemonAPI] Failed to import daemon client: {e}")
+        logger.error(f"Failed to import daemon client: {e}")
         daemon_client = None
         DAEMON_AVAILABLE = False
         DAEMON_HOST = "127.0.0.1"
@@ -133,41 +143,79 @@ def register_routes():
         import asyncio
         
         try:
-            # Get the path to the daemon server module
-            daemon_module = "custom_nodes.ComfyUI-Luna-Collection.luna_daemon.server"
+            # Check if already running
+            if DAEMON_AVAILABLE and daemon_client and daemon_client.is_daemon_running():
+                logger.info("Daemon already running")
+                return web.json_response({"status": "ok", "message": "Daemon already running"})
             
-            # Start daemon in background
+            logger.info("Starting Luna Daemon...")
+            
+            # Get path to daemon package
+            daemon_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'luna_daemon'))
+            
+            # Python executable
             python_exe = sys.executable
             
-            # Build command
-            cmd = [python_exe, "-m", daemon_module]
+            # Build command to run daemon as module
+            # Use the daemon directory as the starting point
+            cmd = [python_exe, "-m", "luna_daemon"]
             
-            # Start as subprocess
+            # Set working directory to ComfyUI root (where custom_nodes is)
+            comfyui_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+            
+            logger.info(f"Command: {' '.join(cmd)}")
+            logger.info(f"Working directory: {comfyui_root}")
+            
+            # Start as subprocess in background
             process = subprocess.Popen(
                 cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
+                cwd=comfyui_root,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                start_new_session=True if os.name != 'nt' else False,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             
-            # Give it a moment to start
-            await asyncio.sleep(2)
+            logger.info(f"Daemon process started with PID {process.pid}")
             
-            # Check if it started
-            if DAEMON_AVAILABLE and daemon_client.is_daemon_running():
-                return web.json_response({"status": "ok", "message": "Daemon started"})
-            else:
-                # Try a few more times
-                for _ in range(5):
-                    await asyncio.sleep(1)
-                    if DAEMON_AVAILABLE and daemon_client.is_daemon_running():
-                        return web.json_response({"status": "ok", "message": "Daemon started"})
+            # Wait for daemon to start with retries
+            max_retries = 15
+            retry_delay = 0.5  # Start with 0.5s, increase as we wait
+            
+            for attempt in range(max_retries):
+                await asyncio.sleep(retry_delay)
                 
-                return web.json_response({"status": "error", "message": "Daemon process started but not responding. Check logs."})
+                # Increase delay for later attempts
+                if attempt > 5:
+                    retry_delay = 1.0
+                
+                if DAEMON_AVAILABLE and daemon_client and daemon_client.is_daemon_running():
+                    logger.info(f"Daemon connected successfully (attempt {attempt + 1})")
+                    return web.json_response({
+                        "status": "ok", 
+                        "message": f"Daemon started successfully (attempt {attempt + 1})"
+                    })
+                
+                # Check if process died
+                if process.poll() is not None:
+                    stdout, stderr = process.communicate()
+                    error_msg = stderr.decode('utf-8', errors='ignore') if stderr else "Process exited"
+                    logger.error(f"Daemon process died: {error_msg[:200]}")
+                    return web.json_response({
+                        "status": "error", 
+                        "message": f"Daemon process exited: {error_msg[:200]}"
+                    })
+            
+            # Timeout
+            logger.warning("Daemon startup timeout - process running but not responding")
+            return web.json_response({
+                "status": "error", 
+                "message": "Daemon process started but failed to respond within timeout (7.5s). Check luna_daemon/server.py logs."
+            })
                 
         except Exception as e:
-            return web.json_response({"status": "error", "message": str(e)})
+            logger.exception("Failed to start daemon")
+            return web.json_response({"status": "error", "message": f"Failed to start daemon: {str(e)}"})
     
     
     @PromptServer.instance.routes.post("/luna/daemon/stop")

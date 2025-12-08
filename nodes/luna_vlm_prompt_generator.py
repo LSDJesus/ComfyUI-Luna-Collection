@@ -104,10 +104,13 @@ _loaded_models: Dict[str, Any] = {}
 
 class LunaVLMPromptGenerator:
     """
-    Generate text prompts using a Vision-Language Model.
+    Generate and enhance text prompts using a Vision-Language Model.
     
-    Uses the LLM output from LunaModelRouter (Qwen3-VL or similar)
-    to generate descriptive prompts, extract styles, or create captions.
+    Uses the LLM output from LunaModelRouter (Qwen3-VL or similar) to:
+    - Generate descriptive prompts from images
+    - Extract artistic styles
+    - Create training captions
+    - Enhance simple text prompts with LLM refinement
     """
     
     CATEGORY = "Luna"
@@ -115,7 +118,7 @@ class LunaVLMPromptGenerator:
     RETURN_NAMES = ("prompt", "style_tags")
     FUNCTION = "generate"
     
-    MODES = ["describe", "extract_style", "caption", "custom"]
+    MODES = ["describe", "extract_style", "caption", "enhance_prompt", "custom"]
     
     @classmethod
     def INPUT_TYPES(cls):
@@ -126,18 +129,28 @@ class LunaVLMPromptGenerator:
                 }),
                 "mode": (cls.MODES, {
                     "default": "describe",
-                    "tooltip": "Preset prompt mode or 'custom' for your own prompt"
+                    "tooltip": "Preset prompt mode: describe (image), extract_style (image), caption (image), enhance_prompt (text), or 'custom'"
                 }),
             },
             "optional": {
+                # === Vision Inputs ===
                 "image": ("IMAGE", {
                     "tooltip": "Image for vision tasks (required for describe/extract_style/caption)"
+                }),
+                
+                # === Text Inputs ===
+                "simple_prompt": ("STRING", {
+                    "default": "",
+                    "multiline": True,
+                    "tooltip": "Simple prompt to enhance. Used when mode is 'enhance_prompt' or with vision modes"
                 }),
                 "custom_prompt": ("STRING", {
                     "default": "",
                     "multiline": True,
-                    "tooltip": "Custom prompt when mode is 'custom'. Use {image} placeholder for image context."
+                    "tooltip": "Custom prompt template when mode is 'custom'. Use {image} placeholder for image context."
                 }),
+                
+                # === Generation Settings ===
                 "max_tokens": ("INT", {
                     "default": 256,
                     "min": 16,
@@ -170,6 +183,7 @@ class LunaVLMPromptGenerator:
         llm: Dict[str, Any],
         mode: str,
         image: Optional[torch.Tensor] = None,
+        simple_prompt: str = "",
         custom_prompt: str = "",
         max_tokens: int = 256,
         temperature: float = 0.7,
@@ -177,7 +191,7 @@ class LunaVLMPromptGenerator:
         keep_model_loaded: bool = True
     ) -> Tuple[str, str]:
         """
-        Generate text using the VLM.
+        Generate or enhance text using the VLM.
         
         Returns:
             (prompt, style_tags): Generated text and extracted style elements
@@ -187,15 +201,27 @@ class LunaVLMPromptGenerator:
         if not isinstance(llm, dict) or "model_path" not in llm:
             raise ValueError("Invalid LLM reference. Use the 'llm' output from Luna Model Router.")
         
-        # Check if image is required
-        if mode in ["describe", "extract_style", "caption"] and image is None:
-            raise ValueError(f"Mode '{mode}' requires an image input.")
-        
-        # Get prompt template
+        # Build prompt template
         if mode == "custom":
-            prompt_template = custom_prompt if custom_prompt else "Describe this image."
+            if not custom_prompt:
+                raise ValueError("mode='custom' requires custom_prompt to be set")
+            prompt_template = custom_prompt
+        elif mode == "enhance_prompt":
+            # Text-only enhancement mode
+            if not simple_prompt:
+                raise ValueError("mode='enhance_prompt' requires simple_prompt to be set")
+            prompt_template = self._get_enhancement_prompt(simple_prompt)
+            image = None  # Force no image for text-only mode
         else:
+            # Vision modes (describe, extract_style, caption)
+            if image is None and mode != "custom":
+                raise ValueError(f"Mode '{mode}' requires an image input.")
+            
             prompt_template = PRESET_PROMPTS[mode]
+            
+            # If simple_prompt is provided, blend it with the template
+            if simple_prompt and mode in ["describe", "extract_style", "caption"]:
+                prompt_template = f"{prompt_template}\n\nBase concept: {simple_prompt}"
         
         # Generate using appropriate backend
         use_daemon = llm.get("use_daemon", False)
@@ -217,6 +243,17 @@ class LunaVLMPromptGenerator:
         )
         
         return self._parse_result(result, mode)
+    
+    @staticmethod
+    def _get_enhancement_prompt(simple_prompt: str) -> str:
+        """Generate prompt enhancement template for text refinement."""
+        return f"""You are an expert prompt engineer for AI image generation.
+Take the following simple prompt and enhance it into a detailed, rich description.
+Improve clarity, add relevant details, and optimize for visual quality.
+Preserve the original intent but make it more vivid and specific.
+Return ONLY the enhanced prompt, no explanations.
+
+Original prompt: {simple_prompt}"""
     
     def _generate_daemon(
         self,

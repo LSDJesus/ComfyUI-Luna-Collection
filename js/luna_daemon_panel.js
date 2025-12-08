@@ -317,6 +317,35 @@ async function unloadModels() {
     }
 }
 
+function attachPanelEventListeners() {
+    const panel = document.querySelector(".luna-daemon-panel");
+    if (!panel) return;
+    
+    // Attach/re-attach all event listeners
+    const refreshBtn = panel.querySelector("#luna-refresh");
+    if (refreshBtn) {
+        refreshBtn.onclick = async () => {
+            await fetchDaemonStatus();
+            updatePanelUI();
+        };
+    }
+    
+    const toggleBtn = panel.querySelector("#luna-toggle");
+    if (toggleBtn) {
+        toggleBtn.onclick = toggleDaemon;
+    }
+    
+    const unloadBtn = panel.querySelector("#luna-unload");
+    if (unloadBtn) {
+        unloadBtn.onclick = unloadModels;
+    }
+    
+    const reconnectBtn = panel.querySelector("#luna-reconnect");
+    if (reconnectBtn) {
+        reconnectBtn.onclick = reconnectDaemon;
+    }
+}
+
 function updatePanelUI() {
     const panel = document.querySelector(".luna-daemon-panel");
     if (!panel) return;
@@ -326,15 +355,24 @@ function updatePanelUI() {
     indicator.className = `status-indicator ${panelState.running ? 'running' : 'stopped'}`;
     
     // Update text values
-    document.getElementById("luna-status").textContent = panelState.running ? 'Running' : 'Stopped';
-    document.getElementById("luna-device").textContent = panelState.device;
-    document.getElementById("luna-requests").textContent = panelState.requests;
-    document.getElementById("luna-uptime").textContent = formatUptime(panelState.uptime);
-    document.getElementById("luna-vram").textContent = 
-        `${panelState.vramUsed.toFixed(1)} / ${panelState.vramTotal.toFixed(1)} GB`;
+    const statusEl = document.getElementById("luna-status");
+    if (statusEl) statusEl.textContent = panelState.running ? 'Running' : 'Stopped';
+    
+    const deviceEl = document.getElementById("luna-device");
+    if (deviceEl) deviceEl.textContent = panelState.device;
+    
+    const requestsEl = document.getElementById("luna-requests");
+    if (requestsEl) requestsEl.textContent = panelState.requests;
+    
+    const uptimeEl = document.getElementById("luna-uptime");
+    if (uptimeEl) uptimeEl.textContent = formatUptime(panelState.uptime);
+    
+    const vramEl = document.getElementById("luna-vram");
+    if (vramEl) vramEl.textContent = `${panelState.vramUsed.toFixed(1)} / ${panelState.vramTotal.toFixed(1)} GB`;
     
     // Update VRAM bar
-    document.getElementById("luna-vram-bar").style.width = `${getVramPercent()}%`;
+    const vramBar = document.getElementById("luna-vram-bar");
+    if (vramBar) vramBar.style.width = `${getVramPercent()}%`;
     
     // Update models list
     const modelsList = document.getElementById("luna-models");
@@ -343,36 +381,85 @@ function updatePanelUI() {
             ? panelState.modelsLoaded.map(m => `<div class="model-item">${m}</div>`).join('')
             : '<div style="opacity: 0.5">Waiting for first workflow...</div>';
         
-        // Add unload button if models are loaded
+        // Update models HTML
+        modelsList.innerHTML = modelsHtml;
+        
+        // Handle unload button visibility
+        const modelsSection = modelsList.parentElement;
+        let unloadBtn = modelsSection.querySelector("#luna-unload");
+        
         if (panelState.modelsLoaded.length > 0) {
-            // Check if unload button exists, if not we need to rebuild section
-            if (!document.getElementById("luna-unload")) {
-                const section = modelsList.parentElement;
-                section.innerHTML = `
-                    <div class="section-title">Loaded Models</div>
-                    <div class="models-list" id="luna-models">${modelsHtml}</div>
-                    <button class="btn btn-unload" id="luna-unload" style="margin-top: 8px; width: 100%;">Unload Models</button>
-                `;
-                section.querySelector("#luna-unload")?.addEventListener("click", unloadModels);
-            } else {
-                modelsList.innerHTML = modelsHtml;
+            // Models are loaded - ensure unload button exists
+            if (!unloadBtn) {
+                unloadBtn = document.createElement("button");
+                unloadBtn.id = "luna-unload";
+                unloadBtn.className = "btn btn-unload";
+                unloadBtn.style.marginTop = "8px";
+                unloadBtn.style.width = "100%";
+                unloadBtn.textContent = "Unload Models";
+                modelsSection.appendChild(unloadBtn);
+                unloadBtn.onclick = unloadModels;
             }
         } else {
-            modelsList.innerHTML = modelsHtml;
-            // Remove unload button if exists
-            document.getElementById("luna-unload")?.remove();
+            // No models - remove unload button if it exists
+            if (unloadBtn) {
+                unloadBtn.remove();
+            }
         }
     }
     
-    // Update toggle button
-    const toggleBtn = document.getElementById("luna-toggle");
-    if (panelState.running) {
-        toggleBtn.className = "btn btn-stop";
-        toggleBtn.textContent = "Stop";
-    } else {
-        toggleBtn.className = "btn btn-start";
-        toggleBtn.textContent = "Start";
+    // Update error message
+    const errorMsg = panel.querySelector(".error-message");
+    if (panelState.error) {
+        if (!errorMsg) {
+            const h3 = panel.querySelector("h3");
+            if (h3) {
+                const newError = document.createElement("div");
+                newError.className = "error-message";
+                newError.textContent = panelState.error;
+                h3.parentNode.insertBefore(newError, h3.nextSibling);
+            }
+        } else {
+            errorMsg.textContent = panelState.error;
+            errorMsg.style.display = "block";
+        }
+    } else if (errorMsg) {
+        errorMsg.style.display = "none";
     }
+    
+    // Update toggle button state and text
+    const toggleBtn = document.getElementById("luna-toggle");
+    if (toggleBtn) {
+        if (panelState.running) {
+            toggleBtn.className = "btn btn-stop";
+            toggleBtn.textContent = "Stop";
+        } else {
+            toggleBtn.className = "btn btn-start";
+            toggleBtn.textContent = "Start";
+        }
+    }
+    
+    // Show/hide reconnect button
+    const buttonRow = panel.querySelector(".button-row");
+    if (buttonRow) {
+        let reconnectBtn = buttonRow.querySelector("#luna-reconnect");
+        if (panelState.error) {
+            if (!reconnectBtn) {
+                reconnectBtn = document.createElement("button");
+                reconnectBtn.id = "luna-reconnect";
+                reconnectBtn.className = "btn btn-refresh";
+                reconnectBtn.style.marginLeft = "auto";
+                reconnectBtn.textContent = "⚡ Fix";
+                buttonRow.appendChild(reconnectBtn);
+                reconnectBtn.onclick = reconnectDaemon;
+            }
+        } else if (reconnectBtn) {
+            reconnectBtn.remove();
+        }
+    }
+    
+    // Re-attach all event listeners after DOM updates
+    attachPanelEventListeners();
 }
 
 // Register the sidebar panel
@@ -406,9 +493,6 @@ app.registerExtension({
             defaultValue: true,
         });
         
-        // Create sidebar panel using ComfyUI's sidebar API
-        const sidebarContent = createPanelContent();
-        
         // Add to ComfyUI sidebar
         if (app.extensionManager?.registerSidebarTab) {
             app.extensionManager.registerSidebarTab({
@@ -418,17 +502,9 @@ app.registerExtension({
                 tooltip: "Luna VAE/CLIP Daemon Control",
                 type: "custom",
                 render: (container) => {
+                    container.innerHTML = "";  // Clear previous content
                     container.appendChild(createPanelContent());
-                    
-                    // Add event listeners
-                    container.querySelector("#luna-refresh")?.addEventListener("click", async () => {
-                        await fetchDaemonStatus();
-                        updatePanelUI();
-                    });
-                    
-                    container.querySelector("#luna-toggle")?.addEventListener("click", toggleDaemon);
-                    container.querySelector("#luna-unload")?.addEventListener("click", unloadModels);
-                    container.querySelector("#luna-reconnect")?.addEventListener("click", reconnectDaemon);
+                    attachPanelEventListeners();  // Attach all event listeners
                 }
             });
         } else {
@@ -500,15 +576,8 @@ function showFloatingPanel() {
     panel.appendChild(createPanelContent());
     document.body.appendChild(panel);
     
-    // Add event listeners
-    panel.querySelector("#luna-refresh")?.addEventListener("click", async () => {
-        await fetchDaemonStatus();
-        updatePanelUI();
-    });
-    
-    panel.querySelector("#luna-toggle")?.addEventListener("click", toggleDaemon);
-    panel.querySelector("#luna-unload")?.addEventListener("click", unloadModels);
-    panel.querySelector("#luna-reconnect")?.addEventListener("click", reconnectDaemon);
+    // Attach event listeners
+    attachPanelEventListeners();
     
     // Make draggable
     let isDragging = false;

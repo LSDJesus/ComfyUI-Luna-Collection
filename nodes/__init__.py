@@ -64,8 +64,9 @@ from .luna_vlm_prompt_generator import LunaVLMPromptGenerator
 # Import secondary model loader for multi-model workflows
 from .luna_secondary_loader import LunaSecondaryModelLoader, LunaModelRestore
 
-# Import Z-IMAGE encoder
+# Import Z-IMAGE encoder and processor
 from .luna_zimage_encoder import LunaZImageEncoder
+from .luna_zimage_processor import LunaZImageProcessor
 
 # Combine all node mappings
 NODE_CLASS_MAPPINGS = {}
@@ -126,6 +127,7 @@ NODE_CLASS_MAPPINGS.update({
     "LunaModelRestore": LunaModelRestore,
     # Z-IMAGE
     "LunaZImageEncoder": LunaZImageEncoder,
+    "LunaZImageProcessor": LunaZImageProcessor,
 })
 
 NODE_DISPLAY_NAME_MAPPINGS.update({
@@ -175,4 +177,5 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "LunaModelRestore": "Luna Model Restore 📤",
     # Z-IMAGE
     "LunaZImageEncoder": "Luna Z-IMAGE Encoder 🌙",
+    "LunaZImageProcessor": "Luna Z-IMAGE Processor 🔄",
 })

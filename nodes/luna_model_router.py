@@ -200,6 +200,108 @@ CLIP_TYPE_MAP = {
 
 
 # =============================================================================
+# Helper Functions
+# =============================================================================
+
+def _get_clip_model_list() -> List[str]:
+    """
+    Get CLIP models from multiple search locations:
+    1. Standard clip folder (models/clip)
+    2. models/clip_gguf (GGUF-format CLIP models)
+    3. models/clip_vision (Vision-specific CLIPs)
+    4. models/LLM (LLM models that can be used as CLIP for Z-IMAGE)
+    """
+    clip_models = set()
+    
+    # Standard clip folder
+    try:
+        clip_models.update(folder_paths.get_filename_list("clip"))
+    except:
+        pass
+    
+    # Try custom folders if they exist in models directory
+    models_dir = None
+    try:
+        # Get the base models directory from folder_paths
+        model_dir_list = folder_paths.get_output_directory() 
+        # This gets output dir, but we need models dir - try to find it
+        if hasattr(folder_paths, 'models_dir'):
+            models_dir = folder_paths.models_dir
+        else:
+            # Fallback: try to find it relative to checkpoints
+            checkpoints_dir = folder_paths.get_full_path("checkpoints", "")
+            if checkpoints_dir:
+                models_dir = os.path.dirname(checkpoints_dir)
+    except:
+        pass
+    
+    # If we found the models directory, search for additional CLIP folders
+    if models_dir and os.path.exists(models_dir):
+        custom_clip_folders = ["clip_gguf", "clip_vision", "LLM"]
+        
+        for folder in custom_clip_folders:
+            folder_path = os.path.join(models_dir, folder)
+            if os.path.isdir(folder_path):
+                try:
+                    for filename in os.listdir(folder_path):
+                        file_path = os.path.join(folder_path, filename)
+                        # Include files (not subdirectories)
+                        if os.path.isfile(file_path):
+                            # Prefix with folder name for clarity
+                            clip_models.add(f"{folder}/{filename}")
+                except:
+                    pass
+    
+    return ["None"] + sorted(list(clip_models))
+
+
+def _resolve_clip_path(clip_name: str) -> Optional[str]:
+    """
+    Resolve a CLIP model name to full path, handling custom folders.
+    
+    Examples:
+        "clip_l.safetensors" → /path/to/models/clip/clip_l.safetensors
+        "clip_gguf/qwen3.gguf" → /path/to/models/clip_gguf/qwen3.gguf
+        "LLM/qwen3-vl.gguf" → /path/to/models/LLM/qwen3-vl.gguf
+    
+    Returns:
+        Full path to model file, or None if not found
+    """
+    if not clip_name or clip_name == "None":
+        return None
+    
+    # Check if it has a folder prefix
+    if "/" in clip_name:
+        folder, filename = clip_name.split("/", 1)
+        # Try to find in custom folders
+        try:
+            if hasattr(folder_paths, 'models_dir'):
+                models_dir = folder_paths.models_dir
+            else:
+                checkpoints_dir = folder_paths.get_full_path("checkpoints", "")
+                if checkpoints_dir:
+                    models_dir = os.path.dirname(checkpoints_dir)
+                else:
+                    return None
+            
+            full_path = os.path.join(models_dir, folder, filename)
+            if os.path.exists(full_path):
+                return full_path
+        except:
+            pass
+    else:
+        # Try standard clip folder first
+        try:
+            full_path = folder_paths.get_full_path("clip", clip_name)
+            if full_path and os.path.exists(full_path):
+                return full_path
+        except:
+            pass
+    
+    return None
+
+
+# =============================================================================
 # CLIP Requirements by Model Type
 # =============================================================================
 
@@ -330,11 +432,8 @@ class LunaModelRouter:
         # Combine all model files for the dropdown (JS will filter)
         all_models = ["None"] + checkpoint_list[1:] + diffusion_list + unet_list
         
-        # CLIP list (safetensors + gguf)
-        try:
-            clip_list = ["None"] + folder_paths.get_filename_list("clip")
-        except:
-            clip_list = ["None"]
+        # CLIP list - now includes models from clip_gguf, clip_vision, and LLM folders
+        clip_list = _get_clip_model_list()
         
         # VAE list
         vae_list = ["None"] + folder_paths.get_filename_list("vae")
@@ -362,21 +461,22 @@ class LunaModelRouter:
                 }),
                 
                 # === CLIP Selection (4 slots) ===
+                # Now searches: models/clip, models/clip_gguf, models/clip_vision, models/LLM
                 "clip_1": (clip_list, {
                     "default": "None",
-                    "tooltip": "Primary CLIP encoder (CLIP-L for most, Qwen3 for Z-IMAGE)"
+                    "tooltip": "Primary CLIP encoder (CLIP-L for most, Qwen3 for Z-IMAGE). Searches: clip/, clip_gguf/, clip_vision/, LLM/"
                 }),
                 "clip_2": (clip_list, {
                     "default": "None",
-                    "tooltip": "Secondary CLIP encoder (CLIP-G for SDXL/SD3)"
+                    "tooltip": "Secondary CLIP encoder (CLIP-G for SDXL/SD3). Searches: clip/, clip_gguf/, clip_vision/, LLM/"
                 }),
                 "clip_3": (clip_list, {
                     "default": "None",
-                    "tooltip": "Tertiary CLIP encoder (T5-XXL for Flux/SD3)"
+                    "tooltip": "Tertiary CLIP encoder (T5-XXL for Flux/SD3). Searches: clip/, clip_gguf/, clip_vision/, LLM/"
                 }),
                 "clip_4": (clip_list, {
                     "default": "None",
-                    "tooltip": "Vision encoder (SigLIP/CLIP-H for vision models)"
+                    "tooltip": "Vision encoder (SigLIP/CLIP-H for vision models). Searches: clip/, clip_gguf/, clip_vision/, LLM/"
                 }),
                 
                 # === VAE Selection ===
@@ -749,7 +849,8 @@ class LunaModelRouter:
         
         for slot, path in clip_config.items():
             if path is not None:
-                full_path = folder_paths.get_full_path("clip", path)
+                # Use the new resolver that handles custom folders
+                full_path = _resolve_clip_path(path)
                 if full_path and os.path.exists(full_path):
                     clip_paths.append(full_path)
                     component_type = slot_to_type.get(slot, "clip_l")
@@ -837,8 +938,8 @@ class LunaModelRouter:
                 "Use a Qwen3-VL .safetensors or .gguf file."
             )
         
-        # Get full path to Qwen3 model
-        full_path = folder_paths.get_full_path("clip", clip_1_path)
+        # Get full path to Qwen3 model using the custom resolver
+        full_path = _resolve_clip_path(clip_1_path)
         if not full_path or not os.path.exists(full_path):
             raise FileNotFoundError(f"Qwen3 model not found: {clip_1_path}")
         
