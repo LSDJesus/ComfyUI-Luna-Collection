@@ -412,6 +412,18 @@ class LunaGGUFConverter:
         if HAS_GGUF_LIB:
             # Use official gguf library if available - it handles quantization properly
             try:
+                # Map our quantization type names to gguf library types
+                quant_map = {
+                    "F16": gguf.GGMLQuantizationType.F16,
+                    "Q8_0": gguf.GGMLQuantizationType.Q8_0,
+                    "Q4_0": gguf.GGMLQuantizationType.Q4_0,
+                    "Q4_K_M": gguf.GGMLQuantizationType.Q4_K_M,
+                    "Q5_0": gguf.GGMLQuantizationType.Q5_0,
+                    "Q5_K_M": gguf.GGMLQuantizationType.Q5_K_M,
+                }
+                
+                quant_type_gguf = quant_map.get(quant_type, gguf.GGMLQuantizationType.F16)
+                
                 writer = gguf.GGUFWriter(output_path, arch="stable-diffusion")
                 
                 # Write metadata
@@ -421,36 +433,24 @@ class LunaGGUFConverter:
                     elif isinstance(value, (int, float)):
                         writer.add_int32(key, int(value))
                 
-                # Determine block size for quantization
-                if quant_type in ["Q4_0", "Q4_K_M"]:
-                    block_size = 32
-                elif quant_type in ["Q8_0"]:
-                    block_size = 32
-                else:
-                    block_size = 1  # F16 doesn't need padding
-                
-                # Process and write tensors - pad dimensions for quantization compatibility
-                print(f"[LunaGGUF] Writing {len(valid_tensors)} tensors with gguf library...")
+                # Process and write tensors with explicit quantization
+                print(f"[LunaGGUF] Writing {len(valid_tensors)} tensors with quantization {quant_type}...")
                 for i, (name, tensor) in enumerate(valid_tensors.items()):
                     if (i + 1) % 100 == 0:
                         print(f"[LunaGGUF] Processing tensor {i + 1}/{len(valid_tensors)}...")
                     
-                    # For quantized formats, pad last dimension to multiple of block size
-                    if block_size > 1:
-                        shape = list(tensor.shape)
-                        last_dim = shape[-1]
-                        padded_dim = ((last_dim + block_size - 1) // block_size) * block_size
-                        
-                        if padded_dim != last_dim:
-                            # Pad the tensor
-                            padding = padded_dim - last_dim
-                            tensor = torch.nn.functional.pad(tensor, (0, padding))
-                    
-                    # Convert tensor to numpy (float32) - let gguf library handle quantization
+                    # Convert tensor to numpy float32
                     tensor_np = tensor.float().cpu().numpy()
                     
-                    # Add tensor - gguf library will quantize based on architecture
-                    writer.add_tensor(name, tensor_np)
+                    # Quantize the tensor using gguf library's quantize function
+                    try:
+                        quantized_data = gguf.quants.quantize(tensor_np, quant_type_gguf)
+                    except Exception as quant_err:
+                        print(f"[LunaGGUF] Quantization failed for {name} ({quant_err}), falling back to F16")
+                        quantized_data = gguf.quants.quantize(tensor_np, gguf.GGMLQuantizationType.F16)
+                    
+                    # Add quantized tensor to writer
+                    writer.add_tensor(name, quantized_data, raw_dtype=quant_type_gguf)
                 
                 writer.write_header_to_file()
                 writer.write_kv_data_to_file()
