@@ -116,133 +116,109 @@ def convert_to_precision(
     """
     Convert checkpoint to target precision safetensors.
     
+    Supports bf16, fp16, fp8_e4m3fn (Ada/Blackwell native FP8).
+    Always strips VAE/CLIP, keeping only UNet weights for Luna Daemon workflow.
+    
+    Args:
+        strip_components: Deprecated, kept for compatibility. Always strips to UNet only.
+    
     Returns:
         Tuple of (original_size_mb, converted_size_mb)
     """
-    dtype_map = {
-        "bf16": torch.bfloat16,
-        "fp16": torch.float16,
-        "fp8_e4m3fn": torch.float8_e4m3fn,
-    }
-    target_dtype = dtype_map.get(precision, torch.bfloat16)
-    
-    print(f"[Luna] Loading {src_path}...")
-    state_dict = load_file(src_path)
-    original_size = os.path.getsize(src_path) / (1024 * 1024)
-    
-    # Filter to UNet only if stripping
-    if strip_components:
-        print("[Luna] Extracting UNet weights only...")
-        state_dict = get_unet_keys(state_dict)
-        if not state_dict:
-            raise ValueError("No UNet keys found in checkpoint. Is this a valid model?")
-        print(f"[Luna] Extracted {len(state_dict)} UNet tensors")
-    
-    # Convert precision
-    print(f"[Luna] Converting to {precision}...")
-    new_dict = {}
-    for key, tensor in state_dict.items():
-        if tensor.dtype in [torch.float32, torch.float16, torch.bfloat16]:
-            new_dict[key] = tensor.to(target_dtype)
-        else:
-            new_dict[key] = tensor
-    
-    # Save
-    print(f"[Luna] Saving to {dst_path}...")
-    save_file(new_dict, dst_path)
-    
-    converted_size = os.path.getsize(dst_path) / (1024 * 1024)
-    print(f"[Luna] Conversion complete: {original_size:.1f}MB -> {converted_size:.1f}MB")
-    
-    return (original_size, converted_size)
+    try:
+        # Import utility module
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from utils.precision_converter import convert_checkpoint_precision
+        
+        print(f"[Luna] Converting to {precision} (UNet only)")
+        original_size, converted_size = convert_checkpoint_precision(
+            source_checkpoint=src_path,
+            output_path=dst_path,
+            precision=precision
+        )
+        
+        return (original_size, converted_size)
+        
+    except ImportError:
+        # Fallback to inline implementation if utility not available
+        dtype_map = {
+            "bf16": torch.bfloat16,
+            "fp16": torch.float16,
+            "fp8_e4m3fn": torch.float8_e4m3fn,
+        }
+        target_dtype = dtype_map.get(precision, torch.bfloat16)
+        
+        print(f"[Luna] Loading {src_path}...")
+        state_dict = load_file(src_path)
+        original_size = os.path.getsize(src_path) / (1024 * 1024)
+        
+        # Filter to UNet only if stripping
+        if strip_components:
+            print("[Luna] Extracting UNet weights only...")
+            state_dict = get_unet_keys(state_dict)
+            if not state_dict:
+                raise ValueError("No UNet keys found in checkpoint. Is this a valid model?")
+            print(f"[Luna] Extracted {len(state_dict)} UNet tensors")
+        
+        # Convert precision
+        print(f"[Luna] Converting to {precision}...")
+        new_dict = {}
+        for key, tensor in state_dict.items():
+            if tensor.dtype in [torch.float32, torch.float16, torch.bfloat16]:
+                new_dict[key] = tensor.to(target_dtype)
+            else:
+                new_dict[key] = tensor
+        
+        # Save
+        print(f"[Luna] Saving to {dst_path}...")
+        save_file(new_dict, dst_path)
+        
+        converted_size = os.path.getsize(dst_path) / (1024 * 1024)
+        print(f"[Luna] Conversion complete: {original_size:.1f}MB -> {converted_size:.1f}MB")
+        
+        return (original_size, converted_size)
 
 
 def convert_to_gguf(
-    src_path: str, 
-    dst_path: str, 
+    src_path: str,
+    dst_path: str,
     quant_type: str
 ) -> Tuple[float, float]:
     """
-    Convert checkpoint to GGUF format using Luna's internal converter
-    or external ComfyUI-GGUF script.
+    Convert checkpoint to GGUF format with quantization.
+    
+    Uses the gguf_converter utility module for proper llama-cpp-python quantization.
+    Always strips VAE/CLIP, keeping only UNet weights for Luna Daemon workflow.
     
     Returns:
         Tuple of (original_size_mb, converted_size_mb)
     """
-    original_size = os.path.getsize(src_path) / (1024 * 1024)
-    
-    # Try using Luna's internal GGUF converter first
     try:
-        from .luna_gguf_converter import LunaGGUFConverter
+        # Import utility module
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from utils.gguf_converter import convert_checkpoint_to_gguf
         
         output_dir = os.path.dirname(dst_path)
         output_name = os.path.splitext(os.path.basename(dst_path))[0]
         
-        # Map quant type to converter format
-        quant_map = {
-            "Q8_0": "Q8_0 (recommended for Ampere/Ada)",
-            "Q4_0": "Q4_0 (smaller, Blackwell optimized)",
-            "Q4_K_M": "Q4_K_M (best quality Q4, Blackwell)",
-        }
-        quant_option = quant_map.get(quant_type, quant_map["Q8_0"])
-        
-        print(f"[Luna] Using internal GGUF converter: {quant_type}")
-        converter = LunaGGUFConverter()
-        result = converter.convert(
-            src_path, output_dir, quant_option,
-            output_filename=output_name,
-            extract_unet_only=True
+        print(f"[Luna] Converting to GGUF: {quant_type} (UNet only)")
+        output_path, tensor_count, final_size = convert_checkpoint_to_gguf(
+            source_checkpoint=src_path,
+            output_directory=output_dir,
+            quantization=quant_type,
+            output_filename=output_name
         )
         
-        # Verify the file was created and get size
-        if not os.path.exists(dst_path):
-            raise FileNotFoundError(f"Converter did not create output file: {dst_path}")
+        original_size = os.path.getsize(src_path) / (1024 * 1024)
+        return (original_size, final_size)
         
-        converted_size = os.path.getsize(dst_path) / (1024 * 1024)
-        print(f"[Luna] Internal converter success: {original_size:.1f}MB → {converted_size:.1f}MB")
-        return (original_size, converted_size)
-        
-    except ImportError as e:
-        print(f"[Luna] Internal GGUF converter not available: {e}")
-        print("[Luna] Falling back to external ComfyUI-GGUF converter...")
     except Exception as e:
-        print(f"[Luna] Internal GGUF converter failed: {e}")
-        print("[Luna] Falling back to external ComfyUI-GGUF converter...")
-    
-    # Fall back to external ComfyUI-GGUF script
-    converter_paths = [
-        os.path.join(folder_paths.base_path, "custom_nodes", "ComfyUI-GGUF", "tools", "convert.py"),
-        os.path.join(folder_paths.base_path, "custom_nodes", "ComfyUI_GGUF", "tools", "convert.py"),
-    ]
-    
-    converter_script = None
-    for path in converter_paths:
-        if os.path.exists(path):
-            converter_script = path
-            break
-    
-    if converter_script is None:
-        raise FileNotFoundError(
-            "GGUF converter not found. Install ComfyUI-GGUF or ensure Luna GGUF converter is available."
-        )
-    
-    import subprocess
-    
-    cmd = [
-        sys.executable, converter_script,
-        "--in", src_path,
-        "--out", dst_path,
-        "--out-type", quant_type.lower(),
-        "--unet-only"
-    ]
-    
-    print(f"[Luna] Executing: {' '.join(cmd)}")
-    subprocess.run(cmd, check=True)
-    
-    converted_size = os.path.getsize(dst_path) / (1024 * 1024)
-    return (original_size, converted_size)
-
-
+        print(f"[Luna] GGUF conversion failed: {e}")
+        raise
 # =============================================================================
 # Main Node
 # =============================================================================
