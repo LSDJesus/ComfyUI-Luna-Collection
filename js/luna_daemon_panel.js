@@ -297,6 +297,84 @@ async function reconnectDaemon() {
     }
 }
 
+async function ensureDaemonRunning() {
+    /**
+     * Smart checklist workflow:
+     * 1. Check if daemon is running
+     * 2. If running + started: nothing to do
+     * 3. If running + not started: start it
+     * 4. If not running: run it first
+     */
+    
+    console.log("[Luna] Starting daemon checklist...");
+    
+    // Step 1: Check current status
+    await fetchDaemonStatus();
+    console.log(`[Luna] Status check: running=${panelState.running}, error=${panelState.error}`);
+    
+    // Step 2: If already running and no error, we're done
+    if (panelState.running && !panelState.error) {
+        console.log("[Luna] ✓ Daemon is running");
+        return true;
+    }
+    
+    // Step 3: If running but showing error, try to reconnect
+    if (panelState.running && panelState.error) {
+        console.log("[Luna] Daemon running but error detected, reconnecting...");
+        await reconnectDaemon();
+        await fetchDaemonStatus();
+        
+        if (panelState.running && !panelState.error) {
+            console.log("[Luna] ✓ Reconnection successful");
+            return true;
+        }
+    }
+    
+    // Step 4: Not running, start it
+    if (!panelState.running) {
+        console.log("[Luna] Daemon not running, starting...");
+        try {
+            const response = await api.fetchApi("/luna/daemon/start", { method: "POST" });
+            const data = await response.json();
+            
+            if (!response.ok) {
+                panelState.error = data.message || `HTTP ${response.status}`;
+                console.error(`[Luna] Start failed: ${panelState.error}`);
+                updatePanelUI();
+                attachPanelEventListeners();
+                return false;
+            }
+            
+            if (data.status === "error") {
+                panelState.error = data.message || "Start failed";
+                console.error(`[Luna] Start error: ${panelState.error}`);
+                updatePanelUI();
+                attachPanelEventListeners();
+                return false;
+            }
+            
+            console.log("[Luna] ✓ Daemon started successfully");
+            panelState.error = null;
+            await fetchDaemonStatus();
+            updatePanelUI();
+            attachPanelEventListeners();
+            return true;
+            
+        } catch (e) {
+            panelState.error = "Start failed: " + e.message;
+            console.error(`[Luna] Exception during start: ${e.message}`);
+            updatePanelUI();
+            attachPanelEventListeners();
+            return false;
+        }
+    }
+    
+    console.log("[Luna] Unexpected state, falling back to status update");
+    updatePanelUI();
+    attachPanelEventListeners();
+    return panelState.running && !panelState.error;
+}
+
 async function toggleDaemon() {
     try {
         const endpoint = panelState.running ? "/luna/daemon/stop" : "/luna/daemon/start";
@@ -387,9 +465,20 @@ function attachPanelEventListeners() {
             toggleBtn.disabled = true;
             const wasRunning = panelState.running;
             const originalText = toggleBtn.textContent;
-            toggleBtn.textContent = wasRunning ? "Stopping..." : "Starting...";
+            
             try {
-                await toggleDaemon();
+                if (wasRunning) {
+                    // Stopping: use simple toggle
+                    toggleBtn.textContent = "Stopping...";
+                    await toggleDaemon();
+                } else {
+                    // Starting: use smart checklist
+                    toggleBtn.textContent = "Ensuring daemon...";
+                    const success = await ensureDaemonRunning();
+                    if (success) {
+                        console.log("[Luna] Daemon ready!");
+                    }
+                }
             } finally {
                 toggleBtn.disabled = false;
                 // Text will be updated by updatePanelUI
@@ -556,16 +645,16 @@ app.registerExtension({
         // Fetch initial status
         await fetchDaemonStatus();
         
-        // Auto-start daemon if not running
+        // Auto-start daemon if not running using smart checklist
         if (!panelState.running) {
             console.log("[Luna] Auto-starting daemon...");
             try {
-                await api.fetchApi("/luna/daemon/start", { method: "POST" });
-                // Wait a moment for it to spin up
-                setTimeout(async () => {
-                    await fetchDaemonStatus();
-                    updatePanelUI();
-                }, 2000);
+                const success = await ensureDaemonRunning();
+                if (success) {
+                    console.log("[Luna] Auto-start successful");
+                } else {
+                    console.warn("[Luna] Auto-start failed - daemon not responding");
+                }
             } catch (e) {
                 console.error("[Luna] Failed to auto-start daemon:", e);
             }

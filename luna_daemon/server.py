@@ -2206,6 +2206,7 @@ class DynamicDaemon:
         
         self.start_time = time.time()
         self.request_count = 0
+        self.shutdown_requested = False  # Flag for clean shutdown
         
         logger.info(f"Daemon mode: {service_type.value}")
     
@@ -2668,6 +2669,12 @@ class DynamicDaemon:
                         "vlm_count": self.qwen3_encoder._vlm_count
                     }
             
+            elif cmd == "shutdown":
+                # Request clean shutdown
+                logger.info("Shutdown requested via command")
+                self.shutdown_requested = True
+                result = {"status": "ok", "message": "Shutdown initiated"}
+            
             else:
                 result = {"error": f"Unknown command: {cmd}"}
             
@@ -2715,14 +2722,21 @@ class DynamicDaemon:
             logger.info("Ready to accept connections!")
             logger.info("Press Ctrl+C to stop")
             
-            while True:
-                conn, addr = server.accept()
-                thread = threading.Thread(
-                    target=self.handle_request,
-                    args=(conn, addr),
-                    daemon=True
-                )
-                thread.start()
+            # Set socket to non-blocking so we can check shutdown flag
+            server.settimeout(1.0)
+            
+            while not self.shutdown_requested:
+                try:
+                    conn, addr = server.accept()
+                    thread = threading.Thread(
+                        target=self.handle_request,
+                        args=(conn, addr),
+                        daemon=True
+                    )
+                    thread.start()
+                except socket.timeout:
+                    # Check shutdown flag
+                    continue
                 
         except KeyboardInterrupt:
             logger.info("Shutting down...")

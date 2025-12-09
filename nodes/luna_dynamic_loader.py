@@ -186,6 +186,7 @@ def convert_to_gguf(
         }
         quant_option = quant_map.get(quant_type, quant_map["Q8_0"])
         
+        print(f"[Luna] Using internal GGUF converter: {quant_type}")
         converter = LunaGGUFConverter()
         result = converter.convert(
             src_path, output_dir, quant_option,
@@ -193,11 +194,20 @@ def convert_to_gguf(
             extract_unet_only=True
         )
         
+        # Verify the file was created and get size
+        if not os.path.exists(dst_path):
+            raise FileNotFoundError(f"Converter did not create output file: {dst_path}")
+        
         converted_size = os.path.getsize(dst_path) / (1024 * 1024)
+        print(f"[Luna] Internal converter success: {original_size:.1f}MB → {converted_size:.1f}MB")
         return (original_size, converted_size)
         
-    except ImportError:
-        pass
+    except ImportError as e:
+        print(f"[Luna] Internal GGUF converter not available: {e}")
+        print("[Luna] Falling back to external ComfyUI-GGUF converter...")
+    except Exception as e:
+        print(f"[Luna] Internal GGUF converter failed: {e}")
+        print("[Luna] Falling back to external ComfyUI-GGUF converter...")
     
     # Fall back to external ComfyUI-GGUF script
     converter_paths = [
