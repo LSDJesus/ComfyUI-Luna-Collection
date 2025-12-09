@@ -67,15 +67,21 @@ class Luna_Advanced_Upscaler:
 
     def _basic_tiling_upscale(self, in_img: torch.Tensor, upscale_model, tile_x: int, tile_y: int, tile_overlap: int):
         """Basic tiling implementation as fallback when luna_tiling_orchestrator is not available"""
-        batch_size, channels, height, width = in_img.shape
-        
-        # Calculate number of tiles
-        num_tiles_x = math.ceil(width / (tile_x - tile_overlap))
-        num_tiles_y = math.ceil(height / (tile_y - tile_overlap))
-        
-        # Prepare output tensor
-        output = torch.zeros((batch_size, channels, height * upscale_model.scale, width * upscale_model.scale), 
-                           dtype=in_img.dtype, device=in_img.device)
+        with torch.inference_mode():  # Disable gradient tracking
+            batch_size, channels, height, width = in_img.shape
+            
+            # Calculate number of tiles
+            num_tiles_x = math.ceil(width / (tile_x - tile_overlap))
+            num_tiles_y = math.ceil(height / (tile_y - tile_overlap))
+            
+            # Estimate output size and use CPU canvas only for massive outputs (>8GB)
+            output_bytes = batch_size * channels * height * width * upscale_model.scale * upscale_model.scale * 4
+            output_gb = output_bytes / (1024**3)
+            canvas_device = 'cpu' if output_gb > 8.0 else in_img.device
+            
+            # Prepare output tensor
+            output = torch.zeros((batch_size, channels, height * upscale_model.scale, width * upscale_model.scale), 
+                               dtype=in_img.dtype, device=canvas_device)
         
         for y in range(num_tiles_y):
             for x in range(num_tiles_x):
@@ -108,28 +114,40 @@ class Luna_Advanced_Upscaler:
                 out_x_end = out_x_start + upscaled_tile.shape[3]
                 out_y_end = out_y_start + upscaled_tile.shape[2]
                 
-                # Blend with existing content if there's overlap
+                # Move tile to canvas device and blend with existing content if there's overlap
+                upscaled_tile_canvas = upscaled_tile.to(canvas_device)
+                
                 if x > 0 or y > 0:
                     # Simple average blending for overlapping regions
                     overlap_region = output[:, :, out_y_start:out_y_end, out_x_start:out_x_end]
                     if overlap_region.shape[2] > 0 and overlap_region.shape[3] > 0:
-                        blend_mask = torch.ones_like(upscaled_tile)
+                        blend_mask = torch.ones_like(upscaled_tile_canvas)
                         # Create gradient blend mask for overlap
                         if tile_overlap > 0:
                             blend_width = tile_overlap * upscale_model.scale
                             if x > 0:  # Left overlap
-                                blend_mask[:, :, :, :blend_width] = torch.linspace(0.5, 1.0, blend_width).unsqueeze(0).unsqueeze(0).unsqueeze(2)
+                                blend_mask[:, :, :, :blend_width] = torch.linspace(0.5, 1.0, blend_width, device=canvas_device).unsqueeze(0).unsqueeze(0).unsqueeze(2)
                             if y > 0:  # Top overlap
-                                blend_mask[:, :, :blend_width, :] = torch.linspace(0.5, 1.0, blend_width).unsqueeze(0).unsqueeze(0).unsqueeze(3)
+                                blend_mask[:, :, :blend_width, :] = torch.linspace(0.5, 1.0, blend_width, device=canvas_device).unsqueeze(0).unsqueeze(0).unsqueeze(3)
                         
                         output[:, :, out_y_start:out_y_end, out_x_start:out_x_end] = \
-                            overlap_region * (1 - blend_mask) + upscaled_tile * blend_mask
+                            overlap_region * (1 - blend_mask) + upscaled_tile_canvas * blend_mask
+                        del blend_mask
                     else:
-                        output[:, :, out_y_start:out_y_end, out_x_start:out_x_end] = upscaled_tile
+                        output[:, :, out_y_start:out_y_end, out_x_start:out_x_end] = upscaled_tile_canvas
                 else:
-                    output[:, :, out_y_start:out_y_end, out_x_start:out_x_end] = upscaled_tile
-        
-        return output
+                    output[:, :, out_y_start:out_y_end, out_x_start:out_x_end] = upscaled_tile_canvas
+                
+                # Clean up GPU memory after each tile
+                del tile, upscaled_tile, upscaled_tile_canvas
+                if in_img.device != 'cpu':
+                    torch.cuda.empty_cache()
+            
+            # Move final canvas back to original device if needed
+            if canvas_device != in_img.device:
+                output = output.to(in_img.device)
+            
+            return output
 
     def _adaptive_resize(self, tensor, target_height, target_width, resampling, use_antialias):
         if resampling == 'lanczos': resampling_mode = 'bicubic'
@@ -166,14 +184,15 @@ class Luna_Advanced_Upscaler:
                 raise e
 
     def upscale(self, image: torch.Tensor, scale_by: float, resampling: str, supersample: bool, rescale_after_model: bool, tile_strategy: str, tile_mode: str, tile_resolution: int, tile_overlap: int, show_preview: bool, upscale_model=None, tensorrt_engine_path=None):
-        self.OUTPUT_NODE = show_preview
-        
-        device = comfy.model_management.get_torch_device()
-        
-        # Determine whether to use TensorRT or spandrel model
-        use_tensorrt = TENSORRT_AVAILABLE and tensorrt_engine_path and tensorrt_engine_path.strip()
-        
-        in_img = image.permute(0, 3, 1, 2).to(device)
+        with torch.inference_mode():  # Disable gradient tracking for entire upscale
+            self.OUTPUT_NODE = show_preview
+            
+            device = comfy.model_management.get_torch_device()
+            
+            # Determine whether to use TensorRT or spandrel model
+            use_tensorrt = TENSORRT_AVAILABLE and tensorrt_engine_path and tensorrt_engine_path.strip()
+            
+            in_img = image.permute(0, 3, 1, 2).to(device)
         
         if use_tensorrt:
             # Use TensorRT engine
@@ -206,7 +225,12 @@ class Luna_Advanced_Upscaler:
             # Use spandrel model (original logic)
             if upscale_model is None:
                 raise ValueError("Either upscale_model or tensorrt_engine_path must be provided")
-                
+            
+            # Estimate input size to determine if we need aggressive memory management
+            input_bytes = in_img.numel() * in_img.element_size()
+            input_mb = input_bytes / (1024**2)
+            large_image = input_mb > 500  # >500MB input (~2K images)
+            
             upscale_model.to(device)
             
             if tile_strategy == "none":
@@ -214,6 +238,10 @@ class Luna_Advanced_Upscaler:
             else:
                 if tile_mode == 'auto': tile_x, tile_y = self._calculate_auto_tile_size(in_img.shape[3], in_img.shape[2], tile_resolution)
                 else: tile_x, tile_y = tile_resolution, tile_resolution
+                
+                # For very large images, offload model between tiles to maximize VRAM for canvas
+                if large_image:
+                    logging.info(f"[Luna Upscaler] Large image detected ({input_mb:.1f}MB), using memory-efficient tiling")
                 
                 # Use luna_tiling_orchestrator if available, otherwise fallback to basic tiling
                 if self.luna_tiling_orchestrator is not None:
@@ -223,6 +251,8 @@ class Luna_Advanced_Upscaler:
                     s = self._basic_tiling_upscale(in_img, upscale_model, tile_x, tile_y, tile_overlap)
             
             upscale_model.to("cpu")
+            if device != 'cpu':
+                torch.cuda.empty_cache()
         
         s_for_resizing = s
 
@@ -241,9 +271,9 @@ class Luna_Advanced_Upscaler:
                 else: resampling_mode = resampling
                 s_resized = F.interpolate(s_for_resizing, size=(target_height, target_width), mode=resampling_mode, antialias=bool(use_antialias))
         
-        s_final_for_comfy = s_resized.permute(0, 2, 3, 1)
+            s_final_for_comfy = s_resized.permute(0, 2, 3, 1)
 
-        return (s_final_for_comfy,)
+            return (s_final_for_comfy,)
 
 NODE_CLASS_MAPPINGS = {"Luna_Advanced_Upscaler": Luna_Advanced_Upscaler}
 NODE_DISPLAY_NAME_MAPPINGS = {"Luna_Advanced_Upscaler": "Luna Advanced Upscaler"}

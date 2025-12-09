@@ -1,13 +1,23 @@
 import torch
 import math
+import comfy.model_management
 
 def luna_tiling_orchestrator(image_tensor, model, tile_x, tile_y, overlap, strategy):
-    height, width = image_tensor.shape[2], image_tensor.shape[3]
-    scale = model.scale
-    new_height, new_width = int(height * scale), int(width * scale)
-    
-    device = image_tensor.device
-    canvas = torch.zeros((image_tensor.shape[0], image_tensor.shape[1], new_height, new_width), device=device)
+    with torch.inference_mode():  # Disable gradient tracking
+        height, width = image_tensor.shape[2], image_tensor.shape[3]
+        scale = model.scale
+        new_height, new_width = int(height * scale), int(width * scale)
+        
+        device = image_tensor.device
+        
+        # Estimate output size in GB
+        output_bytes = image_tensor.shape[0] * image_tensor.shape[1] * new_height * new_width * 4
+        output_gb = output_bytes / (1024**3)
+        
+        # Use CPU canvas only for truly massive outputs (>8GB) - allows 4K→16K on high-VRAM GPUs
+        canvas_device = 'cpu' if output_gb > 8.0 else device
+        canvas = torch.zeros((image_tensor.shape[0], image_tensor.shape[1], new_height, new_width), 
+                           device=canvas_device, dtype=image_tensor.dtype)
     
     rows = math.ceil(height / tile_y)
     cols = math.ceil(width / tile_x)
@@ -43,6 +53,17 @@ def luna_tiling_orchestrator(image_tensor, model, tile_x, tile_y, overlap, strat
             crop_y_end = crop_y_start + paste_h
             crop_x_end = crop_x_start + paste_w
             
-            canvas[:, :, paste_y:paste_y+paste_h, paste_x:paste_x+paste_w] = upscaled_tile[:, :, crop_y_start:crop_y_end, crop_x_start:crop_x_end]
+            # Extract crop and move to canvas device (CPU or GPU)
+            tile_crop = upscaled_tile[:, :, crop_y_start:crop_y_end, crop_x_start:crop_x_end].to(canvas_device)
+            canvas[:, :, paste_y:paste_y+paste_h, paste_x:paste_x+paste_w] = tile_crop
+            
+            # Clean up GPU memory after each tile
+            del upscaled_tile, tile_input, tile_crop
+            if device != 'cpu':
+                torch.cuda.empty_cache()
+    
+    # Move final canvas back to original device if needed
+    if canvas_device != device:
+        canvas = canvas.to(device)
     
     return canvas
