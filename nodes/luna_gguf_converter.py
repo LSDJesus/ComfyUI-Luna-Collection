@@ -76,7 +76,3 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "LunaGGUFConverter": "Luna GGUF Converter",
 }
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "LunaGGUFConverterV2": "Luna GGUF Converter V2 (Fixed Quantization)",
-}
