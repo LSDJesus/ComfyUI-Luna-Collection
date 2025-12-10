@@ -12,7 +12,18 @@ from typing import Tuple
 # Add parent directory to path to import utils
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from utils.gguf_converter import convert_checkpoint_to_gguf
+try:
+    from utils.gguf_converter import convert_checkpoint_to_gguf
+except ImportError:
+    # Try relative import as fallback
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("gguf_converter", str(Path(__file__).parent.parent / "utils" / "gguf_converter.py"))
+    if spec and spec.loader:
+        gguf_converter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(gguf_converter)
+        convert_checkpoint_to_gguf = gguf_converter.convert_checkpoint_to_gguf
+    else:
+        raise ImportError("Failed to load gguf_converter module")
 
 
 class LunaGGUFConverter:

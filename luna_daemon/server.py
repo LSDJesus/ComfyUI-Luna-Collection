@@ -170,6 +170,7 @@ class ScalingConfig:
 class WorkerType(Enum):
     VAE = "vae"
     CLIP = "clip"
+    IMAGE_SAVE = "image_save"
 
 
 # ============================================================================
@@ -2272,7 +2273,7 @@ class DynamicDaemon:
         # Async image save pool - CPU-only, always available for parallel saves
         # Uses 1-4 worker threads for disk I/O without GPU overhead
         self.save_pool = WorkerPool(
-            worker_type="image_save",  # Custom worker type for image saving
+            worker_type=WorkerType.IMAGE_SAVE,
             device="cpu",
             precision="fp32",  # Not used for CPU image saver
             config=self.config,
