@@ -333,7 +333,7 @@ class Luna_UltimateSDUpscale:
             batch_tensor = img_tensor.unsqueeze(0).permute(0, 3, 1, 2)
 
             # Use ComfyUI's upscale method
-            upscaled_tensor = comfy.utils.common_upscale(
+            upscaled_tensor = comfy.utils.common_upscale(  # type: ignore
                 batch_tensor, target_width, target_height, "lanczos", "center"
             ).permute(0, 2, 3, 1).squeeze(0)
 
@@ -388,7 +388,11 @@ class Luna_UltimateSDUpscale:
                                     model, positive, negative, vae, seed, steps, cfg,
                                     sampler_name, scheduler, denoise):
         """Process tiles in linear order (row by row)"""
-        from nodes import KSampler, VAEDecode
+        try:
+            from nodes import KSampler, VAEDecode  # type: ignore
+        except ImportError:
+            KSampler = None  # type: ignore
+            VAEDecode = None  # type: ignore
 
         ksampler = KSampler()
         vae_decoder = VAEDecode()

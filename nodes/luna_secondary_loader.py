@@ -73,13 +73,15 @@ class ModelMemoryManager:
     then reloading them faster than from disk.
     """
     
-    _instance = None
+    _instance: Optional['ModelMemoryManager'] = None
+    _ram_cache: Dict[str, Any] = {}
+    _metadata: Dict[str, Dict[str, Any]] = {}
     
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance._ram_cache = {}
-            cls._instance._metadata = {}
+            cls._instance._ram_cache = {}  # type: ignore
+            cls._instance._metadata = {}  # type: ignore
         return cls._instance
     
     def offload_to_ram(self, model: Any, model_id: str) -> bool:
@@ -500,7 +502,7 @@ class LunaSecondaryModelLoader:
             if additional_clip_name and additional_clip_name != "None":
                 clip_path = folder_paths.get_full_path("clip", additional_clip_name)
                 if clip_path:
-                    return comfy.sd.load_clip(
+                    return comfy.sd.load_clip(  # type: ignore
                         ckpt_paths=[clip_path],
                         embedding_directory=folder_paths.get_folder_paths("embeddings")
                     )
@@ -515,7 +517,7 @@ class LunaSecondaryModelLoader:
             if clip_path and os.path.exists(clip_path):
                 try:
                     # Load additional encoder
-                    additional = comfy.sd.load_clip(
+                    additional = comfy.sd.load_clip(  # type: ignore
                         ckpt_paths=[clip_path],
                         embedding_directory=folder_paths.get_folder_paths("embeddings")
                     )
@@ -553,12 +555,19 @@ class LunaSecondaryModelLoader:
             raise FileNotFoundError(f"VAE not found: {vae_name}")
         
         try:
-            from nodes import VAELoader
-            loader = VAELoader()
-            return loader.load_vae(vae_name)[0]
+            try:
+                from nodes import VAELoader  # type: ignore
+            except ImportError:
+                VAELoader = None  # type: ignore
+            
+            if VAELoader:
+                loader = VAELoader()
+                return loader.load_vae(vae_name)[0]
+            else:
+                raise ImportError("VAELoader not available")
         except ImportError:
-            sd = comfy.utils.load_torch_file(vae_path)
-            return comfy.sd.VAE(sd=sd)
+            sd = comfy.utils.load_torch_file(vae_path)  # type: ignore
+            return comfy.sd.VAE(sd=sd)  # type: ignore
 
 
 # =============================================================================

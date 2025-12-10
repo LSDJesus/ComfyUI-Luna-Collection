@@ -12,11 +12,7 @@ from typing import Tuple
 # Add parent directory to path to import utils
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-try:
-    from utils.gguf_converter import convert_checkpoint_to_gguf
-except ImportError:
-    # Fallback for relative import
-    from ..utils.gguf_converter import convert_checkpoint_to_gguf
+from utils.gguf_converter import convert_checkpoint_to_gguf
 
 
 class LunaGGUFConverter:

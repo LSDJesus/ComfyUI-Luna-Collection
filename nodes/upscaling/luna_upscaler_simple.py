@@ -114,7 +114,7 @@ class Luna_SimpleUpscaler:
                 
             upscale_model.to(device)
             in_img = image.permute(0, 3, 1, 2).to(device)
-            s = comfy.utils.tiled_scale(in_img, lambda a: upscale_model(a), tile_x=512, tile_y=512, overlap=32, upscale_amount=upscale_model.scale)
+            s = comfy.utils.tiled_scale(in_img, lambda a: upscale_model(a), tile_x=512, tile_y=512, overlap=32, upscale_amount=upscale_model.scale)  # type: ignore
             upscale_model.to("cpu")
         
         target_width = round(image.shape[2] * scale_by)

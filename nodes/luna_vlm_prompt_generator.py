@@ -274,7 +274,7 @@ Original prompt: {simple_prompt}"""
             img_data = (image.cpu().numpy() * 255).astype(np.uint8)
         
         # Call daemon
-        result = daemon_client.vlm_generate(
+        result = daemon_client.vlm_generate(  # type: ignore
             prompt=prompt,
             image=img_data,
             max_tokens=max_tokens,

@@ -1,7 +1,6 @@
 import torch
 import comfy.utils
 import comfy.model_management
-import comfy.nodes
 import folder_paths
 import numpy as np
 from PIL import Image
@@ -27,7 +26,8 @@ except ImportError:
 
 # Import ComfyUI's default upscaler node for delegation
 try:
-    from comfy.nodes import UpscaleUsingSampler
+    import nodes  # type: ignore
+    UpscaleUsingSampler = getattr(nodes, 'UpscaleUsingSampler', None)  # type: ignore
     COMFYUI_UPSCALER_AVAILABLE = True
 except ImportError:
     COMFYUI_UPSCALER_AVAILABLE = False

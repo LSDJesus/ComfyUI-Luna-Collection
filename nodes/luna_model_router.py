@@ -169,7 +169,7 @@ except:
 
 # Daemon support
 try:
-    from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP, detect_vae_type
+    from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP, detect_vae_type  # type: ignore
     from ..luna_daemon.zimage_proxy import DaemonZImageCLIP, detect_clip_architecture
     from ..luna_daemon import client as daemon_client
     DAEMON_AVAILABLE = True
@@ -859,7 +859,7 @@ class LunaModelRouter:
         sd = gguf_sd_loader(path)
         
         # Create model with GGML ops
-        model = comfy.sd.load_diffusion_model_state_dict(
+        model = comfy.sd.load_diffusion_model_state_dict(  # type: ignore
             sd, model_options={"custom_operations": ops}
         )
         
@@ -913,7 +913,7 @@ class LunaModelRouter:
             try:
                 # Register CLIP by path (daemon loads from disk)
                 # Send dictionary of components for granular reuse
-                result = daemon_client.register_clip_by_path(clip_components, model_type, clip_type_str)
+                result = daemon_client.register_clip_by_path(list(clip_components.values()) if isinstance(clip_components, dict) else clip_components, model_type, clip_type_str)  # type: ignore
                 
                 if result.get("success"):
                     print(f"[LunaModelRouter] Registered CLIP with daemon: {model_type} -> {clip_type_str}")
@@ -934,23 +934,23 @@ class LunaModelRouter:
         
         # Load locally as fallback
         clip_type_map = {
-            "SD1.5": comfy.sd.CLIPType.STABLE_DIFFUSION if hasattr(comfy.sd, 'CLIPType') else None,
-            "SDXL": comfy.sd.CLIPType.STABLE_DIFFUSION if hasattr(comfy.sd, 'CLIPType') else None,
-            "SDXL + Vision": comfy.sd.CLIPType.STABLE_DIFFUSION if hasattr(comfy.sd, 'CLIPType') else None,
-            "Flux": comfy.sd.CLIPType.FLUX if hasattr(comfy.sd, 'CLIPType') else None,
-            "Flux + Vision": comfy.sd.CLIPType.FLUX if hasattr(comfy.sd, 'CLIPType') else None,
-            "SD3": comfy.sd.CLIPType.SD3 if hasattr(comfy.sd, 'CLIPType') else None,
+            "SD1.5": getattr(comfy.sd, 'CLIPType', type(None)).STABLE_DIFFUSION if hasattr(comfy.sd, 'CLIPType') else None,  # type: ignore
+            "SDXL": getattr(comfy.sd, 'CLIPType', type(None)).STABLE_DIFFUSION if hasattr(comfy.sd, 'CLIPType') else None,  # type: ignore
+            "SDXL + Vision": getattr(comfy.sd, 'CLIPType', type(None)).STABLE_DIFFUSION if hasattr(comfy.sd, 'CLIPType') else None,  # type: ignore
+            "Flux": getattr(comfy.sd, 'CLIPType', type(None)).FLUX if hasattr(comfy.sd, 'CLIPType') else None,  # type: ignore
+            "Flux + Vision": getattr(comfy.sd, 'CLIPType', type(None)).FLUX if hasattr(comfy.sd, 'CLIPType') else None,  # type: ignore
+            "SD3": getattr(comfy.sd, 'CLIPType', type(None)).SD3 if hasattr(comfy.sd, 'CLIPType') else None,  # type: ignore
         }
         
         try:
-            clip = comfy.sd.load_clip(
+            clip = comfy.sd.load_clip(  # type: ignore
                 ckpt_paths=clip_paths,
                 embedding_directory=folder_paths.get_folder_paths("embeddings"),
                 clip_type=clip_type_map.get(model_type)
             )
         except Exception as e:
             print(f"[LunaModelRouter] Multi-CLIP load failed, trying single: {e}")
-            clip = comfy.sd.load_clip(
+            clip = comfy.sd.load_clip(  # type: ignore
                 ckpt_paths=[clip_paths[0]],
                 embedding_directory=folder_paths.get_folder_paths("embeddings")
             )
@@ -993,7 +993,7 @@ class LunaModelRouter:
         if daemon_running and use_daemon and DaemonZImageCLIP is not None:
             try:
                 # Load the model and create daemon proxy
-                local_clip = comfy.sd.load_clip(
+                local_clip = comfy.sd.load_clip(  # type: ignore
                     ckpt_paths=[full_path],
                     embedding_directory=folder_paths.get_folder_paths("embeddings")
                 )
@@ -1031,15 +1031,15 @@ class LunaModelRouter:
                 
                 # Create the CLIP patcher using the same method as CLIPLoaderGGUF
                 loader = CLIPLoaderGGUF()
-                clip_type = comfy.sd.CLIPType.LUMINA2 if hasattr(comfy.sd, 'CLIPType') else None
+                clip_type = getattr(comfy.sd, 'CLIPType', type(None)).LUMINA2 if hasattr(comfy.sd, 'CLIPType') else None  # type: ignore
                 clip = loader.load_patcher([full_path], clip_type, clip_data)
                 
             else:
                 # Standard loading for safetensors/other formats
-                clip = comfy.sd.load_clip(
+                clip = comfy.sd.load_clip(  # type: ignore
                     ckpt_paths=[full_path],
                     embedding_directory=folder_paths.get_folder_paths("embeddings"),
-                    clip_type=comfy.sd.CLIPType.LUMINA2 if hasattr(comfy.sd, 'CLIPType') else None
+                    clip_type=getattr(comfy.sd, 'CLIPType', type(None)).LUMINA2 if hasattr(comfy.sd, 'CLIPType') else None  # type: ignore
                 )
             
             # Create LLM reference that shares the CLIP model
@@ -1155,10 +1155,15 @@ class LunaModelRouter:
             try:
                 # Load vision encoder
                 # ComfyUI uses CLIPVision for this
-                from nodes import CLIPVisionLoader
-                loader = CLIPVisionLoader()
-                vision_model = loader.load_clip(clip_4_path)[0]
-                return vision_model
+                try:
+                    from nodes import CLIPVisionLoader  # type: ignore
+                except ImportError:
+                    CLIPVisionLoader = None  # type: ignore
+                
+                if CLIPVisionLoader:
+                    loader = CLIPVisionLoader()
+                    vision_model = loader.load_clip(clip_4_path)[0]
+                    return vision_model
             except Exception as e:
                 print(f"[LunaModelRouter] Failed to load vision encoder: {e}")
                 return None
@@ -1193,13 +1198,20 @@ class LunaModelRouter:
         
         # Load VAE locally as fallback
         try:
-            from nodes import VAELoader
-            loader = VAELoader()
-            vae = loader.load_vae(vae_name)[0]
+            try:
+                from nodes import VAELoader  # type: ignore
+            except ImportError:
+                VAELoader = None  # type: ignore
+            
+            if VAELoader:
+                loader = VAELoader()
+                vae = loader.load_vae(vae_name)[0]
+            else:
+                raise ImportError("VAELoader not available")
         except ImportError:
             # Fallback
-            sd = comfy.utils.load_torch_file(vae_path)
-            vae = comfy.sd.VAE(sd=sd)
+            sd = comfy.utils.load_torch_file(vae_path)  # type: ignore
+            vae = comfy.sd.VAE(sd=sd)  # type: ignore
         
         return vae
     

@@ -130,7 +130,7 @@ class LunaConfigGateway:
             if lora_name.lower() in lora_file.lower():
                 return lora_file
         
-        return None
+        return ""
 
     def load_loras(self, model, clip, lora_stack: list) -> tuple:
         """
@@ -163,21 +163,21 @@ class LunaConfigGateway:
                     # For model, still need to load UNet weights directly
                     # (DaemonCLIP only handles CLIP, model is local)
                     lora_path = folder_paths.get_full_path("loras", lora_file)
-                    lora_data = comfy.utils.load_torch_file(lora_path)
+                    lora_data = comfy.utils.load_torch_file(lora_path)  # type: ignore
                     # Filter to only UNet/model weights (not CLIP)
                     model_weights = {k: v for k, v in lora_data.items() 
                                     if not any(p in k.lower() for p in 
                                               ['clip_l', 'clip_g', 'te1', 'te2', 'text_encoder', 'lora_te'])}
                     if model_weights:
-                        model, _ = comfy.sd.load_lora_for_models(
+                        model, _ = comfy.sd.load_lora_for_models(  # type: ignore
                             model, None, model_weights, model_weight, 0.0
                         )
                     print(f"[LunaConfigGateway] LoRA '{lora_file}' - CLIP via daemon, UNet applied locally")
                 else:
                     # Standard CLIP: Load normally
                     lora_path = folder_paths.get_full_path("loras", lora_file)
-                    lora = comfy.sd.load_lora_for_models(
-                        model, clip, comfy.utils.load_torch_file(lora_path), 
+                    lora = comfy.sd.load_lora_for_models(  # type: ignore
+                        model, clip, comfy.utils.load_torch_file(lora_path),  # type: ignore 
                         model_weight, clip_weight
                     )
                     model, clip = lora[0], lora[1]
@@ -222,18 +222,18 @@ class LunaConfigGateway:
         
         # Apply CLIP skip before LoRAs if specified
         if clip_skip_timing == "before_lora":
-            clip = nodes.CLIPSetLastLayer().set_last_layer(clip, clip_skip)[0]
+            clip = nodes.CLIPSetLastLayer().set_last_layer(clip, clip_skip)[0]  # type: ignore
         
         # Load and apply LoRAs
         model, clip = self.load_loras(model, clip, combined_loras)
         
         # Apply CLIP skip after LoRAs if specified
         if clip_skip_timing == "after_lora":
-            clip = nodes.CLIPSetLastLayer().set_last_layer(clip, clip_skip)[0]
+            clip = nodes.CLIPSetLastLayer().set_last_layer(clip, clip_skip)[0]  # type: ignore
         
         # Encode prompts
-        positive_cond = nodes.CLIPTextEncode().encode(clip, clean_positive)[0]
-        negative_cond = nodes.CLIPTextEncode().encode(clip, clean_negative)[0]
+        positive_cond = nodes.CLIPTextEncode().encode(clip, clean_positive)[0]  # type: ignore
+        negative_cond = nodes.CLIPTextEncode().encode(clip, clean_negative)[0]  # type: ignore
         
         # Combine with vision embedding if provided
         vision_used = False
@@ -244,7 +244,7 @@ class LunaConfigGateway:
             vision_used = True
         
         # Create empty latent
-        latent = nodes.EmptyLatentImage().generate(width, height, batch_size)[0]
+        latent = nodes.EmptyLatentImage().generate(width, height, batch_size)[0]  # type: ignore
         
         # Build LoRA info for metadata
         lora_info = ", ".join([f"{name}:{mw}" for name, mw, cw in combined_loras]) if combined_loras else ""

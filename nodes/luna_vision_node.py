@@ -174,7 +174,7 @@ class LunaVisionNode:
                     img_np = (image[0].cpu().numpy() * 255).astype(np.uint8)
                     
                     # Call daemon's vision encoding
-                    embed = daemon_client.encode_vision(img_np)
+                    embed = daemon_client.encode_vision(img_np)  # type: ignore
                     
                     return ({
                         "type": "qwen3_vision",
@@ -233,7 +233,7 @@ class LunaVisionNode:
                 
                 # Get image embedding through chat handler
                 # This extracts the vision embedding without generating text
-                embed = chat_handler.get_image_embedding(pil_img)
+                embed = chat_handler.get_image_embedding(pil_img)  # type: ignore
                 
                 return torch.tensor(embed)
                 

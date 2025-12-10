@@ -447,7 +447,7 @@ Respond only with the refined/generated prompt text, no explanations."""
             
             messages.append({
                 "role": "user",
-                "content": [
+                "content": [  # type: ignore
                     {"type": "image_url", "image_url": {"url": image_url}},
                     {"type": "text", "text": prompt}
                 ]

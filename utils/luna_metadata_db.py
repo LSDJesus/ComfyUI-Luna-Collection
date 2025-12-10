@@ -347,7 +347,7 @@ class LunaMetadataDB:
         
         with self._transaction() as conn:
             cursor = conn.execute(sql, list(data.values()))
-            return cursor.lastrowid
+            return cursor.lastrowid if cursor.lastrowid is not None else 0
     
     def get_by_path(self, file_path: str, model_type: str) -> Optional[Dict]:
         """Get model by file path and type."""
@@ -640,7 +640,7 @@ def get_model_metadata(file_path: str, model_type: str = 'lora') -> Optional[Dic
 
 
 def store_civitai_metadata(file_path: str, model_type: str, 
-                           civitai_data: Dict, tensor_hash: str = None) -> int:
+                           civitai_data: Dict, tensor_hash: Optional[str] = None) -> int:
     """
     Store metadata from Civitai API response.
     
