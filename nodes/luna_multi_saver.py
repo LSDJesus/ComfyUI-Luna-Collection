@@ -20,6 +20,14 @@ except ImportError:
     piexif = None
     HAS_PIEXIF = False
 
+# Try to import daemon client for async saving
+try:
+    from luna_daemon.client import DaemonClient
+    DAEMON_AVAILABLE = True
+except ImportError:
+    DAEMON_AVAILABLE = False
+    DaemonClient = None
+
 class LunaMultiSaver:
     CATEGORY = "Luna/Image"
     RETURN_TYPES = ()
@@ -35,6 +43,7 @@ class LunaMultiSaver:
             "required": {
                 "save_path": ("STRING", {"default": "", "tooltip": "Path relative to output dir. Supports: %model_path% (full path like Illustrious/3DCG/model), %model_name% (just model name), %index%, %time:FORMAT% (e.g. %time:YYYY-mm-dd%). Empty = output root."}),
                 "filename": ("STRING", {"default": "%time:YYYY_mm_dd.HH.MM.SS%_%model_name%", "tooltip": "Filename template. Supports: %model_name%, %index%, %time:FORMAT% (e.g. %time:YYYY-mm-dd.HH.MM.SS%). Affix is always appended."}),
+                "daemon_save": ("BOOLEAN", {"default": False, "label_on": "Async (Daemon)", "label_off": "Blocking", "tooltip": "Use daemon async saving (non-blocking) or local blocking save. Requires daemon to be running."}),
                 "save_mode": (["parallel", "sequential"], {"default": "parallel", "tooltip": "Parallel saves asynchronously, sequential saves one by one"}),
                 "quality_gate": (["disabled", "variance", "edge_density", "both"], {"default": "disabled", "tooltip": "Quality check mode: variance detects flat/blank images, edge_density detects blurry images, both requires passing both checks"}),
                 "min_quality_threshold": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05, "tooltip": "Minimum quality score required for saving (0.3 recommended for filtering obviously bad images)"}),
@@ -407,6 +416,131 @@ class LunaMultiSaver:
 
         return self.save_results
 
+    def _save_images_via_daemon(self, filtered_images, discarded_images, model_name_raw, save_path,
+                                custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp,
+                                filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow,
+                                quality_gate, min_quality_threshold):
+        """Submit images to daemon for async saving and return immediately"""
+        if not DAEMON_AVAILABLE or not DaemonClient:
+            error_msg = "[LunaMultiSaver] Daemon save selected but daemon client not available. Is Luna Daemon running? Falling back to local save."
+            print(error_msg)
+            # Fall back to local parallel save
+            return self._fallback_to_local_save(
+                filtered_images, discarded_images, model_name_raw, save_path,
+                custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp,
+                filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow
+            )
+        
+        try:
+            client = DaemonClient()
+            
+            # Collect image data for daemon
+            images_for_daemon = []
+            for image, affix, subdir, fmt in filtered_images:
+                # Convert tensor to numpy
+                image_np = image
+                if hasattr(image_np, 'cpu'):
+                    image_np = image_np.cpu().numpy()
+                elif isinstance(image_np, np.ndarray):
+                    pass  # Already numpy
+                else:
+                    image_np = np.array(image_np)
+                
+                # Ensure proper shape and range
+                if image_np.ndim == 4:
+                    image_np = image_np[0]
+                if image_np.max() <= 1.0:
+                    image_np = (image_np * 255).astype(np.uint8)
+                else:
+                    image_np = image_np.astype(np.uint8)
+                
+                images_for_daemon.append({
+                    "image": image_np,
+                    "affix": affix,
+                    "format": fmt,
+                    "subdir": subdir
+                })
+            
+            # Build daemon request
+            save_request = {
+                "save_path": save_path,
+                "filename": filename,
+                "model_name": model_name_raw or "",
+                "quality_gate": quality_gate,
+                "min_quality_threshold": min_quality_threshold,
+                "png_compression": png_compression,
+                "lossy_quality": lossy_quality,
+                "lossless_webp": lossless_webp,
+                "embed_workflow": embed_workflow,
+                "filename_index": filename_index,
+                "custom_metadata": custom_metadata,
+                "metadata": metadata or {},
+                "prompt": prompt,
+                "extra_pnginfo": extra_pnginfo,
+                "images": images_for_daemon,
+                "output_dir": self.output_dir,
+                "timestamp": datetime.now().isoformat(),
+            }
+            
+            # Submit to daemon
+            result = client.submit_async("save_images_async", save_request)
+            
+            if result.get("success"):
+                job_id = result.get("job_id", "unknown")
+                num_images = result.get("num_images", len(images_for_daemon))
+                msg = f"[LunaMultiSaver] Submitted {num_images} images to daemon (Job ID: {job_id})"
+                print(msg)
+                return {
+                    "ui": {
+                        "text": [msg],
+                        "images": []
+                    }
+                }
+            else:
+                error_msg = f"[LunaMultiSaver] Daemon submission failed: {result.get('error', 'Unknown error')}"
+                print(error_msg)
+                # Fall back to local save
+                return self._fallback_to_local_save(
+                    filtered_images, discarded_images, model_name_raw, save_path,
+                    custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp,
+                    filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow
+                )
+        
+        except Exception as e:
+            error_msg = f"[LunaMultiSaver] Daemon save error: {str(e)}. Falling back to local save."
+            print(error_msg)
+            # Fall back to local parallel save
+            return self._fallback_to_local_save(
+                filtered_images, discarded_images, model_name_raw, save_path,
+                custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp,
+                filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow
+            )
+    
+    def _fallback_to_local_save(self, filtered_images, discarded_images, model_name_raw, save_path,
+                                custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp,
+                                filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow):
+        """Fallback to local parallel save (same as normal operation)"""
+        all_results = []
+        
+        # Save passed images
+        if filtered_images:
+            results = self.save_images_parallel(filtered_images, model_name_raw, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+            all_results.extend(results)
+        
+        # Save discarded images
+        if discarded_images:
+            discarded_path = os.path.join(save_path, "_discarded") if save_path else "_discarded"
+            discarded_data = [(img, affix, subdir, fmt) for img, affix, subdir, fmt, score, mode in discarded_images]
+            discarded_results = self.save_images_parallel(discarded_data, model_name_raw, discarded_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)
+            for r in discarded_results:
+                r["discarded"] = True
+            all_results.extend(discarded_results)
+        
+        if not all_results:
+            return {"ui": {"images": []}}
+        
+        return {"ui": {"images": all_results}}
+
     def save_images_sequential(self, images_data, model_name_raw, custom_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename_template="", filename_index=0, lossless_webp=False, lossy_quality=90, png_compression=4, embed_workflow=True):
         """Save images sequentially"""
         results = []
@@ -417,7 +551,7 @@ class LunaMultiSaver:
 
         return results
 
-    def save_images(self, save_path, filename, save_mode, quality_gate, min_quality_threshold,
+    def save_images(self, save_path, filename, daemon_save, save_mode, quality_gate, min_quality_threshold,
                    model_name=None, model_path_raw=None, image_1=None, image_2=None, image_3=None, image_4=None, image_5=None,
                    affix_1="RAW", affix_2="UPSCALED", affix_3="DETAILED", affix_4="IMAGE4", affix_5="IMAGE5",
                    format_1="png", format_2="png", format_3="png", format_4="png", format_5="png",
@@ -457,7 +591,16 @@ class LunaMultiSaver:
 
         all_results = []
         
-        # Save passed images to normal location
+        # Check if using daemon save
+        if daemon_save:
+            return self._save_images_via_daemon(
+                filtered_images, discarded_images, model_name_raw, save_path,
+                custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp,
+                filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow,
+                quality_gate, min_quality_threshold
+            )
+        
+        # Save passed images to normal location (local blocking save)
         if filtered_images:
             if save_mode == "parallel":
                 results = self.save_images_parallel(filtered_images, model_name_raw, save_path, custom_metadata, metadata, prompt, extra_pnginfo, batch_timestamp, filename, filename_index, lossless_webp, lossy_quality, png_compression, embed_workflow)

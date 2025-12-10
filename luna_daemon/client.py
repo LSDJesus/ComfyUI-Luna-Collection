@@ -651,6 +651,23 @@ class DaemonClient:
         if isinstance(result, dict) and "text" in result:
             return result["text"]
         return result
+    
+    def submit_async(self, cmd: str, data: dict) -> dict:
+        """
+        Submit async job to daemon and return immediately.
+        
+        Useful for long-running operations (image saving, etc.) that don't block workflow.
+        
+        Args:
+            cmd: Command name (e.g., "save_images_async")
+            data: Request data dictionary
+        
+        Returns:
+            Status dict with job_id for tracking
+        """
+        request = {"cmd": cmd, **data}
+        result = self._send_request(request)
+        return result if isinstance(result, dict) else {"error": str(result)}
 
 
 # =============================================================================

@@ -2197,6 +2197,7 @@ class DynamicDaemon:
         
         self.vae_pool: Optional[WorkerPool] = None
         self.clip_pool: Optional[WorkerPool] = None
+        self.save_pool: Optional[WorkerPool] = None  # Async image saver pool
         self.ws_server: Optional[WebSocketServer] = None
         
         # Qwen3 encoder for Z-IMAGE CLIP + LLM (unified model)
@@ -2267,6 +2268,18 @@ class DynamicDaemon:
             self.vae_pool.start()
             # Don't scale up immediately - wait for demand
             # self.vae_pool.scale_up()
+        
+        # Async image save pool - CPU-only, always available for parallel saves
+        # Uses 1-4 worker threads for disk I/O without GPU overhead
+        self.save_pool = WorkerPool(
+            worker_type="image_save",  # Custom worker type for image saving
+            device="cpu",
+            precision="fp32",  # Not used for CPU image saver
+            config=self.config,
+            on_scale_event=self._on_scale_event
+        )
+        self.save_pool.start()
+        logger.info(f"Image save pool configured on CPU (up to 4 parallel workers)")
         
         # Report VRAM usage
         if 'cuda' in self.device:
@@ -2675,6 +2688,58 @@ class DynamicDaemon:
                 self.shutdown_requested = True
                 result = {"status": "ok", "message": "Shutdown initiated"}
             
+            elif cmd == "save_images_async":
+                # Asynchronous image saving - submit to worker pool and return immediately
+                # This prevents workflow blocking on disk I/O
+                try:
+                    save_request = {
+                        "save_path": request.get("save_path", ""),
+                        "filename": request.get("filename", ""),
+                        "model_name": request.get("model_name", ""),
+                        "quality_gate": request.get("quality_gate", "disabled"),
+                        "min_quality_threshold": request.get("min_quality_threshold", 0.3),
+                        "png_compression": request.get("png_compression", 4),
+                        "lossy_quality": request.get("lossy_quality", 90),
+                        "lossless_webp": request.get("lossless_webp", False),
+                        "embed_workflow": request.get("embed_workflow", True),
+                        "filename_index": request.get("filename_index", 0),
+                        "custom_metadata": request.get("custom_metadata", ""),
+                        "metadata": request.get("metadata", {}),
+                        "prompt": request.get("prompt"),
+                        "extra_pnginfo": request.get("extra_pnginfo"),
+                        "images": request.get("images", []),
+                        "output_dir": request.get("output_dir", ""),
+                        "timestamp": request.get("timestamp", ""),
+                    }
+                    
+                    # Generate unique job ID
+                    import uuid
+                    job_id = str(uuid.uuid4())[:8]
+                    
+                    # Submit to async worker pool (fire and forget)
+                    # Worker will save images in background without blocking
+                    if hasattr(self, 'save_pool') and self.save_pool:
+                        self.save_pool.submit("save_images", save_request)
+                        result = {
+                            "success": True,
+                            "job_id": job_id,
+                            "message": f"Image save job submitted (ID: {job_id})",
+                            "num_images": len(save_request.get("images", []))
+                        }
+                        logger.debug(f"[Image Save] Job {job_id}: {result['num_images']} images submitted")
+                    else:
+                        # No save pool available - still accept but log warning
+                        result = {
+                            "warning": "Save pool not initialized, images may not be saved",
+                            "job_id": job_id,
+                            "success": False
+                        }
+                        logger.warning("[Image Save] No save pool available")
+                        
+                except Exception as e:
+                    result = {"error": f"Image save submission failed: {str(e)}"}
+                    logger.error(f"[Image Save] Error: {str(e)}")
+            
             else:
                 result = {"error": f"Unknown command: {cmd}"}
             
@@ -2747,6 +2812,8 @@ class DynamicDaemon:
                 self.vae_pool.stop()
             if self.clip_pool:
                 self.clip_pool.stop()
+            if self.save_pool:
+                self.save_pool.stop()
             server.close()
 
 
