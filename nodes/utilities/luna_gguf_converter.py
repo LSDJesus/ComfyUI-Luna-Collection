@@ -8,22 +8,21 @@ import os
 import sys
 from pathlib import Path
 from typing import Tuple
+import importlib.util
 
-# Add parent directory to path to import utils
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Load gguf_converter using importlib to avoid path issues
+# luna_gguf_converter.py is at nodes/utilities/, so go up 3 levels to get to root
+converter_path = Path(__file__).parent.parent.parent / "utils" / "gguf_converter.py"
 
 try:
-    from utils.gguf_converter import convert_checkpoint_to_gguf
-except ImportError:
-    # Try relative import as fallback
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("gguf_converter", str(Path(__file__).parent.parent / "utils" / "gguf_converter.py"))
-    if spec and spec.loader:
-        gguf_converter = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(gguf_converter)
-        convert_checkpoint_to_gguf = gguf_converter.convert_checkpoint_to_gguf
-    else:
-        raise ImportError("Failed to load gguf_converter module")
+    spec = importlib.util.spec_from_file_location("gguf_converter", converter_path)
+    if not spec or not spec.loader:
+        raise ImportError("Could not create spec for gguf_converter")
+    gguf_converter = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gguf_converter)
+    convert_checkpoint_to_gguf = gguf_converter.convert_checkpoint_to_gguf
+except Exception as e:
+    raise ImportError(f"Failed to load gguf_converter module from {converter_path}: {e}")
 
 
 class LunaGGUFConverter:
