@@ -816,14 +816,23 @@ class LunaModelRouter:
                 from .luna_dynamic_loader import convert_to_precision, convert_to_gguf
                 
                 if is_gguf:
-                    convert_to_gguf(model_path, cache_path, quant_type)
+                    convert_to_gguf(
+                        src_path=model_path,
+                        dst_path=cache_path,
+                        quant_type=quant_type
+                    )
                 else:
-                    convert_to_precision(model_path, cache_path, precision, strip_components=True)
+                    convert_to_precision(
+                        src_path=model_path,
+                        dst_path=cache_path,
+                        precision=precision,
+                        strip_components=True
+                    )
                     
                 print(f"[LunaModelRouter] Conversion complete!")
-            except ImportError:
+            except ImportError as e:
                 raise RuntimeError(
-                    "Dynamic precision conversion requires luna_dynamic_loader module.\n"
+                    f"Dynamic precision conversion requires conversion utilities: {e}\n"
                     "Set precision to 'None' to load without conversion."
                 )
         else:
