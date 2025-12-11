@@ -169,3 +169,5 @@ NODE_DISPLAY_NAME_MAPPINGS.update({
     "LunaZImageEncoder": "Luna Z-IMAGE Encoder 🌙",
     "LunaZImageProcessor": "Luna Z-IMAGE Processor 🔄",
 })
+
+__all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS']

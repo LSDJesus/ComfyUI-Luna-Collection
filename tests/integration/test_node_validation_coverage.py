@@ -11,7 +11,10 @@ import os
 from unittest.mock import patch, MagicMock
 
 # Import validation system
-from validation import luna_validator
+try:
+    from validation import luna_validator
+except ImportError:
+    luna_validator = None
 
 
 class TestNodeValidationCoverage:

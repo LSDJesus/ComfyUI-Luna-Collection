@@ -22,16 +22,22 @@ import importlib
 
 LunaPerformanceMonitor = None
 try:
-    luna_perf_module = importlib.import_module('luna_performance_monitor')
-    LunaPerformanceMonitor = luna_perf_module.LunaPerformanceMonitor
+    from pathlib import Path
+    root_dir = str(Path(__file__).parent.parent.parent)
+    if root_dir not in sys.path:
+        sys.path.insert(0, root_dir)
+    from utils.luna_performance_monitor import LunaPerformanceMonitor
 except ImportError:
     print("Luna Ultimate SD Upscale: Performance monitoring not available")
 
 # Import TensorRT Engine
 Engine = None
 try:
-    luna_trt_module = importlib.import_module('trt_engine')
-    Engine = luna_trt_module.Engine
+    from pathlib import Path
+    root_dir = str(Path(__file__).parent.parent.parent)
+    if root_dir not in sys.path:
+        sys.path.insert(0, root_dir)
+    from utils.trt_engine import Engine
 except ImportError:
     print("Luna Ultimate SD Upscale: TensorRT Engine not available. Please ensure trt_engine.py is properly installed.")
 

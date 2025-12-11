@@ -236,8 +236,14 @@ class LunaDynamicModelLoader:
         
         # 5. Convert UNet if not already done
         if not os.path.exists(unet_path):
-            # Import conversion utilities from utils (up 2 levels: loaders/ -> nodes/ -> root)
-            from ...utils.checkpoint_converter import convert_to_precision, convert_to_gguf, convert_to_bnb
+            # Import conversion utilities from utils
+            # ComfyUI's dynamic loading doesn't always preserve package context,
+            # so we add the root directory to sys.path
+            root_dir = str(Path(__file__).parent.parent.parent)
+            if root_dir not in sys.path:
+                sys.path.insert(0, root_dir)
+            
+            from utils.checkpoint_converter import convert_to_precision, convert_to_gguf, convert_to_bnb
             
             print(f"[Luna] First use - extracting and converting UNet...")
             print(f"[Luna] Source: {src_path}")

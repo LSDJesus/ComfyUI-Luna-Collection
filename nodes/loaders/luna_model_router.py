@@ -814,8 +814,15 @@ class LunaModelRouter:
             print(f"[LunaModelRouter] Output: {cache_path}")
             
             try:
-                # Import conversion utilities from utils (up 2 levels: loaders/ -> nodes/ -> root)
-                from ...utils.checkpoint_converter import convert_to_precision, convert_to_gguf, convert_to_bnb
+                # Import conversion utilities from utils
+                # ComfyUI's dynamic loading doesn't always preserve package context,
+                # so we add the root directory to sys.path
+                import sys
+                root_dir = str(Path(__file__).parent.parent.parent)
+                if root_dir not in sys.path:
+                    sys.path.insert(0, root_dir)
+                
+                from utils.checkpoint_converter import convert_to_precision, convert_to_gguf, convert_to_bnb
                 
                 is_bnb = precision in ["nf4", "int8"]
                 

@@ -6,10 +6,7 @@ Tests loaders working together and with ComfyUI ecosystem components.
 """
 
 import unittest
-import tempfile
-import os
-import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import sys
 from pathlib import Path
 
@@ -245,8 +242,8 @@ class TestLoaderIntegration(unittest.TestCase):
         import sys
         sys.modules['nodes.loaders'] = mock_loaders
         
-        # Import the centralized registration (now mocked)
-        from nodes.loaders import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+        # Import the centralized registration from main nodes package
+        from nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS  # type: ignore
 
         # Verify all expected nodes are registered
         expected_nodes = [

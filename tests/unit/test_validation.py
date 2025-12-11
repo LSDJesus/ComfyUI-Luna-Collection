@@ -9,7 +9,6 @@ from PIL import Image
 import tempfile
 import os
 from validation import (
-    LunaInputValidator,
     ImageInput,
     NumericInput,
     TextInput,

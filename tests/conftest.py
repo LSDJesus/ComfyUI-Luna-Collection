@@ -74,8 +74,11 @@ def temp_image_file():
 @pytest.fixture
 def mock_validator():
     """Mock validator for testing."""
-    from validation import LunaInputValidator
-    return LunaInputValidator()
+    try:
+        from validation import LunaInputValidator
+        return LunaInputValidator()
+    except ImportError:
+        return None
 
 
 @pytest.fixture(scope="session")
@@ -93,8 +96,11 @@ def luna_test_config():
 def setup_test_environment():
     """Setup test environment before each test."""
     # Reset any global state
-    from validation import validation_cache
-    validation_cache.clear()
+    try:
+        from validation import validation_cache
+        validation_cache.clear()
+    except ImportError:
+        pass
 
     # Set test environment variables
     os.environ['LUNA_TEST_MODE'] = '1'
