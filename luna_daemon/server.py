@@ -2133,7 +2133,7 @@ class WebSocketServer:
                         logger.error(f"WebSocket accept error: {e}")
         
         threading.Thread(target=accept_loop, name="ws-accept", daemon=True).start()
-        logger.info(f"WebSocket server listening on ws://{self.host}:{self.port}")
+        logger.info(f"WebSocket monitoring server started on ws://{self.host}:{self.port}")
     
     def stop(self):
         """Stop the WebSocket server"""
@@ -2788,8 +2788,8 @@ class DynamicDaemon:
             server.bind((DAEMON_HOST, self.port))
             server.listen(MAX_WORKERS * 2)
             
-            logger.info(f"Socket server: {DAEMON_HOST}:{self.port}")
-            logger.info(f"WebSocket monitor: ws://{DAEMON_HOST}:{DAEMON_WS_PORT}")
+            logger.info(f"Socket server (work): {DAEMON_HOST}:{self.port}")
+            logger.info(f"WebSocket server (monitoring): ws://{DAEMON_HOST}:{DAEMON_WS_PORT}")
             logger.info(f"Service type: {self.service_type.value}")
             
             if self.vae_pool:
