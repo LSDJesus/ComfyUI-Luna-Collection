@@ -816,13 +816,24 @@ class LunaModelRouter:
             try:
                 # Import conversion utilities from utils
                 # ComfyUI's dynamic loading doesn't always preserve package context,
-                # so we add the root directory to sys.path
+                # so we use importlib to load it dynamically
                 import sys
-                root_dir = str(Path(__file__).parent.parent.parent)
-                if root_dir not in sys.path:
-                    sys.path.insert(0, root_dir)
+                import importlib.util
                 
-                from utils.checkpoint_converter import convert_to_precision, convert_to_gguf, convert_to_bnb
+                # Calculate path to checkpoint_converter.py
+                converter_path = Path(__file__).parent.parent.parent / "utils" / "checkpoint_converter.py"
+                
+                if not converter_path.exists():
+                    raise FileNotFoundError(f"checkpoint_converter.py not found at {converter_path}")
+                
+                # Load module dynamically
+                spec = importlib.util.spec_from_file_location("checkpoint_converter", converter_path)
+                converter_module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(converter_module)
+                
+                convert_to_precision = converter_module.convert_to_precision
+                convert_to_gguf = converter_module.convert_to_gguf
+                convert_to_bnb = converter_module.convert_to_bnb
                 
                 is_bnb = precision in ["nf4", "int8"]
                 
