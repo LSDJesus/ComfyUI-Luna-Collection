@@ -82,6 +82,12 @@ try:
         from .config import MODEL_TYPE
     except ImportError:
         MODEL_TYPE = "SDXL"
+    
+    # Import attention mode configuration
+    try:
+        from .config import ATTENTION_MODE
+    except ImportError:
+        ATTENTION_MODE = "auto"
 except ImportError:
     from config import (
         DAEMON_HOST, DAEMON_PORT, DAEMON_VAE_PORT, DAEMON_WS_PORT, 
@@ -105,6 +111,12 @@ except ImportError:
         from config import MODEL_TYPE
     except ImportError:
         MODEL_TYPE = "SDXL"
+    
+    # Import attention mode configuration
+    try:
+        from config import ATTENTION_MODE
+    except ImportError:
+        ATTENTION_MODE = "auto"
 
 # Import CLIP_TYPE_MAP from model router for model_type → clip_type mapping
 try:
@@ -2884,6 +2896,33 @@ def main():
     clip_precision = args.precision if args.precision else args.clip_precision
     vae_precision = args.precision if args.precision else args.vae_precision
     
+    # Apply attention mode configuration
+    if ATTENTION_MODE != "auto":
+        try:
+            import comfy.model_management as mm
+            attention_map = {
+                "xformers": mm.xformers_enabled,
+                "flash": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False),
+                "sage": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False),
+                "pytorch": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', True),
+                "split": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False)
+            }
+            
+            if ATTENTION_MODE.lower() in attention_map:
+                logger.info(f"Setting attention mode to: {ATTENTION_MODE}")
+                if ATTENTION_MODE.lower() == "xformers":
+                    # xformers is already default if available, just verify
+                    if not mm.xformers_enabled():
+                        logger.warning("xformers requested but not available, using fallback")
+                else:
+                    # For other modes, disable xformers and set appropriate flags
+                    attention_map[ATTENTION_MODE.lower()]()
+                    logger.info(f"Disabled xformers, using {ATTENTION_MODE} attention")
+            else:
+                logger.warning(f"Unknown attention mode '{ATTENTION_MODE}', using auto-detection")
+        except Exception as e:
+            logger.warning(f"Failed to set attention mode: {e}, using auto-detection")
+    
     # Print banner
     print("=" * 60)
     print("  Luna VAE/CLIP Daemon v2.1 - Split Architecture")
@@ -2892,6 +2931,7 @@ def main():
     print(f"  Device: {device}")
     print(f"  CLIP Precision: {clip_precision}")
     print(f"  VAE Precision: {vae_precision}")
+    print(f"  Attention Mode: {ATTENTION_MODE}")
     print(f"  Socket: {DAEMON_HOST}:{port}")
     print(f"  WebSocket: ws://{DAEMON_HOST}:{DAEMON_WS_PORT}")
     print("=" * 60)

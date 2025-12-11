@@ -46,6 +46,25 @@ LLM_DEVICE = "cuda:1"     # GPU for Large Language Models (Qwen3-VL, etc.)
 SHARED_DEVICE = CLIP_DEVICE
 
 # =============================================================================
+# Attention Mechanism Configuration
+# =============================================================================
+
+# Attention implementation to use: "auto", "xformers", "flash", "sage", "pytorch", "split"
+# - "auto": Let ComfyUI auto-detect (default)
+# - "xformers": Use xformers (best for RTX 3000/4000)
+# - "flash": Flash Attention 2 (requires flash-attn package)
+# - "sage": Sage Attention (memory efficient, requires sage-attention package)
+# - "pytorch": PyTorch native attention (slowest, most compatible)
+# - "split": Split attention (for older GPUs)
+#
+# To match your ComfyUI settings:
+#   If you run ComfyUI with --use-sage-attention, set ATTENTION_MODE = "sage"
+#   If you run ComfyUI with --use-pytorch-cross-attention, set ATTENTION_MODE = "pytorch"
+#
+# Or set via environment variable: LUNA_ATTENTION_MODE=sage
+ATTENTION_MODE = os.environ.get("LUNA_ATTENTION_MODE", "auto")
+
+# =============================================================================
 # Model Paths
 # =============================================================================
 
