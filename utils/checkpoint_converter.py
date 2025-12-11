@@ -35,7 +35,14 @@ def convert_to_precision(
     Returns:
         Tuple of (original_size_mb, converted_size_mb)
     """
-    from .precision_converter import convert_checkpoint_precision
+    import importlib.util
+    from pathlib import Path
+    
+    precision_path = Path(__file__).parent / "precision_converter.py"
+    spec = importlib.util.spec_from_file_location("precision_converter", precision_path)
+    precision_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(precision_module)
+    convert_checkpoint_precision = precision_module.convert_checkpoint_precision
     
     print(f"[Checkpoint Converter] Converting to {precision} (UNet only)")
     original_size, converted_size = convert_checkpoint_precision(
@@ -66,7 +73,14 @@ def convert_to_gguf(
     Returns:
         Tuple of (original_size_mb, converted_size_mb)
     """
-    from .gguf_converter import convert_checkpoint_to_gguf
+    import importlib.util
+    from pathlib import Path
+    
+    gguf_path = Path(__file__).parent / "gguf_converter.py"
+    spec = importlib.util.spec_from_file_location("gguf_converter", gguf_path)
+    gguf_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gguf_module)
+    convert_checkpoint_to_gguf = gguf_module.convert_checkpoint_to_gguf
     
     output_dir = os.path.dirname(dst_path)
     output_name = os.path.splitext(os.path.basename(dst_path))[0]
@@ -102,7 +116,14 @@ def convert_to_bnb(
     Returns:
         Tuple of (original_size_mb, converted_size_mb)
     """
-    from .bitsandbytes_converter import convert_checkpoint_to_bnb
+    import importlib.util
+    from pathlib import Path
+    
+    bnb_path = Path(__file__).parent / "bitsandbytes_converter.py"
+    spec = importlib.util.spec_from_file_location("bitsandbytes_converter", bnb_path)
+    bnb_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bnb_module)
+    convert_checkpoint_to_bnb = bnb_module.convert_checkpoint_to_bnb
     
     print(f"[Checkpoint Converter] Converting to BitsAndBytes: {quant_type} (UNet only)")
     original_size, converted_size = convert_checkpoint_to_bnb(

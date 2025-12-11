@@ -80,8 +80,11 @@ def quantize_tensor_nf4(tensor: torch.Tensor) -> torch.Tensor:
     if tensor.dtype not in [torch.float32, torch.float16, torch.bfloat16]:
         return tensor
     
-    # Convert to float32 for quantization
-    tensor_fp32 = tensor.to(torch.float32)
+    # Determine device for quantization (bnb requires CUDA for packing)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    
+    # Convert to float32 and move to device
+    tensor_fp32 = tensor.to(device=device, dtype=torch.float32)
     
     # Quantize using bitsandbytes NF4
     # Note: This creates a Params4bit object, we need to extract the quantized data
@@ -92,9 +95,13 @@ def quantize_tensor_nf4(tensor: torch.Tensor) -> torch.Tensor:
         quant_type="nf4"  # type: ignore
     )
     
-    # Return the quantized data
+    # Ensure it is on the correct device (Params4bit might be lazy)
+    if device == "cuda" and quantized.data.device.type == "cpu":
+         quantized.cuda(device)
+    
+    # Return the quantized data (move back to CPU for saving)
     # BitsAndBytes stores this as uint8 with metadata
-    return quantized.data
+    return quantized.data.cpu()
 
 
 def quantize_tensor_int8(tensor: torch.Tensor) -> torch.Tensor:
@@ -113,18 +120,21 @@ def quantize_tensor_int8(tensor: torch.Tensor) -> torch.Tensor:
     if tensor.dtype not in [torch.float32, torch.float16, torch.bfloat16]:
         return tensor
     
-    # Convert to float32 for quantization
-    tensor_fp32 = tensor.to(torch.float32)
+    # Determine device
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Convert to float32 and move to device
+    tensor_fp32 = tensor.to(device=device, dtype=torch.float32)
     
     # Quantize using bitsandbytes INT8
     quantized = bnb.nn.Int8Params(  # type: ignore
         tensor_fp32,
         requires_grad=False,
         has_fp16_weights=False  # type: ignore
-    )
+    ).cuda(device)
     
     # Return the quantized data
-    return quantized.data
+    return quantized.data.cpu()
 
 
 def convert_checkpoint_to_bnb(
@@ -181,6 +191,8 @@ def convert_checkpoint_to_bnb(
     
     # Save quantized checkpoint
     print(f"[BnB Converter] Saving to {output_path}...")
+    print(f"[BnB Converter] WARNING: This file contains raw packed {quantization.upper()} data without quantization state.")
+    print(f"[BnB Converter] It requires a specialized loader to be used.")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     save_file(quantized_dict, output_path)
     
