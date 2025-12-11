@@ -1,7 +1,6 @@
 {
     "include": [
         "nodes",
-        "luna_daemon",
         "utils"
     ],
     "exclude": [

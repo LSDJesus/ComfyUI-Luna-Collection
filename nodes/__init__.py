@@ -3,12 +3,18 @@
 
 # Import from subdirectories
 from . import upscaling
-from . import promptcraft
+from .prompting import promptcraft
 
-# Import individual node files
-from .luna_config_gateway import LunaConfigGateway
-from .luna_multi_saver import LunaMultiSaver
-from .luna_yaml_wildcard import (
+# Workflow nodes
+from .workflow.luna_config_gateway import LunaConfigGateway
+from .workflow.luna_multi_saver import LunaMultiSaver
+from .workflow.luna_expression_pack import (
+    LunaExpressionPromptBuilder,
+    LunaExpressionSlicerSaver,
+)
+
+# Prompting nodes
+from .prompting.luna_yaml_wildcard import (
     LunaYAMLWildcard,
     LunaYAMLWildcardBatch,
     LunaYAMLWildcardExplorer,
@@ -17,56 +23,40 @@ from .luna_yaml_wildcard import (
     LunaYAMLInjector,
     LunaYAMLPathExplorer,
 )
-from .luna_wildcard_connections import (
+from .prompting.luna_wildcard_connections import (
     LunaConnectionMatcher,
     LunaConnectionEditor,
     LunaSmartLoRALinker,
     LunaConnectionStats,
 )
-from .luna_civitai_scraper import (
-    LunaCivitaiScraper,
-    LunaCivitaiBatchScraper,
-)
-from .luna_expression_pack import (
-    LunaExpressionPromptBuilder,
-    LunaExpressionSlicerSaver,
-)
-
-# Import daemon nodes - proxy loaders that return VAE/CLIP objects usable by any node
-from .luna_daemon_loader import (
-    LunaDaemonVAELoader,
-    LunaDaemonCLIPLoader,
-)
-
-# Import batch prompt utilities
-from .luna_batch_prompt_extractor import (
+from .prompting.luna_batch_prompt_extractor import (
     LunaBatchPromptExtractor,
     LunaBatchPromptLoader,
     LunaDimensionScaler,
 )
+from .prompting.luna_trigger_injector import LunaLoRATriggerInjector
 
-# Import LoRA validator
-from .luna_lora_validator import LunaLoRAValidator
+# Loader nodes
+from .loaders.luna_daemon_loader import (
+    LunaDaemonVAELoader,
+    LunaDaemonCLIPLoader,
+)
+from .loaders.luna_model_router import LunaModelRouter
+from .loaders.luna_dynamic_loader import LunaDynamicModelLoader, LunaOptimizedWeightsManager
+from .loaders.luna_secondary_loader import LunaSecondaryModelLoader, LunaModelRestore
 
-# Import LoRA trigger injector
-from .luna_trigger_injector import LunaLoRATriggerInjector
+# Vision nodes
+from .vision.luna_vision_node import LunaVisionNode
+from .vision.luna_vlm_prompt_generator import LunaVLMPromptGenerator
+from .vision.luna_zimage_encoder import LunaZImageEncoder
+from .vision.luna_zimage_processor import LunaZImageProcessor
 
-# Import unified model router
-from .luna_model_router import LunaModelRouter
-
-# Import dynamic loader
-from .luna_dynamic_loader import LunaDynamicModelLoader, LunaOptimizedWeightsManager
-
-# Import vision and VLM nodes
-from .luna_vision_node import LunaVisionNode
-from .luna_vlm_prompt_generator import LunaVLMPromptGenerator
-
-# Import secondary model loader for multi-model workflows
-from .luna_secondary_loader import LunaSecondaryModelLoader, LunaModelRestore
-
-# Import Z-IMAGE encoder and processor
-from .luna_zimage_encoder import LunaZImageEncoder
-from .luna_zimage_processor import LunaZImageProcessor
+# Utility nodes
+from .utilities.luna_civitai_scraper import (
+    LunaCivitaiScraper,
+    LunaCivitaiBatchScraper,
+)
+from .utilities.luna_lora_validator import LunaLoRAValidator
 
 # Combine all node mappings
 NODE_CLASS_MAPPINGS = {}

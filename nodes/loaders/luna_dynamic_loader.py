@@ -10,6 +10,8 @@ The ultimate checkpoint loading solution for multi-GPU setups:
 Supported UNet precisions:
 - bf16: Native bfloat16 safetensors
 - fp8_e4m3fn: Native FP8 (Ada/Blackwell optimized)
+- nf4: 4-bit NormalFloat (BitsAndBytes, QLoRA standard)
+- int8: 8-bit integer (BitsAndBytes, 50% VRAM reduction)
 - gguf_Q8_0: 8-bit GGUF (Ampere INT8 tensor cores)
 - gguf_Q4_K_M: 4-bit GGUF (Blackwell INT4 tensor cores!)
 
@@ -29,7 +31,6 @@ from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
 
 import torch
-from safetensors.torch import load_file, save_file
 
 try:
     import folder_paths
@@ -66,159 +67,14 @@ except:
     HAS_GGUF_NODE = False
     UnetLoaderGGUF = None
 
-
-# =============================================================================
-# Conversion Utilities
-# =============================================================================
-
-def get_unet_keys(state_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
-    """
-    Extract only UNet-related keys from a checkpoint state dict.
-    Filters out VAE, CLIP, and other non-UNet components.
-    """
-    unet_prefixes = [
-        "model.diffusion_model.",
-        "diffusion_model.",
-        "unet.",
-        "model.model.",
-    ]
-    
-    exclude_prefixes = [
-        "first_stage_model.",  # VAE
-        "cond_stage_model.",   # CLIP
-        "conditioner.",        # CLIP (SDXL format)
-        "vae.",
-        "text_encoder.",
-        "text_model.",
-        "clip.",
-    ]
-    
-    unet_tensors = {}
-    
-    for key, tensor in state_dict.items():
-        if any(key.startswith(exc) for exc in exclude_prefixes):
-            continue
-        
-        if any(key.startswith(pre) for pre in unet_prefixes):
-            unet_tensors[key] = tensor
-        elif "diffusion" in key.lower() or "unet" in key.lower():
-            unet_tensors[key] = tensor
-    
-    return unet_tensors
+# Check for BitsAndBytes support
+try:
+    import bitsandbytes as bnb
+    HAS_BNB = True
+except ImportError:
+    HAS_BNB = False
 
 
-def convert_to_precision(
-    src_path: str, 
-    dst_path: str, 
-    precision: str, 
-    strip_components: bool
-) -> Tuple[float, float]:
-    """
-    Convert checkpoint to target precision safetensors.
-    
-    Supports bf16, fp16, fp8_e4m3fn (Ada/Blackwell native FP8).
-    Always strips VAE/CLIP, keeping only UNet weights for Luna Daemon workflow.
-    
-    Args:
-        strip_components: Deprecated, kept for compatibility. Always strips to UNet only.
-    
-    Returns:
-        Tuple of (original_size_mb, converted_size_mb)
-    """
-    try:
-        # Import utility module
-        import sys
-        from pathlib import Path
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from utils.precision_converter import convert_checkpoint_precision
-        
-        print(f"[Luna] Converting to {precision} (UNet only)")
-        original_size, converted_size = convert_checkpoint_precision(
-            source_checkpoint=src_path,
-            output_path=dst_path,
-            precision=precision
-        )
-        
-        return (original_size, converted_size)
-        
-    except ImportError:
-        # Fallback to inline implementation if utility not available
-        dtype_map = {
-            "bf16": torch.bfloat16,
-            "fp16": torch.float16,
-            "fp8_e4m3fn": torch.float8_e4m3fn,
-        }
-        target_dtype = dtype_map.get(precision, torch.bfloat16)
-        
-        print(f"[Luna] Loading {src_path}...")
-        state_dict = load_file(src_path)
-        original_size = os.path.getsize(src_path) / (1024 * 1024)
-        
-        # Filter to UNet only if stripping
-        if strip_components:
-            print("[Luna] Extracting UNet weights only...")
-            state_dict = get_unet_keys(state_dict)
-            if not state_dict:
-                raise ValueError("No UNet keys found in checkpoint. Is this a valid model?")
-            print(f"[Luna] Extracted {len(state_dict)} UNet tensors")
-        
-        # Convert precision
-        print(f"[Luna] Converting to {precision}...")
-        new_dict = {}
-        for key, tensor in state_dict.items():
-            if tensor.dtype in [torch.float32, torch.float16, torch.bfloat16]:
-                new_dict[key] = tensor.to(target_dtype)
-            else:
-                new_dict[key] = tensor
-        
-        # Save
-        print(f"[Luna] Saving to {dst_path}...")
-        save_file(new_dict, dst_path)
-        
-        converted_size = os.path.getsize(dst_path) / (1024 * 1024)
-        print(f"[Luna] Conversion complete: {original_size:.1f}MB -> {converted_size:.1f}MB")
-        
-        return (original_size, converted_size)
-
-
-def convert_to_gguf(
-    src_path: str,
-    dst_path: str,
-    quant_type: str
-) -> Tuple[float, float]:
-    """
-    Convert checkpoint to GGUF format with quantization.
-    
-    Uses the gguf_converter utility module for proper llama-cpp-python quantization.
-    Always strips VAE/CLIP, keeping only UNet weights for Luna Daemon workflow.
-    
-    Returns:
-        Tuple of (original_size_mb, converted_size_mb)
-    """
-    try:
-        # Import utility module
-        import sys
-        from pathlib import Path
-        sys.path.insert(0, str(Path(__file__).parent.parent))
-        from utils.gguf_converter import convert_checkpoint_to_gguf
-        
-        output_dir = os.path.dirname(dst_path)
-        output_name = os.path.splitext(os.path.basename(dst_path))[0]
-        
-        print(f"[Luna] Converting to GGUF: {quant_type} (UNet only)")
-        output_path, tensor_count, final_size = convert_checkpoint_to_gguf(
-            source_checkpoint=src_path,
-            output_directory=output_dir,
-            quantization=quant_type,
-            output_filename=output_name
-        )
-        
-        original_size = os.path.getsize(src_path) / (1024 * 1024)
-        return (original_size, final_size)
-        
-    except Exception as e:
-        print(f"[Luna] GGUF conversion failed: {e}")
-        raise
 # =============================================================================
 # Main Node
 # =============================================================================
@@ -247,11 +103,14 @@ class LunaDynamicModelLoader:
     # bf16: Best default - fp32 range, native on Ampere+, stable gradients
     # fp16: Slightly more precision but limited range, legacy compat
     # fp8: 75% VRAM reduction, Ada/Blackwell native
+    # BnB: QLoRA-compatible quantization, widely used for fine-tuning
     # GGUF: Integer quantization, GPU-specific tensor core optimization
     PRECISION_OPTIONS = [
         "bf16 (recommended, fp32 range)",
         "fp16 (legacy, more precision)",
         "fp8_e4m3fn (Ada/Blackwell, 75% smaller)",
+        "nf4 (4-bit BitsAndBytes, QLoRA standard)",
+        "int8 (8-bit BitsAndBytes, 50% VRAM)",
         "gguf_Q8_0 (Ampere INT8 tensor cores)",
         "gguf_Q4_K_M (Blackwell INT4 tensor cores)",
     ]
@@ -348,6 +207,7 @@ class LunaDynamicModelLoader:
         # 1. Parse options
         precision_key = precision.split()[0]  # "bf16 (universal...)" -> "bf16"
         is_gguf = "gguf" in precision_key
+        is_bnb = precision_key in ["nf4", "int8"]
         
         # 2. Resolve source checkpoint path (HDD)
         src_path = folder_paths.get_full_path("checkpoints", ckpt_name)
@@ -367,6 +227,8 @@ class LunaDynamicModelLoader:
         if is_gguf:
             quant_type = precision_key.replace("gguf_", "")
             unet_filename = f"{base_name}_{quant_type}.gguf"
+        elif is_bnb:
+            unet_filename = f"{base_name}_{precision_key}_unet.safetensors"
         else:
             unet_filename = f"{base_name}_{precision_key}_unet.safetensors"
         
@@ -374,6 +236,9 @@ class LunaDynamicModelLoader:
         
         # 5. Convert UNet if not already done
         if not os.path.exists(unet_path):
+            # Import conversion utilities from utils (up 2 levels: loaders/ -> nodes/ -> root)
+            from ...utils.checkpoint_converter import convert_to_precision, convert_to_gguf, convert_to_bnb
+            
             print(f"[Luna] First use - extracting and converting UNet...")
             print(f"[Luna] Source: {src_path}")
             print(f"[Luna] Target: {unet_path}")
@@ -381,6 +246,8 @@ class LunaDynamicModelLoader:
             if is_gguf:
                 quant_type = precision_key.replace("gguf_", "")
                 convert_to_gguf(src_path, unet_path, quant_type)
+            elif is_bnb:
+                convert_to_bnb(src_path, unet_path, precision_key)
             else:
                 convert_to_precision(src_path, unet_path, precision_key, strip_components=True)
             
@@ -421,6 +288,8 @@ class LunaDynamicModelLoader:
         print(f"[Luna] Loading optimized UNet: {unet_filename}")
         if is_gguf:
             model = self._load_gguf_unet(unet_path)
+        elif is_bnb:
+            model = self._load_bnb_unet(unet_path)
         else:
             model = self._load_safetensors_unet(unet_path)
         
@@ -463,6 +332,30 @@ class LunaDynamicModelLoader:
                 return load_unet(path)
             except:
                 raise RuntimeError(f"Failed to load GGUF: {e}")
+    
+    def _load_bnb_unet(self, path: str) -> Any:
+        """Load UNet from BitsAndBytes quantized file."""
+        
+        if not HAS_BNB:
+            raise ImportError(
+                "bitsandbytes is required to load quantized models.\n"
+                "Install with: pip install bitsandbytes"
+            )
+        
+        # BitsAndBytes models are saved as safetensors with quantized tensors
+        # ComfyUI should handle them transparently
+        try:
+            from comfy.sd import load_unet
+            return load_unet(path)
+        except Exception as e:
+            # Fallback: try loading as checkpoint
+            print(f"[Luna] Direct UNet load failed, trying checkpoint loader: {e}")
+            out = comfy.sd.load_checkpoint_guess_config(
+                path,
+                output_vae=False,
+                output_clip=False
+            )
+            return out[0]
 
 
 # =============================================================================

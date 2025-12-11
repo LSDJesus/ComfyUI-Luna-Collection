@@ -449,8 +449,9 @@ class LunaModelRouter:
     # bf16: Recommended default - fp32 range, native on Ampere+, stable
     # fp16: Legacy - slightly more precision but limited range
     # fp8: 75% VRAM reduction, native on Ada/Blackwell
+    # BnB: QLoRA-compatible quantization, widely used for fine-tuning
     # GGUF: Integer quantization using GPU tensor cores
-    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "gguf_Q8_0", "gguf_Q4_K_M"]
+    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "nf4", "int8", "gguf_Q8_0", "gguf_Q4_K_M"]
     
     # Daemon routing modes
     DAEMON_MODES = ["auto", "force_daemon", "force_local"]
@@ -813,13 +814,22 @@ class LunaModelRouter:
             print(f"[LunaModelRouter] Output: {cache_path}")
             
             try:
-                from .luna_dynamic_loader import convert_to_precision, convert_to_gguf
+                # Import conversion utilities from utils (up 2 levels: loaders/ -> nodes/ -> root)
+                from ...utils.checkpoint_converter import convert_to_precision, convert_to_gguf, convert_to_bnb
+                
+                is_bnb = precision in ["nf4", "int8"]
                 
                 if is_gguf:
                     convert_to_gguf(
                         src_path=model_path,
                         dst_path=cache_path,
                         quant_type=quant_type
+                    )
+                elif is_bnb:
+                    convert_to_bnb(
+                        src_path=model_path,
+                        dst_path=cache_path,
+                        quant_type=precision
                     )
                 else:
                     convert_to_precision(

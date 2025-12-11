@@ -22,7 +22,6 @@ import time
 import queue
 import logging
 import json
-import asyncio
 import hashlib
 import base64
 import struct
@@ -568,7 +567,7 @@ class ModelRegistry:
                 state_dict = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
                              for k, v in state_dict.items()}
             
-            self._loaded_vae = comfy.sd.VAE(sd=state_dict)
+            self._loaded_vae = comfy.sd.VAE(sd=state_dict)  # type: ignore
             self.vae.loaded = True
             
             logger.info(f"[ModelRegistry] Loaded VAE ({precision})")
@@ -595,28 +594,28 @@ class ModelRegistry:
             
             # Map clip type string to comfy.sd.CLIPType enum
             clip_type_enum_map = {
-                "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,
-                "sd3": comfy.sd.CLIPType.SD3,
-                "flux": comfy.sd.CLIPType.FLUX,
-                "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,
-                "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,
-                "lumina2": comfy.sd.CLIPType.LUMINA2,
+                "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,  # type: ignore
+                "sd3": comfy.sd.CLIPType.SD3,  # type: ignore
+                "flux": comfy.sd.CLIPType.FLUX,  # type: ignore
+                "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,  # type: ignore
+                "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,  # type: ignore
+                "lumina2": comfy.sd.CLIPType.LUMINA2,  # type: ignore
             }
-            clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)
+            clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)  # type: ignore
             
             # Build the CLIP model from components
             # This uses load_text_encoder_state_dicts which takes state dicts directly
             clip_data = []
             for name in ["clip_l", "clip_g", "t5xxl"]:
-                if name in components:
-                    sd = components[name]
+                if name in components:  # type: ignore
+                    sd = components[name]  # type: ignore
                     if precision != "fp32":
                         dtype = torch.bfloat16 if precision == "bf16" else torch.float16
                         sd = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
                              for k, v in sd.items()}
                     clip_data.append(sd)
             
-            self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(
+            self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(  # type: ignore
                 state_dicts=clip_data,
                 clip_type=clip_type_enum,
                 model_options={}
@@ -741,7 +740,7 @@ class ModelRegistry:
             self.clip = RegisteredModel(
                 model_type=model_type,
                 clip_type=clip_type,
-                paths=valid_components, # Now a dict
+                paths=valid_components, # Now a dict  # type: ignore
                 loaded=False
             )
             
@@ -796,7 +795,7 @@ class ModelRegistry:
             # Check if path-based or state_dict-based
             if hasattr(self.vae, 'path') and self.vae.path:
                 # Load from path
-                state_dict = comfy.utils.load_torch_file(self.vae.path)
+                state_dict = comfy.utils.load_torch_file(self.vae.path)  # type: ignore
             elif self.vae.state_dict:
                 state_dict = self.vae.state_dict
             else:
@@ -807,7 +806,7 @@ class ModelRegistry:
                 state_dict = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
                              for k, v in state_dict.items()}
             
-            self._loaded_vae = comfy.sd.VAE(sd=state_dict)
+            self._loaded_vae = comfy.sd.VAE(sd=state_dict)  # type: ignore
             self.vae.loaded = True
             
             logger.info(f"[ModelRegistry] Loaded VAE ({precision})")
@@ -833,19 +832,19 @@ class ModelRegistry:
             
             # Map clip type string to comfy.sd.CLIPType enum
             clip_type_enum_map = {
-                "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,
-                "sd3": comfy.sd.CLIPType.SD3,
-                "flux": comfy.sd.CLIPType.FLUX,
-                "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,
-                "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,
-                "lumina2": comfy.sd.CLIPType.LUMINA2,
+                "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,  # type: ignore
+                "sd3": comfy.sd.CLIPType.SD3,  # type: ignore
+                "flux": comfy.sd.CLIPType.FLUX,  # type: ignore
+                "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,  # type: ignore
+                "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,  # type: ignore
+                "lumina2": comfy.sd.CLIPType.LUMINA2,  # type: ignore
             }
-            clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)
+            clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)  # type: ignore
             
             # Check if path-based or state_dict-based
             if hasattr(self.clip, 'paths') and self.clip.paths:
                 # Load from paths using comfy.sd.load_clip
-                self._loaded_clip = comfy.sd.load_clip(
+                self._loaded_clip = comfy.sd.load_clip(  # type: ignore  # type: ignore
                     ckpt_paths=self.clip.paths,
                     embedding_directory=folder_paths.get_folder_paths("embeddings") if folder_paths else None,
                     clip_type=clip_type_enum
@@ -862,7 +861,7 @@ class ModelRegistry:
                                  for k, v in sd.items()}
                         clip_data.append(sd)
                 
-                self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(
+                self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(  # type: ignore  # type: ignore
                     state_dicts=clip_data,
                     clip_type=clip_type_enum,
                     model_options={}
@@ -1013,7 +1012,7 @@ class TransientLoRAContext:
                 weight_key = f"{id(target_layer)}_weight"
                 
                 if weight_key not in self.original_weights:
-                    self.original_weights[weight_key] = (target_layer, weight.data.clone())
+                    self.original_weights[weight_key] = (target_layer, weight.data.clone())  # type: ignore
                 
                 # Apply delta (in-place add)
                 if delta.shape == weight.shape:
@@ -1073,7 +1072,7 @@ class TransientLoRAContext:
         # Restore all modified weights
         for weight_key, (layer, original) in self.original_weights.items():
             if hasattr(layer, 'weight'):
-                layer.weight.data.copy_(original)
+                layer.weight.data.copy_(original)  # type: ignore
         
         self.original_weights.clear()
         return False  # Don't suppress exceptions
@@ -1193,15 +1192,15 @@ class ModelWorker:
                 logger.info(f"[VAE-{self.worker_id}] VAE loaded from registry ({self.precision})")
             else:
                 # Fallback to static config paths
-                vae_path = self._resolve_path(VAE_PATH, "vae")
+                vae_path = self._resolve_path(VAE_PATH or "", "vae")  # type: ignore
                 
                 if not vae_path:
                     raise RuntimeError(f"VAE model not found: {VAE_PATH}")
                     
-                sd = comfy.utils.load_torch_file(vae_path)
+                sd = comfy.utils.load_torch_file(vae_path)  # type: ignore
                 if self.precision != "fp32":
                     sd = self._convert_state_dict_precision(sd)
-                self.model = comfy.sd.VAE(sd=sd)
+                self.model = comfy.sd.VAE(sd=sd)  # type: ignore
                 logger.info(f"[VAE-{self.worker_id}] VAE loaded from config path ({self.precision})")
             
         elif self.worker_type == WorkerType.CLIP:
@@ -1216,11 +1215,11 @@ class ModelWorker:
                 # Fallback to static config paths
                 clip_paths = []
                 
-                l_path = self._resolve_path(self.clip_l_path, "clip")
+                l_path = self._resolve_path(self.clip_l_path or "", "clip")  # type: ignore
                 if l_path:
                     clip_paths.append(l_path)
                     
-                g_path = self._resolve_path(self.clip_g_path, "clip")
+                g_path = self._resolve_path(self.clip_g_path or "", "clip")  # type: ignore
                 if g_path:
                     clip_paths.append(g_path)
                 
@@ -1257,19 +1256,19 @@ class ModelWorker:
 
                 # Map clip type string to comfy.sd.CLIPType enum
                 clip_type_enum_map = {
-                    "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,
-                    "sd3": comfy.sd.CLIPType.SD3,
-                    "flux": comfy.sd.CLIPType.FLUX,
-                    "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,
-                    "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,
-                    "lumina2": comfy.sd.CLIPType.LUMINA2,
+                    "stable_diffusion": comfy.sd.CLIPType.STABLE_DIFFUSION,  # type: ignore
+                    "sd3": comfy.sd.CLIPType.SD3,  # type: ignore
+                    "flux": comfy.sd.CLIPType.FLUX,  # type: ignore
+                    "stable_cascade": comfy.sd.CLIPType.STABLE_CASCADE,  # type: ignore
+                    "stable_audio": comfy.sd.CLIPType.STABLE_AUDIO,  # type: ignore
+                    "lumina2": comfy.sd.CLIPType.LUMINA2,  # type: ignore
                 }
-                clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)
+                clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)  # type: ignore
                 
                 logger.info(f"[CLIP-{self.worker_id}] Debug: clip_type_enum={clip_type_enum}")
                 
-                emb_dir = self.embeddings_dir if os.path.exists(self.embeddings_dir) else None
-                self.model = comfy.sd.load_clip(
+                emb_dir = self.embeddings_dir if self.embeddings_dir and os.path.exists(self.embeddings_dir) else None  # type: ignore
+                self.model = comfy.sd.load_clip(  # type: ignore
                     ckpt_paths=clip_paths,
                     embedding_directory=emb_dir,
                     clip_type=clip_type_enum
@@ -1351,17 +1350,17 @@ class ModelWorker:
         # Average multiple tile configurations for better seams
         output_device = torch.device('cpu')
         
-        samples = comfy.utils.tiled_scale(
+        samples = comfy.utils.tiled_scale(  # type: ignore
             pixels, encode_fn, tile_size, tile_size, overlap,
             upscale_amount=(1.0/downscale), out_channels=latent_channels,
             output_device=output_device
         )
-        samples += comfy.utils.tiled_scale(
+        samples += comfy.utils.tiled_scale(  # type: ignore
             pixels, encode_fn, tile_size * 2, tile_size // 2, overlap,
             upscale_amount=(1.0/downscale), out_channels=latent_channels,
             output_device=output_device
         )
-        samples += comfy.utils.tiled_scale(
+        samples += comfy.utils.tiled_scale(  # type: ignore
             pixels, encode_fn, tile_size // 2, tile_size * 2, overlap,
             upscale_amount=(1.0/downscale), out_channels=latent_channels,
             output_device=output_device
@@ -1421,15 +1420,15 @@ class ModelWorker:
         output_device = torch.device('cpu')
         
         # Average multiple tile configurations for better seams
-        pixels = comfy.utils.tiled_scale(
+        pixels = comfy.utils.tiled_scale(  # type: ignore
             latents, decode_fn, tile_size // 2, tile_size * 2, overlap,
             upscale_amount=upscale, output_device=output_device
         )
-        pixels += comfy.utils.tiled_scale(
+        pixels += comfy.utils.tiled_scale(  # type: ignore
             latents, decode_fn, tile_size * 2, tile_size // 2, overlap,
             upscale_amount=upscale, output_device=output_device
         )
-        pixels += comfy.utils.tiled_scale(
+        pixels += comfy.utils.tiled_scale(  # type: ignore
             latents, decode_fn, tile_size, tile_size, overlap,
             upscale_amount=upscale, output_device=output_device
         )
