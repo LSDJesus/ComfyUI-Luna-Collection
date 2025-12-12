@@ -136,6 +136,7 @@ try:
     UnetLoaderGGUF = None
     CLIPLoaderGGUF = None
     gguf_sd_loader = None
+    gguf_clip_loader = None
     GGMLOps = None
     GGUFModelPatcher = None
     
@@ -147,11 +148,12 @@ try:
             GGMLOps = getattr(module, 'GGMLOps', None)
             GGUFModelPatcher = getattr(module, 'GGUFModelPatcher', None)
             if UnetLoaderGGUF:
-                # Also get the loader function
+                # Also get the loader functions
                 loader_path = path.replace('.nodes', '.loader')
                 try:
-                    loader_module = __import__(loader_path, fromlist=['gguf_sd_loader'])
+                    loader_module = __import__(loader_path, fromlist=['gguf_sd_loader', 'gguf_clip_loader'])
                     gguf_sd_loader = getattr(loader_module, 'gguf_sd_loader', None)
+                    gguf_clip_loader = getattr(loader_module, 'gguf_clip_loader', None)
                 except:
                     pass
                 break
@@ -163,6 +165,7 @@ except:
     UnetLoaderGGUF = None
     CLIPLoaderGGUF = None
     gguf_sd_loader = None
+    gguf_clip_loader = None
     GGMLOps = None
     GGUFModelPatcher = None
 
@@ -1048,7 +1051,7 @@ class LunaModelRouter:
         try:
             # Handle GGUF loading via ComfyUI-GGUF loader
             if full_path.lower().endswith(".gguf"):
-                if not HAS_GGUF or CLIPLoaderGGUF is None:
+                if not HAS_GGUF or CLIPLoaderGGUF is None or gguf_clip_loader is None:
                     raise RuntimeError(
                         "GGUF CLIP loading requires ComfyUI-GGUF extension. "
                         "Install from: https://github.com/city96/ComfyUI-GGUF"
@@ -1060,8 +1063,7 @@ class LunaModelRouter:
                 # but our custom LLM/ folder isn't registered. So we call the underlying
                 # loader functions directly with the full path.
                 
-                from ComfyUI_GGUF.loader import gguf_clip_loader
-                
+                # Use the imported gguf_clip_loader from module-level imports
                 # Load the GGUF clip data
                 clip_data = [gguf_clip_loader(full_path)]
                 

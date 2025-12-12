@@ -179,7 +179,7 @@ function createPanelContent() {
             <div class="section-title">Status</div>
             <div class="stat-row">
                 <span class="stat-label">State</span>
-                <span class="stat-value" id="luna-status">${panelState.running ? 'Running' : 'Stopped'}</span>
+                <span class="stat-value" id="luna-status">${panelState.running ? 'Running (System Tray)' : 'Stopped'}</span>
             </div>
             <div class="stat-row">
                 <span class="stat-label">Device</span>
@@ -224,7 +224,7 @@ function createPanelContent() {
             <button class="btn btn-refresh" id="luna-refresh">↻ Refresh</button>
             ${panelState.running 
                 ? '<button class="btn btn-stop" id="luna-toggle">Stop</button>'
-                : '<button class="btn btn-start" id="luna-toggle">Start</button>'
+                : '<button class="btn btn-start" id="luna-toggle">Start Tray</button>'
             }
             ${panelState.error ? '<button class="btn btn-refresh" id="luna-reconnect" style="margin-left: auto;">⚡ Fix</button>' : ''}
         </div>
@@ -523,21 +523,26 @@ function attachPanelEventListeners() {
 
 function updatePanelUI() {
     const panel = document.querySelector(".luna-daemon-panel");
-    if (!panel) return;
+    if (!panel) {
+        console.warn("[Luna] Panel not found in DOM, skipping update");
+        return;
+    }
     
     // Update status indicator
     const indicator = panel.querySelector(".status-indicator");
-    indicator.className = `status-indicator ${panelState.running ? 'running' : 'stopped'}`;
+    if (indicator) {
+        indicator.className = `status-indicator ${panelState.running ? 'running' : 'stopped'}`;
+    }
     
     // Update text values
     const statusEl = document.getElementById("luna-status");
-    if (statusEl) statusEl.textContent = panelState.running ? 'Running' : 'Stopped';
+    if (statusEl) statusEl.textContent = panelState.running ? 'Running (System Tray)' : 'Stopped';
     
     const deviceEl = document.getElementById("luna-device");
     if (deviceEl) deviceEl.textContent = panelState.device;
     
     const requestsEl = document.getElementById("luna-requests");
-    if (requestsEl) requestsEl.textContent = panelState.requests;
+    if (requestsEl) requestsEl.textContent = panelState.requests.toString();
     
     const uptimeEl = document.getElementById("luna-uptime");
     if (uptimeEl) uptimeEl.textContent = formatUptime(panelState.uptime);
@@ -552,9 +557,12 @@ function updatePanelUI() {
     // Update models list
     const modelsList = document.getElementById("luna-models");
     if (modelsList) {
-        let modelsHtml = panelState.modelsLoaded.length > 0 
-            ? panelState.modelsLoaded.map(m => `<div class="model-item">${m}</div>`).join('')
-            : '<div style="opacity: 0.5">Waiting for first workflow...</div>';
+        let modelsHtml;
+        if (panelState.modelsLoaded && panelState.modelsLoaded.length > 0) {
+            modelsHtml = panelState.modelsLoaded.map(m => `<div class="model-item">${m}</div>`).join('');
+        } else {
+            modelsHtml = '<div style="opacity: 0.5">Waiting for first workflow...</div>';
+        }
         
         // Update models HTML
         modelsList.innerHTML = modelsHtml;
@@ -610,7 +618,7 @@ function updatePanelUI() {
             toggleBtn.textContent = "Stop";
         } else {
             toggleBtn.className = "btn btn-start";
-            toggleBtn.textContent = "Start";
+            toggleBtn.textContent = "Start Tray";
         }
     }
     
@@ -699,11 +707,14 @@ app.registerExtension({
             }
         }
         
-        // Auto-refresh every 5 seconds
+        // Auto-refresh every 3 seconds (only if panel exists in DOM)
         setInterval(async () => {
-            await fetchDaemonStatus();
-            updatePanelUI();
-        }, 5000);
+            const panel = document.querySelector(".luna-daemon-panel");
+            if (panel) {
+                await fetchDaemonStatus();
+                updatePanelUI();
+            }
+        }, 3000);
     }
 });
 

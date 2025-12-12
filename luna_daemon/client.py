@@ -697,40 +697,44 @@ def is_daemon_running() -> bool:
 
 
 def start_daemon() -> bool:
-    """Start the Luna Daemon subprocess if not running"""
+    """Start the Luna Daemon Tray if not running (single-instance enforced)"""
+    # Check if daemon is already responding
     if is_daemon_running():
         return True
     
     try:
         import subprocess
         import sys
+        from pathlib import Path
         
-        # Start daemon as subprocess in the background
-        daemon_module = os.path.join(
-            os.path.dirname(__file__),
-            "__main__.py"
-        )
+        # Path to tray app (enforces single instance)
+        tray_app = Path(__file__).parent / "tray_app.py"
         
-        # Windows: Use CREATE_NEW_WINDOW to start in separate window
+        if not tray_app.exists():
+            print(f"[LunaDaemon] Tray app not found at {tray_app}")
+            return False
+        
+        # Start tray app - it will handle single-instance checking
+        # and auto-start the daemon server
         if sys.platform == "win32":
+            # Windows: Start tray app (visible in system tray)
             subprocess.Popen(
-                [sys.executable, "-m", "luna_daemon.server"],
-                creationflags=subprocess.CREATE_NEW_CONSOLE,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL
+                [sys.executable, str(tray_app)],
+                creationflags=0,  # Normal window for tray visibility
+                cwd=str(tray_app.parent)
             )
         else:
-            # Unix: Use nohup to detach from terminal
+            # Unix: Start tray app in background
             subprocess.Popen(
-                [sys.executable, "-m", "luna_daemon.server"],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True
+                [sys.executable, str(tray_app)],
+                start_new_session=True,
+                cwd=str(tray_app.parent)
             )
         
+        print(f"[LunaDaemon] Tray app started, check system tray")
         return True
     except Exception as e:
-        print(f"[LunaDaemon] Error starting daemon: {e}")
+        print(f"[LunaDaemon] Error starting daemon tray: {e}")
         return False
 
 

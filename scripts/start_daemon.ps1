@@ -1,13 +1,14 @@
 <#
 .SYNOPSIS
-    Start only the Luna VAE/CLIP Daemon
+    Start the Luna Daemon System Tray App
 .DESCRIPTION
-    Starts the daemon that holds shared VAE and CLIP models.
+    Starts the Luna Daemon tray app which manages shared VAE and CLIP models.
+    The tray app enforces single-instance and runs in your system tray.
     Run this once before starting any ComfyUI instances.
 .PARAMETER Device
     GPU device to load models on (default: cuda:1)
 .PARAMETER NewWindow
-    Launch daemon in a separate terminal window (default: true)
+    Launch tray app in a separate terminal window (default: true)
 .PARAMETER NoWindow
     Run in current terminal instead of spawning a new window
 #>
@@ -34,12 +35,15 @@ if ($NewWindow -or (-not $NoWindow -and -not $env:LUNA_DAEMON_SPAWNED)) {
 }
 
 # Running in target terminal (either -NoWindow or spawned)
-$Host.UI.RawUI.WindowTitle = "Luna VAE/CLIP Daemon [$Device]"
+$Host.UI.RawUI.WindowTitle = "Luna Daemon Tray [$Device]"
 
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  Luna VAE/CLIP Daemon" -ForegroundColor Cyan
+Write-Host "  Luna Daemon System Tray" -ForegroundColor Cyan
 Write-Host "  Device: $Device" -ForegroundColor Cyan
+Write-Host "  Single-instance enforced" -ForegroundColor Yellow
 Write-Host "============================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Look for the Luna icon in your system tray!" -ForegroundColor Green
 Write-Host ""
 
 Set-Location $ComfyUIPath
@@ -49,4 +53,5 @@ Set-Location $ComfyUIPath
 $env:LUNA_DAEMON_DEVICE = $Device
 $env:LUNA_DAEMON_MODE = "1"  # Suppress irrelevant warnings from other modules
 
-python -m custom_nodes.ComfyUI-Luna-Collection.luna_daemon.server
+# Start the tray app (enforces single instance automatically)
+python -m custom_nodes.ComfyUI-Luna-Collection.luna_daemon.tray_app

@@ -37,18 +37,21 @@ echo Luna Root: %LUNA_ROOT%
 echo ComfyUI Root: %COMFYUI_ROOT%
 echo.
 
-REM Start daemon directly (this way we see any errors)
+REM Start daemon tray app (enforces single instance)
 cd /d "%LUNA_ROOT%"
-echo Starting daemon from: %CD%
-echo Command: %PYTHON_EXE% luna_daemon\__main__.py
+echo Starting daemon tray from: %CD%
+echo Command: %PYTHON_EXE% luna_daemon\tray_app.py
+echo.
+echo NOTE: The daemon will run in your system tray.
+echo Look for the Luna icon in the Windows taskbar notification area.
 echo.
 
-REM Run daemon - if it crashes, the window will show the error before closing
-%PYTHON_EXE% luna_daemon\__main__.py
+REM Run tray app - if it crashes, the window will show the error before closing
+%PYTHON_EXE% luna_daemon\tray_app.py
 
-REM If we get here, the daemon exited
+REM If we get here, the tray app exited
 echo.
-echo WARNING: Daemon process exited!
+echo WARNING: Daemon tray exited!
 echo Check the output above for error messages
 echo.
 pause

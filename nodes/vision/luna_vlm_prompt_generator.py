@@ -332,7 +332,8 @@ Original prompt: {simple_prompt}"""
         """Load Qwen3-VL model and processor."""
         
         # Try GGUF first (llama-cpp-python)
-        if model_path.endswith('.gguf'):
+        # Case-insensitive check for .gguf extension
+        if model_path.lower().endswith('.gguf'):
             return self._load_gguf_model(model_path, mmproj_path)
         
         # Safetensors via transformers
@@ -370,8 +371,43 @@ Original prompt: {simple_prompt}"""
         """Load model using transformers."""
         try:
             from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+            import json
             
-            model_dir = os.path.dirname(model_path) if os.path.isfile(model_path) else model_path
+            # If model_path points to a specific file (not a directory), use that file's directory
+            # UNLESS it's a GGUF file (which should never reach here, but double-check)
+            if os.path.isfile(model_path):
+                if model_path.lower().endswith('.gguf'):
+                    raise RuntimeError(
+                        f"GGUF file routed to transformers loader: {model_path}\n"
+                        "This should not happen - please report this bug."
+                    )
+                model_dir = os.path.dirname(model_path)
+            else:
+                model_dir = model_path
+            
+            # Verify the directory contains a config.json for transformers
+            config_path = os.path.join(model_dir, 'config.json')
+            if not os.path.exists(config_path):
+                raise RuntimeError(
+                    f"No config.json found in {model_dir}\n"
+                    "This doesn't appear to be a valid transformers model directory."
+                )
+            
+            # Load and validate config
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            
+            # Check if this is a Qwen2-VL model
+            model_type = config.get('model_type', '')
+            if model_type != 'qwen2_vl':
+                print(f"[LunaVLMPromptGenerator] Warning: model_type is '{model_type}', expected 'qwen2_vl'")
+                print(f"[LunaVLMPromptGenerator] Model directory: {model_dir}")
+                print(f"[LunaVLMPromptGenerator] This may cause compatibility issues.")
+            
+            # Log key model parameters for debugging
+            hidden_size = config.get('hidden_size', 'unknown')
+            num_layers = config.get('num_hidden_layers', 'unknown')
+            print(f"[LunaVLMPromptGenerator] Loading model: hidden_size={hidden_size}, layers={num_layers}")
             
             processor = AutoProcessor.from_pretrained(model_dir, trust_remote_code=True)
             model = Qwen2VLForConditionalGeneration.from_pretrained(

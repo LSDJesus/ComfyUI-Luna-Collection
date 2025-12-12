@@ -149,32 +149,33 @@ def register_routes():
                 logger.info("Daemon already running")
                 return web.json_response({"status": "ok", "message": "Daemon already running"})
             
-            logger.info("Starting Luna Daemon...")
+            logger.info("Starting Luna Daemon Tray...")
             
-            # Get path to daemon package and __main__.py
+            # Get path to daemon package and tray_app.py
             from pathlib import Path
             repo_root = Path(__file__).resolve().parents[2]
             daemon_dir = repo_root / 'luna_daemon'
-            daemon_main = os.path.join(daemon_dir, '__main__.py')
+            tray_app = os.path.join(daemon_dir, 'tray_app.py')
             
             # Python executable
             python_exe = sys.executable
             
-            # Build command to run daemon directly with full path to __main__.py
-            cmd = [python_exe, daemon_main]
+            # Build command to run tray app (single-instance enforced)
+            cmd = [python_exe, tray_app]
             
             # Set working directory to the daemon directory so relative imports work
             logger.info(f"Command: {' '.join(cmd)}")
             logger.info(f"Working directory: {daemon_dir}")
             
-            # Start as subprocess in background
+            # Start tray app as subprocess
+            # The tray app enforces single-instance via port lock
             process = subprocess.Popen(
                 cmd,
                 cwd=daemon_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 start_new_session=True if os.name != 'nt' else False,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+                creationflags=0 if os.name == 'nt' else 0  # Don't hide window so tray is visible
             )
             
             logger.info(f"Daemon process started with PID {process.pid}")
