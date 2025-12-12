@@ -598,7 +598,7 @@ class LunaModelRouter:
         daemon_running = DAEMON_AVAILABLE and daemon_client is not None and daemon_client.is_daemon_running()
         
         if require_daemon and not daemon_running:
-            from ..luna_daemon.config import DAEMON_HOST, DAEMON_PORT
+            from ...luna_daemon.config import DAEMON_HOST, DAEMON_PORT
             error_msg = (
                 "Daemon mode is 'force_daemon' but Luna Daemon is not running!\n"
                 f"  Expected daemon at {DAEMON_HOST}:{DAEMON_PORT}\n"
