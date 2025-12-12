@@ -1031,11 +1031,40 @@ class LunaModelRouter:
         # For Z-IMAGE, we prefer daemon's Qwen3-VL if available
         if daemon_running and use_daemon and DaemonZImageCLIP is not None:
             try:
-                # Load the model and create daemon proxy
-                local_clip = comfy.sd.load_clip(  # type: ignore
-                    ckpt_paths=[full_path],
+                # Load with Z-IMAGE text encoder (same as local path)
+                print(f"[LunaModelRouter] Loading Qwen3-VL for daemon (Z-IMAGE 2560-dim encoder)")
+                
+                import comfy.text_encoders.z_image
+                import comfy.text_encoders.hunyuan_video
+                from comfy.sd1_clip import CLIP
+                
+                clip_data = comfy.utils.load_torch_file(full_path, safe_load=True)
+                
+                # For multi-shard models, merge all shards into single state_dict
+                # Check if this is a sharded model by looking for shard info in the path
+                if "model-" in os.path.basename(full_path):
+                    # Multi-shard model - need to load and merge all shards
+                    model_dir = os.path.dirname(full_path)
+                    shard_files = sorted([f for f in os.listdir(model_dir) if f.startswith("model-") and f.endswith(".safetensors")])
+                    
+                    # Merge all shards into single state_dict
+                    merged_state_dict = {}
+                    for shard_file in shard_files:
+                        shard_data = comfy.utils.load_torch_file(os.path.join(model_dir, shard_file), safe_load=True)
+                        merged_state_dict.update(shard_data)
+                    clip_data = merged_state_dict
+                
+                hunyuan_detect = comfy.text_encoders.hunyuan_video.llama_detect([clip_data], "model.")
+                
+                tokenizer = comfy.text_encoders.z_image.ZImageTokenizer(
                     embedding_directory=folder_paths.get_folder_paths("embeddings")
                 )
+                text_encoder_model = comfy.text_encoders.z_image.te(**hunyuan_detect)()
+                text_encoder_model.load_sd(clip_data)
+                
+                local_clip = CLIP(tokenizer=tokenizer, text_encoder=text_encoder_model, name="qwen3_4b")
+                
+                # Create daemon proxy that uses the same weights for both CLIP and LLM
                 daemon_clip = DaemonZImageCLIP(source_clip=local_clip, use_existing=False)
                 
                 # For LLM, we create a reference to the same model
@@ -1074,11 +1103,45 @@ class LunaModelRouter:
                 
             else:
                 # Standard loading for safetensors/other formats
-                clip = comfy.sd.load_clip(  # type: ignore
-                    ckpt_paths=[full_path],
-                    embedding_directory=folder_paths.get_folder_paths("embeddings"),
-                    clip_type=getattr(comfy.sd, 'CLIPType', type(None)).LUMINA2 if hasattr(comfy.sd, 'CLIPType') else None  # type: ignore
+                # User selected Z-IMAGE model type, so load with Z-IMAGE text encoder (Qwen3_4B - 2560 dims)
+                print(f"[LunaModelRouter] Loading Qwen3-VL for Z-IMAGE (2560-dim text encoder)")
+                
+                # Load with Z-IMAGE text encoder configuration
+                import comfy.text_encoders.z_image
+                import comfy.text_encoders.hunyuan_video
+                
+                # Load state dict
+                clip_data = comfy.utils.load_torch_file(full_path, safe_load=True)
+                
+                # For multi-shard models, merge all shards into single state_dict
+                # Check if this is a sharded model by looking for shard info in the path
+                if "model-" in os.path.basename(full_path):
+                    # Multi-shard model - need to load and merge all shards
+                    model_dir = os.path.dirname(full_path)
+                    shard_files = sorted([f for f in os.listdir(model_dir) if f.startswith("model-") and f.endswith(".safetensors")])
+                    
+                    # Merge all shards into single state_dict
+                    merged_state_dict = {}
+                    for shard_file in shard_files:
+                        shard_data = comfy.utils.load_torch_file(os.path.join(model_dir, shard_file), safe_load=True)
+                        merged_state_dict.update(shard_data)
+                    clip_data = merged_state_dict
+                
+                # Detect llama architecture params from the Qwen3 model
+                # Keys in standalone Qwen3-VL are "model.*" not "text_encoders.qwen3_4b.transformer.*"
+                hunyuan_detect = comfy.text_encoders.hunyuan_video.llama_detect([clip_data], "model.")
+                
+                # Build the CLIP object with Z-IMAGE tokenizer and Qwen3_4B model
+                from comfy.sd1_clip import CLIP
+                
+                tokenizer = comfy.text_encoders.z_image.ZImageTokenizer(
+                    embedding_directory=folder_paths.get_folder_paths("embeddings")
                 )
+                
+                text_encoder_model = comfy.text_encoders.z_image.te(**hunyuan_detect)()
+                text_encoder_model.load_sd(clip_data)
+                
+                clip = CLIP(tokenizer=tokenizer, text_encoder=text_encoder_model, name="qwen3_4b")
             
             # Create LLM reference that shares the CLIP model
             # The GGUF file contains lm_head weights - we can use them for generation

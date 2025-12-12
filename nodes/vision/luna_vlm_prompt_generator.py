@@ -370,7 +370,7 @@ Original prompt: {simple_prompt}"""
     def _load_transformers_model(self, model_path: str) -> Tuple[Any, Any]:
         """Load model using transformers."""
         try:
-            from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+            from transformers import AutoModelForVision2Seq, AutoProcessor
             import json
             
             # If model_path points to a specific file (not a directory), use that file's directory
@@ -397,33 +397,40 @@ Original prompt: {simple_prompt}"""
             with open(config_path, 'r') as f:
                 config = json.load(f)
             
-            # Check if this is a Qwen2-VL model
-            model_type = config.get('model_type', '')
-            if model_type != 'qwen2_vl':
-                print(f"[LunaVLMPromptGenerator] Warning: model_type is '{model_type}', expected 'qwen2_vl'")
-                print(f"[LunaVLMPromptGenerator] Model directory: {model_dir}")
-                print(f"[LunaVLMPromptGenerator] This may cause compatibility issues.")
+            # Check model type (supports both qwen2_vl and qwen3_vl)
+            model_type = config.get('model_type', 'unknown')
+            print(f"[LunaVLMPromptGenerator] Detected model_type: {model_type}")
             
-            # Log key model parameters for debugging
-            hidden_size = config.get('hidden_size', 'unknown')
-            num_layers = config.get('num_hidden_layers', 'unknown')
-            print(f"[LunaVLMPromptGenerator] Loading model: hidden_size={hidden_size}, layers={num_layers}")
+            if model_type not in ['qwen2_vl', 'qwen3_vl']:
+                print(f"[LunaVLMPromptGenerator] Warning: Unexpected model_type '{model_type}'")
+                print(f"[LunaVLMPromptGenerator] Attempting to load anyway with AutoModelForVision2Seq")
             
+            # Use AutoModel to handle both Qwen2-VL and Qwen3-VL
+            print(f"[LunaVLMPromptGenerator] Loading from: {model_dir}")
             processor = AutoProcessor.from_pretrained(model_dir, trust_remote_code=True)
-            model = Qwen2VLForConditionalGeneration.from_pretrained(
+            
+            # Detect if model is FP8 quantized (not supported by cuDNN for conv3d)
+            # FP8 models need to be loaded as bfloat16/float16
+            is_fp8 = 'FP8' in model_dir or 'fp8' in model_dir.lower()
+            target_dtype = torch.bfloat16 if is_fp8 else torch.float16
+            
+            if is_fp8:
+                print(f"[LunaVLMPromptGenerator] Detected FP8 model - loading as {target_dtype} for compatibility")
+            
+            model = AutoModelForVision2Seq.from_pretrained(
                 model_dir,
                 trust_remote_code=True,
-                torch_dtype=torch.float16,
+                torch_dtype=target_dtype,
                 device_map="auto"
             )
             
-            print(f"[LunaVLMPromptGenerator] Loaded transformers model from: {model_dir}")
+            print(f"[LunaVLMPromptGenerator] Successfully loaded {model_type} model")
             
             return model, processor
             
-        except ImportError:
+        except ImportError as e:
             raise RuntimeError(
-                "transformers required for safetensors models.\n"
+                f"transformers required for safetensors models: {e}\n"
                 "Install with: pip install transformers"
             )
     
