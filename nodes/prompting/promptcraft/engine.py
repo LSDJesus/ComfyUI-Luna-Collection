@@ -9,7 +9,7 @@ import re
 import json
 import random
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional, Any, Union
+from typing import Dict, List, Set, Tuple, Optional, Any
 from dataclasses import dataclass, field
 
 try:

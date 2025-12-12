@@ -6,9 +6,8 @@ No AI dependencies - pure deterministic logic
 import yaml
 import random
 import re
-import os
 from dataclasses import dataclass, field
-from typing import List, Set, Dict, Tuple, Optional, Callable
+from typing import List, Set, Dict, Tuple, Optional
 from pathlib import Path
 
 

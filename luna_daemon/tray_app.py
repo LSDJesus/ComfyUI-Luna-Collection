@@ -86,14 +86,20 @@ class LunaDaemonTray:
             sys.path.insert(0, str(daemon_dir))
         
         try:
-            from server import DynamicDaemon
+            # Import the server module and fetch DynamicDaemon attribute to avoid static import issues
+            import server as server_module
             from config import SHARED_DEVICE, CLIP_PRECISION, VAE_PRECISION, ServiceType
-            self.DynamicDaemon = DynamicDaemon
+            # Prefer explicit DynamicDaemon but allow common fallback names
+            self.DynamicDaemon = getattr(server_module, "DynamicDaemon", None)
+            if self.DynamicDaemon is None:
+                self.DynamicDaemon = getattr(server_module, "Daemon", None) or getattr(server_module, "LunaDaemon", None)
+            if self.DynamicDaemon is None:
+                raise ImportError("DynamicDaemon not found in server module")
             self.SHARED_DEVICE = SHARED_DEVICE
             self.CLIP_PRECISION = CLIP_PRECISION
             self.VAE_PRECISION = VAE_PRECISION
             self.ServiceType = ServiceType
-        except ImportError as e:
+        except Exception as e:
             print(f"Error importing daemon: {e}")
             self.DynamicDaemon = None
     

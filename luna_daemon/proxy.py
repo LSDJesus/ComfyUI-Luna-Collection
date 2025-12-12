@@ -31,7 +31,7 @@ Architecture:
 
 import torch
 import hashlib
-from typing import Optional, Dict, Any, List, Tuple, Union
+from typing import Optional, Dict, Any, List
 
 from . import client as daemon_client
 from .client import DaemonConnectionError, ModelMismatchError

@@ -1,12 +1,8 @@
 import torch
 import comfy.utils
 import comfy.model_management
-import folder_paths
-import numpy as np
-from PIL import Image
 import os
 import torch.nn.functional as F
-from spandrel import ImageModelDescriptor
 import sys
 
 # Add the parent directory to sys.path to enable relative imports

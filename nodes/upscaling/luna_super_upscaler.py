@@ -16,7 +16,7 @@ Based on SeedVR2 Video Upscaler (Apache 2.0 License)
 
 import os
 import torch
-from typing import Tuple, Optional, Any, Dict, List
+from typing import Tuple, Any, Dict
 
 try:
     import folder_paths

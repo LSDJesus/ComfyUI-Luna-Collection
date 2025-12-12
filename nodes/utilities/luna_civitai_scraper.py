@@ -21,8 +21,7 @@ import io
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Any
-from datetime import datetime
+from typing import Dict, Optional, Tuple, Any
 import urllib.request
 import urllib.error
 import ssl

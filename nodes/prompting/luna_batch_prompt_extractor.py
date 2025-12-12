@@ -8,8 +8,7 @@ import os
 import json
 import re
 from PIL import Image
-from PIL.PngImagePlugin import PngInfo
-from PIL.ExifTags import TAGS, IFD
+from PIL.ExifTags import IFD
 from typing import Tuple, Dict, List, Any, Optional
 
 try:

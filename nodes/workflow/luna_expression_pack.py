@@ -3,11 +3,9 @@ Luna Expression Pack - Generate character expression packs for Luna Narrates and
 Supports SDXL, Illustrious, Pony, and Flux models
 """
 
-import os
 from pathlib import Path
 from typing import Tuple
 
-import torch
 import numpy as np
 from PIL import Image
 

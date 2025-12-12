@@ -52,7 +52,7 @@ except ImportError:
 
 # Daemon support
 try:
-    from ..luna_daemon import client as daemon_client
+    from ...luna_daemon import client as daemon_client
     DAEMON_AVAILABLE = True
 except ImportError:
     DAEMON_AVAILABLE = False

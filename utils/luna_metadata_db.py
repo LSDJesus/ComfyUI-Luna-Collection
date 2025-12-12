@@ -14,11 +14,9 @@ This is independent of SwarmUI's LiteDB - Luna maintains its own cache for:
 """
 
 import sqlite3
-import os
-import json
 import threading
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from datetime import datetime
 from contextlib import contextmanager
 

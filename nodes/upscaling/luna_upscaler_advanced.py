@@ -1,7 +1,5 @@
 import torch
-import comfy.utils
 import comfy.model_management
-import folder_paths
 import numpy as np
 from PIL import Image
 import math

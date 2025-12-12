@@ -1,4 +1,3 @@
-import os
 import re
 import comfy.samplers
 import comfy.sd

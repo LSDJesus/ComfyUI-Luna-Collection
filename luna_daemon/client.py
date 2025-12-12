@@ -416,7 +416,7 @@ class DaemonClient:
         Returns:
             Tuple of (cond, pooled, uncond, pooled_neg)
         """
-        request = {
+        request: Dict[str, Any] = {
             "cmd": "clip_encode",
             "positive": positive,
             "negative": negative,
@@ -455,7 +455,7 @@ class DaemonClient:
         Returns:
             Tuple of (positive_conditioning, negative_conditioning) ready for KSampler
         """
-        request = {
+        request: Dict[str, Any] = {
             "cmd": "clip_encode_sdxl",
             "positive": positive,
             "negative": negative,
@@ -650,7 +650,9 @@ class DaemonClient:
         result = self._send_request(request)
         if isinstance(result, dict) and "text" in result:
             return result["text"]
-        return result
+        if isinstance(result, str):
+            return result
+        return str(result)
     
     def submit_async(self, cmd: str, data: dict) -> dict:
         """
@@ -757,9 +759,12 @@ def register_vae_by_path(vae_path: str, vae_type: str) -> dict:
     return get_client().register_vae_by_path(vae_path, vae_type)
 
 
-def register_clip_by_path(clip_paths: list, model_type: str, clip_type: str) -> dict:
-    """Register CLIP by paths with daemon (loads from disk)"""
-    return get_client().register_clip_by_path(clip_paths, model_type, clip_type)
+def register_clip_by_path(clip_components: dict, model_type: str, clip_type: str) -> dict:
+    """Register CLIP by paths with daemon (loads from disk)
+
+    clip_components: Dict of {component_type: path} (e.g. {"clip_l": "path/to/clip_l.safetensors"})
+    """
+    return get_client().register_clip_by_path(clip_components, model_type, clip_type)
 
 
 def vae_encode(pixels: torch.Tensor, vae_type: str,

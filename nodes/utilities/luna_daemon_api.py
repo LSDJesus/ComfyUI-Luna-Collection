@@ -4,7 +4,6 @@ HTTP endpoints for the Luna Daemon panel in ComfyUI.
 """
 
 import os
-import json
 import importlib
 import logging
 
@@ -34,8 +33,8 @@ except ImportError:
 
 # Try to import daemon client
 try:
-    from ..luna_daemon import client as daemon_client
-    from ..luna_daemon.config import (
+    from ...luna_daemon import client as daemon_client
+    from ...luna_daemon.config import (
         DAEMON_HOST, DAEMON_PORT, CLIP_DEVICE, MAX_WORKERS
     )
     DAEMON_AVAILABLE = True
@@ -44,10 +43,12 @@ except ImportError:
     try:
         import os
         import sys
-        # Add parent directory to path for direct import
-        _daemon_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'luna_daemon'))
-        if _daemon_dir not in sys.path:
-            sys.path.insert(0, os.path.dirname(_daemon_dir))
+        from pathlib import Path
+        # Add repo root to path for direct import (nodes/utilities → nodes → repo_root)
+        _repo_root = Path(__file__).resolve().parents[2]
+        _daemon_dir = _repo_root / "luna_daemon"
+        if str(_repo_root) not in sys.path:
+            sys.path.insert(0, str(_repo_root))
         
         from luna_daemon import client as daemon_client
         from luna_daemon.config import (
@@ -151,7 +152,9 @@ def register_routes():
             logger.info("Starting Luna Daemon...")
             
             # Get path to daemon package and __main__.py
-            daemon_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'luna_daemon'))
+            from pathlib import Path
+            repo_root = Path(__file__).resolve().parents[2]
+            daemon_dir = repo_root / 'luna_daemon'
             daemon_main = os.path.join(daemon_dir, '__main__.py')
             
             # Python executable

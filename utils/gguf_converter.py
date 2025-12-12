@@ -13,7 +13,6 @@ import ctypes
 from pathlib import Path
 from typing import Tuple, Dict
 
-import torch
 from safetensors.torch import load_file
 
 try:

@@ -15,7 +15,7 @@ Architecture:
 """
 
 import os
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict
 import torch
 from safetensors.torch import load_file, save_file
 

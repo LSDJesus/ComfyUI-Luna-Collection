@@ -11,8 +11,7 @@ import json
 import os
 import random
 import re
-from typing import Dict, List, Optional, Tuple, Any, Set
-from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Set
 
 import folder_paths
 

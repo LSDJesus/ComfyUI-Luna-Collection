@@ -3,7 +3,6 @@ from torch.cuda import nvtx
 from collections import OrderedDict
 import numpy as np
 from polygraphy.backend.common import bytes_from_path  # type: ignore
-from polygraphy import util
 from polygraphy.backend.trt import ModifyNetworkOutputs, Profile
 from polygraphy.backend.trt import (
     engine_from_bytes,  # type: ignore
@@ -13,10 +12,9 @@ from polygraphy.backend.trt import (
 )
 from polygraphy.logger import G_LOGGER
 import tensorrt as trt
-from logging import error, warning
+from logging import error
 from tqdm import tqdm
 import copy
-from typing import Dict, Any, Optional, List, Union, Tuple
 
 TRT_LOGGER = trt.Logger(trt.Logger.ERROR)  # type: ignore
 G_LOGGER.module_severity = G_LOGGER.ERROR

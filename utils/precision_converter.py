@@ -8,7 +8,7 @@ Supports:
 """
 
 import os
-from typing import Tuple, Dict
+from typing import Tuple
 
 import torch
 from safetensors.torch import load_file, save_file

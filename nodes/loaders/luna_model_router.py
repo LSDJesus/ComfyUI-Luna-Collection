@@ -59,9 +59,8 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Tuple, Optional, Any, Dict, List
+from typing import Tuple, Optional, Any, Dict, List
 
-import torch
 from aiohttp import web
 
 try:

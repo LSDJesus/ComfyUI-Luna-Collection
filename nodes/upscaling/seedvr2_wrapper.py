@@ -17,7 +17,7 @@ Key Optimizations:
 import os
 import sys
 import torch
-from typing import Dict, Any, Optional, List, Tuple, Callable
+from typing import Any, Optional, List, Tuple, Callable
 from dataclasses import dataclass
 
 # Add seedvr2 to path if available

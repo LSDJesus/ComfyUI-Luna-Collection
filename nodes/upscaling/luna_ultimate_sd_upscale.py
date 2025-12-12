@@ -1,12 +1,9 @@
 import torch
 import comfy.utils
-import folder_paths
 import numpy as np
 from PIL import Image, ImageFilter
 import math
 import os
-import torch.nn.functional as F
-import logging
 import sys
 from enum import Enum
 
@@ -18,7 +15,6 @@ utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file
 if utils_path not in sys.path:
     sys.path.insert(0, utils_path)
 
-import importlib
 
 LunaPerformanceMonitor = None
 try:

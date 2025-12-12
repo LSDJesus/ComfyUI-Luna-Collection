@@ -1,6 +1,5 @@
 import torch
 import math
-import comfy.model_management
 
 def luna_tiling_orchestrator(image_tensor, model, tile_x, tile_y, overlap, strategy):
     with torch.inference_mode():  # Disable gradient tracking

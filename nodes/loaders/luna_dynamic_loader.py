@@ -26,9 +26,8 @@ the HDD, and only store the optimized UNets locally (~2-4GB each vs 6.5GB).
 """
 
 import os
-import sys
 from pathlib import Path
-from typing import Tuple, Optional, Dict, Any
+from typing import Tuple, Any
 
 import torch
 

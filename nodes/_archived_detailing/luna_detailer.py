@@ -45,7 +45,6 @@ except ImportError:
     SEG = None
     core = None
 import nodes
-import folder_paths
 
 
 # Global instance for the TensorRT engine (similar to your original Mediapipe_Engine)

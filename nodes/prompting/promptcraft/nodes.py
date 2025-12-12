@@ -7,7 +7,7 @@ Single unified node - complexity lives in engine + JS panel.
 import os
 import json
 import random
-from typing import Dict, List, Tuple, Any, Optional
+from typing import List, Tuple, Optional
 
 try:
     import folder_paths  # type: ignore
@@ -16,7 +16,7 @@ except ImportError:
     folder_paths = None  # type: ignore
     HAS_FOLDER_PATHS = False
 
-from .engine import LunaPromptEngine, create_engine
+from .engine import LunaPromptEngine
 
 
 # =============================================================================

@@ -46,7 +46,7 @@ from __future__ import annotations
 
 import os
 import gc
-from typing import TYPE_CHECKING, Tuple, Optional, Any, Dict
+from typing import Tuple, Optional, Any, Dict
 
 import torch
 
