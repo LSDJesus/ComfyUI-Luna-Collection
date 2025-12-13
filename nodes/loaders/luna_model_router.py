@@ -174,6 +174,7 @@ try:
     from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP, detect_vae_type  # type: ignore
     from ..luna_daemon.zimage_proxy import DaemonZImageCLIP, detect_clip_architecture
     from ..luna_daemon import client as daemon_client
+    from ..luna_daemon.config import DAEMON_HOST, DAEMON_PORT
     DAEMON_AVAILABLE = True
 except ImportError:
     DAEMON_AVAILABLE = False
@@ -181,6 +182,8 @@ except ImportError:
     DaemonCLIP = None
     DaemonZImageCLIP = None
     daemon_client = None
+    DAEMON_HOST = "127.0.0.1"
+    DAEMON_PORT = 19283
     def detect_vae_type(vae): return 'unknown'
     def detect_clip_architecture(clip): return {'type': 'unknown', 'is_qwen': False}
 
@@ -598,7 +601,6 @@ class LunaModelRouter:
         daemon_running = DAEMON_AVAILABLE and daemon_client is not None and daemon_client.is_daemon_running()
         
         if require_daemon and not daemon_running:
-            from ...luna_daemon.config import DAEMON_HOST, DAEMON_PORT
             error_msg = (
                 "Daemon mode is 'force_daemon' but Luna Daemon is not running!\n"
                 f"  Expected daemon at {DAEMON_HOST}:{DAEMON_PORT}\n"
