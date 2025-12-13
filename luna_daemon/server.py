@@ -2309,7 +2309,7 @@ class DynamicDaemon:
             "device": self.device,
             "precision": self.precision,
             "uptime_seconds": time.time() - self.start_time,
-            "total_requests": self.request_count,
+            "request_count": self.request_count,  # Changed from total_requests
         }
         
         if self.vae_pool:
@@ -2320,6 +2320,18 @@ class DynamicDaemon:
         # Add LoRA registry stats
         if self.lora_registry:
             info["lora_registry"] = self.lora_registry.get_stats()
+        
+        # Add model registry info (loaded models, paths, etc.)
+        if self.model_registry:
+            registry_info = self.model_registry.get_info()
+            info.update({
+                "vae_loaded": registry_info.get("vae_loaded", False),
+                "clip_loaded": registry_info.get("clip_loaded", False),
+                "loaded_vae": registry_info.get("vae_type"),
+                "loaded_vae_path": registry_info.get("vae_path"),
+                "loaded_clip": registry_info.get("clip_model_type"),
+                "loaded_clip_paths": registry_info.get("clip_paths"),
+            })
         
         if 'cuda' in self.device:
             device_idx = int(self.device.split(':')[1]) if ':' in self.device else 0
