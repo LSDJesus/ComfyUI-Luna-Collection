@@ -2,12 +2,14 @@ import os
 import sys
 import importlib.util
 import traceback
+from pathlib import Path
 
 # This remains. It tells ComfyUI where to find our JavaScript files.
 WEB_DIRECTORY = "./js"
 
 # The base directory of our collection
 NODE_DIR = os.path.dirname(os.path.abspath(__file__))
+PACKAGE_ROOT = Path(__file__).parent  # For imports in submodules (nodes, luna_daemon, etc.)
 
 # Add utils directory to Python path for imports
 utils_dir = os.path.join(NODE_DIR, "utils")

@@ -26,9 +26,9 @@ from typing import TYPE_CHECKING, Tuple, List, Any
 
 if TYPE_CHECKING:
     import folder_paths
-    from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP
-    from ..luna_daemon.zimage_proxy import DaemonZImageCLIP
-    from ..luna_daemon import client as daemon_client
+    from luna_daemon.proxy import DaemonVAE, DaemonCLIP
+    from luna_daemon.zimage_proxy import DaemonZImageCLIP
+    from luna_daemon import client as daemon_client
 
 try:
     import folder_paths
@@ -36,16 +36,33 @@ except ImportError:
     folder_paths = None  # type: ignore
 
 # Import proxy classes
+DAEMON_AVAILABLE = False
+DaemonConnectionError = Exception
+DaemonVAE = None  # type: ignore
+DaemonCLIP = None  # type: ignore
+DaemonZImageCLIP = None  # type: ignore
+daemon_client = None
+
 try:
-    from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP, detect_vae_type, detect_clip_type
-    from ..luna_daemon.zimage_proxy import (
+    import sys
+    from pathlib import Path
+    
+    # Import package root from parent package
+    from ... import PACKAGE_ROOT
+    
+    if str(PACKAGE_ROOT) not in sys.path:
+        sys.path.insert(0, str(PACKAGE_ROOT))
+    
+    # Try absolute imports
+    from luna_daemon.proxy import DaemonVAE, DaemonCLIP, detect_vae_type, detect_clip_type
+    from luna_daemon.zimage_proxy import (
         DaemonZImageCLIP, 
         detect_clip_architecture, 
         is_zimage_clip,
         create_clip_proxy
     )
-    from ..luna_daemon import client as daemon_client
-    from ..luna_daemon.client import DaemonConnectionError
+    from luna_daemon import client as daemon_client
+    from luna_daemon.client import DaemonConnectionError
     DAEMON_AVAILABLE = True
 except ImportError:
     DAEMON_AVAILABLE = False

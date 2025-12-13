@@ -118,31 +118,43 @@ class DaemonClient:
     
     def is_running(self) -> bool:
         """Check if daemon is available (uses short timeout for health check)"""
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2)  # Short timeout for health check, not 120 seconds
-            sock.connect((self.host, self.port))
-            
-            # Send health check request
-            request = {"cmd": "health"}
-            data = pickle.dumps(request)
-            sock.sendall(struct.pack('>I', len(data)) + data)
-            
-            # Receive response header (4 bytes = uint32 length)
-            header = sock.recv(4)
-            if len(header) < 4:
+        # Retry up to 3 times with small delays to handle startup race conditions
+        import time
+        for attempt in range(3):
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(2)  # Short timeout for health check, not 120 seconds
+                sock.connect((self.host, self.port))
+                
+                # Send health check request
+                request = {"cmd": "health"}
+                data = pickle.dumps(request)
+                sock.sendall(struct.pack('>I', len(data)) + data)
+                
+                # Receive response header (4 bytes = uint32 length)
+                header = sock.recv(4)
+                if len(header) < 4:
+                    sock.close()
+                    if attempt < 2:
+                        time.sleep(0.1)
+                    continue
+                
+                response_len = struct.unpack('>I', header)[0]
+                response_data = sock.recv(response_len)
                 sock.close()
-                return False
-            
-            response_len = struct.unpack('>I', header)[0]
-            response_data = sock.recv(response_len)
-            sock.close()
-            
-            result = pickle.loads(response_data)
-            return result.get("status") == "ok"
-        except Exception as e:
-            print(f"[Luna.DaemonClient] Health check failed: {type(e).__name__}: {e}")
-            return False
+                
+                result = pickle.loads(response_data)
+                is_ok = result.get("status") == "ok"
+                if is_ok:
+                    print(f"[Luna.DaemonClient] ✓ Daemon health check passed on attempt {attempt + 1}")
+                return is_ok
+            except Exception as e:
+                if attempt < 2:
+                    time.sleep(0.1)  # Small delay before retry
+                elif attempt == 2:
+                    print(f"[Luna.DaemonClient] ✗ Health check failed after {attempt + 1} attempts connecting to {self.host}:{self.port}: {type(e).__name__}: {e}")
+        
+        return False
     
     def get_info(self) -> dict:
         """Get daemon info (device, VRAM usage, loaded models/components)"""

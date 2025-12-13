@@ -170,22 +170,59 @@ except:
     GGUFModelPatcher = None
 
 # Daemon support
+DAEMON_AVAILABLE = False
+DaemonVAE = None
+DaemonCLIP = None
+DaemonZImageCLIP = None
+daemon_client = None
+DAEMON_HOST = "127.0.0.1"
+DAEMON_PORT = 19283
+
+def detect_vae_type(vae): 
+    return 'unknown'
+    
+def detect_clip_architecture(clip): 
+    return {'type': 'unknown', 'is_qwen': False}
+
+# Try to import daemon modules with fallback
 try:
-    from ..luna_daemon.proxy import DaemonVAE, DaemonCLIP, detect_vae_type  # type: ignore
-    from ..luna_daemon.zimage_proxy import DaemonZImageCLIP, detect_clip_architecture
-    from ..luna_daemon import client as daemon_client
-    from ..luna_daemon.config import DAEMON_HOST, DAEMON_PORT
+    print("[Luna.ModelRouter] Attempting to import daemon modules...")
+    import sys
+    from pathlib import Path
+    
+    # Import package root from parent package
+    from ... import PACKAGE_ROOT
+    print(f"[Luna.ModelRouter] Repository root: {PACKAGE_ROOT}")
+    
+    if str(PACKAGE_ROOT) not in sys.path:
+        sys.path.insert(0, str(PACKAGE_ROOT))
+        print(f"[Luna.ModelRouter] Added to sys.path: {PACKAGE_ROOT}")
+    
+    # Try absolute imports
+    from luna_daemon.proxy import DaemonVAE as _DaemonVAE, DaemonCLIP as _DaemonCLIP, detect_vae_type as _detect_vae_type
+    print("[Luna.ModelRouter] ✓ Imported proxy modules")
+    from luna_daemon.zimage_proxy import DaemonZImageCLIP as _DaemonZImageCLIP, detect_clip_architecture as _detect_clip_architecture
+    print("[Luna.ModelRouter] ✓ Imported zimage_proxy")
+    from luna_daemon import client as _daemon_client
+    print("[Luna.ModelRouter] ✓ Imported daemon client")
+    from luna_daemon.config import DAEMON_HOST as _DAEMON_HOST, DAEMON_PORT as _DAEMON_PORT
+    print("[Luna.ModelRouter] ✓ Imported daemon config")
+    
+    # Assign to module variables
+    DaemonVAE = _DaemonVAE
+    DaemonCLIP = _DaemonCLIP
+    DaemonZImageCLIP = _DaemonZImageCLIP
+    daemon_client = _daemon_client
+    DAEMON_HOST = _DAEMON_HOST
+    DAEMON_PORT = _DAEMON_PORT
+    detect_vae_type = _detect_vae_type
+    detect_clip_architecture = _detect_clip_architecture
     DAEMON_AVAILABLE = True
-except ImportError:
-    DAEMON_AVAILABLE = False
-    DaemonVAE = None
-    DaemonCLIP = None
-    DaemonZImageCLIP = None
-    daemon_client = None
-    DAEMON_HOST = "127.0.0.1"
-    DAEMON_PORT = 19283
-    def detect_vae_type(vae): return 'unknown'
-    def detect_clip_architecture(clip): return {'type': 'unknown', 'is_qwen': False}
+    print("[Luna.ModelRouter] ✓ Daemon imports successful!")
+except Exception as e:
+    print(f"[Luna.ModelRouter] ✗ Daemon import failed: {type(e).__name__}: {e}")
+    import traceback
+    traceback.print_exc()
 
 
 # =============================================================================
@@ -598,7 +635,9 @@ class LunaModelRouter:
         # === STEP 2: Check daemon availability ===
         use_daemon = daemon_mode != "force_local"
         require_daemon = daemon_mode == "force_daemon"
-        daemon_running = DAEMON_AVAILABLE and daemon_client is not None and daemon_client.is_daemon_running()
+        
+        # Check if daemon is running by pinging the work port directly
+        daemon_running = self._is_daemon_running_direct()
         
         if require_daemon and not daemon_running:
             error_msg = (
@@ -675,6 +714,36 @@ class LunaModelRouter:
         print(f"[LunaModelRouter] {status}")
         
         return (output_model, output_clip, output_vae, output_llm, output_clip_vision, output_model_name, status)
+    
+    def _is_daemon_running_direct(self) -> bool:
+        """
+        Check if daemon is running by directly pinging the work port.
+        No imports or DAEMON_AVAILABLE check needed - just test connectivity.
+        
+        Returns True if daemon responds, False otherwise.
+        """
+        import socket
+        import time
+        
+        host = "127.0.0.1"
+        port = 19283  # Daemon work port
+        
+        # Try 3 times with 0.1s delays
+        for attempt in range(3):
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(2)  # 2 second timeout
+                sock.connect((host, port))
+                sock.close()
+                print(f"[Luna.ModelRouter] ✓ Daemon is running (attempt {attempt + 1})")
+                return True
+            except Exception as e:
+                if attempt < 2:
+                    time.sleep(0.1)
+                elif attempt == 2:
+                    print(f"[Luna.ModelRouter] ✗ Daemon not responding on {host}:{port}")
+        
+        return False
     
     def _validate_clip_config(self, model_type: str, clip_config: Dict[str, Optional[str]]) -> None:
         """

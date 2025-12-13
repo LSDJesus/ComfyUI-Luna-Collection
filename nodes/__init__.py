@@ -58,6 +58,12 @@ from .utilities.luna_civitai_scraper import (
 )
 from .utilities.luna_lora_validator import LunaLoRAValidator
 
+# Daemon API - registers web routes for the daemon panel
+try:
+    from .utilities import luna_daemon_api  # noqa: F401 - imported for side effects (route registration)
+except ImportError:
+    pass
+
 # Combine all node mappings
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
