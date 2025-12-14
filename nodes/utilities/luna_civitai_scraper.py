@@ -12,6 +12,7 @@ This allows keeping metadata current without relying on SwarmUI.
 
 import json
 import os
+import sys
 import re
 import struct
 import hashlib
@@ -46,19 +47,21 @@ except ImportError:
 
 # Import Luna metadata database
 try:
-    from utils.luna_metadata_db import get_db, store_civitai_metadata
+    from pathlib import Path
+    # Go up two levels from nodes/utilities/ to reach project root
+    root_dir = str(Path(__file__).parent.parent.parent)
+    utils_dir = os.path.join(root_dir, 'utils')
+    import sys
+    if utils_dir not in sys.path:
+        sys.path.insert(0, utils_dir)
+    from luna_metadata_db import get_db, store_civitai_metadata
     HAS_METADATA_DB = True
 except ImportError:
-    try:
-        # Fallback for standalone execution
-        from ..utils.luna_metadata_db import get_db, store_civitai_metadata
-        HAS_METADATA_DB = True
-    except ImportError:
-        HAS_METADATA_DB = False
-        # Only print warning when NOT running as daemon
-        import os
-        if not os.environ.get('LUNA_DAEMON_MODE'):
-            print("LunaCivitai: Metadata database not available")
+    HAS_METADATA_DB = False
+    # Only print warning when NOT running as daemon
+    import os
+    if not os.environ.get('LUNA_DAEMON_MODE'):
+        pass  # Metadata database is optional
 
 # Try to import PromptServer for web endpoints
 PromptServer = None

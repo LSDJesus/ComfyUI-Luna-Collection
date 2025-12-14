@@ -14,10 +14,14 @@ let panelState = {
     error: null,
     device: "unknown",
     vramUsed: 0,
+    vramAllocated: 0,
     vramTotal: 0,
+    vramPercent: 0,
     requests: 0,
     uptime: 0,
     modelsLoaded: [],
+    checkpoints: [],
+    gpus: [],
     vaeLoaded: false,
     clipLoaded: false,
 };
@@ -196,18 +200,49 @@ function createPanelContent() {
         </div>
         
         <div class="section">
-            <div class="section-title">VRAM</div>
-            <div class="stat-row">
-                <span class="stat-label">Usage</span>
-                <span class="stat-value" id="luna-vram">${panelState.vramUsed.toFixed(1)} / ${panelState.vramTotal.toFixed(1)} GB</span>
-            </div>
-            <div class="vram-bar">
-                <div class="vram-fill" id="luna-vram-bar" style="width: ${getVramPercent()}%"></div>
-            </div>
+            <div class="section-title">VRAM - Multi-GPU</div>
+            ${panelState.gpus.length > 0 
+                ? (() => {
+                    console.log(`[Luna Panel] Building UI for ${panelState.gpus.length} GPUs:`, panelState.gpus);
+                    return panelState.gpus.map(gpu => `
+                        <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
+                            <div class="stat-row">
+                                <span class="stat-label">GPU ${gpu.id}${gpu.is_daemon_device ? ' (Daemon)' : ''}</span>
+                                <span class="stat-value">${gpu.reserved_gb} / ${gpu.total_gb} GB</span>
+                            </div>
+                            <div class="stat-row" style="font-size: 11px; opacity: 0.7;">
+                                <span>${gpu.name}</span>
+                                <span>${gpu.percent}%</span>
+                            </div>
+                            <div class="vram-bar">
+                                <div class="vram-fill" style="width: ${gpu.percent}%; ${gpu.percent > 90 ? 'background: #f87171;' : ''}"></div>
+                            </div>
+                        </div>
+                    `).join('');
+                })()
+                
+                : `
+                <div class="stat-row">
+                    <span class="stat-label">Reserved</span>
+                    <span class="stat-value" id="luna-vram">${panelState.vramUsed.toFixed(2)} / ${panelState.vramTotal.toFixed(1)} GB</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Active</span>
+                    <span class="stat-value" id="luna-vram-allocated">${panelState.vramAllocated.toFixed(2)} GB</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Usage</span>
+                    <span class="stat-value" id="luna-vram-percent">${panelState.vramPercent.toFixed(1)}%</span>
+                </div>
+                <div class="vram-bar">
+                    <div class="vram-fill" id="luna-vram-bar" style="width: ${panelState.vramPercent}%"></div>
+                </div>
+                `
+            }
         </div>
         
         <div class="section">
-            <div class="section-title">Loaded Models</div>
+            <div class="section-title">Daemon Models</div>
             <div class="models-list" id="luna-models">
                 ${panelState.modelsLoaded.length > 0 
                     ? panelState.modelsLoaded.map(m => `<div class="model-item">${m}</div>`).join('')
@@ -218,6 +253,23 @@ function createPanelContent() {
                 ? '<button class="btn btn-unload" id="luna-unload" style="margin-top: 8px; width: 100%;">Unload Models</button>'
                 : ''
             }
+        </div>
+        
+        <div class="section">
+            <div class="section-title">Checkpoints (Across Instances)</div>
+            <div class="models-list" id="luna-checkpoints">
+                ${panelState.checkpoints.length > 0
+                    ? panelState.checkpoints.map(ckpt => `
+                        <div class="model-item">
+                            <div style="font-weight: 500;">${ckpt.name}</div>
+                            <div style="font-size: 11px; opacity: 0.7; margin-top: 2px;">
+                                ${ckpt.size_mb.toFixed(1)} MB • ${ckpt.device} • ${ckpt.dtype} • ${ckpt.instance_id}
+                            </div>
+                        </div>
+                    `).join('')
+                    : '<div style="opacity: 0.5">No checkpoints loaded</div>'
+                }
+            </div>
         </div>
         
         <div class="button-row">
@@ -251,14 +303,27 @@ async function fetchDaemonStatus() {
         const response = await api.fetchApi("/luna/daemon/status");
         if (response.ok) {
             const data = await response.json();
+            
+            // Debug: log data to see what we're getting
+            if (data.gpus && data.gpus.length > 0) {
+                console.log('[Luna Panel] GPU data:', data.gpus);
+            }
+            if (data.checkpoints && data.checkpoints.length > 0) {
+                console.log('[Luna Panel] Checkpoints:', data.checkpoints);
+            }
+            
             panelState.running = data.running || false;
             panelState.error = data.error || null;
             panelState.device = data.device || "unknown";
             panelState.vramUsed = data.vram_used_gb || 0;
+            panelState.vramAllocated = data.vram_allocated_gb || 0;
             panelState.vramTotal = data.vram_total_gb || 0;
+            panelState.vramPercent = data.vram_percent || 0;
             panelState.requests = data.request_count || 0;
             panelState.uptime = data.uptime_seconds || 0;
             panelState.modelsLoaded = data.models_loaded || [];
+            panelState.checkpoints = data.checkpoints || [];
+            panelState.gpus = data.gpus || [];
             panelState.vaeLoaded = data.vae_loaded || false;
             panelState.clipLoaded = data.clip_loaded || false;
         } else {
@@ -528,6 +593,18 @@ function updatePanelUI() {
         return;
     }
     
+    // If GPU or checkpoint data exists, we need to recreate the entire panel
+    // because those sections are created dynamically
+    if (panelState.gpus.length > 0 || panelState.checkpoints.length > 0) {
+        // Find the parent container and replace the panel content
+        const parent = panel.parentElement;
+        const newPanel = createPanelContent();
+        parent.replaceChild(newPanel, panel);
+        attachPanelEventListeners();
+        return;
+    }
+    
+    // Otherwise, do incremental updates for simple fields
     // Update status indicator
     const indicator = panel.querySelector(".status-indicator");
     if (indicator) {
@@ -548,11 +625,17 @@ function updatePanelUI() {
     if (uptimeEl) uptimeEl.textContent = formatUptime(panelState.uptime);
     
     const vramEl = document.getElementById("luna-vram");
-    if (vramEl) vramEl.textContent = `${panelState.vramUsed.toFixed(1)} / ${panelState.vramTotal.toFixed(1)} GB`;
+    if (vramEl) vramEl.textContent = `${panelState.vramUsed.toFixed(2)} / ${panelState.vramTotal.toFixed(1)} GB`;
+    
+    const vramAllocatedEl = document.getElementById("luna-vram-allocated");
+    if (vramAllocatedEl) vramAllocatedEl.textContent = `${panelState.vramAllocated.toFixed(2)} GB`;
+    
+    const vramPercentEl = document.getElementById("luna-vram-percent");
+    if (vramPercentEl) vramPercentEl.textContent = `${panelState.vramPercent.toFixed(1)}%`;
     
     // Update VRAM bar
     const vramBar = document.getElementById("luna-vram-bar");
-    if (vramBar) vramBar.style.width = `${getVramPercent()}%`;
+    if (vramBar) vramBar.style.width = `${panelState.vramPercent}%`;
     
     // Update models list
     const modelsList = document.getElementById("luna-models");
@@ -707,14 +790,14 @@ app.registerExtension({
             }
         }
         
-        // Auto-refresh every 3 seconds (only if panel exists in DOM)
+        // Auto-refresh every 1 second for real-time VRAM monitoring
         setInterval(async () => {
             const panel = document.querySelector(".luna-daemon-panel");
             if (panel) {
                 await fetchDaemonStatus();
                 updatePanelUI();
             }
-        }, 3000);
+        }, 1000);
     }
 });
 

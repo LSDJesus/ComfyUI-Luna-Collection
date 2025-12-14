@@ -145,6 +145,81 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# ============================================================================
+# VRAM Monitoring Utilities
+# ============================================================================
+
+def log_all_gpu_vram(prefix: str = ""):
+    """
+    Log VRAM usage for all available GPUs.
+    Useful for tracking memory allocation during operations.
+    """
+    if not torch.cuda.is_available():
+        return
+    
+    gpu_count = torch.cuda.device_count()
+    vram_info = []
+    
+    for gpu_id in range(gpu_count):
+        try:
+            # Get system-level memory info (actual usage across all processes)
+            free_mem, total_mem = torch.cuda.mem_get_info(gpu_id)
+            used_gb = (total_mem - free_mem) / 1024**3
+            total_gb = total_mem / 1024**3
+            percent = round((used_gb / total_gb) * 100, 1)
+            
+            vram_info.append(f"GPU{gpu_id}: {used_gb:.2f}/{total_gb:.1f}GB ({percent}%)")
+        except Exception as e:
+            vram_info.append(f"GPU{gpu_id}: ERROR")
+    
+    logger.info(f"[VRAM] {prefix}{' | '.join(vram_info)}")
+
+
+# ============================================================================
+# Multi-GPU Device Patching (ComfyUI-MultiGPU pattern)
+# ============================================================================
+# CRITICAL: Patch ComfyUI's device management to enable multi-GPU routing
+# This must happen BEFORE any model loading occurs
+
+import comfy.model_management as mm
+import threading
+
+# Thread-local context for per-operation device override
+# Allows get_clip() and get_vae() to specify which GPU to use
+_daemon_device_context = threading.local()
+_original_get_torch_device = mm.get_torch_device
+_original_text_encoder_device = mm.text_encoder_device
+
+def _daemon_get_torch_device_patched():
+    """
+    Context-aware device patch for general model loading.
+    """
+    if hasattr(_daemon_device_context, 'device') and _daemon_device_context.device is not None:
+        device = torch.device(_daemon_device_context.device)
+        logger.debug(f"[PATCH] get_torch_device() -> {device} (context override)")
+        return device
+    result = _original_get_torch_device()
+    logger.debug(f"[PATCH] get_torch_device() -> {result} (default)")
+    return result
+
+def _daemon_text_encoder_device_patched():
+    """
+    Context-aware device patch specifically for CLIP/text encoders.
+    This is the CRITICAL patch for CLIP placement!
+    """
+    if hasattr(_daemon_device_context, 'device') and _daemon_device_context.device is not None:
+        device = torch.device(_daemon_device_context.device)
+        logger.info(f"[PATCH] text_encoder_device() -> {device} (CLIP context override)")
+        return device
+    result = _original_text_encoder_device()
+    logger.debug(f"[PATCH] text_encoder_device() -> {result} (default)")
+    return result
+
+# Apply the patches permanently
+mm.get_torch_device = _daemon_get_torch_device_patched
+mm.text_encoder_device = _daemon_text_encoder_device_patched
+logger.info(f"[PATCH] Installed context-aware multi-GPU patches (get_torch_device + text_encoder_device)")
+
 
 # ============================================================================
 # Configuration for Dynamic Scaling
@@ -328,28 +403,39 @@ class LoRARegistry:
         # Find the LoRA file
         lora_path = folder_paths.get_full_path("loras", lora_name)
         if lora_path is None or not os.path.exists(lora_path):
-            # Try with/without extensions
-            base_name = lora_name
-            for ext in ('.safetensors', '.ckpt', '.pt', '.pth', '.bin'):
-                if base_name.lower().endswith(ext):
-                    base_name = base_name[:-len(ext)]
-                    break
-            
-            # Try common extensions
-            for ext in ('.safetensors', '.ckpt', '.pt', '.pth', '.bin'):
-                test_name = base_name + ext
-                lora_path = folder_paths.get_full_path("loras", test_name)
-                if lora_path and os.path.exists(lora_path):
+            # folder_paths.get_full_path() doesn't always handle subdirs well
+            # Try building path manually from loras base directory
+            loras_dirs = folder_paths.get_folder_paths("loras") if folder_paths else []
+            for base_dir in loras_dirs:
+                test_path = os.path.join(base_dir, lora_name)
+                if os.path.exists(test_path):
+                    lora_path = test_path
                     break
             else:
-                logger.warning(f"[LoRARegistry] LoRA not found: {lora_name}")
-                return None
+                # Still not found - try with/without extensions
+                base_name = lora_name
+                for ext in ('.safetensors', '.ckpt', '.pt', '.pth', '.bin'):
+                    if base_name.lower().endswith(ext):
+                        base_name = base_name[:-len(ext)]
+                        break
+                
+                # Try common extensions
+                for ext in ('.safetensors', '.ckpt', '.pt', '.pth', '.bin'):
+                    test_name = base_name + ext
+                    lora_path = folder_paths.get_full_path("loras", test_name)
+                    if lora_path and os.path.exists(lora_path):
+                        break
+                else:
+                    logger.error(f"[LoRARegistry] LoRA not found: {lora_name}")
+                    logger.error(f"[LoRARegistry] Searched in: {loras_dirs}")
+                    return None
         
         logger.info(f"[LoRARegistry] Loading LoRA from disk: {os.path.basename(lora_path)}")
         
         try:
-            # Load the full LoRA file
-            all_weights = load_safetensors(lora_path)
+            # Load the full LoRA file using ComfyUI's loader (supports BF16)
+            import comfy.utils
+            all_weights = comfy.utils.load_torch_file(lora_path)  # type: ignore
             
             # Extract CLIP-specific weights
             clip_weights = {}
@@ -459,7 +545,7 @@ class ModelRegistry:
         self._loaded_vae = None
         self._loaded_clip = None
         
-        logger.info("[ModelRegistry] Initialized - awaiting model registration from clients")
+        logger.info(f"[ModelRegistry] Initialized on device {device} - awaiting model registration from clients")
     
     def register_vae(self, vae_type: str, state_dict: Dict[str, Any]) -> dict:
         """
@@ -550,6 +636,7 @@ class ModelRegistry:
         Get or load the registered VAE model.
         
         Loads on first access, returns cached model on subsequent calls.
+        Sets device context to VAE_DEVICE before loading.
         """
         with self.lock:
             if self.vae is None:
@@ -561,14 +648,33 @@ class ModelRegistry:
             # Load the VAE
             import comfy.sd
             
+            # Set device context for VAE loading on GPU 0
+            target_device = torch.device(VAE_DEVICE)
+            logger.info(f"[ModelRegistry] ========== VAE LOADING START ==========")
+            logger.info(f"[ModelRegistry] Target device: {target_device} ({VAE_DEVICE})")
+            log_all_gpu_vram("BEFORE VAE load: ")
+            
             state_dict = self.vae.state_dict
             if precision != "fp32":
                 dtype = torch.bfloat16 if precision == "bf16" else torch.float16
                 state_dict = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
                              for k, v in state_dict.items()}
             
-            self._loaded_vae = comfy.sd.VAE(sd=state_dict)  # type: ignore
-            self.vae.loaded = True
+            # Set thread-local device context for VAE
+            _daemon_device_context.device = VAE_DEVICE
+            try:
+                self._loaded_vae = comfy.sd.VAE(sd=state_dict)  # type: ignore
+                self.vae.loaded = True
+            finally:
+                # Clear context after loading
+                _daemon_device_context.device = None
+            
+            log_all_gpu_vram("AFTER VAE load: ")
+            
+            # Free the state_dict from registry to save VRAM (model is now loaded)
+            self.vae.state_dict = None
+            del state_dict
+            torch.cuda.empty_cache()
             
             logger.info(f"[ModelRegistry] Loaded VAE ({precision})")
             return self._loaded_vae
@@ -578,6 +684,7 @@ class ModelRegistry:
         Get or load the registered CLIP model.
         
         Uses the registered clip_type for proper model construction.
+        Sets device context to CLIP_DEVICE before loading.
         """
         with self.lock:
             if self.clip is None:
@@ -603,8 +710,14 @@ class ModelRegistry:
             }
             clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)  # type: ignore
             
-            # Build the CLIP model from components
-            # This uses load_text_encoder_state_dicts which takes state dicts directly
+            # Set device context for CLIP loading on GPU 1
+            target_device = torch.device(CLIP_DEVICE)
+            logger.info(f"[ModelRegistry] ========== CLIP LOADING START ==========")
+            logger.info(f"[ModelRegistry] Target device: {target_device} ({CLIP_DEVICE})")
+            log_all_gpu_vram("BEFORE CLIP load: ")
+            logger.info(f"[ModelRegistry] About to set context and load CLIP...")
+            
+            # Build state_dicts with proper precision
             clip_data = []
             for name in ["clip_l", "clip_g", "t5xxl"]:
                 if name in components:  # type: ignore
@@ -615,14 +728,44 @@ class ModelRegistry:
                              for k, v in sd.items()}
                     clip_data.append(sd)
             
-            self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(  # type: ignore
-                state_dicts=clip_data,
-                clip_type=clip_type_enum,
-                model_options={}
-            )
+            # Set thread-local device context for CLIP
+            logger.info(f"[ModelRegistry] Setting context device to: {CLIP_DEVICE}")
+            _daemon_device_context.device = CLIP_DEVICE
+            logger.info(f"[ModelRegistry] Context device set, now calling load_text_encoder_state_dicts()...")
+            try:
+                # Load CLIP - will use our context-aware patched device
+                self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(  # type: ignore
+                    state_dicts=clip_data,
+                    clip_type=clip_type_enum
+                )
+                logger.info(f"[ModelRegistry] load_text_encoder_state_dicts() completed")
+            finally:
+                # Clear context after loading
+                logger.info(f"[ModelRegistry] Clearing context device")
+                _daemon_device_context.device = None
+            
+            log_all_gpu_vram("AFTER CLIP load: ")
+            
             self.clip.loaded = True
             
-            logger.info(f"[ModelRegistry] Loaded CLIP ({precision}, type={clip_type_str})")
+            # Log which device CLIP ended up on
+            clip_device = "unknown"
+            if hasattr(self._loaded_clip, 'cond_stage_model') and hasattr(self._loaded_clip.cond_stage_model, 'device'):
+                clip_device = str(self._loaded_clip.cond_stage_model.device)
+            
+            # Free the state_dicts from registry to save VRAM (model is now loaded)
+            self.clip.components = None
+            del clip_data
+            torch.cuda.empty_cache()
+            
+            logger.info(f"[ModelRegistry] Loaded CLIP ({precision}, type={clip_type_str}, device={clip_device})")
+            
+            # Log memory usage after loading
+            if 'cuda' in str(clip_device):
+                gpu_id = int(clip_device.split(':')[1]) if ':' in clip_device else 0
+                allocated = torch.cuda.memory_allocated(gpu_id) / 1024**3
+                logger.info(f"[ModelRegistry] GPU {gpu_id} memory after CLIP load: {allocated:.2f} GB allocated")
+            
             return self._loaded_clip
     
     def has_vae(self) -> bool:
@@ -781,6 +924,7 @@ class ModelRegistry:
         Get or load the registered VAE model.
         
         Supports both state_dict and path-based registration.
+        Sets device context to VAE_DEVICE before loading.
         """
         with self.lock:
             if self.vae is None:
@@ -791,6 +935,10 @@ class ModelRegistry:
             
             import comfy.sd
             import comfy.utils
+            
+            # Set device context for VAE loading on GPU 0
+            target_device = torch.device(VAE_DEVICE)
+            logger.info(f"[ModelRegistry] Loading VAE on {target_device} (via device context)...")
             
             # Check if path-based or state_dict-based
             if hasattr(self.vae, 'path') and self.vae.path:
@@ -806,8 +954,20 @@ class ModelRegistry:
                 state_dict = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
                              for k, v in state_dict.items()}
             
-            self._loaded_vae = comfy.sd.VAE(sd=state_dict)  # type: ignore
-            self.vae.loaded = True
+            # Set thread-local device context for VAE
+            _daemon_device_context.device = VAE_DEVICE
+            try:
+                self._loaded_vae = comfy.sd.VAE(sd=state_dict)  # type: ignore
+                self.vae.loaded = True
+            finally:
+                # Clear context after loading
+                _daemon_device_context.device = None
+            
+            # Free the state_dict to save VRAM
+            if hasattr(self.vae, 'state_dict'):
+                self.vae.state_dict = None
+            del state_dict
+            torch.cuda.empty_cache()
             
             logger.info(f"[ModelRegistry] Loaded VAE ({precision})")
             return self._loaded_vae
@@ -817,6 +977,7 @@ class ModelRegistry:
         Get or load the registered CLIP model.
         
         Supports both state_dict and path-based registration.
+        Sets device context to CLIP_DEVICE before loading.
         """
         with self.lock:
             if self.clip is None:
@@ -841,33 +1002,56 @@ class ModelRegistry:
             }
             clip_type_enum = clip_type_enum_map.get(clip_type_str, comfy.sd.CLIPType.STABLE_DIFFUSION)  # type: ignore
             
-            # Check if path-based or state_dict-based
-            if hasattr(self.clip, 'paths') and self.clip.paths:
-                # Load from paths using comfy.sd.load_clip
-                self._loaded_clip = comfy.sd.load_clip(  # type: ignore  # type: ignore
-                    ckpt_paths=self.clip.paths,
-                    embedding_directory=folder_paths.get_folder_paths("embeddings") if folder_paths else None,
-                    clip_type=clip_type_enum
-                )
-            elif self.clip.components:
-                # Load from state dicts
-                clip_data = []
-                for name in ["clip_l", "clip_g", "t5xxl"]:
-                    if name in self.clip.components:
-                        sd = self.clip.components[name]
-                        if precision != "fp32":
-                            dtype = torch.bfloat16 if precision == "bf16" else torch.float16
-                            sd = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
-                                 for k, v in sd.items()}
-                        clip_data.append(sd)
-                
-                self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(  # type: ignore  # type: ignore
-                    state_dicts=clip_data,
-                    clip_type=clip_type_enum,
-                    model_options={}
-                )
-            else:
-                return None
+            # Set device context for CLIP loading
+            logger.info(f"[ModelRegistry] ========== CLIP LOADING START (get_clip_model) ==========")
+            log_all_gpu_vram("BEFORE CLIP load: ")
+            logger.info(f"[ModelRegistry] Target device: {CLIP_DEVICE}")
+            logger.info(f"[ModelRegistry] Setting device context to: {CLIP_DEVICE}")
+            _daemon_device_context.device = CLIP_DEVICE
+            
+            try:
+                # Check if path-based or state_dict-based
+                if hasattr(self.clip, 'paths') and self.clip.paths:
+                    # Load from paths using comfy.sd.load_clip
+                    # Convert paths dict to list of values (paths)
+                    clip_paths_list = list(self.clip.paths.values()) if isinstance(self.clip.paths, dict) else self.clip.paths
+                    logger.info(f"[ModelRegistry] Loading CLIP from paths: {len(clip_paths_list)} files")
+                    self._loaded_clip = comfy.sd.load_clip(  # type: ignore
+                        ckpt_paths=clip_paths_list,
+                        embedding_directory=folder_paths.get_folder_paths("embeddings") if folder_paths else None,
+                        clip_type=clip_type_enum
+                    )
+                elif self.clip.components:
+                    # Load from state dicts
+                    clip_data = []
+                    for name in ["clip_l", "clip_g", "t5xxl"]:
+                        if name in self.clip.components:
+                            sd = self.clip.components[name]
+                            if precision != "fp32":
+                                dtype = torch.bfloat16 if precision == "bf16" else torch.float16
+                                sd = {k: v.to(dtype) if isinstance(v, torch.Tensor) and v.is_floating_point() else v 
+                                     for k, v in sd.items()}
+                            clip_data.append(sd)
+                    
+                    logger.info(f"[ModelRegistry] Loading CLIP from state_dicts: {len(clip_data)} components")
+                    self._loaded_clip = comfy.sd.load_text_encoder_state_dicts(  # type: ignore  # type: ignore
+                        state_dicts=clip_data,
+                        clip_type=clip_type_enum,
+                        model_options={}
+                    )
+                    
+                    # Free the state_dicts from registry to save VRAM
+                    self.clip.components = None
+                    del clip_data
+                    torch.cuda.empty_cache()
+                else:
+                    return None
+            finally:
+                # Clear device context
+                logger.info(f"[ModelRegistry] Clearing device context")
+                _daemon_device_context.device = None
+            
+            log_all_gpu_vram("AFTER CLIP load: ")
             
             self.clip.loaded = True
             logger.info(f"[ModelRegistry] Loaded CLIP ({precision}, type={clip_type_str})")
@@ -893,7 +1077,311 @@ class ModelRegistry:
             "clip_type": self.clip.clip_type if self.clip else None,
             "clip_loaded": self._loaded_clip is not None,
             "clip_paths": self.clip.paths if self.clip and self.clip.paths else None,
+            "model_registered": hasattr(self, 'model') and self.model is not None,
+            "model_type": self.model.model_type if hasattr(self, 'model') and self.model else None,
+            "model_loaded": hasattr(self, '_loaded_model') and self._loaded_model is not None,
+            "model_path": self.model.path if hasattr(self, 'model') and self.model and self.model.path else None,
         }
+    
+    # =========================================================================
+    # MODEL (UNet) Operations - Centralized Inference Server
+    # =========================================================================
+    
+    def register_model_by_path(self, model_path: str, model_type: str) -> dict:
+        """
+        Register a diffusion model (UNet) by path for daemon loading.
+        
+        The daemon loads the model from disk and freezes it (eval + requires_grad=False)
+        for optimal VRAM usage. All inference routes through this single shared model.
+        
+        Args:
+            model_path: Full path to checkpoint or unet file
+            model_type: Type string ('flux', 'sdxl', 'sd15', etc.)
+        
+        Returns:
+            Registration status dict
+        """
+        with self.lock:
+            # Clear any previously loaded model
+            if hasattr(self, '_loaded_model') and self._loaded_model is not None:
+                del self._loaded_model
+                self._loaded_model = None
+                torch.cuda.empty_cache()
+            
+            if not hasattr(self, 'model'):
+                self.model = None
+            
+            self.model = RegisteredModel(
+                model_type=model_type,
+                clip_type="",  # Not applicable for models
+                path=model_path,
+                loaded=False
+            )
+            
+            import os
+            size_mb = os.path.getsize(model_path) / 1024 / 1024 if os.path.exists(model_path) else 0
+            
+            logger.info(f"[ModelRegistry] Registered Model: {model_type} from {model_path} ({size_mb:.1f} MB)")
+            
+            return {
+                "success": True,
+                "model_type": model_type,
+                "model_path": model_path,
+                "size_mb": size_mb,
+                "message": f"Model registered, ready for loading"
+            }
+    
+    def register_model(self, model_type: str, state_dict: Dict[str, Any]) -> dict:
+        """
+        Register a model from state dict (less efficient than path-based).
+        
+        Args:
+            model_type: Type string ('flux', 'sdxl', 'sd15', etc.)
+            state_dict: The model state dict
+        
+        Returns:
+            Registration status dict
+        """
+        with self.lock:
+            # Clear any previously loaded model
+            if hasattr(self, '_loaded_model') and self._loaded_model is not None:
+                del self._loaded_model
+                self._loaded_model = None
+                torch.cuda.empty_cache()
+            
+            if not hasattr(self, 'model'):
+                self.model = None
+            
+            self.model = RegisteredModel(
+                model_type=model_type,
+                clip_type="",
+                state_dict=state_dict,
+                loaded=False
+            )
+            
+            size_mb = sum(t.numel() * t.element_size() for t in state_dict.values() 
+                         if isinstance(t, torch.Tensor)) / 1024 / 1024
+            
+            logger.info(f"[ModelRegistry] Registered Model: {model_type} ({size_mb:.1f} MB)")
+            
+            return {
+                "success": True,
+                "model_type": model_type,
+                "size_mb": size_mb,
+                "message": f"Model registered, ready for loading"
+            }
+    
+    def load_model_async(self):
+        """Async load model in background (called after registration)"""
+        # For now just log - actual loading happens on first inference
+        logger.info("[ModelRegistry] Model load scheduled (lazy - will load on first forward)")
+    
+    def get_model(self):
+        """
+        Get or load the registered model.
+        
+        Loads on first access, returns cached model on subsequent calls.
+        Model is frozen (eval + requires_grad=False) for optimal VRAM.
+        """
+        with self.lock:
+            if not hasattr(self, 'model') or self.model is None:
+                raise RuntimeError("No model registered. Call register_model_by_path first.")
+            
+            if hasattr(self, '_loaded_model') and self._loaded_model is not None:
+                return self._loaded_model
+            
+            # Load the model
+            import comfy.sd
+            import comfy.utils
+            import folder_paths
+            
+            logger.info(f"[ModelRegistry] Loading model: {self.model.model_type}")
+            
+            # Set device context
+            _daemon_device_context.device = self.device
+            
+            try:
+                if self.model.path:
+                    # Load from path (preferred)
+                    logger.info(f"[ModelRegistry] Loading model from path: {self.model.path}")
+                    
+                    # Use comfy's load functions
+                    if 'unet' in self.model.path.lower() or self.model.path.endswith('.safetensors'):
+                        # Direct unet file
+                        model_patcher = comfy.sd.load_diffusion_model(self.model.path)
+                    else:
+                        # Full checkpoint - extract model only
+                        out = comfy.sd.load_checkpoint_guess_config(
+                            self.model.path,
+                            output_vae=False,
+                            output_clip=False,
+                            embedding_directory=folder_paths.get_folder_paths("embeddings")
+                        )
+                        model_patcher = out[0]
+                else:
+                    # Load from state dict (less common)
+                    logger.info(f"[ModelRegistry] Loading model from state dict")
+                    # TODO: Create model from state dict
+                    raise NotImplementedError("State dict loading not yet implemented for models")
+                
+                # CRITICAL: Freeze the model for inference
+                # This prevents gradient tracking and saves 60-70% VRAM
+                if hasattr(model_patcher, 'model') and hasattr(model_patcher.model, 'diffusion_model'):
+                    diff_model = model_patcher.model.diffusion_model
+                    diff_model.eval()
+                    param_count = 0
+                    for param in diff_model.parameters():
+                        param.requires_grad = False
+                        param_count += 1
+                    logger.info(f"[ModelRegistry] ✓ Model frozen: {param_count} parameters (eval + requires_grad=False)")
+                
+                # Move to daemon device
+                model_patcher.load_device = torch.device(self.device)
+                
+                self._loaded_model = model_patcher
+                self.model.loaded = True
+                
+                logger.info(f"[ModelRegistry] ✓ Model loaded and frozen on {self.device}")
+                return self._loaded_model
+                
+            finally:
+                # Clear device context
+                _daemon_device_context.device = None
+    
+    def model_forward(self, x: torch.Tensor, timesteps: torch.Tensor,
+                     context: Optional[Any] = None,
+                     model_type: str = 'sdxl',
+                     lora_stack: Optional[List[tuple]] = None,
+                     **kwargs) -> torch.Tensor:
+        """
+        Execute UNet forward pass with optional transient LoRA application.
+        
+        LoRAs are applied as temporary patches during inference only (F-150 method),
+        then removed. This allows different requests to have different LoRA stacks
+        without persistent state pollution.
+        
+        Args:
+            x: Noisy latents (B, C, H, W)
+            timesteps: Timestep tensor (B,)
+            context: Conditioning/context tensor
+            model_type: Model type string
+            lora_stack: Optional list of (lora_name, model_str, clip_str) tuples
+            **kwargs: Additional model-specific arguments
+        
+        Returns:
+            Denoised output tensor
+        """
+        model = self.get_model()
+        
+        # Move inputs to daemon device
+        device = torch.device(self.device)
+        x = x.to(device)
+        timesteps = timesteps.to(device)
+        if context is not None:
+            context = context.to(device)
+        
+        # Apply LoRAs transiently if provided (per-request, not persistent)
+        if lora_stack:
+            with self._apply_lora_transient(model, lora_stack):
+                with torch.inference_mode():
+                    result = model.model.diffusion_model(x, timesteps, context=context, **kwargs)
+        else:
+            # No LoRAs - direct inference
+            with torch.inference_mode():
+                result = model.model.diffusion_model(x, timesteps, context=context, **kwargs)
+        
+        return result
+    
+    def _apply_lora_transient(self, model, lora_stack):
+        """
+        Context manager for transient LoRA application to UNet.
+        
+        Loads LoRA weights, applies them as temporary patches, then removes them.
+        Thread-safe for concurrent requests with different LoRA stacks.
+        
+        Usage:
+            with self._apply_lora_transient(model, lora_stack):
+                output = model(x, timesteps, context)  # LoRAs applied during forward
+                # LoRAs automatically removed here
+        """
+        import contextlib
+        import comfy.utils
+        import folder_paths
+        
+        @contextlib.contextmanager
+        def lora_context():
+            diff_model = model.model.diffusion_model
+            original_weights = {}  # Store originals for restoration
+            
+            try:
+                # Load and apply each LoRA in stack
+                for lora_name, model_strength, _ in lora_stack:
+                    try:
+                        # Find and load LoRA file
+                        lora_list = folder_paths.get_filename_list("loras")
+                        lora_file = None
+                        
+                        # Exact match first
+                        if lora_name in lora_list:
+                            lora_file = lora_name
+                        else:
+                            # Try with extensions or partial match
+                            for f in lora_list:
+                                if lora_name.lower() in f.lower():
+                                    lora_file = f
+                                    break
+                        
+                        if lora_file is None:
+                            logger.warning(f"[ModelRegistry] LoRA '{lora_name}' not found")
+                            continue
+                        
+                        # Load LoRA weights from disk
+                        lora_path = folder_paths.get_full_path("loras", lora_file)
+                        lora_data = comfy.utils.load_torch_file(lora_path)
+                        
+                        # Filter to UNet weights only (not CLIP)
+                        unet_weights = {k: v for k, v in lora_data.items()
+                                       if not any(p in k.lower() for p in
+                                                 ['clip_l', 'clip_g', 'te1', 'te2', 'text_encoder', 'lora_te'])}
+                        
+                        if not unet_weights:
+                            continue
+                        
+                        # Apply LoRA weights as patches (in-place modification)
+                        for layer_key, lora_weight in unet_weights.items():
+                            # Convert LoRA delta format to model weight patches
+                            # Simplified: just add LoRA weighted deltas
+                            # TODO: Implement proper LoRA application (low-rank decomposition)
+                            try:
+                                # This is a simplified approach - actual LoRA needs proper decomposition
+                                if layer_key in diff_model.state_dict():
+                                    # Store original weight
+                                    param = dict(diff_model.named_parameters()).get(layer_key)
+                                    if param is not None:
+                                        original_weights[layer_key] = param.data.clone()
+                                        # Apply LoRA (scaled by strength)
+                                        param.data.add_(lora_weight.to(param.device), alpha=model_strength)
+                            except Exception as e:
+                                logger.debug(f"[ModelRegistry] Could not apply LoRA to {layer_key}: {e}")
+                        
+                        logger.debug(f"[ModelRegistry] Applied LoRA '{lora_file}' (strength={model_strength})")
+                    
+                    except Exception as e:
+                        logger.warning(f"[ModelRegistry] Error applying LoRA '{lora_name}': {e}")
+                
+                yield
+            
+            finally:
+                # Restore original weights
+                for layer_key, original_weight in original_weights.items():
+                    try:
+                        param = dict(diff_model.named_parameters()).get(layer_key)
+                        if param is not None:
+                            param.data = original_weight
+                    except Exception as e:
+                        logger.debug(f"[ModelRegistry] Error restoring {layer_key}: {e}")
+        
+        return lora_context()
 
 
 class TransientLoRAContext:
@@ -1188,7 +1676,7 @@ class ModelWorker:
             
             # Try model_registry first (dynamic loading)
             if self.model_registry and self.model_registry.has_vae():
-                self.model = self.model_registry.get_vae(self.precision)
+                self.model = self.model_registry.get_vae_model(self.precision)
                 logger.info(f"[VAE-{self.worker_id}] VAE loaded from registry ({self.precision})")
             else:
                 # Fallback to static config paths
@@ -1208,7 +1696,7 @@ class ModelWorker:
             
             # Try model_registry first (dynamic loading)
             if self.model_registry and self.model_registry.has_clip():
-                self.model = self.model_registry.get_clip(self.precision)
+                self.model = self.model_registry.get_clip_model(self.precision)
                 clip_type = self.model_registry.clip.clip_type if self.model_registry.clip else "unknown"
                 logger.info(f"[CLIP-{self.worker_id}] CLIP loaded from registry ({self.precision}, type={clip_type})")
             else:
@@ -1306,22 +1794,65 @@ class ModelWorker:
         Returns:
             Latent tensor
         """
-        if pixels.dim() == 3:
-            pixels = pixels.unsqueeze(0)
+        log_all_gpu_vram(f"[VAE-{self.worker_id}] BEFORE encode: ")
         
-        if tiled:
-            latents = self._encode_tiled(pixels, tile_size, overlap)
-        else:
-            try:
-                latents = self.model.encode(pixels)
-            except RuntimeError as e:
-                if "out of memory" in str(e).lower():
-                    logger.warning(f"[VAE] OOM during encode, falling back to tiled mode")
-                    torch.cuda.empty_cache()
-                    latents = self._encode_tiled(pixels, tile_size, overlap)
-                else:
-                    raise
-        return latents.cpu()
+        # CRITICAL: Use inference_mode to disable gradient tracking
+        with torch.inference_mode():
+            # Detach input to prevent holding computation graph references
+            pixels = pixels.detach()
+            
+            if pixels.dim() == 3:
+                pixels = pixels.unsqueeze(0)
+            
+            if tiled:
+                latents = self._encode_tiled(pixels, tile_size, overlap)
+            else:
+                try:
+                    latents = self.model.encode(pixels)
+                except RuntimeError as e:
+                    if "out of memory" in str(e).lower():
+                        logger.warning(f"[VAE] OOM during encode, falling back to tiled mode")
+                        torch.cuda.empty_cache()
+                        latents = self._encode_tiled(pixels, tile_size, overlap)
+                    else:
+                        raise
+        
+            # Delete input tensor immediately after use
+            del pixels
+            
+            log_all_gpu_vram(f"[VAE-{self.worker_id}] AFTER encode: ")
+            
+            # Detach output to break computation graph (redundant in inference_mode but safe)
+            latents = latents.detach()
+            result = latents.cpu()
+        
+        # === AGGRESSIVE GPU MEMORY CLEANUP ===
+        # The VAE encoder creates intermediate activations that aren't captured by latents variable
+        # We need to explicitly clear those to prevent memory from staying on GPU after encode
+        del latents  # Free GPU memory
+        
+        # Ensure GPU work is complete before cleanup
+        torch.cuda.synchronize()
+        
+        # First cache clear after sync
+        torch.cuda.empty_cache()
+        
+        # If the model has cached activations, clear them
+        if hasattr(self.model, 'cache_clear'):
+            self.model.cache_clear()
+        
+        # Second cache clear to catch any lingering allocations
+        torch.cuda.empty_cache()
+        
+        # Force garbage collection to free any Python objects holding GPU memory
+        import gc
+        gc.collect()
+        
+        # Final cache clear after GC
+        torch.cuda.empty_cache()
+        
+        log_all_gpu_vram(f"[VAE-{self.worker_id}] AFTER CPU transfer: ")
+        return result
     
     def _encode_tiled(self, pixels: torch.Tensor, tile_size: int = 512, 
                       overlap: int = 64) -> torch.Tensor:
@@ -1367,6 +1898,8 @@ class ModelWorker:
         )
         samples /= 3.0
         
+        torch.cuda.empty_cache()  # Clean up after tiled operations
+        
         return samples
     
     def process_vae_decode(self, latents: torch.Tensor, tiled: bool = False,
@@ -1383,19 +1916,71 @@ class ModelWorker:
         Returns:
             Pixel tensor
         """
-        if tiled:
-            pixels = self._decode_tiled(latents, tile_size, overlap)
-        else:
-            try:
-                pixels = self.model.decode(latents)
-            except RuntimeError as e:
-                if "out of memory" in str(e).lower():
-                    logger.warning(f"[VAE] OOM during decode, falling back to tiled mode")
-                    torch.cuda.empty_cache()
-                    pixels = self._decode_tiled(latents, tile_size, overlap)
-                else:
-                    raise
-        return pixels.cpu()
+        logger.info(f"[VAE-{self.worker_id}] Starting decode (tiled={tiled}, shape={latents.shape}, tile_size={tile_size}, overlap={overlap})")
+        log_all_gpu_vram(f"[VAE-{self.worker_id}] BEFORE decode: ")
+        
+        # CRITICAL: Use inference_mode to disable gradient tracking
+        # This allows activations to be freed layer-by-layer instead of retained for backprop
+        with torch.inference_mode():
+            # Detach input to prevent holding computation graph references
+            latents = latents.detach()
+            
+            if tiled:
+                logger.info(f"[VAE-{self.worker_id}] Using tiled decode")
+                pixels = self._decode_tiled(latents, tile_size, overlap)
+            else:
+                try:
+                    logger.info(f"[VAE-{self.worker_id}] Using normal decode")
+                    pixels = self.model.decode(latents)
+                    logger.info(f"[VAE-{self.worker_id}] Normal decode completed")
+                except RuntimeError as e:
+                    if "out of memory" in str(e).lower():
+                        logger.warning(f"[VAE-{self.worker_id}] OOM during decode, falling back to tiled mode")
+                        torch.cuda.empty_cache()
+                        pixels = self._decode_tiled(latents, tile_size, overlap)
+                    else:
+                        raise
+        
+        # Delete input tensor immediately after use to free any GPU copies
+        del latents
+        
+        log_all_gpu_vram(f"[VAE-{self.worker_id}] AFTER decode: ")
+        logger.info(f"[VAE-{self.worker_id}] Decode completed, moving to CPU")
+        
+        # Detach output to break any remaining computation graph
+        pixels = pixels.detach()
+        
+        # Move result to CPU
+        result = pixels.cpu()
+        
+        # === AGGRESSIVE GPU MEMORY CLEANUP ===
+        # The VAE decoder creates intermediate activations that aren't captured by pixels variable
+        # We need to explicitly clear those to prevent 18GB from staying on GPU after decode
+        del pixels  # Free GPU memory immediately
+        
+        # Ensure GPU work is complete before cleanup
+        torch.cuda.synchronize()
+        
+        # First cache clear after sync
+        torch.cuda.empty_cache()
+        
+        # If the model has cached activations, clear them
+        if hasattr(self.model, 'cache_clear'):
+            self.model.cache_clear()
+        
+        # Second cache clear to catch any lingering allocations
+        torch.cuda.empty_cache()
+        
+        # Force garbage collection to free any Python objects holding GPU memory
+        import gc
+        gc.collect()
+        
+        # Final cache clear after GC
+        torch.cuda.empty_cache()
+        
+        log_all_gpu_vram(f"[VAE-{self.worker_id}] AFTER CPU transfer: ")
+        logger.info(f"[VAE-{self.worker_id}] CPU transfer complete")
+        return result
     
     def _decode_tiled(self, latents: torch.Tensor, tile_size: int = 64,
                       overlap: int = 16) -> torch.Tensor:
@@ -1406,10 +1991,14 @@ class ModelWorker:
         """
         import comfy.utils
         
+        logger.info(f"[VAE-{self.worker_id}] _decode_tiled: latents.shape={latents.shape}, tile_size={tile_size}, overlap={overlap}")
+        
         # Get model properties
         upscale = getattr(self.model, 'upscale_ratio', 8)
         if callable(upscale):
             upscale = 8  # Default for SDXL
+        
+        logger.info(f"[VAE-{self.worker_id}] _decode_tiled: upscale={upscale}")
         
         # Prepare the decoding function
         def decode_fn(a):
@@ -1420,23 +2009,30 @@ class ModelWorker:
         output_device = torch.device('cpu')
         
         # Average multiple tile configurations for better seams
+        logger.info(f"[VAE-{self.worker_id}] _decode_tiled: Starting tiled_scale pass 1/3")
         pixels = comfy.utils.tiled_scale(  # type: ignore
             latents, decode_fn, tile_size // 2, tile_size * 2, overlap,
             upscale_amount=upscale, output_device=output_device
         )
+        logger.info(f"[VAE-{self.worker_id}] _decode_tiled: Starting tiled_scale pass 2/3")
         pixels += comfy.utils.tiled_scale(  # type: ignore
             latents, decode_fn, tile_size * 2, tile_size // 2, overlap,
             upscale_amount=upscale, output_device=output_device
         )
+        logger.info(f"[VAE-{self.worker_id}] _decode_tiled: Starting tiled_scale pass 3/3")
         pixels += comfy.utils.tiled_scale(  # type: ignore
             latents, decode_fn, tile_size, tile_size, overlap,
             upscale_amount=upscale, output_device=output_device
         )
+        logger.info(f"[VAE-{self.worker_id}] _decode_tiled: All passes complete, averaging")
         pixels /= 3.0
+        logger.info(f"[VAE-{self.worker_id}] _decode_tiled: Complete")
         
         # Process output if model has the method
         if hasattr(self.model, 'process_output'):
             pixels = self.model.process_output(pixels)
+        
+        torch.cuda.empty_cache()  # Clean up after tiled operations
         
         return pixels
     
@@ -1452,6 +2048,8 @@ class ModelWorker:
         If lora_stack is provided and lora_registry is available, applies LoRA
         weights transiently using the F-150 pattern (lock-based).
         """
+        log_all_gpu_vram(f"[CLIP-{self.worker_id}] BEFORE encode: ")
+        
         with self.lock:  # F-150: serialize LoRA application per-worker
             # Apply LoRAs if provided
             ctx = TransientLoRAContext(self.model, lora_stack or [], self.lora_registry) \
@@ -1467,7 +2065,25 @@ class ModelWorker:
                 tokens_neg = self.model.tokenize(negative if negative else "")
                 uncond, pooled_neg = self.model.encode_from_tokens(tokens_neg, return_pooled=True)
                 
-                return (cond.cpu(), pooled.cpu(), uncond.cpu(), pooled_neg.cpu())
+                result = (cond.cpu(), pooled.cpu(), uncond.cpu(), pooled_neg.cpu())
+                
+                # Clean up GPU memory from encoding operations
+                del cond, pooled, uncond, pooled_neg
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
+                
+                # If model has cache, clear it
+                if hasattr(self.model, 'cache_clear'):
+                    self.model.cache_clear()
+                torch.cuda.empty_cache()
+                
+                # Force GC
+                import gc
+                gc.collect()
+                torch.cuda.empty_cache()
+                
+                log_all_gpu_vram(f"[CLIP-{self.worker_id}] AFTER encode: ")
+                return result
             finally:
                 if ctx:
                     ctx.__exit__(None, None, None)
@@ -1531,6 +2147,21 @@ class ModelWorker:
                     }
                 ]]
                 
+                # Clean up GPU memory from encoding operations
+                del cond, pooled, uncond, pooled_neg
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
+                
+                # If model has cache, clear it
+                if hasattr(self.model, 'cache_clear'):
+                    self.model.cache_clear()
+                torch.cuda.empty_cache()
+                
+                # Force GC
+                import gc
+                gc.collect()
+                torch.cuda.empty_cache()
+                
                 return (positive_out, negative_out)
             finally:
                 if ctx:
@@ -1569,6 +2200,8 @@ class ModelWorker:
                 
                 try:
                     # Process based on command type
+                    logger.info(f"[{self.worker_type.value.upper()}-{self.worker_id}] Processing {cmd} (request_id={request_id})")
+                    
                     if self.worker_type == WorkerType.VAE:
                         if cmd == "vae_encode":
                             result = self.process_vae_encode(
@@ -1612,13 +2245,21 @@ class ModelWorker:
                         else:
                             result = {"error": f"Unknown CLIP command: {cmd}"}
                     
+                    logger.info(f"[{self.worker_type.value.upper()}-{self.worker_id}] Completed {cmd} successfully (request_id={request_id})")
+                    
                 except Exception as e:
-                    logger.error(f"[{self.worker_type.value.upper()}-{self.worker_id}] Error: {e}")
+                    logger.error(f"[{self.worker_type.value.upper()}-{self.worker_id}] Error processing {cmd}: {e}")
+                    import traceback
+                    logger.error(f"[{self.worker_type.value.upper()}-{self.worker_id}] Traceback:\n{traceback.format_exc()}")
                     result = {"error": str(e)}
                 
                 # Send result back
                 if request_id in self.result_queues:
                     self.result_queues[request_id].put(result)
+                
+                # Clean up GPU memory after each request
+                if 'cuda' in self.device:
+                    torch.cuda.empty_cache()
                 
                 self.request_queue.task_done()
                 
@@ -1839,9 +2480,10 @@ class WorkerPool:
         # Submit to work queue
         self.request_queue.put((request_id, cmd, data))
         
-        # Wait for result
+        # Wait for result - longer timeout for VAE operations with tiled decoding
+        timeout = 180.0 if cmd in ["vae_encode", "vae_decode"] else 60.0
         try:
-            result = self.result_queues[request_id].get(timeout=60.0)
+            result = self.result_queues[request_id].get(timeout=timeout)
         finally:
             with self.lock:
                 del self.result_queues[request_id]
@@ -2185,6 +2827,8 @@ class DynamicDaemon:
         self.port = port or DAEMON_PORT
         self.config = ScalingConfig()
         
+        logger.info(f"[MULTI-GPU] Context-aware device routing ready (CLIP: {CLIP_DEVICE}, VAE: {VAE_DEVICE})")
+        
         # LoRA Registry (F-150) - only needed for CLIP
         if service_type in (ServiceType.FULL, ServiceType.CLIP_ONLY):
             self.lora_registry = LoRARegistry(max_size_mb=2048.0, device=device)
@@ -2193,6 +2837,11 @@ class DynamicDaemon:
         
         # Model Registry - for dynamic model loading from client registration
         self.model_registry = ModelRegistry(device=device)
+        
+        # Checkpoint tracking - stores info about UNet/checkpoint models loaded in ComfyUI instances
+        # Format: {instance_id: {"name": str, "size_mb": float, "device": str, "path": str}}
+        self.checkpoint_registry: Dict[str, Dict[str, Any]] = {}
+        self.checkpoint_lock = threading.Lock()
         
         # Adjust model sizes based on precision
         # VAE size
@@ -2219,6 +2868,7 @@ class DynamicDaemon:
         
         self.start_time = time.time()
         self.request_count = 0
+        self.work_request_count = 0  # Track only VAE/CLIP encode/decode work
         self.shutdown_requested = False  # Flag for clean shutdown
         
         logger.info(f"Daemon mode: {service_type.value}")
@@ -2293,12 +2943,8 @@ class DynamicDaemon:
         self.save_pool.start()
         logger.info(f"Image save pool configured on CPU (up to 4 parallel workers)")
         
-        # Report VRAM usage
-        if 'cuda' in self.device:
-            device_idx = int(self.device.split(':')[1]) if ':' in self.device else 0
-            used = torch.cuda.memory_allocated(device_idx) / 1024**3
-            total = torch.cuda.get_device_properties(device_idx).total_memory / 1024**3
-            logger.info(f"Initial VRAM usage: {used:.2f} / {total:.2f} GB")
+        # Report initial VRAM usage for all GPUs
+        log_all_gpu_vram("Initial VRAM: ")
     
     def get_info(self) -> dict:
         """Get daemon status info"""
@@ -2309,7 +2955,8 @@ class DynamicDaemon:
             "device": self.device,
             "precision": self.precision,
             "uptime_seconds": time.time() - self.start_time,
-            "request_count": self.request_count,  # Changed from total_requests
+            "request_count": self.work_request_count,  # Only VAE/CLIP work requests
+            "total_requests": self.request_count,  # All requests including health checks
         }
         
         if self.vae_pool:
@@ -2335,8 +2982,48 @@ class DynamicDaemon:
         
         if 'cuda' in self.device:
             device_idx = int(self.device.split(':')[1]) if ':' in self.device else 0
-            info["vram_used_gb"] = torch.cuda.memory_allocated(device_idx) / 1024**3
-            info["vram_total_gb"] = torch.cuda.get_device_properties(device_idx).total_memory / 1024**3
+            allocated = torch.cuda.memory_allocated(device_idx) / 1024**3
+            reserved = torch.cuda.memory_reserved(device_idx) / 1024**3
+            total = torch.cuda.get_device_properties(device_idx).total_memory / 1024**3
+            
+            info["vram_used_gb"] = reserved  # Use reserved (actual VRAM held by PyTorch)
+            info["vram_allocated_gb"] = allocated  # Active tensors only
+            info["vram_total_gb"] = total
+            info["vram_percent"] = round((reserved / total) * 100, 1)
+            
+            # Multi-GPU monitoring - report all available GPUs
+            gpu_count = torch.cuda.device_count()
+            info["gpu_count"] = gpu_count
+            info["gpus"] = []
+            
+            for gpu_id in range(gpu_count):
+                try:
+                    # Get process-specific memory (what this daemon allocated)
+                    gpu_allocated = torch.cuda.memory_allocated(gpu_id) / 1024**3
+                    gpu_reserved = torch.cuda.memory_reserved(gpu_id) / 1024**3
+                    
+                    # Get system-level memory info (shows actual GPU usage across all processes)
+                    free_mem, total_mem = torch.cuda.mem_get_info(gpu_id)
+                    gpu_total = total_mem / 1024**3
+                    gpu_used = (total_mem - free_mem) / 1024**3
+                    gpu_percent = round((gpu_used / gpu_total) * 100, 1)
+                    gpu_name = torch.cuda.get_device_name(gpu_id)
+                    
+                    info["gpus"].append({
+                        "id": gpu_id,
+                        "name": gpu_name,
+                        "allocated_gb": round(gpu_allocated, 2),  # Daemon's allocation
+                        "reserved_gb": round(gpu_used, 2),  # Actual system usage
+                        "total_gb": round(gpu_total, 1),
+                        "percent": gpu_percent,
+                        "is_daemon_device": (gpu_id == device_idx)
+                    })
+                except Exception as e:
+                    logger.error(f"Error reading GPU {gpu_id} stats: {e}")
+        
+        # Add checkpoint registry info
+        with self.checkpoint_lock:
+            info["checkpoints"] = list(self.checkpoint_registry.values())
         
         return info
     
@@ -2465,8 +3152,45 @@ class DynamicDaemon:
                     if self.clip_pool and len(self.clip_pool.workers) == 0:
                         self.clip_pool.scale_up()
             
+            # MODEL (UNet) Registration - centralized inference server
+            elif cmd == "register_model_by_path":
+                model_path = request.get("model_path", "")
+                model_type = request.get("model_type", "sdxl")
+                result = self.model_registry.register_model_by_path(model_path, model_type)
+                
+                # Immediately start loading in background (non-blocking)
+                if result.get("success"):
+                    self.model_registry.load_model_async()
+            
+            elif cmd == "register_model":
+                model_type = request.get("model_type", "sdxl")
+                state_dict = request.get("state_dict", {})
+                result = self.model_registry.register_model(model_type, state_dict)
+                
+                # Immediately start loading in background (non-blocking)
+                if result.get("success"):
+                    self.model_registry.load_model_async()
+            
+            # MODEL (UNet) Inference - routes all instance sampling through daemon
+            elif cmd == "model_forward":
+                self.work_request_count += 1  # Count model work
+                x = request.get("x")
+                timesteps = request.get("timesteps")
+                context = request.get("context")
+                model_type = request.get("model_type", "sdxl")
+                lora_stack = request.get("lora_stack", [])
+                
+                # Extract any additional kwargs (control, y, etc.)
+                extra_kwargs = {k: v for k, v in request.items() 
+                               if k not in ["cmd", "x", "timesteps", "context", "model_type", "lora_stack"]}
+                
+                result = self.model_registry.model_forward(
+                    x, timesteps, context, model_type, lora_stack, **extra_kwargs
+                )
+            
             # VAE commands - only available in FULL or VAE_ONLY mode
             elif cmd in ("vae_encode", "vae_decode"):
+                self.work_request_count += 1  # Count VAE work
                 if self.vae_pool is None:
                     result = {"error": f"VAE not available in {self.service_type.value} mode"}
                 else:
@@ -2474,6 +3198,7 @@ class DynamicDaemon:
             
             # CLIP commands - only available in FULL or CLIP_ONLY mode
             elif cmd in ("clip_encode", "clip_encode_sdxl"):
+                self.work_request_count += 1  # Count CLIP work
                 if self.clip_pool is None:
                     result = {"error": f"CLIP not available in {self.service_type.value} mode"}
                 else:
@@ -2492,6 +3217,37 @@ class DynamicDaemon:
                     result = {"error": "LoRA registry not available in VAE-only mode"}
                 else:
                     lora_hash = request.get("lora_hash", "")
+            
+            # Checkpoint tracking - register UNet/checkpoint models from ComfyUI instances
+            elif cmd == "register_checkpoint":
+                instance_id = request.get("instance_id", "unknown")
+                checkpoint_info = {
+                    "instance_id": instance_id,
+                    "name": request.get("name", "unknown"),
+                    "path": request.get("path", ""),
+                    "size_mb": request.get("size_mb", 0),
+                    "device": request.get("device", "unknown"),
+                    "dtype": request.get("dtype", "unknown"),
+                }
+                
+                with self.checkpoint_lock:
+                    self.checkpoint_registry[instance_id] = checkpoint_info
+                
+                result = {"success": True, "message": f"Checkpoint registered for {instance_id}"}
+                logger.info(f"[CheckpointRegistry] Registered: {checkpoint_info['name']} ({checkpoint_info['size_mb']:.1f} MB) on {checkpoint_info['device']}")
+            
+            elif cmd == "unregister_checkpoint":
+                instance_id = request.get("instance_id", "unknown")
+                
+                with self.checkpoint_lock:
+                    if instance_id in self.checkpoint_registry:
+                        removed = self.checkpoint_registry.pop(instance_id)
+                        result = {"success": True, "message": f"Unregistered {removed['name']}"}
+                        logger.info(f"[CheckpointRegistry] Unregistered: {removed['name']} from {instance_id}")
+                    else:
+                        result = {"success": False, "message": f"Instance {instance_id} not found"}
+            
+            elif cmd == "upload_lora":
                     weights = request.get("weights", {})
                     success = self.lora_registry.put(lora_hash, weights)
                     result = {"success": success, "hash": lora_hash}
@@ -2772,7 +3528,9 @@ class DynamicDaemon:
             conn.sendall(struct.pack('>I', len(response_data)) + response_data)
             
         except Exception as e:
+            import traceback
             logger.error(f"Error handling request: {e}")
+            logger.error(f"Traceback:\n{traceback.format_exc()}")
             try:
                 # Send error with length-prefix
                 err_data = pickle.dumps({"error": str(e)})

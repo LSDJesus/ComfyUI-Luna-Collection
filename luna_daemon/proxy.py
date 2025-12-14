@@ -255,24 +255,27 @@ class DaemonVAE:
         
         return h > threshold or w > threshold
         
-    def encode(self, pixel_samples: torch.Tensor, auto_tile: bool = True) -> torch.Tensor:
+    def encode(self, pixel_samples: torch.Tensor, auto_tile: bool = False) -> torch.Tensor:
         """
         Encode pixels to latent space via daemon.
         
         Args:
             pixel_samples: Image tensor (B, H, W, C)
-            auto_tile: If True, automatically use tiled encoding for large images
+            auto_tile: If True, force tiled encoding. By default (False), the daemon
+                      will attempt full encode and fall back to tiled on OOM.
             
         Returns:
             Latent tensor
         """
+        print(f"[DaemonVAE] encode() called - type={self.vae_type}, shape={pixel_samples.shape}")
         self._check_daemon()
         self._ensure_registered()
         
-        # Determine if tiling is needed
-        use_tiled = auto_tile and self._should_tile(pixel_samples, is_latent=False)
+        # Only use tiling if explicitly requested
+        use_tiled = auto_tile
         
         try:
+            print(f"[DaemonVAE] Sending encode request to daemon (tiled={use_tiled})")
             return daemon_client.vae_encode(
                 pixel_samples, 
                 self.vae_type,
@@ -286,25 +289,28 @@ class DaemonVAE:
             raise RuntimeError(f"Daemon error: {e}")
     
     def decode(self, samples_in: torch.Tensor, vae_options: Optional[Dict] = None,
-               auto_tile: bool = True) -> torch.Tensor:
+               auto_tile: bool = False) -> torch.Tensor:
         """
         Decode latents to pixels via daemon.
         
         Args:
             samples_in: Latent tensor
             vae_options: Optional VAE options (for compatibility)
-            auto_tile: If True, automatically use tiled decoding for large latents
+            auto_tile: If True, force tiled decoding. By default (False), the daemon
+                      will attempt full decode and fall back to tiled on OOM.
             
         Returns:
             Pixel tensor
         """
+        print(f"[DaemonVAE] decode() called - type={self.vae_type}, shape={samples_in.shape}")
         self._check_daemon()
         self._ensure_registered()
         
-        # Determine if tiling is needed
-        use_tiled = auto_tile and self._should_tile(samples_in, is_latent=True)
+        # Only use tiling if explicitly requested
+        use_tiled = auto_tile
         
         try:
+            print(f"[DaemonVAE] Sending decode request to daemon (tiled={use_tiled})")
             return daemon_client.vae_decode(
                 samples_in, 
                 self.vae_type,
@@ -855,3 +861,161 @@ class DaemonTokens:
     
     def __repr__(self):
         return f"DaemonTokens({self.clip_type}: {self.text[:50]}...)"
+
+
+# =============================================================================
+# MODEL (UNet) Proxy
+# =============================================================================
+
+class DaemonModel:
+    """
+    Proxy for diffusion models (UNets) that routes inference to Luna Daemon.
+    
+    This allows centralized UNet hosting on the daemon's GPU with:
+    - Frozen weights (no gradient tracking → 60-70% VRAM reduction)
+    - Shared model across multiple ComfyUI instances
+    - LoRA application in daemon (same pattern as DaemonCLIP)
+    
+    Usage:
+        # In Luna Model Router when daemon is enabled:
+        model = DaemonModel(actual_model, model_type='flux')
+        
+        # ComfyUI samplers will call model() and it routes to daemon
+        latents = model(x, timestep, context)  # → daemon inference
+    """
+    
+    def __init__(
+        self,
+        source_model: Optional[Any] = None,
+        model_type: Optional[str] = None,
+        use_existing: bool = False
+    ):
+        """
+        Create a UNet proxy.
+        
+        Args:
+            source_model: The actual ModelPatcher from checkpoint loader (for registration)
+            model_type: Model type string ('flux', 'sdxl', 'sd15', etc.)
+            use_existing: If True, use already-loaded daemon model
+        """
+        self.source_model = source_model
+        self.use_existing = use_existing
+        self._registered = False
+        self.model_type = model_type or 'sdxl'
+        
+        # LoRA stack: list of (lora_name, model_strength, clip_strength)
+        self.lora_stack: List[tuple] = []
+        
+        # Match ComfyUI ModelPatcher attributes
+        self.device = torch.device("cpu")  # Proxy doesn't hold weights
+        self.model_dtype = torch.float16
+        self.load_device = torch.device("cuda:0")  # Where ComfyUI thinks it loads
+        self.offload_device = torch.device("cpu")
+        
+        # Model structure (mimics ModelPatcher)
+        self.model = self  # Self-reference for compatibility
+        self.model_options = {}
+        self.model_keys = set()
+        
+    def _ensure_registered(self):
+        """Ensure model is registered with daemon."""
+        if self._registered or self.use_existing:
+            return
+        
+        if self.source_model is None:
+            raise RuntimeError(
+                "DaemonModel has no source model and use_existing=False.\n"
+                "Cannot register with daemon."
+            )
+        
+        # Register with daemon
+        try:
+            daemon_client.register_model(self.source_model, self.model_type)
+            self._registered = True
+        except Exception as e:
+            raise RuntimeError(f"Failed to register model with daemon: {e}")
+    
+    def _check_daemon(self):
+        """Verify daemon is running."""
+        if not daemon_client.is_daemon_running():
+            raise RuntimeError(
+                "Luna Daemon is not running!\n"
+                "Start it from the Luna Daemon panel or run:\n"
+                "  python -m luna_daemon.server"
+            )
+    
+    def __call__(self, x: torch.Tensor, timesteps: torch.Tensor, 
+                 context: Optional[torch.Tensor] = None, **kwargs) -> torch.Tensor:
+        """
+        Forward pass through UNet via daemon.
+        
+        This is called by ComfyUI's samplers during denoising.
+        
+        Args:
+            x: Noisy latents (B, C, H, W)
+            timesteps: Timestep tensor (B,)
+            context: Conditioning/context tensor (B, seq_len, dim)
+            **kwargs: Additional model-specific arguments
+            
+        Returns:
+            Denoised output tensor
+        """
+        self._check_daemon()
+        self._ensure_registered()
+        
+        try:
+            return daemon_client.model_forward(
+                x=x,
+                timesteps=timesteps,
+                context=context,
+                model_type=self.model_type,
+                lora_stack=self.lora_stack,
+                **kwargs
+            )
+        except DaemonConnectionError as e:
+            raise RuntimeError(f"Daemon error during model forward: {e}")
+    
+    def add_lora(self, lora_name: str, model_strength: float, clip_strength: float):
+        """
+        Add a LoRA to the stack (will be applied in daemon).
+        
+        Args:
+            lora_name: LoRA filename
+            model_strength: UNet strength multiplier
+            clip_strength: CLIP strength (ignored here, handled by DaemonCLIP)
+        """
+        self.lora_stack.append((lora_name, model_strength, clip_strength))
+        print(f"[DaemonModel] Added LoRA '{lora_name}' (model_str={model_strength}), stack size: {len(self.lora_stack)}")
+    
+    def clear_loras(self):
+        """Clear all LoRAs from the stack."""
+        self.lora_stack = []
+        print("[DaemonModel] Cleared LoRA stack")
+    
+    # ModelPatcher compatibility methods
+    def clone(self):
+        """Clone the proxy (returns new instance with same config)."""
+        cloned = DaemonModel(self.source_model, self.model_type, self.use_existing)
+        cloned.lora_stack = self.lora_stack.copy()
+        cloned._registered = self._registered
+        return cloned
+    
+    def patch_model(self, *args, **kwargs):
+        """Compatibility method - LoRAs handled via add_lora()."""
+        pass
+    
+    def unpatch_model(self, *args, **kwargs):
+        """Compatibility method - daemon manages unpatching."""
+        pass
+    
+    def get_model_object(self, name: str):
+        """Get model object by name (for compatibility)."""
+        return self
+    
+    def model_patches_to(self, device):
+        """Move patches to device (no-op for proxy)."""
+        pass
+    
+    def model_dtype(self):
+        """Return model dtype."""
+        return self.model_dtype

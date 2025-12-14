@@ -19,23 +19,27 @@ if utils_path not in sys.path:
 LunaPerformanceMonitor = None
 try:
     from pathlib import Path
+    # Go up two levels from nodes/upscaling/ to reach project root
     root_dir = str(Path(__file__).parent.parent.parent)
-    if root_dir not in sys.path:
-        sys.path.insert(0, root_dir)
-    from utils.luna_performance_monitor import LunaPerformanceMonitor
+    utils_dir = os.path.join(root_dir, 'utils')
+    if utils_dir not in sys.path:
+        sys.path.insert(0, utils_dir)
+    from luna_performance_monitor import LunaPerformanceMonitor
 except ImportError:
-    print("Luna Ultimate SD Upscale: Performance monitoring not available")
+    pass  # Performance monitoring is optional
 
 # Import TensorRT Engine
 Engine = None
 try:
     from pathlib import Path
+    # Go up two levels from nodes/upscaling/ to reach project root
     root_dir = str(Path(__file__).parent.parent.parent)
-    if root_dir not in sys.path:
-        sys.path.insert(0, root_dir)
-    from utils.trt_engine import Engine
+    utils_dir = os.path.join(root_dir, 'utils')
+    if utils_dir not in sys.path:
+        sys.path.insert(0, utils_dir)
+    from trt_engine import Engine
 except ImportError:
-    print("Luna Ultimate SD Upscale: TensorRT Engine not available. Please ensure trt_engine.py is properly installed.")
+    pass  # TensorRT is optional (you're using WaveSpeed instead)
 
 # Global instances for TensorRT engines
 TENSORRT_UPSCALE_ENGINE = None

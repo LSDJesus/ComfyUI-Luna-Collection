@@ -190,8 +190,9 @@ try:
     import sys
     from pathlib import Path
     
-    # Import package root from parent package
-    from ... import PACKAGE_ROOT
+    # Get package root by navigating from this file
+    # nodes/loaders/luna_model_router.py -> nodes -> ComfyUI-Luna-Collection
+    PACKAGE_ROOT = Path(__file__).resolve().parents[2]
     print(f"[Luna.ModelRouter] Repository root: {PACKAGE_ROOT}")
     
     if str(PACKAGE_ROOT) not in sys.path:
@@ -657,6 +658,20 @@ class LunaModelRouter:
             )
             precision_str = f" → {dynamic_precision}" if dynamic_precision != "None" else ""
             status_parts.append(f"MODEL: {model_source}/{os.path.basename(model_name)}{precision_str}")
+            
+            # Clean up any cached tensors from model loading
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            
+            # Register checkpoint with daemon for tracking (if daemon is running)
+            if daemon_running and use_daemon:
+                self._register_checkpoint_with_daemon(
+                    output_model, model_name, dynamic_precision
+                )
+                
+                # WRAP in DaemonModel proxy for centralized inference
+                output_model = self._wrap_model_as_daemon_proxy(output_model, model_type, model_name)
         else:
             status_parts.append("MODEL: None (no model selected)")
         
@@ -939,14 +954,26 @@ class LunaModelRouter:
                     f"Dynamic precision conversion requires conversion utilities: {e}\n"
                     "Set precision to 'None' to load without conversion."
                 )
+            finally:
+                # Clean up VRAM after conversion
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
         else:
             print(f"[LunaModelRouter] Using cached: {cache_path}")
         
         # Load converted model
         if is_gguf:
-            return self._load_gguf_model(cache_path)
+            model = self._load_gguf_model(cache_path)
         else:
-            return comfy.sd.load_unet(cache_path)
+            model = comfy.sd.load_unet(cache_path)
+        
+        # Clean up after loading
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        
+        return model
     
     def _load_gguf_model(self, path: str) -> Any:
         """Load GGUF model file directly from path.
@@ -1026,10 +1053,12 @@ class LunaModelRouter:
             try:
                 # Register CLIP by path (daemon loads from disk)
                 # Send dictionary of components for granular reuse
-                result = daemon_client.register_clip_by_path(list(clip_components.values()) if isinstance(clip_components, dict) else clip_components, model_type, clip_type_str)  # type: ignore
+                print(f"[LunaModelRouter] Registering CLIP with daemon: {clip_components}")
+                result = daemon_client.register_clip_by_path(clip_components, model_type, clip_type_str)  # type: ignore
+                print(f"[LunaModelRouter] Registration result: {result}")
                 
                 if result.get("success"):
-                    print(f"[LunaModelRouter] Registered CLIP with daemon: {model_type} -> {clip_type_str}")
+                    print(f"[LunaModelRouter] ✓ Registered CLIP with daemon: {model_type} -> {clip_type_str}")
                     # Return DaemonCLIP proxy (no source_clip needed - daemon loads from path)
                     daemon_clip_type = {
                         "SD1.5": "sd15",
@@ -1041,9 +1070,9 @@ class LunaModelRouter:
                     }.get(model_type, "sdxl")
                     return DaemonCLIP(source_clip=None, clip_type=daemon_clip_type, use_existing=True)
                 else:
-                    print(f"[LunaModelRouter] Daemon CLIP registration failed: {result.get('error')}")
+                    print(f"[LunaModelRouter] ✗ Daemon CLIP registration failed: {result.get('error')}")
             except Exception as e:
-                print(f"[LunaModelRouter] Daemon CLIP failed, using local: {e}")
+                print(f"[LunaModelRouter] ✗ Daemon CLIP exception, using local: {e}")
         
         # Load locally as fallback
         clip_type_map = {
@@ -1360,16 +1389,18 @@ class LunaModelRouter:
             try:
                 # Register VAE by path (daemon loads from disk)
                 vae_type = self._detect_vae_type_from_path(vae_path)
+                print(f"[LunaModelRouter] Registering VAE with daemon: {vae_path} (type={vae_type})")
                 result = daemon_client.register_vae_by_path(vae_path, vae_type)
+                print(f"[LunaModelRouter] Registration result: {result}")
                 
                 if result.get("success"):
-                    print(f"[LunaModelRouter] Registered VAE with daemon: {vae_type}")
+                    print(f"[LunaModelRouter] ✓ Registered VAE with daemon: {vae_type}")
                     # Return DaemonVAE proxy (no source_vae needed - daemon loads from path)
                     return DaemonVAE(source_vae=None, vae_type=vae_type, use_existing=True)
                 else:
-                    print(f"[LunaModelRouter] Daemon VAE registration failed: {result.get('error')}")
+                    print(f"[LunaModelRouter] ✗ Daemon VAE registration failed: {result.get('error')}")
             except Exception as e:
-                print(f"[LunaModelRouter] Daemon VAE failed, using local: {e}")
+                print(f"[LunaModelRouter] ✗ Daemon VAE exception, using local: {e}")
         
         # Load VAE locally as fallback
         try:
@@ -1405,6 +1436,115 @@ class LunaModelRouter:
         else:
             # Default to SDXL (most common)
             return "sdxl"
+    
+    def _register_checkpoint_with_daemon(self, model: Any, model_name: str, precision: str) -> None:
+        """Register checkpoint with daemon for tracking across instances."""
+        try:
+            from server import PromptServer
+            from luna_daemon import client as daemon_client
+            import torch
+            
+            # Generate instance ID from server port
+            port = getattr(PromptServer.instance, 'port', 8188)
+            instance_id = f"comfyui:{port}"
+            
+            # Get model size - use estimated size instead of state_dict to avoid VRAM spike
+            size_mb = 0
+            if hasattr(model, 'model'):
+                # Try to get size from model parameters without creating state_dict copy
+                try:
+                    for param in model.model.parameters():
+                        if hasattr(param, 'numel') and hasattr(param, 'element_size'):
+                            size_mb += param.numel() * param.element_size()
+                    size_mb = size_mb / (1024 * 1024)  # Convert to MB
+                except:
+                    # Fallback: estimate from file size or use default
+                    size_mb = 2500  # Default estimate
+            
+            # Get device
+            device = "cuda:0"  # Default
+            if hasattr(model, 'load_device'):
+                device = str(model.load_device)
+            elif hasattr(model, 'model') and hasattr(model.model, 'device'):
+                device = str(model.model.device)
+            
+            # Determine dtype
+            dtype = precision if precision != "None" else "unknown"
+            if hasattr(model, 'model') and hasattr(model.model, 'dtype'):
+                dtype_obj = model.model.dtype
+                if dtype == "None" or dtype == "unknown":
+                    dtype = str(dtype_obj).replace("torch.", "")
+            
+            # Register with daemon
+            result = daemon_client.register_checkpoint(
+                instance_id=instance_id,
+                name=os.path.basename(model_name),
+                path=model_name,
+                size_mb=round(size_mb, 1),
+                device=device,
+                dtype=dtype
+            )
+            
+            if result.get('success'):
+                print(f"[LunaModelRouter] ✓ Registered checkpoint with daemon: {os.path.basename(model_name)} ({size_mb:.1f} MB) on {device}")
+            else:
+                print(f"[LunaModelRouter] ✗ Checkpoint registration failed: {result.get('message', 'unknown error')}")
+            
+        except ImportError as e:
+            print(f"[LunaModelRouter] Cannot register checkpoint - daemon client not available: {e}")
+        except Exception as e:
+            import traceback
+            print(f"[LunaModelRouter] ✗ Error registering checkpoint with daemon: {e}")
+            print(traceback.format_exc())
+    
+    def _wrap_model_as_daemon_proxy(self, model: Any, model_type: str, model_path: str) -> Any:
+        """
+        Wrap loaded model as DaemonModel proxy for centralized inference.
+        
+        This replaces the actual model object with a proxy that routes
+        all inference calls through the Luna Daemon, enabling:
+        - Frozen weights (eval + requires_grad=False) → 60-70% VRAM reduction
+        - Shared model across multiple ComfyUI instances
+        - Transient LoRA application per-request
+        
+        Args:
+            model: The loaded ModelPatcher object
+            model_type: Model type string (flux, sdxl, etc.)
+            model_path: Path to the model file
+        
+        Returns:
+            DaemonModel proxy object
+        """
+        try:
+            from luna_daemon.proxy import DaemonModel
+            from luna_daemon import client as daemon_client
+            
+            # Determine Luna model type
+            luna_model_type = model_type.replace(" + Vision", "").lower()  # "SDXL" → "sdxl"
+            
+            # Create proxy
+            proxy = DaemonModel(source_model=model, model_type=luna_model_type)
+            
+            # Register model with daemon by path (avoids socket serialization)
+            result = daemon_client.register_model_by_path(model_path, luna_model_type)
+            
+            if result.get('success'):
+                print(f"[LunaModelRouter] ✓ Model registered with daemon: {luna_model_type} ({result.get('size_mb', 0):.1f} MB)")
+                print(f"[LunaModelRouter] ✓ Using DaemonModel proxy - inference routes through daemon")
+                return proxy
+            else:
+                print(f"[LunaModelRouter] ⚠ Model registration with daemon failed: {result.get('message')}, falling back to local")
+                return model
+        
+        except ImportError:
+            print(f"[LunaModelRouter] ⚠ DaemonModel not available, using local model")
+            return model
+        except Exception as e:
+            import traceback
+            print(f"[LunaModelRouter] ⚠ Error creating DaemonModel proxy: {e}")
+            print(traceback.format_exc())
+            return model
+
 
 
 # =============================================================================

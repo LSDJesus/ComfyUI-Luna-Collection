@@ -135,17 +135,24 @@ class LunaConfigGateway:
         """
         Load and apply LoRAs to model and clip.
         
-        For standard CLIP: Uses comfy.sd.load_lora_for_models (socket serialization)
-        For DaemonCLIP: Uses add_lora_by_name (daemon loads from disk directly)
+        Architecture:
+        - DaemonCLIP: Uses add_lora_by_name (daemon loads from disk)
+        - DaemonModel: Uses add_lora (daemon applies transiently per-request)
+        - Standard local: Uses comfy.sd.load_lora_for_models
+        
+        This centralizes LoRA loading with intelligent routing based on proxy type.
         """
         if not lora_stack:
             return model, clip
         
-        # Check if using DaemonCLIP (Luna Daemon handles CLIP)
+        # Detect proxy types
         use_daemon_clip = is_daemon_clip(clip)
+        use_daemon_model = type(model).__name__ == "DaemonModel"
         
         if use_daemon_clip:
-            print("[LunaConfigGateway] DaemonCLIP detected - using disk-based LoRA loading")
+            print("[LunaConfigGateway] DaemonCLIP detected - CLIP LoRAs via daemon")
+        if use_daemon_model:
+            print("[LunaConfigGateway] DaemonModel detected - UNet LoRAs via daemon")
         
         for lora_name, model_weight, clip_weight in lora_stack:
             lora_file = self.find_lora_file(lora_name)
@@ -154,13 +161,18 @@ class LunaConfigGateway:
                 continue
             
             try:
+                # CLIP LoRA handling
                 if use_daemon_clip:
-                    # DaemonCLIP: Tell daemon to load LoRA from disk
-                    # The daemon extracts CLIP weights and caches them
                     clip = clip.add_lora_by_name(lora_file, model_weight, clip_weight)
-                    
-                    # For model, still need to load UNet weights directly
-                    # (DaemonCLIP only handles CLIP, model is local)
+                
+                # UNet LoRA handling
+                if use_daemon_model:
+                    # DaemonModel: Add to proxy's stack (applied transiently in daemon)
+                    model.add_lora(lora_file, model_weight, clip_weight)
+                    print(f"[LunaConfigGateway] LoRA '{lora_file}' → daemon (model={model_weight}, clip={clip_weight})")
+                
+                elif use_daemon_clip:
+                    # DaemonCLIP but local model: Load UNet weights only
                     lora_path = folder_paths.get_full_path("loras", lora_file)
                     lora_data = comfy.utils.load_torch_file(lora_path)  # type: ignore
                     # Filter to only UNet/model weights (not CLIP)
@@ -171,9 +183,10 @@ class LunaConfigGateway:
                         model, _ = comfy.sd.load_lora_for_models(  # type: ignore
                             model, None, model_weights, model_weight, 0.0
                         )
-                    print(f"[LunaConfigGateway] LoRA '{lora_file}' - CLIP via daemon, UNet applied locally")
+                    print(f"[LunaConfigGateway] LoRA '{lora_file}' - CLIP via daemon, UNet local")
+                
                 else:
-                    # Standard CLIP: Load normally
+                    # Standard local: Load both CLIP and UNet
                     lora_path = folder_paths.get_full_path("loras", lora_file)
                     lora = comfy.sd.load_lora_for_models(  # type: ignore
                         model, clip, comfy.utils.load_torch_file(lora_path),  # type: ignore 

@@ -57,6 +57,14 @@ class DaemonClient:
         self._ipc_enabled = False
         self._daemon_gpu_id: Optional[int] = None
         self._local_gpu_id: Optional[int] = None
+        
+        # Automatically attempt IPC negotiation if enabled
+        # This enables zero-copy CUDA shared memory for same-GPU VAE operations
+        if ENABLE_CUDA_IPC:
+            try:
+                self.negotiate_ipc()
+            except:
+                pass  # Daemon might not be running yet, will work lazily
     
     def _send_request(self, request: dict) -> Any:
         """Send request to daemon with Length-Prefix Protocol (Optimized)"""
@@ -145,14 +153,15 @@ class DaemonClient:
                 
                 result = pickle.loads(response_data)
                 is_ok = result.get("status") == "ok"
-                if is_ok:
-                    print(f"[Luna.DaemonClient] ✓ Daemon health check passed on attempt {attempt + 1}")
+                # Only log on first successful connection after being down, not every check
+                # This prevents spam from the 1-second panel refresh
                 return is_ok
             except Exception as e:
                 if attempt < 2:
                     time.sleep(0.1)  # Small delay before retry
                 elif attempt == 2:
-                    print(f"[Luna.DaemonClient] ✗ Health check failed after {attempt + 1} attempts connecting to {self.host}:{self.port}: {type(e).__name__}: {e}")
+                    # Only log failures on final attempt
+                    pass  # Silently fail - caller can handle it
         
         return False
     
@@ -204,6 +213,41 @@ class DaemonClient:
     def shutdown(self) -> dict:
         """Shutdown the daemon server"""
         return self._send_request({"cmd": "shutdown"})
+    
+    def register_checkpoint(self, instance_id: str, name: str, path: str, 
+                           size_mb: float, device: str, dtype: str) -> dict:
+        """
+        Register a checkpoint/UNet model with the daemon for tracking.
+        
+        The daemon doesn't load the model, just tracks it for monitoring purposes.
+        
+        Args:
+            instance_id: Unique identifier for this ComfyUI instance (e.g., "comfyui:8188")
+            name: Model name
+            path: Path to the checkpoint file
+            size_mb: Size in MB
+            device: Device where model is loaded (e.g., "cuda:0")
+            dtype: Data type (e.g., "fp16", "fp8_e4m3fn")
+        
+        Returns:
+            Dict with registration status
+        """
+        return self._send_request({
+            "cmd": "register_checkpoint",
+            "instance_id": instance_id,
+            "name": name,
+            "path": path,
+            "size_mb": size_mb,
+            "device": device,
+            "dtype": dtype
+        })
+    
+    def unregister_checkpoint(self, instance_id: str) -> dict:
+        """Unregister a checkpoint from tracking"""
+        return self._send_request({
+            "cmd": "unregister_checkpoint",
+            "instance_id": instance_id
+        })
     
     # =========================================================================
     # Model Registration (new component-based API)
@@ -350,14 +394,21 @@ class DaemonClient:
             # IPC mode doesn't support tiling yet - fallback to regular
             return self._vae_encode_ipc(pixels, vae_type)
         
-        return self._send_request({
+        # CRITICAL: Detach and move to CPU, then delete GPU version to prevent memory leak
+        pixels_cpu = pixels.detach().cpu()
+        
+        result = self._send_request({
             "cmd": "vae_encode",
-            "pixels": pixels.cpu(),
+            "pixels": pixels_cpu,
             "vae_type": vae_type,
             "tiled": tiled,
             "tile_size": tile_size,
             "overlap": overlap
         })
+        
+        # Explicitly delete CPU copy after sending
+        del pixels_cpu
+        return result
     
     def _vae_encode_ipc(self, pixels: torch.Tensor, vae_type: str) -> torch.Tensor:
         """VAE encode using CUDA IPC (zero-copy for same-GPU)."""
@@ -399,14 +450,22 @@ class DaemonClient:
             # IPC mode doesn't support tiling yet - fallback to regular
             return self._vae_decode_ipc(latents, vae_type)
         
-        return self._send_request({
+        # CRITICAL: Detach and move to CPU, then delete GPU version to prevent memory leak
+        # The daemon will create its own GPU copy, so keeping the original serves no purpose
+        latents_cpu = latents.detach().cpu()
+        
+        result = self._send_request({
             "cmd": "vae_decode",
-            "latents": latents.cpu(),
+            "latents": latents_cpu,
             "vae_type": vae_type,
             "tiled": tiled,
             "tile_size": tile_size,
             "overlap": overlap
         })
+        
+        # Explicitly delete CPU copy after sending to free memory
+        del latents_cpu
+        return result
     
     def _vae_decode_ipc(self, latents: torch.Tensor, vae_type: str) -> torch.Tensor:
         """VAE decode using CUDA IPC (zero-copy for same-GPU)."""
@@ -702,6 +761,111 @@ class DaemonClient:
         request = {"cmd": cmd, **data}
         result = self._send_request(request)
         return result if isinstance(result, dict) else {"error": str(result)}
+    
+    # =========================================================================
+    # MODEL (UNet) Operations
+    # =========================================================================
+    
+    def register_model(self, model: Any, model_type: str) -> dict:
+        """
+        Register a diffusion model (UNet) with the daemon.
+        
+        The daemon will extract and freeze the model weights for shared inference.
+        Model is set to eval mode with requires_grad=False for VRAM optimization.
+        
+        Args:
+            model: The ModelPatcher object from checkpoint loader
+            model_type: Type string ('flux', 'sdxl', 'sd15', etc.)
+        
+        Returns:
+            Dict with registration status
+        """
+        # Extract model state dict
+        try:
+            if hasattr(model, 'model') and hasattr(model.model, 'diffusion_model'):
+                state_dict = model.model.diffusion_model.state_dict()
+            elif hasattr(model, 'state_dict'):
+                state_dict = model.state_dict()
+            else:
+                raise ValueError("Cannot extract model state dict")
+        except Exception as e:
+            raise DaemonConnectionError(f"Failed to extract model state dict: {e}")
+        
+        # Move to CPU for transport
+        cpu_state_dict = {k: v.cpu() for k, v in state_dict.items()}
+        
+        return self._send_request({
+            "cmd": "register_model",
+            "model_type": model_type,
+            "state_dict": cpu_state_dict
+        })
+    
+    def register_model_by_path(self, model_path: str, model_type: str) -> dict:
+        """
+        Register a model by path for daemon disk loading (preferred method).
+        
+        The daemon loads the model from disk directly, avoiding socket
+        serialization overhead. Model is frozen (eval + requires_grad=False).
+        
+        Args:
+            model_path: Full path to checkpoint/unet file
+            model_type: Type string ('flux', 'sdxl', 'sd15', etc.)
+        
+        Returns:
+            Dict with registration status
+        """
+        return self._send_request({
+            "cmd": "register_model_by_path",
+            "model_path": model_path,
+            "model_type": model_type
+        })
+    
+    def model_forward(self, x: torch.Tensor, timesteps: torch.Tensor,
+                     context: Optional[torch.Tensor] = None,
+                     model_type: str = 'sdxl',
+                     lora_stack: Optional[List[tuple]] = None,
+                     **kwargs) -> torch.Tensor:
+        """
+        Execute UNet forward pass through daemon.
+        
+        This is the main inference call used by samplers during denoising.
+        
+        Args:
+            x: Noisy latents (B, C, H, W)
+            timesteps: Timestep tensor (B,)
+            context: Conditioning/context tensor (B, seq_len, dim)
+            model_type: Model type string
+            lora_stack: Optional list of (lora_name, model_str, clip_str) tuples
+            **kwargs: Additional model-specific arguments
+        
+        Returns:
+            Denoised output tensor
+        """
+        # Move tensors to CPU for transport (daemon will move to its GPU)
+        x_cpu = x.detach().cpu()
+        timesteps_cpu = timesteps.detach().cpu()
+        context_cpu = context.detach().cpu() if context is not None else None
+        
+        request = {
+            "cmd": "model_forward",
+            "x": x_cpu,
+            "timesteps": timesteps_cpu,
+            "context": context_cpu,
+            "model_type": model_type
+        }
+        
+        if lora_stack:
+            request["lora_stack"] = lora_stack
+        
+        # Add any extra kwargs (control, y, etc.)
+        request.update(kwargs)
+        
+        result = self._send_request(request)
+        
+        # Move result back to original device
+        if isinstance(result, torch.Tensor):
+            return result.to(x.device)
+        return result
 
 
 # =============================================================================
@@ -773,6 +937,17 @@ def start_daemon() -> bool:
 def get_daemon_info() -> dict:
     """Get daemon info including loaded models"""
     return get_client().get_info()
+
+
+def register_checkpoint(instance_id: str, name: str, path: str,
+                       size_mb: float, device: str, dtype: str) -> dict:
+    """Register a checkpoint/UNet model with daemon for tracking"""
+    return get_client().register_checkpoint(instance_id, name, path, size_mb, device, dtype)
+
+
+def unregister_checkpoint(instance_id: str) -> dict:
+    """Unregister a checkpoint from daemon tracking"""
+    return get_client().unregister_checkpoint(instance_id)
 
 
 def unload_daemon_models() -> dict:
@@ -876,6 +1051,29 @@ def get_lora_stats() -> dict:
 def clear_lora_cache() -> dict:
     """Clear LoRA cache"""
     return get_client().clear_lora_cache()
+
+
+# =============================================================================
+# MODEL (UNet) Operations
+# =============================================================================
+
+def register_model(model: Any, model_type: str) -> dict:
+    """Register a diffusion model with the daemon"""
+    return get_client().register_model(model, model_type)
+
+
+def register_model_by_path(model_path: str, model_type: str) -> dict:
+    """Register a model by path (preferred - avoids socket serialization)"""
+    return get_client().register_model_by_path(model_path, model_type)
+
+
+def model_forward(x: torch.Tensor, timesteps: torch.Tensor,
+                 context: Optional[torch.Tensor] = None,
+                 model_type: str = 'sdxl',
+                 lora_stack: Optional[List[tuple]] = None,
+                 **kwargs) -> torch.Tensor:
+    """Execute UNet forward pass through daemon"""
+    return get_client().model_forward(x, timesteps, context, model_type, lora_stack, **kwargs)
 
 
 # =============================================================================
