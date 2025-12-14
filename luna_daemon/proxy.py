@@ -917,6 +917,51 @@ class DaemonModel:
         self.model_options = {}
         self.model_keys = set()
         
+        # Forward commonly accessed attributes from source_model
+        # These are set in __init__ to avoid repeated __getattr__ lookups
+        self._model_sampling = None
+        self._sampling_type = None
+        self._model_config = None
+        self._init_attributes_from_source()
+    
+    def _init_attributes_from_source(self):
+        """Initialize key attributes from source model for faster access."""
+        if self.source_model is not None:
+            # Cache commonly accessed attributes
+            if hasattr(self.source_model, 'model_sampling'):
+                self._model_sampling = self.source_model.model_sampling
+            if hasattr(self.source_model, 'sampling_type'):
+                self._sampling_type = self.source_model.sampling_type
+            if hasattr(self.source_model, 'model_config'):
+                self._model_config = self.source_model.model_config
+    
+    @property
+    def model_sampling(self):
+        """Forward model_sampling from source model."""
+        if self._model_sampling is not None:
+            return self._model_sampling
+        if self.source_model is not None:
+            return getattr(self.source_model, 'model_sampling', None)
+        return None
+    
+    @property
+    def sampling_type(self):
+        """Forward sampling_type from source model."""
+        if self._sampling_type is not None:
+            return self._sampling_type
+        if self.source_model is not None:
+            return getattr(self.source_model, 'sampling_type', None)
+        return None
+    
+    @property
+    def model_config(self):
+        """Forward model_config from source model."""
+        if self._model_config is not None:
+            return self._model_config
+        if self.source_model is not None:
+            return getattr(self.source_model, 'model_config', None)
+        return None
+        
     def _ensure_registered(self):
         """Ensure model is registered with daemon."""
         if self._registered or self.use_existing:
@@ -1019,3 +1064,31 @@ class DaemonModel:
     def model_dtype(self):
         """Return model dtype."""
         return self.model_dtype
+    
+    def __getattr__(self, name: str):
+        """
+        Forward unknown attributes to source model for compatibility.
+        
+        This allows third-party nodes to access attributes like model_sampling.percent_to_sigma()
+        without explicitly implementing them. Falls back to source_model for attribute lookup.
+        
+        Args:
+            name: Attribute name
+            
+        Returns:
+            Attribute from source model if available, else raises AttributeError
+        """
+        # Avoid infinite recursion on initialization
+        if name.startswith('_'):
+            raise AttributeError(f"'DaemonModel' object has no attribute '{name}'")
+        
+        # Try to get from source_model if available
+        source_model = object.__getattribute__(self, 'source_model')
+        if source_model is not None:
+            try:
+                return getattr(source_model, name)
+            except AttributeError:
+                pass
+        
+        # Standard Python behavior for missing attributes
+        raise AttributeError(f"'DaemonModel' object has no attribute '{name}'")
