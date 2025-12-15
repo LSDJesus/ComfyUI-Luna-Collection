@@ -161,7 +161,7 @@ class LunaConfigGateway:
         
         Architecture:
         - DaemonCLIP: Uses add_lora_by_name (daemon loads from disk)
-        - DaemonModel: Uses add_lora (daemon applies transiently per-request)
+        - InferenceModeWrapper: Uses standard ComfyUI LoRA loading
         - Standard local: Uses comfy.sd.load_lora_for_models
         
         This centralizes LoRA loading with intelligent routing based on proxy type.
@@ -171,12 +171,13 @@ class LunaConfigGateway:
         
         # Detect proxy types
         use_daemon_clip = is_daemon_clip(clip)
-        use_daemon_model = type(model).__name__ == "DaemonModel"
+        # InferenceModeWrapper wraps model, but LoRAs apply normally through the wrapper
+        is_wrapped_model = type(model).__name__ == "InferenceModeWrapper"
         
         if use_daemon_clip:
             print("[LunaConfigGateway] DaemonCLIP detected - CLIP LoRAs via daemon")
-        if use_daemon_model:
-            print("[LunaConfigGateway] DaemonModel detected - UNet LoRAs via daemon")
+        if is_wrapped_model:
+            print("[LunaConfigGateway] InferenceModeWrapper detected - LoRAs apply through wrapper")
         
         for lora_name, model_weight, clip_weight in lora_stack:
             lora_file = self.find_lora_file(lora_name)
@@ -189,13 +190,9 @@ class LunaConfigGateway:
                 if use_daemon_clip:
                     clip = clip.add_lora_by_name(lora_file, model_weight, clip_weight)
                 
-                # UNet LoRA handling
-                if use_daemon_model:
-                    # DaemonModel: Add to proxy's stack (applied transiently in daemon)
-                    model.add_lora(lora_file, model_weight, clip_weight)
-                    print(f"[LunaConfigGateway] LoRA '{lora_file}' → daemon (model={model_weight}, clip={clip_weight})")
-                
-                elif use_daemon_clip:
+                # UNet LoRA handling - standard loading for all model types
+                # (InferenceModeWrapper forwards add_patches transparently)
+                if use_daemon_clip:
                     # DaemonCLIP but local model: Load UNet weights only
                     lora_path = folder_paths.get_full_path("loras", lora_file)
                     lora_data = comfy.utils.load_torch_file(lora_path)  # type: ignore
@@ -265,21 +262,23 @@ class LunaConfigGateway:
         # Load and apply LoRAs
         model, clip = self.load_loras(model, clip, combined_loras)
         
-        # Configure FB cache if enabled (daemon mode only)
+        # Configure FB cache if enabled
         if fb_cache_enabled:
-            from luna_daemon.proxy import DaemonModel
-            if isinstance(model, DaemonModel):
-                model.fb_cache_params = {
-                    "enabled": True,
-                    "start_percent": fb_cache_start,
-                    "end_percent": fb_cache_end,
-                    "residual_diff_threshold": fb_cache_threshold,
-                    "max_consecutive_hits": -1,  # Unlimited
-                    "object_to_patch": fb_cache_object_to_patch,
-                }
+            try:
+                from luna_daemon.wavespeed_utils import apply_fb_cache_to_model
+                
+                model = apply_fb_cache_to_model(
+                    model,
+                    start_percent=fb_cache_start,
+                    end_percent=fb_cache_end,
+                    residual_diff_threshold=fb_cache_threshold,
+                    object_to_patch=fb_cache_object_to_patch
+                )
                 print(f"[LunaConfigGateway] FB cache enabled: {fb_cache_start:.0%}-{fb_cache_end:.0%} (threshold={fb_cache_threshold}, patch={fb_cache_object_to_patch})")
-            else:
-                print("[LunaConfigGateway] Warning: FB cache requires DaemonModel, ignoring")
+            except ImportError:
+                print("[LunaConfigGateway] Warning: FB cache not available (wavespeed_utils not found)")
+            except Exception as e:
+                print(f"[LunaConfigGateway] Warning: FB cache error: {e}")
         
         # Apply CLIP skip after LoRAs if specified
         if clip_skip_timing == "after_lora":

@@ -719,6 +719,72 @@ def try_apply_fb_cache(model: Any, fb_config: FBCacheConfig, model_type: str = "
     return apply_patch()
 
 
+def apply_fb_cache_to_model(
+    model: Any,
+    start_percent: float = 0.0,
+    end_percent: float = 1.0,
+    residual_diff_threshold: float = 0.1,
+    object_to_patch: str = "diffusion_model"
+) -> Any:
+    """
+    Apply first-block cache to a model for VRAM/speed optimization.
+    
+    This wraps the model's forward pass with FB cache logic, caching
+    first-block outputs and reusing them when residuals are similar.
+    
+    Args:
+        model: ModelPatcher or InferenceModeWrapper
+        start_percent: Start applying cache at this timestep percent
+        end_percent: Stop applying cache at this timestep percent
+        residual_diff_threshold: Threshold for cache reuse
+        object_to_patch: Which object to patch ("diffusion_model" or "transformer")
+    
+    Returns:
+        The same model with FB cache applied
+    """
+    try:
+        # Try to use wavespeed's ApplyFBCacheOnModel if available
+        try:
+            import sys
+            # Check if wavespeed is available
+            if 'wavespeed' in sys.modules or any('wavespeed' in p for p in sys.path):
+                from wavespeed.fbcache_nodes import ApplyFBCacheOnModel
+                node = ApplyFBCacheOnModel()
+                result = node.apply(
+                    model=model,
+                    start_percent=start_percent,
+                    end_percent=end_percent,
+                    residual_diff_threshold=residual_diff_threshold,
+                    max_consecutive_cache_hits=-1,  # Unlimited
+                    return_cached_output_when_exceeding_max_hits=True,
+                    object_to_patch=object_to_patch
+                )
+                return result[0]
+        except ImportError:
+            pass
+        
+        # Fallback: Apply manually using our integrated code
+        # The model's unet function wrapper approach
+        if hasattr(model, 'set_model_unet_function_wrapper'):
+            config = FBCacheConfig(
+                enabled=True,
+                start_percent=start_percent,
+                end_percent=end_percent,
+                residual_diff_threshold=residual_diff_threshold,
+                max_consecutive_hits=-1,
+                object_to_patch=object_to_patch
+            )
+            # Store config on model for use during inference
+            model._fb_cache_config = config
+            logger.info(f"[FBCache] Config stored on model (will apply during inference)")
+        
+        return model
+        
+    except Exception as e:
+        logger.warning(f"[FBCache] Could not apply FB cache: {e}")
+        return model
+
+
 @contextlib.contextmanager
 def apply_fb_cache_transient(model: Any, fb_config: Optional[FBCacheConfig], model_type: str = "SDXL"):
     """

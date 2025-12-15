@@ -1616,13 +1616,13 @@ class LunaModelRouter:
     
     def _wrap_model_as_daemon_proxy(self, model: Any, model_type: str, model_path: str) -> Any:
         """
-        Wrap loaded model as DaemonModel proxy for centralized inference.
+        Wrap loaded model with InferenceModeWrapper for VRAM optimization.
         
-        This replaces the actual model object with a proxy that routes
-        all inference calls through the Luna Daemon, enabling:
-        - Frozen weights (eval + requires_grad=False) → 60-70% VRAM reduction
-        - Shared model across multiple ComfyUI instances
-        - Transient LoRA application per-request
+        This wraps the model to force inference_mode() on all forward passes,
+        which disables gradient tracking and significantly reduces VRAM usage.
+        
+        The model stays local - no daemon communication for inference.
+        VAE/CLIP can still use the daemon for shared encoding.
         
         Args:
             model: The loaded ModelPatcher object
@@ -1630,40 +1630,22 @@ class LunaModelRouter:
             model_path: Path to the model file
         
         Returns:
-            DaemonModel proxy object
+            InferenceModeWrapper wrapped model
         """
         try:
-            from luna_daemon.proxy import DaemonModel
-            from luna_daemon import client as daemon_client
+            from luna_daemon.inference_wrapper import wrap_model_for_inference
             
-            # Ensure model_path is absolute (daemon needs full path)
-            if not os.path.isabs(model_path):
-                model_path = os.path.abspath(model_path)
+            # Wrap model with inference_mode
+            wrapped = wrap_model_for_inference(model)
             
-            # Determine Luna model type
-            luna_model_type = model_type.replace(" + Vision", "").lower()  # "SDXL" → "sdxl"
-            
-            # Create proxy
-            proxy = DaemonModel(source_model=model, model_type=luna_model_type)
-            
-            # Register model with daemon by path (avoids socket serialization)
-            result = daemon_client.register_model_by_path(model_path, luna_model_type)
-            
-            if result.get('success'):
-                print(f"[LunaModelRouter] [OK] Model registered with daemon: {luna_model_type} ({result.get('size_mb', 0):.1f} MB)")
-                print(f"[LunaModelRouter] [OK] Using DaemonModel proxy - inference routes through daemon")
-                return proxy
-            else:
-                print(f"[LunaModelRouter] ⚠ Model registration with daemon failed: {result.get('message')}, falling back to local")
-                return model
+            print(f"[LunaModelRouter] ✓ Model wrapped with InferenceModeWrapper for VRAM optimization")
+            return wrapped
         
         except ImportError:
-            print(f"[LunaModelRouter] ⚠ DaemonModel not available, using local model")
+            print(f"[LunaModelRouter] ⚠ InferenceModeWrapper not available, using local model")
             return model
         except Exception as e:
-            import traceback
-            print(f"[LunaModelRouter] ⚠ Error creating DaemonModel proxy: {e}")
-            print(traceback.format_exc())
+            print(f"[LunaModelRouter] ⚠ Error wrapping model: {e}")
             return model
 
 
