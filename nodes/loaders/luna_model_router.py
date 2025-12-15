@@ -607,10 +607,6 @@ class LunaModelRouter:
                 }),
             },
             "optional": {
-                "local_weights_dir": ("STRING", {
-                    "default": "",
-                    "tooltip": "Directory for converted UNet cache (default: models/unet/optimized)"
-                }),
             },
             "hidden": {
                 "dynprompt": "DYNPROMPT",
@@ -630,7 +626,6 @@ class LunaModelRouter:
         clip_4: str,
         vae_name: str,
         daemon_mode: str,
-        local_weights_dir: str = "",
         dynprompt=None,
         unique_id=None
     ) -> Tuple[Any, Any, Any, Any, Any, str, str]:
@@ -850,7 +845,7 @@ class LunaModelRouter:
         
         if should_convert:
             print(f"[LunaModelRouter] Converting model from {actual_precision} to {precision}")
-            model, converted_path = self._load_with_conversion(model_path, precision, local_weights_dir)
+            model, converted_path = self._load_with_conversion(model_path, precision)
             return model, output_name, converted_path
         elif actual_precision not in ["fp16", "bf16"] and precision != "None":
             # Model is already in a quantized/converted format
@@ -933,163 +928,76 @@ class LunaModelRouter:
         self,
         model_path: str,
         precision: str,
-        local_weights_dir: str
-    ) -> Any:
-        """Load model with precision conversion (cached).
-        
-        Output locations:
-        - GGUF: models/unet/unet-converted/<relative_subfolders>/filename_Q4_K_M.gguf
-          (preserves folder hierarchy from checkpoints, unet-converted is typically symlinked to NVMe)
-        - bf16/fp8: models/checkpoints/checkpoints_converted/filename_fp8.safetensors
-          (flat structure, typically on fast NVMe via symlink)
+        local_weights_dir: str = ""
+    ) -> Tuple[Any, str]:
         """
-        from safetensors.torch import load_file, save_file
+        Load model with precision conversion using smart caching.
         
-        is_gguf = "gguf" in precision
+        Uses conversion_cache + smart_converter to:
+        1. Check if converted model already exists
+        2. Convert only if needed
+        3. Return path to converted model
         
-        # Get the base filename
-        base_name = os.path.splitext(os.path.basename(model_path))[0]
+        Output locations (standardized):
+        - Precision (fp16/bf16/fp8): models/diffusion_models/converted/{basename}_{precision}.safetensors
+        - BitsAndBytes (nf4/int8): models/diffusion_models/converted/{basename}_{precision}.safetensors
+        - GGUF (Q4/Q8): models/diffusion_models/gguf/{basename}_{precision}.gguf
         
-        # Strip existing model-type suffixes to avoid duplication
-        # e.g., "model_fp8_e4m3fn_unet" -> "model"
-        #       "model_unet" -> "model"
-        #       "model_clip_g" -> "model"
-        suffix_patterns = ["_fp8_e4m3fn_unet", "_bf16_unet", "_fp16_unet", "_unet", "_clip_g", "_clip_l", "_t5xxl"]
-        for pattern in suffix_patterns:
-            if base_name.endswith(pattern):
-                base_name = base_name[:-len(pattern)]
-                break
+        Args:
+            model_path: Path to source model
+            precision: Target precision (fp16, bf16, fp8_e4m3fn, nf4, int8, Q4_K_M, etc.)
+            local_weights_dir: Deprecated - now ignored (uses standardized paths)
         
-        # Determine relative subfolder path from checkpoints root
-        # e.g., "Illustrious/Realistic" from ".../checkpoints/Illustrious/Realistic/model.safetensors"
-        checkpoints_root = folder_paths.get_folder_paths("checkpoints")[0] if folder_paths.get_folder_paths("checkpoints") else None
-        relative_subpath = ""
+        Returns:
+            Tuple of (loaded_model, converted_path)
+        """
+        import sys
+        import importlib.util
+        from pathlib import Path
         
-        if checkpoints_root:
-            # Normalize paths for comparison
-            norm_model_path = os.path.normpath(model_path)
-            norm_checkpoints = os.path.normpath(checkpoints_root)
+        try:
+            # Load smart_converter dynamically
+            converter_path = Path(__file__).parent.parent.parent / "utils" / "smart_converter.py"
             
-            if norm_model_path.startswith(norm_checkpoints):
-                # Extract relative path (e.g., "Illustrious/Realistic/model.safetensors")
-                rel_path = os.path.relpath(norm_model_path, norm_checkpoints)
-                # Get just the folder part (e.g., "Illustrious/Realistic")
-                relative_subpath = os.path.dirname(rel_path)
-        
-        # Build output path based on conversion type
-        if is_gguf:
-            # GGUF → models/unet/unet-converted/<relative_subpath>/filename_Q4_K_M.gguf
-            quant_type = precision.replace("gguf_", "")
-            cache_filename = f"{base_name}_{quant_type}.gguf"
+            if not converter_path.exists():
+                raise FileNotFoundError(f"smart_converter.py not found at {converter_path}")
             
-            unet_root = folder_paths.get_folder_paths("unet")[0] if folder_paths.get_folder_paths("unet") else os.path.join(folder_paths.models_dir, "unet")
+            spec = importlib.util.spec_from_file_location("smart_converter", converter_path)
+            if spec is None or spec.loader is None:
+                raise RuntimeError("Failed to create module spec for smart_converter")
             
-            # Always put in unet-converted subfolder, then mirror the checkpoint hierarchy
-            if relative_subpath:
-                cache_dir = os.path.join(unet_root, "unet-converted", relative_subpath)
+            smart_converter_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(smart_converter_module)
+            smart_convert = smart_converter_module.smart_convert
+            
+            # Use smart converter - checks cache, converts if needed
+            converted_path, was_newly_converted = smart_convert(model_path, precision)
+            
+            if was_newly_converted:
+                print(f"[LunaModelRouter] ✓ Conversion complete: {converted_path}")
             else:
-                cache_dir = os.path.join(unet_root, "unet-converted")
-        else:
-            # bf16/fp8 → models/checkpoints/checkpoints_converted/<relative_subpath>/filename_fp8.safetensors
-            cache_filename = f"{base_name}_{precision}_unet.safetensors"
+                print(f"[LunaModelRouter] ✓ Using cached conversion: {converted_path}")
             
-            if checkpoints_root:
-                if relative_subpath:
-                    cache_dir = os.path.join(checkpoints_root, "checkpoints_converted", relative_subpath)
-                else:
-                    cache_dir = os.path.join(checkpoints_root, "checkpoints_converted")
+            # Load the converted model
+            if converted_path.endswith('.gguf'):
+                model = self._load_gguf_model(converted_path)
             else:
-                cache_dir = os.path.join(folder_paths.models_dir, "checkpoints", "checkpoints_converted")
-        
-        # Override with explicit local_weights_dir if provided
-        if local_weights_dir and os.path.isdir(local_weights_dir):
-            cache_dir = local_weights_dir
-        
-        os.makedirs(cache_dir, exist_ok=True)
-        cache_path = os.path.join(cache_dir, cache_filename)
-        
-        # Convert if not cached
-        if not os.path.exists(cache_path):
-            print(f"[LunaModelRouter] Converting to {precision}...")
-            print(f"[LunaModelRouter] Output: {cache_path}")
+                # Safetensors (fp16, bf16, fp8, nf4, int8)
+                model = self._load_safetensors_model(converted_path)
             
-            try:
-                # Import conversion utilities from utils
-                # ComfyUI's dynamic loading doesn't always preserve package context,
-                # so we use importlib to load it dynamically
-                import sys
-                import importlib.util
-                
-                # Calculate path to checkpoint_converter.py using centralized LUNA_PATH
-                if LUNA_PATH:
-                    converter_path = Path(LUNA_PATH) / "utils" / "checkpoint_converter.py"
-                else:
-                    # Fallback: luna_model_router.py is at nodes/loaders/, go up 3 levels
-                    converter_path = Path(__file__).parent.parent.parent / "utils" / "checkpoint_converter.py"
-                
-                if not converter_path.exists():
-                    raise FileNotFoundError(f"checkpoint_converter.py not found at {converter_path}")
-                
-                # Load module dynamically
-                spec = importlib.util.spec_from_file_location("checkpoint_converter", converter_path)
-                if spec is None:
-                    raise RuntimeError("Failed to create module spec for checkpoint_converter")
-                converter_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(converter_module)
-                
-                convert_to_precision = converter_module.convert_to_precision
-                convert_to_gguf = converter_module.convert_to_gguf
-                convert_to_bnb = converter_module.convert_to_bnb
-                
-                is_bnb = precision in ["nf4", "int8"]
-                
-                if is_gguf:
-                    convert_to_gguf(
-                        src_path=model_path,
-                        dst_path=cache_path,
-                        quant_type=quant_type
-                    )
-                elif is_bnb:
-                    convert_to_bnb(
-                        src_path=model_path,
-                        dst_path=cache_path,
-                        quant_type=precision
-                    )
-                else:
-                    convert_to_precision(
-                        src_path=model_path,
-                        dst_path=cache_path,
-                        precision=precision,
-                        strip_components=True
-                    )
-                    
-                print(f"[LunaModelRouter] Conversion complete!")
-            except ImportError as e:
-                raise RuntimeError(
-                    f"Dynamic precision conversion requires conversion utilities: {e}\n"
-                    "Set precision to 'None' to load without conversion."
-                )
-            finally:
-                # Clean up VRAM after conversion
-                import torch
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-        else:
-            print(f"[LunaModelRouter] Using cached: {cache_path}")
+            return model, converted_path
         
-        # Load converted model
-        if is_gguf:
-            model = self._load_gguf_model(cache_path)
-        else:
-            model = comfy.sd.load_unet(cache_path)
-        
-        # Clean up after loading
-        import torch
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-        
-        # Return both the loaded model and the path to the converted file
-        return model, cache_path
+        except Exception as e:
+            print(f"[LunaModelRouter] ✗ Conversion error: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+    
+    def _load_safetensors_model(self, path: str) -> Any:
+        """Load safetensors model file (UNet only)."""
+        print(f"[LunaModelRouter] Loading safetensors: {path}")
+        model = comfy.sd.load_unet(path)
+        return model
     
     def _load_gguf_model(self, path: str) -> Any:
         """Load GGUF model file directly from path.
