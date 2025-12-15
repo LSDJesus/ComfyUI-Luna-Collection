@@ -29,15 +29,9 @@ class LunaConfigGateway:
     - Outputs complete metadata dict
     """
     CATEGORY = "Luna"
-    RETURN_TYPES = ("MODEL", "CLIP", "VAE", "CONDITIONING", "CONDITIONING", "LATENT",
-                    "INT", "INT", "INT", "INT", "INT", "FLOAT", "FLOAT", "INT",
-                    comfy.samplers.KSampler.SAMPLERS, comfy.samplers.KSampler.SCHEDULERS,
-                    "STRING", "STRING", "STRING",
-                    "LORA_STACK", "METADATA")
-    RETURN_NAMES = ("model", "clip", "vae", "positive", "negative", "latent",
-                    "width", "height", "batch_size", "seed", "steps", "cfg", "denoise", "clip_skip",
-                    "sampler_name", "scheduler", "model_name", "positive_prompt", "negative_prompt",
-                    "lora_stack", "metadata")
+    CATEGORY = "Luna"
+    RETURN_TYPES = ("LUNA_PIPE", "METADATA")
+    RETURN_NAMES = ("luna_pipe", "metadata")
     FUNCTION = "process"
 
     # Regex to extract <lora:name:weight> or <lora:name:model_weight:clip_weight>
@@ -86,6 +80,36 @@ class LunaConfigGateway:
                     "max": 2.0,
                     "step": 0.05,
                     "tooltip": "Strength of vision conditioning (0 = text only, 1 = balanced, 2 = vision dominant)"
+                }),
+                # FB Cache (First-Block Cache) settings for 2x speedup on final denoising steps
+                "fb_cache_enabled": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Enable First-Block Cache for ~2x speedup on final denoising steps (daemon mode only)"
+                }),
+                "fb_cache_start": ("FLOAT", {
+                    "default": 0.0,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.05,
+                    "tooltip": "Start caching at this denoising percentage (0.0 = start, 1.0 = end)"
+                }),
+                "fb_cache_end": ("FLOAT", {
+                    "default": 1.0,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.05,
+                    "tooltip": "Stop caching at this denoising percentage (typical: 1.0 for final steps only)"
+                }),
+                "fb_cache_threshold": ("FLOAT", {
+                    "default": 0.1,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.01,
+                    "tooltip": "Residual diff tolerance for cache hits (0.0=strict, higher=more caching but less accurate)"
+                }),
+                "fb_cache_object_to_patch": (("diffusion_model",), {
+                    "default": "diffusion_model",
+                    "tooltip": "Model object to patch (typically 'diffusion_model')"
                 }),
             }
         }
@@ -203,7 +227,9 @@ class LunaConfigGateway:
     def process(self, model, clip, vae, width, height, batch_size, seed, steps, cfg, denoise,
                 clip_skip, clip_skip_timing, sampler, scheduler,
                 model_name="", positive_prompt="", negative_prompt="", lora_stack=None,
-                vision_embed=None, vision_strength=1.0):
+                vision_embed=None, vision_strength=1.0,
+                fb_cache_enabled=False, fb_cache_start=0.0, fb_cache_end=1.0, fb_cache_threshold=0.1,
+                fb_cache_object_to_patch="diffusion_model"):
         
         # Clean model name
         if model_name:
@@ -238,6 +264,22 @@ class LunaConfigGateway:
         
         # Load and apply LoRAs
         model, clip = self.load_loras(model, clip, combined_loras)
+        
+        # Configure FB cache if enabled (daemon mode only)
+        if fb_cache_enabled:
+            from luna_daemon.proxy import DaemonModel
+            if isinstance(model, DaemonModel):
+                model.fb_cache_params = {
+                    "enabled": True,
+                    "start_percent": fb_cache_start,
+                    "end_percent": fb_cache_end,
+                    "residual_diff_threshold": fb_cache_threshold,
+                    "max_consecutive_hits": -1,  # Unlimited
+                    "object_to_patch": fb_cache_object_to_patch,
+                }
+                print(f"[LunaConfigGateway] FB cache enabled: {fb_cache_start:.0%}-{fb_cache_end:.0%} (threshold={fb_cache_threshold}, patch={fb_cache_object_to_patch})")
+            else:
+                print("[LunaConfigGateway] Warning: FB cache requires DaemonModel, ignoring")
         
         # Apply CLIP skip after LoRAs if specified
         if clip_skip_timing == "after_lora":
@@ -284,12 +326,20 @@ class LunaConfigGateway:
             "lora_count": len(combined_loras),
             "vision_conditioning": vision_used,
             "vision_strength": vision_strength if vision_used else 0.0,
+            "fb_cache_enabled": fb_cache_enabled,
+            "fb_cache_range": f"{fb_cache_start:.0%}-{fb_cache_end:.0%}" if fb_cache_enabled else "disabled",
         }
         
-        return (model, clip, vae, positive_cond, negative_cond, latent,
-                width, height, batch_size, seed, steps, cfg, denoise, clip_skip,
-                sampler, scheduler, model_name, positive_prompt or "", negative_prompt or "",
-                combined_loras, metadata)
+        # Build luna_pipe: tuple containing all generation components
+        luna_pipe = (
+            model, clip, vae,
+            positive_cond, negative_cond,
+            latent,
+            width, height, seed, steps, cfg, denoise,
+            sampler, scheduler
+        )
+        
+        return (luna_pipe, metadata)
     
     def _combine_vision_conditioning(
         self,

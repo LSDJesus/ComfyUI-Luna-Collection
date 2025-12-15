@@ -35,25 +35,23 @@ try:
 except ImportError:
     folder_paths = None  # type: ignore
 
-# Import proxy classes
+# Import centralized path constants - sys.path already configured in __init__.py
+try:
+    from __init__ import LUNA_PATH, COMFY_PATH
+except (ImportError, ModuleNotFoundError, AttributeError):
+    LUNA_PATH = None
+    COMFY_PATH = None
+
+# Import daemon proxy classes - sys.path is already set up centrally
 DAEMON_AVAILABLE = False
 DaemonConnectionError = Exception
 DaemonVAE = None  # type: ignore
 DaemonCLIP = None  # type: ignore
 DaemonZImageCLIP = None  # type: ignore
-daemon_client = None
+daemon_client = None  # type: ignore
 
 try:
-    import sys
-    from pathlib import Path
-    
-    # Import package root from parent package
-    from ... import PACKAGE_ROOT
-    
-    if str(PACKAGE_ROOT) not in sys.path:
-        sys.path.insert(0, str(PACKAGE_ROOT))
-    
-    # Try absolute imports
+    # Absolute imports work because __init__.py already configured sys.path
     from luna_daemon.proxy import DaemonVAE, DaemonCLIP, detect_vae_type, detect_clip_type
     from luna_daemon.zimage_proxy import (
         DaemonZImageCLIP, 
@@ -64,25 +62,9 @@ try:
     from luna_daemon import client as daemon_client
     from luna_daemon.client import DaemonConnectionError
     DAEMON_AVAILABLE = True
-except ImportError:
-    DAEMON_AVAILABLE = False
-    DaemonConnectionError = Exception
-    DaemonVAE = None  # type: ignore
-    DaemonCLIP = None  # type: ignore
-    DaemonZImageCLIP = None  # type: ignore
-    daemon_client = None  # type: ignore
-    
-    # Dummy functions for when daemon is not available
-    def detect_vae_type(vae: Any) -> str:
-        return 'unknown'
-    def detect_clip_type(clip: Any) -> str:
-        return 'unknown'
-    def detect_clip_architecture(clip: Any) -> dict:
-        return {'type': 'unknown', 'is_qwen': False}
-    def is_zimage_clip(clip: Any) -> bool:
-        return False
-    def create_clip_proxy(source_clip: Any, use_existing: bool = False, force_type: Any = None):
-        return source_clip
+except ImportError as e:
+    # Daemon not available - will be caught at runtime when nodes are used
+    pass
 
 
 def ensure_daemon_running(node_name: str) -> None:

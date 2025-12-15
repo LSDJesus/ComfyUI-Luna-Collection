@@ -70,8 +70,8 @@ class ConnectionsDB:
             # Return this path even if it doesn't exist (will be created on first save)
             return default_path
         
-        # Last resort fallback: alongside this node file
-        return os.path.join(os.path.dirname(__file__), "..", "wildcards", "connections.json")
+        # Last resort fallback: return None (connections can be created on demand)
+        return None
     
     def load(self, force_reload: bool = False) -> Dict:
         """Load connections database with caching"""

@@ -52,17 +52,20 @@ def get_default_wildcards_dir() -> str:
             if os.path.exists(wildcards_path):
                 return wildcards_path
     
-    # Fallback paths
-    fallbacks = [
-        "D:/AI/SD Models/wildcards",
-        os.path.join(os.path.dirname(__file__), '..', '..', 'wildcards'),
-    ]
+    # Fallback to common local path (if it exists)
+    # Otherwise return the folder_paths location even if it doesn't exist yet
+    common_path = "D:/AI/SD Models/wildcards"
+    if os.path.exists(common_path):
+        return common_path
     
-    for path in fallbacks:
-        if os.path.exists(path):
-            return path
+    # Return primary path even if not found (may be created on demand)
+    # Prefer folder_paths.models_dir if available
+    if HAS_FOLDER_PATHS:
+        models_dir = getattr(folder_paths, 'models_dir', None)
+        if models_dir:
+            return os.path.join(models_dir, 'wildcards')
     
-    return fallbacks[0]
+    return common_path
 
 
 # =============================================================================

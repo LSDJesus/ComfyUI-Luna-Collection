@@ -20,7 +20,13 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 from contextlib import contextmanager
 
-# Try to import folder_paths to find ComfyUI root
+# Import centralized path constants
+try:
+    from __init__ import COMFY_PATH
+except (ImportError, ModuleNotFoundError, AttributeError):
+    COMFY_PATH = None
+
+# Try to import folder_paths to find ComfyUI root (fallback)
 try:
     import folder_paths
     HAS_FOLDER_PATHS = True
@@ -35,19 +41,27 @@ except ImportError:
 def get_comfyui_root() -> Path:
     """
     Get the ComfyUI root directory.
-    Uses folder_paths if available, otherwise walks up from this file.
+    Priority:
+    1. Centralized COMFY_PATH from Luna __init__.py
+    2. folder_paths.base_path if available
+    3. Last resort: walk up directory tree
     """
+    # First try: centralized COMFY_PATH (fastest, most reliable)
+    if COMFY_PATH:
+        return Path(COMFY_PATH)
+    
+    # Second try: folder_paths.base_path
     if HAS_FOLDER_PATHS:
         # folder_paths.base_path is the ComfyUI root
         return Path(folder_paths.base_path)
     
-    # Fallback: walk up from this file until we find main.py or ComfyUI markers
+    # Last resort: walk up from this file until we find main.py or ComfyUI markers
     current = Path(__file__).resolve()
     for parent in current.parents:
         if (parent / "main.py").exists() or (parent / "comfy").is_dir():
             return parent
     
-    # Last resort: assume standard custom_nodes structure
+    # Absolute last resort: assume standard custom_nodes structure
     # This file is in: ComfyUI/custom_nodes/ComfyUI-Luna-Collection/utils/
     return current.parent.parent.parent.parent
 

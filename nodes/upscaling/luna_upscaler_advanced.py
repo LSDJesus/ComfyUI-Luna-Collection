@@ -8,13 +8,8 @@ import torch.nn.functional as F
 import logging
 import sys
 
-# Add the parent directory to sys.path to enable relative imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import utils modules directly
-utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils")
-if utils_path not in sys.path:
-    sys.path.insert(0, utils_path)
+# NOTE: sys.path is configured centrally in __init__.py
+# All necessary directories are already added at Luna Collection import time
 
 try:
     from trt_engine import Engine  # type: ignore

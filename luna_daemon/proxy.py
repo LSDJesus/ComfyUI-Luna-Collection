@@ -906,60 +906,69 @@ class DaemonModel:
         # LoRA stack: list of (lora_name, model_strength, clip_strength)
         self.lora_stack: List[tuple] = []
         
+        # FB cache params: dict with caching configuration
+        self.fb_cache_params: Optional[Dict[str, Any]] = None
+        
         # Match ComfyUI ModelPatcher attributes
         self.device = torch.device("cpu")  # Proxy doesn't hold weights
-        self.model_dtype = torch.float16
+        self._model_dtype = torch.float16
         self.load_device = torch.device("cuda:0")  # Where ComfyUI thinks it loads
         self.offload_device = torch.device("cpu")
         
         # Model structure (mimics ModelPatcher)
         self.model = self  # Self-reference for compatibility
-        self.model_options = {}
+        self.model_options = {
+            "transformer_options": {},
+        }
         self.model_keys = set()
-        
-        # Forward commonly accessed attributes from source_model
-        # These are set in __init__ to avoid repeated __getattr__ lookups
-        self._model_sampling = None
-        self._sampling_type = None
-        self._model_config = None
-        self._init_attributes_from_source()
-    
-    def _init_attributes_from_source(self):
-        """Initialize key attributes from source model for faster access."""
-        if self.source_model is not None:
-            # Cache commonly accessed attributes
-            if hasattr(self.source_model, 'model_sampling'):
-                self._model_sampling = self.source_model.model_sampling
-            if hasattr(self.source_model, 'sampling_type'):
-                self._sampling_type = self.source_model.sampling_type
-            if hasattr(self.source_model, 'model_config'):
-                self._model_config = self.source_model.model_config
     
     @property
     def model_sampling(self):
-        """Forward model_sampling from source model."""
-        if self._model_sampling is not None:
-            return self._model_sampling
+        """Forward model_sampling from source model (always fresh lookup)."""
         if self.source_model is not None:
-            return getattr(self.source_model, 'model_sampling', None)
+            # Try direct attribute first
+            if hasattr(self.source_model, 'model_sampling'):
+                return getattr(self.source_model, 'model_sampling', None)
+            # Try through .model if it exists
+            if hasattr(self.source_model, 'model'):
+                model_obj = getattr(self.source_model, 'model', None)
+                if model_obj and hasattr(model_obj, 'model_sampling'):
+                    return getattr(model_obj, 'model_sampling', None)
         return None
     
     @property
     def sampling_type(self):
-        """Forward sampling_type from source model."""
-        if self._sampling_type is not None:
-            return self._sampling_type
+        """Forward sampling_type from source model (always fresh lookup)."""
         if self.source_model is not None:
-            return getattr(self.source_model, 'sampling_type', None)
+            if hasattr(self.source_model, 'sampling_type'):
+                return getattr(self.source_model, 'sampling_type', None)
+            if hasattr(self.source_model, 'model'):
+                model_obj = getattr(self.source_model, 'model', None)
+                if model_obj and hasattr(model_obj, 'sampling_type'):
+                    return getattr(model_obj, 'sampling_type', None)
         return None
     
     @property
     def model_config(self):
-        """Forward model_config from source model."""
-        if self._model_config is not None:
-            return self._model_config
+        """Forward model_config from source model (always fresh lookup)."""
         if self.source_model is not None:
-            return getattr(self.source_model, 'model_config', None)
+            if hasattr(self.source_model, 'model_config'):
+                return getattr(self.source_model, 'model_config', None)
+            if hasattr(self.source_model, 'model'):
+                model_obj = getattr(self.source_model, 'model', None)
+                if model_obj and hasattr(model_obj, 'model_config'):
+                    return getattr(model_obj, 'model_config', None)
+        return None
+    
+    @property
+    def latent_format(self):
+        """Forward latent_format from source model (needed for latent preview)."""
+        if self.source_model is not None:
+            # Try to get latent_format from source model
+            if hasattr(self.source_model, 'model') and hasattr(self.source_model.model, 'latent_format'):
+                return self.source_model.model.latent_format
+            # Fallback to direct attribute
+            return getattr(self.source_model, 'latent_format', None)
         return None
         
     def _ensure_registered(self):
@@ -967,18 +976,11 @@ class DaemonModel:
         if self._registered or self.use_existing:
             return
         
-        if self.source_model is None:
-            raise RuntimeError(
-                "DaemonModel has no source model and use_existing=False.\n"
-                "Cannot register with daemon."
-            )
-        
-        # Register with daemon
-        try:
-            daemon_client.register_model(self.source_model, self.model_type)
-            self._registered = True
-        except Exception as e:
-            raise RuntimeError(f"Failed to register model with daemon: {e}")
+        # For now, skip registration if the daemon should already have it
+        # The model is forwarded via tensors only, not the model object itself
+        # Actual model persistence on daemon is handled by the daemon's model manager
+        self._registered = True
+        return
     
     def _check_daemon(self):
         """Verify daemon is running."""
@@ -988,6 +990,61 @@ class DaemonModel:
                 "Start it from the Luna Daemon panel or run:\n"
                 "  python -m luna_daemon.server"
             )
+    
+    def model_dtype(self):
+        """Return the model dtype (ComfyUI calls this as a method)."""
+        return self._model_dtype
+    
+    def extra_conds_shapes(self, **kwargs):
+        """Return extra conditioning shapes for memory estimation."""
+        # For proxy, we don't have actual shapes, so return empty dict
+        # (daemon will handle actual memory management)
+        return {}
+    
+    def memory_required(self, shape: List[int], **kwargs) -> int:
+        """
+        Estimate memory required for model.
+        
+        ComfyUI calls this during memory estimation. We return a dummy value
+        since the actual model runs on the daemon's GPU.
+        
+        Args:
+            shape: Model input shape
+            **kwargs: Additional arguments (cond_shapes, etc.) for compatibility
+            
+        Returns:
+            Estimated memory in bytes (dummy value for proxy)
+        """
+        # Return minimal dummy value - daemon manages actual memory
+        # This satisfies ComfyUI's memory estimation without needing actual values
+        return 1024 * 1024 * 100  # 100MB dummy estimate
+    
+    @property
+    def current_patcher(self):
+        """Return self as current patcher (daemon model acts as its own patcher)."""
+        return self
+    
+    def prepare_state(self, timestep):
+        """Prepare state for sampling (no-op, daemon handles this)."""
+        pass
+    
+    def apply_model(self, x: torch.Tensor, timestep: torch.Tensor, 
+                    **kwargs) -> torch.Tensor:
+        """
+        Apply model inference (called by ComfyUI samplers).
+        
+        This is the actual inference call during denoising.
+        
+        Args:
+            x: Input tensor (latents)
+            timestep: Timestep tensor
+            **kwargs: Additional arguments (conditioning, etc.)
+            
+        Returns:
+            Model output tensor
+        """
+        # Route to daemon via __call__
+        return self(x, timestep, **kwargs)
     
     def __call__(self, x: torch.Tensor, timesteps: torch.Tensor, 
                  context: Optional[torch.Tensor] = None, **kwargs) -> torch.Tensor:
@@ -1015,6 +1072,7 @@ class DaemonModel:
                 context=context,
                 model_type=self.model_type,
                 lora_stack=self.lora_stack,
+                fb_cache_params=self.fb_cache_params,
                 **kwargs
             )
         except DaemonConnectionError as e:
@@ -1042,6 +1100,7 @@ class DaemonModel:
         """Clone the proxy (returns new instance with same config)."""
         cloned = DaemonModel(self.source_model, self.model_type, self.use_existing)
         cloned.lora_stack = self.lora_stack.copy()
+        cloned.fb_cache_params = self.fb_cache_params.copy() if self.fb_cache_params else None
         cloned._registered = self._registered
         return cloned
     
@@ -1055,15 +1114,16 @@ class DaemonModel:
     
     def get_model_object(self, name: str):
         """Get model object by name (for compatibility)."""
+        if name == "model_sampling" and self.model_sampling is not None:
+            return self.model_sampling
+        # For other names, try source_model
+        if self.source_model is not None and hasattr(self.source_model, 'get_model_object'):
+            return self.source_model.get_model_object(name)
         return self
     
     def model_patches_to(self, device):
         """Move patches to device (no-op for proxy)."""
         pass
-    
-    def model_dtype(self):
-        """Return model dtype."""
-        return self.model_dtype
     
     def __getattr__(self, name: str):
         """

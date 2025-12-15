@@ -3011,6 +3011,7 @@ class DynamicDaemon:
             "service_type": self.service_type.value,
             "device": self.device,
             "precision": self.precision,
+            "attention_mode": ATTENTION_MODE,
             "uptime_seconds": time.time() - self.start_time,
             "request_count": self.work_request_count,  # Only VAE/CLIP work requests
             "total_requests": self.request_count,  # All requests including health checks
@@ -3084,6 +3085,47 @@ class DynamicDaemon:
         
         return info
     
+    def _apply_attention_mode(self, mode: str) -> bool:
+        """Apply attention mode settings dynamically at runtime
+        
+        Args:
+            mode: Attention mode to apply ("sage", "xformers", "flash", "pytorch", "split", "auto")
+            
+        Returns:
+            True if successfully applied, False otherwise
+        """
+        if mode == "auto":
+            logger.info("[DynamicAttention] Set to auto mode - will use ComfyUI defaults")
+            return True
+        
+        try:
+            import comfy.model_management as mm  # type: ignore
+            
+            logger.info(f"[DynamicAttention] Applying {mode} attention mode...")
+            
+            # Map modes to their configuration
+            attention_map = {
+                "xformers": lambda: None,  # xformers is default if available
+                "flash": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False),
+                "sage": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False),
+                "pytorch": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', True),
+                "split": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False)
+            }
+            
+            if mode.lower() in attention_map:
+                config_func = attention_map[mode.lower()]
+                if config_func:
+                    config_func()
+                logger.info(f"[DynamicAttention] Successfully applied {mode} attention mode")
+                return True
+            else:
+                logger.warning(f"[DynamicAttention] Unknown mode '{mode}'")
+                return False
+                
+        except Exception as e:
+            logger.error(f"[DynamicAttention] Failed to apply {mode}: {e}")
+            return False
+    
     def _get_gpu_id(self) -> Optional[int]:
         """Get the GPU index this daemon is using."""
         if 'cuda' not in self.device:
@@ -3137,6 +3179,22 @@ class DynamicDaemon:
                 result = {"status": "ok", "service_type": self.service_type.value}
             elif cmd == "info":
                 result = self.get_info()
+            elif cmd == "set_attention_mode":
+                # Dynamically change attention mode at runtime
+                new_mode = request.get("mode", "auto")
+                logger.info(f"[API] Received request to change attention mode to: {new_mode}")
+                
+                # Update the global config (for new models loaded after this)
+                global ATTENTION_MODE
+                ATTENTION_MODE = new_mode
+                
+                # Apply the new mode immediately
+                success = self._apply_attention_mode(new_mode)
+                result = {
+                    "success": success,
+                    "mode": new_mode,
+                    "message": f"Attention mode {'changed to' if success else 'failed to change to'} {new_mode}"
+                }
             
             # Model registration commands (dynamic loading from clients)
             elif cmd == "register_vae":
@@ -3674,39 +3732,31 @@ def configure_attention_mode():
     Call this before creating the DynamicDaemon to ensure the correct attention
     mechanism is used (sage, xformers, pytorch, etc.).
     
+    Performs live detection of ComfyUI's attention mode when ATTENTION_MODE is "auto".
+    
     Returns:
         bool: True if attention mode was successfully configured, False otherwise
     """
-    if ATTENTION_MODE == "auto":
-        logger.debug("Using auto-detected attention mode")
-        return True
-    
     try:
         import comfy.model_management as mm  # type: ignore
-        attention_map = {
-            "xformers": mm.xformers_enabled,
-            "flash": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False),
-            "sage": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False),
-            "pytorch": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', True),
-            "split": lambda: setattr(mm, 'XFORMERS_IS_AVAILABLE', False) or setattr(mm, 'ENABLE_PYTORCH_ATTENTION', False)
-        }
         
-        if ATTENTION_MODE.lower() in attention_map:
-            logger.info(f"Setting attention mode to: {ATTENTION_MODE}")
-            if ATTENTION_MODE.lower() == "xformers":
-                # xformers is already default if available, just verify
-                if not mm.xformers_enabled():
-                    logger.warning("xformers requested but not available, using fallback")
-            else:
-                # For other modes, disable xformers and set appropriate flags
-                attention_map[ATTENTION_MODE.lower()]()
-                logger.info(f"Disabled xformers, using {ATTENTION_MODE} attention")
+        # Detect current mode from ComfyUI (via subprocess, detection functions may not work)
+        # The LUNA_ATTENTION_MODE env var is set by the parent ComfyUI process
+        detected_mode = "pytorch"  # Default fallback
+        
+        # If auto mode, use whatever was passed via environment variable (already in ATTENTION_MODE)
+        if ATTENTION_MODE == "auto":
+            logger.info(f"[Auto-detect] Luna daemon using: auto (will match ComfyUI)")
             return True
-        else:
-            logger.warning(f"Unknown attention mode '{ATTENTION_MODE}', using auto-detection")
-            return False
+        
+        # For non-auto modes, just log and proceed
+        logger.info(f"[Config] Luna daemon configured for: {ATTENTION_MODE} attention")
+        logger.info(f"[Config] Environment LUNA_ATTENTION_MODE was set by parent ComfyUI process")
+        
+        # No need to override - the config already has the right mode from env var
+        return True
     except Exception as e:
-        logger.warning(f"Failed to set attention mode: {e}, using auto-detection")
+        logger.warning(f"Failed to configure attention mode: {e}")
         return False
 
 

@@ -49,20 +49,83 @@ SHARED_DEVICE = CLIP_DEVICE
 # Attention Mechanism Configuration
 # =============================================================================
 
+def _detect_comfyui_attention_mode():
+    """
+    Auto-detect the attention mode ComfyUI is currently using.
+    This allows the daemon to automatically match ComfyUI's settings.
+    
+    Checks CLI args for specific attention flags in priority order.
+    PyTorch is the default fallback - only report it if no specific mode is set.
+    
+    Priority: sage > flash > xformers > split > pytorch (default)
+    
+    Returns:
+        str: The detected attention mode ("sage", "xformers", "flash", "pytorch", "split", or "auto")
+    """
+    try:
+        # First try to get CLI args (most reliable when daemon starts after ComfyUI)
+        try:
+            import comfy.cli_args  # type: ignore
+            args = comfy.cli_args.args
+            
+            # Check CLI flags in priority order (skip pytorch check - it's always enabled as fallback)
+            if getattr(args, 'use_sage_attention', False):
+                return "sage"
+            elif getattr(args, 'use_flash_attention', False):
+                return "flash"
+            elif getattr(args, 'use_quad_cross_attention', False):
+                return "split"
+            elif getattr(args, 'use_split_cross_attention', False):
+                return "split"
+            # Don't check disable_xformers - just see if xformers is actually enabled
+            # Fall through to check xformers availability below
+        except (ImportError, AttributeError):
+            pass  # CLI args not available, try runtime detection
+        
+        # Check if xformers is available and enabled (before falling back to pytorch)
+        import comfy.model_management as mm  # type: ignore
+        if hasattr(mm, 'xformers_enabled') and mm.xformers_enabled():
+            return "xformers"
+        
+        # Fallback to runtime detection functions (less reliable but better than nothing)
+        if hasattr(mm, 'sage_attention_enabled') and mm.sage_attention_enabled():
+            return "sage"
+        elif hasattr(mm, 'flash_attention_enabled') and mm.flash_attention_enabled():
+            return "flash"
+        
+        # Default fallback - pytorch is always available
+        return "pytorch"
+        
+    except ImportError:
+        # ComfyUI not available yet (daemon starting before ComfyUI)
+        return "auto"
+    except Exception as e:
+        print(f"[Luna.Config] Warning: Failed to detect ComfyUI attention mode: {e}")
+        return "auto"
+
+
 # Attention implementation to use: "auto", "xformers", "flash", "sage", "pytorch", "split"
-# - "auto": Let ComfyUI auto-detect (default)
+# - "auto": Auto-detect from ComfyUI (default, recommended)
 # - "xformers": Use xformers (best for RTX 3000/4000)
 # - "flash": Flash Attention 2 (requires flash-attn package)
 # - "sage": Sage Attention (memory efficient, requires sage-attention package)
 # - "pytorch": PyTorch native attention (slowest, most compatible)
 # - "split": Split attention (for older GPUs)
 #
-# To match your ComfyUI settings:
-#   If you run ComfyUI with --use-sage-attention, set ATTENTION_MODE = "sage"
-#   If you run ComfyUI with --use-pytorch-cross-attention, set ATTENTION_MODE = "pytorch"
+# The daemon will automatically detect and match ComfyUI's attention mode when set to "auto".
+# This means if you start ComfyUI with --use-sage-attention, the daemon will use sage too.
 #
-# Or set via environment variable: LUNA_ATTENTION_MODE=sage
+# Override via environment variable: 
+#   LUNA_ATTENTION_MODE=sage .\scripts\start_daemon.ps1
+#   or use PowerShell parameter: .\scripts\start_daemon.ps1 -AttentionMode sage
+#
+# Or set directly here to force a specific mode:
+#   ATTENTION_MODE = "sage"
+#
 ATTENTION_MODE = os.environ.get("LUNA_ATTENTION_MODE", "auto")
+
+# Note: Auto-detection happens at daemon startup in configure_attention_mode(),
+# not at config import time, to ensure ComfyUI is fully initialized.
 
 # =============================================================================
 # Model Paths

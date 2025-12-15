@@ -40,15 +40,12 @@ try:
     DAEMON_AVAILABLE = True
 except ImportError:
     # Fallback: try absolute import path
+    # NOTE: sys.path is configured centrally in __init__.py
+    # All necessary directories should already be in sys.path
     try:
         import os
         import sys
         from pathlib import Path
-        # Add repo root to path for direct import (nodes/utilities → nodes → repo_root)
-        _repo_root = Path(__file__).resolve().parents[2]
-        _daemon_dir = _repo_root / "luna_daemon"
-        if str(_repo_root) not in sys.path:
-            sys.path.insert(0, str(_repo_root))
         
         from luna_daemon import client as daemon_client
         from luna_daemon.config import (
@@ -151,9 +148,50 @@ def register_routes():
             # Check if already running
             if DAEMON_AVAILABLE and daemon_client and daemon_client.is_daemon_running():
                 logger.info("Daemon already running")
-                return web.json_response({"status": "ok", "message": "Daemon already running"})
+                
+                # Even though it's running, sync the attention mode
+                try:
+                    import comfy.cli_args  # type: ignore
+                    args = comfy.cli_args.args
+                    attention_mode = "auto"
+                    if getattr(args, 'use_sage_attention', False):
+                        attention_mode = "sage"
+                    elif getattr(args, 'use_flash_attention', False):
+                        attention_mode = "flash"
+                    elif getattr(args, 'use_quad_cross_attention', False) or getattr(args, 'use_split_cross_attention', False):
+                        attention_mode = "split"
+                    elif getattr(args, 'use_pytorch_cross_attention', False):
+                        attention_mode = "pytorch"
+                    
+                    logger.info(f"Updating daemon attention mode to: {attention_mode}")
+                    result = daemon_client.set_attention_mode(attention_mode)
+                    if result.get("success"):
+                        logger.info(f"Successfully updated daemon to {attention_mode} attention")
+                    else:
+                        logger.warning(f"Failed to update daemon attention mode: {result.get('message')}")
+                except Exception as e:
+                    logger.warning(f"Could not sync attention mode: {e}")
+                
+                return web.json_response({"status": "ok", "message": "Daemon already running, attention mode synced"})
             
             logger.info("Starting Luna Daemon Tray...")
+            
+            # Detect ComfyUI's attention mode and pass to daemon via environment variable
+            attention_mode = "auto"
+            try:
+                import comfy.cli_args  # type: ignore
+                args = comfy.cli_args.args
+                if getattr(args, 'use_sage_attention', False):
+                    attention_mode = "sage"
+                elif getattr(args, 'use_flash_attention', False):
+                    attention_mode = "flash"
+                elif getattr(args, 'use_quad_cross_attention', False) or getattr(args, 'use_split_cross_attention', False):
+                    attention_mode = "split"
+                elif getattr(args, 'use_pytorch_cross_attention', False):
+                    attention_mode = "pytorch"
+                logger.info(f"Detected ComfyUI attention mode: {attention_mode}")
+            except Exception as e:
+                logger.warning(f"Could not detect attention mode: {e}, using auto")
             
             # Get path to daemon package and tray_app.py
             from pathlib import Path
@@ -167,22 +205,40 @@ def register_routes():
             # Build command to run tray app (single-instance enforced)
             cmd = [python_exe, tray_app]
             
+            # Prepare environment with attention mode
+            env = os.environ.copy()
+            env['LUNA_ATTENTION_MODE'] = attention_mode
+            
             # Set working directory to the daemon directory so relative imports work
             logger.info(f"Command: {' '.join(cmd)}")
             logger.info(f"Working directory: {daemon_dir}")
+            logger.info(f"Environment: LUNA_ATTENTION_MODE={attention_mode}")
             
             # Start tray app as subprocess
             # The tray app enforces single-instance via port lock
-            process = subprocess.Popen(
-                cmd,
-                cwd=daemon_dir,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                start_new_session=True if os.name != 'nt' else False,
-                creationflags=0 if os.name == 'nt' else 0  # Don't hide window so tray is visible
-            )
+            # Launch detached without capturing output so GUI can initialize properly
+            if os.name == 'nt':
+                # Windows: Use CREATE_NEW_PROCESS_GROUP and DETACHED_PROCESS
+                DETACHED_PROCESS = 0x00000008
+                CREATE_NEW_PROCESS_GROUP = 0x00000200
+                process = subprocess.Popen(
+                    cmd,
+                    cwd=daemon_dir,
+                    env=env,
+                    creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP,
+                    close_fds=True
+                )
+            else:
+                # Unix: Use start_new_session
+                process = subprocess.Popen(
+                    cmd,
+                    cwd=daemon_dir,
+                    env=env,
+                    start_new_session=True,
+                    close_fds=True
+                )
             
-            logger.info(f"Daemon process started with PID {process.pid}")
+            logger.info(f"Daemon tray app launched with PID {process.pid}")
             
             # Wait for daemon to start with retries
             max_retries = 15
@@ -200,16 +256,6 @@ def register_routes():
                     return web.json_response({
                         "status": "ok", 
                         "message": f"Daemon started successfully (attempt {attempt + 1})"
-                    })
-                
-                # Check if process died
-                if process.poll() is not None:
-                    stdout, stderr = process.communicate()
-                    error_msg = stderr.decode('utf-8', errors='ignore') if stderr else "Process exited"
-                    logger.error(f"Daemon process died: {error_msg[:200]}")
-                    return web.json_response({
-                        "status": "error", 
-                        "message": f"Daemon process exited: {error_msg[:200]}"
                     })
             
             # Timeout
@@ -263,9 +309,8 @@ def register_routes():
                     # Try fallback path
                     try:
                         import sys
-                        _daemon_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'luna_daemon'))
-                        if _daemon_dir not in sys.path:
-                            sys.path.insert(0, os.path.dirname(_daemon_dir))
+                        # NOTE: sys.path is configured centrally in __init__.py
+                        # No need for manual path manipulation here
                         from luna_daemon import client as dc
                         daemon_client = dc
                         DAEMON_AVAILABLE = True

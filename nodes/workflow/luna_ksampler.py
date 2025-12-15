@@ -4,7 +4,10 @@ Luna KSampler - Memory-Efficient Sampling Node
 Drop-in replacement for ComfyUI's KSampler with aggressive VRAM optimization.
 
 Key optimization: Wraps sampling in torch.inference_mode() to prevent gradient
-tracking and reduce activation memory usage by 60-70%.
+tracking and reduce activation memory by 60-70%.
+
+FB cache (first-block caching) for 2x speed improvement on final denoising steps
+is configured via Luna Config Gateway and applied daemon-side.
 
 Expected VRAM reduction:
 - Stock KSampler: ~10GB peak (UNet + retained activations)
@@ -14,9 +17,17 @@ Compatible with all schedulers, samplers, and existing workflows.
 """
 
 import torch
-import comfy.sample
 import comfy.samplers
-from nodes import common_ksampler
+
+# Import common_ksampler from ComfyUI's nodes.py file
+try:
+    import nodes
+    common_ksampler = nodes.common_ksampler # type: ignore
+except (ImportError, AttributeError):
+    raise ImportError(
+        "Could not import common_ksampler from ComfyUI nodes.py. "
+        "Ensure ComfyUI root is on sys.path when loading custom nodes."
+    )
 
 
 class LunaKSampler:
@@ -31,16 +42,29 @@ class LunaKSampler:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model": ("MODEL",),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step": 0.1, "round": 0.01}),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, ),
                 "scheduler": (comfy.samplers.KSampler.SCHEDULERS, ),
-                "positive": ("CONDITIONING", ),
-                "negative": ("CONDITIONING", ),
-                "latent_image": ("LATENT", ),
                 "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
+            },
+            "optional": {
+                "model": ("MODEL", {
+                    "tooltip": "Optional if LUNA_PIPE connected"
+                }),
+                "positive": ("CONDITIONING", {
+                    "tooltip": "Optional if LUNA_PIPE connected"
+                }),
+                "negative": ("CONDITIONING", {
+                    "tooltip": "Optional if LUNA_PIPE connected"
+                }),
+                "latent_image": ("LATENT", {
+                    "tooltip": "Optional if LUNA_PIPE connected"
+                }),
+                "luna_pipe": ("LUNA_PIPE", {
+                    "tooltip": "Optional LUNA_PIPE from Config Gateway. Manual inputs override pipe values."
+                }),
             }
         }
 
@@ -48,27 +72,54 @@ class LunaKSampler:
     FUNCTION = "sample"
     CATEGORY = "Luna/Workflow"
     
-    def sample(self, model, seed, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, denoise=1.0):
+    def sample(self, seed, steps, cfg, sampler_name, scheduler, denoise=1.0, model=None, positive=None, negative=None, latent_image=None, luna_pipe=None):
         """
         Execute sampling with inference_mode() optimization.
         
-        CRITICAL: ComfyUI lazy-loads model weights on first sampler call.
-        We must freeze AFTER the lazy load completes, not before.
+        Optional: Use LUNA_PIPE from Config Gateway for all parameters.
+        Manual inputs override corresponding pipe values (if provided).
         
         This method:
-        1. Freezes model immediately before sampling (after lazy load)
+        1. Merges LUNA_PIPE with manual overrides
         2. Uses inference_mode() to prevent gradient tracking
         3. Reduces VRAM by ~7GB per instance
         
+        Model loading, freezing, and LoRA application happen daemon-side
+        (DaemonModel proxy routes all operations to the daemon).
+        
+        FB cache (first-block caching) is configured via Luna Config Gateway
+        and applied daemon-side for 2x speedup on final denoising steps.
+        
         Returns same LATENT output as stock KSampler for drop-in compatibility.
         """
-        # Freeze model NOW (after ComfyUI's lazy loading has completed)
-        if hasattr(model, 'model') and hasattr(model.model, 'diffusion_model'):
-            diff_model = model.model.diffusion_model
-            diff_model.eval()
-            for param in diff_model.parameters():
-                param.requires_grad = False
-            print("[LunaKSampler] ✓ Model frozen (post-lazy-load)")
+        # Extract values from luna_pipe if provided, use manual inputs as overrides
+        if luna_pipe is not None:
+            (
+                pipe_model, pipe_clip, pipe_vae,
+                pipe_positive, pipe_negative,
+                pipe_latent,
+                pipe_width, pipe_height, pipe_seed, pipe_steps, pipe_cfg, pipe_denoise,
+                pipe_sampler, pipe_scheduler
+            ) = luna_pipe
+            
+            # Use pipe values, but allow manual inputs to override
+            # Prefer manually connected inputs, fall back to pipe
+            model = model if model is not None else pipe_model
+            positive = positive if positive is not None else pipe_positive
+            negative = negative if negative is not None else pipe_negative
+            latent_image = latent_image if latent_image is not None else pipe_latent
+            
+            print(f"[LunaKSampler] Using LUNA_PIPE (manual inputs override pipe values if connected)")
+        
+        # Validate required inputs
+        if model is None:
+            raise ValueError("[LunaKSampler] model input is required (provide manually or via LUNA_PIPE)")
+        if positive is None:
+            raise ValueError("[LunaKSampler] positive input is required (provide manually or via LUNA_PIPE)")
+        if negative is None:
+            raise ValueError("[LunaKSampler] negative input is required (provide manually or via LUNA_PIPE)")
+        if latent_image is None:
+            raise ValueError("[LunaKSampler] latent_image input is required (provide manually or via LUNA_PIPE)")
         
         # Use inference_mode to prevent gradient tracking during sampling
         with torch.inference_mode():

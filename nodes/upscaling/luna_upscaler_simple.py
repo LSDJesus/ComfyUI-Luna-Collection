@@ -5,14 +5,10 @@ import os
 import torch.nn.functional as F
 import sys
 
-# Add the parent directory to sys.path to enable relative imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# NOTE: sys.path is configured centrally in __init__.py
+# The parent directories are already in sys.path for module imports
 
 # Import Luna validation system
-validation_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "validation")
-if validation_path not in sys.path:
-    sys.path.insert(0, validation_path)
-
 try:
     from validation import luna_validator, validate_node_input
     VALIDATION_AVAILABLE = True
@@ -29,10 +25,6 @@ def conditional_validate(*args, **kwargs):
     return decorator
 
 # Import utils modules directly
-utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils")
-if utils_path not in sys.path:
-    sys.path.insert(0, utils_path)
-
 try:
     from trt_engine import Engine  # type: ignore
     TENSORRT_AVAILABLE = True

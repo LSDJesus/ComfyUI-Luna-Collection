@@ -80,25 +80,36 @@ class LunaDaemonTray:
         self.daemon_running = False
         self.icon = None
         
-        # Import daemon server
+        # Add ComfyUI root to sys.path so we can import 'comfy' module
+        # Assumes tray_app runs from ComfyUI root as: python -m custom_nodes.ComfyUI-Luna-Collection.luna_daemon.tray_app
+        comfyui_root = Path(__file__).parent.parent.parent.parent  # Go up from luna_daemon to ComfyUI root
+        if comfyui_root.exists() and str(comfyui_root) not in sys.path:
+            sys.path.insert(0, str(comfyui_root))
+        
+        # Import daemon server (renamed to avoid conflict with ComfyUI's server.py)
         daemon_dir = Path(__file__).parent
         if str(daemon_dir) not in sys.path:
             sys.path.insert(0, str(daemon_dir))
         
         try:
-            # Import the server module and fetch DynamicDaemon attribute to avoid static import issues
-            import server as server_module
-            from config import SHARED_DEVICE, CLIP_PRECISION, VAE_PRECISION, ServiceType
+            # Import the daemon server module (renamed to avoid conflict with ComfyUI's server.py)
+            import daemon_server as server_module
+            from config import SHARED_DEVICE, CLIP_PRECISION, VAE_PRECISION, ServiceType, ATTENTION_MODE
             # Prefer explicit DynamicDaemon but allow common fallback names
             self.DynamicDaemon = getattr(server_module, "DynamicDaemon", None)
             if self.DynamicDaemon is None:
                 self.DynamicDaemon = getattr(server_module, "Daemon", None) or getattr(server_module, "LunaDaemon", None)
             if self.DynamicDaemon is None:
                 raise ImportError("DynamicDaemon not found in server module")
+            
+            # Import attention mode configuration function
+            self.configure_attention_mode = getattr(server_module, "configure_attention_mode", None)
+            
             self.SHARED_DEVICE = SHARED_DEVICE
             self.CLIP_PRECISION = CLIP_PRECISION
             self.VAE_PRECISION = VAE_PRECISION
             self.ServiceType = ServiceType
+            self.ATTENTION_MODE = ATTENTION_MODE
         except Exception as e:
             print(f"Error importing daemon: {e}")
             self.DynamicDaemon = None
@@ -147,6 +158,11 @@ class LunaDaemonTray:
                 if self.icon:
                     self.icon.icon = self.create_icon_image('yellow')
                     self.icon.title = "Luna Daemon - Starting..."
+                
+                # Configure attention mode before creating daemon
+                if self.configure_attention_mode:
+                    self.configure_attention_mode()
+                    print(f"Attention mode: {self.ATTENTION_MODE}")
                 
                 daemon = self.DynamicDaemon(
                     device=self.SHARED_DEVICE,
@@ -262,12 +278,51 @@ class LunaDaemonTray:
         if icon:
             icon.stop()
     
+    def run_headless(self):
+        """Run daemon in headless mode (no tray GUI)"""
+        # Try to acquire single-instance lock
+        if not self.lock.acquire():
+            print("Luna Daemon is already running!")
+            return
+        
+        print("Luna Daemon starting in headless mode...")
+        
+        if not self.DynamicDaemon:
+            print("Error: DynamicDaemon not available")
+            return
+        
+        try:
+            # Configure attention mode
+            if self.configure_attention_mode:
+                self.configure_attention_mode()
+                print(f"Attention mode: {self.ATTENTION_MODE}")
+            
+            # Create and run daemon (blocking)
+            daemon = self.DynamicDaemon(
+                device=self.SHARED_DEVICE,
+                clip_precision=self.CLIP_PRECISION,
+                vae_precision=self.VAE_PRECISION,
+                service_type=self.ServiceType.FULL
+            )
+            
+            print("Luna Daemon running (headless mode)")
+            daemon.run()  # Blocking
+        except KeyboardInterrupt:
+            print("\nShutting down Luna Daemon...")
+        except Exception as e:
+            print(f"Daemon error: {e}")
+            import traceback
+            traceback.print_exc()
+        finally:
+            self.lock.release()
+    
     def run(self):
         """Run the system tray application"""
         if not HAS_TRAY:
-            print("Error: pystray not installed")
-            print("Install with: pip install pystray pillow")
-            return
+            print("Warning: pystray not installed, running in headless mode")
+            print("For GUI tray icon, install: pip install pystray pillow")
+            # Run in headless mode - just start daemon without tray
+            return self.run_headless()
         
         # Try to acquire single-instance lock
         if not self.lock.acquire():

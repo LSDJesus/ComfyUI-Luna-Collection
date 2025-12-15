@@ -1580,6 +1580,17 @@ def create_engine(wildcards_dir: Optional[str] = None) -> LunaPromptEngine:
             pass
     
     if wildcards_dir is None:
-        wildcards_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'wildcards')
+        # Use folder_paths if available, otherwise fallback to standard location
+        try:
+            import folder_paths
+            models_dir = getattr(folder_paths, 'models_dir', None)
+            if models_dir:
+                wildcards_dir = os.path.join(models_dir, 'wildcards')
+        except (ImportError, AttributeError):
+            pass
+        
+        # Final fallback
+        if wildcards_dir is None:
+            wildcards_dir = "D:/AI/SD Models/wildcards"
     
     return LunaPromptEngine(wildcards_dir)

@@ -31,6 +31,14 @@ from typing import Tuple, Any
 
 import torch
 
+# Import centralized path constants from Luna Collection
+try:
+    from __init__ import COMFY_PATH, LUNA_PATH
+except (ImportError, ModuleNotFoundError, AttributeError):
+    # Fallback: construct paths if Luna constants aren't available
+    COMFY_PATH = None
+    LUNA_PATH = None
+
 try:
     import folder_paths
     import comfy.sd
@@ -217,7 +225,12 @@ class LunaDynamicModelLoader:
         if local_weights_dir and os.path.isdir(local_weights_dir):
             weights_root = local_weights_dir
         else:
-            weights_root = os.path.join(folder_paths.models_dir, "unet", "optimized")
+            # Use COMFY_PATH if available, fallback to folder_paths.models_dir
+            if COMFY_PATH:
+                models_base = os.path.join(COMFY_PATH, "models")
+            else:
+                models_base = folder_paths.models_dir
+            weights_root = os.path.join(models_base, "unet", "optimized")
         os.makedirs(weights_root, exist_ok=True)
         
         # 4. Build target UNet filename
@@ -240,15 +253,22 @@ class LunaDynamicModelLoader:
             # so we use importlib to load it dynamically
             import importlib.util
             
-            # Calculate path to checkpoint_converter.py
-            converter_path = Path(__file__).parent.parent.parent / "utils" / "checkpoint_converter.py"
+            # Calculate path to checkpoint_converter.py using centralized LUNA_PATH
+            if LUNA_PATH:
+                converter_path = Path(LUNA_PATH) / "utils" / "checkpoint_converter.py"
+            else:
+                # Fallback: luna_dynamic_loader.py is at nodes/loaders/, go up 3 levels
+                converter_path = Path(__file__).parent.parent.parent / "utils" / "checkpoint_converter.py"
             
             if not converter_path.exists():
                 raise FileNotFoundError(f"checkpoint_converter.py not found at {converter_path}")
             
             # Load module dynamically
             spec = importlib.util.spec_from_file_location("checkpoint_converter", converter_path)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"Failed to create module spec for {converter_path}")
             converter_module = importlib.util.module_from_spec(spec)
+            # spec.loader is guaranteed to be not None here
             spec.loader.exec_module(converter_module)
             
             convert_to_precision = converter_module.convert_to_precision
@@ -426,7 +446,12 @@ class LunaOptimizedWeightsManager:
         if weights_directory and os.path.isdir(weights_directory):
             weights_root = weights_directory
         else:
-            weights_root = os.path.join(folder_paths.models_dir, "unet", "optimized")
+            # Use COMFY_PATH if available, fallback to folder_paths.models_dir
+            if COMFY_PATH:
+                models_base = os.path.join(COMFY_PATH, "models")
+            else:
+                models_base = folder_paths.models_dir
+            weights_root = os.path.join(models_base, "unet", "optimized")
         
         if not os.path.exists(weights_root):
             return (f"Weights directory not found: {weights_root}",)

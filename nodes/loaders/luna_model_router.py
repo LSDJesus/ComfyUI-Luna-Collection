@@ -63,6 +63,16 @@ from typing import Tuple, Optional, Any, Dict, List
 
 from aiohttp import web
 
+# Import centralized path constants from Luna Collection
+# NOTE: sys.path is configured centrally in __init__.py, so imports work
+try:
+    # Direct import - Luna __init__.py sets up sys.path
+    from __init__ import COMFY_PATH, LUNA_PATH
+except (ImportError, ModuleNotFoundError, AttributeError):
+    # Fallback: construct paths if Luna constants aren't available
+    COMFY_PATH = None
+    LUNA_PATH = None
+
 try:
     import folder_paths
     import comfy.sd
@@ -190,24 +200,19 @@ try:
     import sys
     from pathlib import Path
     
-    # Get package root by navigating from this file
-    # nodes/loaders/luna_model_router.py -> nodes -> ComfyUI-Luna-Collection
-    PACKAGE_ROOT = Path(__file__).resolve().parents[2]
-    print(f"[Luna.ModelRouter] Repository root: {PACKAGE_ROOT}")
-    
-    if str(PACKAGE_ROOT) not in sys.path:
-        sys.path.insert(0, str(PACKAGE_ROOT))
-        print(f"[Luna.ModelRouter] Added to sys.path: {PACKAGE_ROOT}")
+    # NOTE: sys.path is configured centrally in __init__.py
+    # PACKAGE_ROOT is already available via sys.path setup at import time
+    # This import block can directly attempt imports without path manipulation
     
     # Try absolute imports
     from luna_daemon.proxy import DaemonVAE as _DaemonVAE, DaemonCLIP as _DaemonCLIP, detect_vae_type as _detect_vae_type
-    print("[Luna.ModelRouter] ✓ Imported proxy modules")
+    print("[Luna.ModelRouter] [OK] Imported proxy modules")
     from luna_daemon.zimage_proxy import DaemonZImageCLIP as _DaemonZImageCLIP, detect_clip_architecture as _detect_clip_architecture
-    print("[Luna.ModelRouter] ✓ Imported zimage_proxy")
+    print("[Luna.ModelRouter] [OK] Imported zimage_proxy")
     from luna_daemon import client as _daemon_client
-    print("[Luna.ModelRouter] ✓ Imported daemon client")
+    print("[Luna.ModelRouter] [OK] Imported daemon client")
     from luna_daemon.config import DAEMON_HOST as _DAEMON_HOST, DAEMON_PORT as _DAEMON_PORT
-    print("[Luna.ModelRouter] ✓ Imported daemon config")
+    print("[Luna.ModelRouter] [OK] Imported daemon config")
     
     # Assign to module variables
     DaemonVAE = _DaemonVAE
@@ -216,10 +221,10 @@ try:
     daemon_client = _daemon_client
     DAEMON_HOST = _DAEMON_HOST
     DAEMON_PORT = _DAEMON_PORT
-    detect_vae_type = _detect_vae_type
+    detect_vae_type = _detect_vae_type  # type: ignore
     detect_clip_architecture = _detect_clip_architecture
     DAEMON_AVAILABLE = True
-    print("[Luna.ModelRouter] ✓ Daemon imports successful!")
+    print("[Luna.ModelRouter] [OK] Daemon imports successful!")
 except Exception as e:
     print(f"[Luna.ModelRouter] ✗ Daemon import failed: {type(e).__name__}: {e}")
     import traceback
@@ -279,12 +284,22 @@ def _get_clip_model_list() -> List[str]:
         except:
             pass
     
-    # Method 3: Scan common paths
+    # Method 3: Scan common paths using centralized COMFY_PATH
     if not models_dir:
-        for potential_path in [
+        potential_paths = []
+        
+        # Try COMFY_PATH if available (from centralized __init__.py)
+        if COMFY_PATH:
+            potential_paths.append(os.path.join(COMFY_PATH, "models"))
+        
+        # Fallback options
+        potential_paths.extend([
             os.path.join(os.getcwd(), "models"),
-            os.path.join(os.path.dirname(__file__), "..", "..", "models"),
-        ]:
+            os.path.join(COMFY_PATH, "models") if COMFY_PATH else None,
+        ])
+        potential_paths = [p for p in potential_paths if p]  # Remove None entries
+        
+        for potential_path in potential_paths:
             if os.path.isdir(potential_path):
                 models_dir = potential_path
                 break
@@ -358,12 +373,22 @@ def _resolve_clip_path(clip_name: str) -> Optional[str]:
                 if checkpoints_dir:
                     models_dir = os.path.dirname(checkpoints_dir)
             
-            # Method 3: Scan common paths
+            # Method 3: Scan common paths using centralized COMFY_PATH
             if not models_dir:
-                for potential_path in [
+                potential_paths = []
+                
+                # Try COMFY_PATH if available (from centralized __init__.py)
+                if COMFY_PATH:
+                    potential_paths.append(os.path.join(COMFY_PATH, "models"))
+                
+                # Fallback options
+                potential_paths.extend([
                     os.path.join(os.getcwd(), "models"),
-                    os.path.join(os.path.dirname(__file__), "..", "..", "models"),
-                ]:
+                    os.path.join(COMFY_PATH, "models") if COMFY_PATH else None,
+                ])
+                potential_paths = [p for p in potential_paths if p]  # Remove None entries
+                
+                for potential_path in potential_paths:
                     if os.path.isdir(potential_path):
                         models_dir = potential_path
                         break
@@ -651,9 +676,10 @@ class LunaModelRouter:
         # === STEP 3: Load MODEL ===
         output_model = None
         output_model_name = ""
+        model_path_to_register = None
         
         if model_name and model_name != "None":
-            output_model, output_model_name = self._load_model(
+            output_model, output_model_name, model_path_to_register = self._load_model(
                 model_source, model_name, dynamic_precision, local_weights_dir
             )
             precision_str = f" → {dynamic_precision}" if dynamic_precision != "None" else ""
@@ -671,7 +697,8 @@ class LunaModelRouter:
                 )
                 
                 # WRAP in DaemonModel proxy for centralized inference
-                output_model = self._wrap_model_as_daemon_proxy(output_model, model_type, model_name)
+                # Use the registered path (could be converted path if conversion happened)
+                output_model = self._wrap_model_as_daemon_proxy(output_model, model_type, model_path_to_register)
         else:
             status_parts.append("MODEL: None (no model selected)")
         
@@ -723,7 +750,7 @@ class LunaModelRouter:
                 status_parts.append("VAE: None")
         
         # === Build status ===
-        daemon_status = "daemon ✓" if daemon_running and use_daemon else "local"
+        daemon_status = "daemon [OK]" if daemon_running and use_daemon else "local"
         status = f"[{model_type}] {daemon_status} | " + " | ".join(status_parts)
         
         print(f"[LunaModelRouter] {status}")
@@ -750,7 +777,7 @@ class LunaModelRouter:
                 sock.settimeout(2)  # 2 second timeout
                 sock.connect((host, port))
                 sock.close()
-                print(f"[Luna.ModelRouter] ✓ Daemon is running (attempt {attempt + 1})")
+                print(f"[Luna.ModelRouter] [OK] Daemon is running (attempt {attempt + 1})")
                 return True
             except Exception as e:
                 if attempt < 2:
@@ -789,7 +816,7 @@ class LunaModelRouter:
         name: str,
         precision: str,
         local_weights_dir: str
-    ) -> Tuple[Any, str]:
+    ) -> Tuple[Any, str, str]:
         """Load model from specified source with optional precision conversion."""
         
         # Get full path
@@ -807,10 +834,27 @@ class LunaModelRouter:
         # Extract model name for output
         output_name = os.path.splitext(os.path.basename(name))[0]
         
+        # Detect actual precision in the model weights
+        actual_precision = self._detect_model_precision(model_path)
+        
         # Check if dynamic precision conversion is needed
-        if precision != "None":
-            model = self._load_with_conversion(model_path, precision, local_weights_dir)
-            return model, output_name
+        # Only convert if:
+        # 1. Conversion requested (precision != "None")
+        # 2. Model is in a convertible format (fp16, bf16)
+        # 3. Requested precision is different from actual
+        should_convert = (
+            precision != "None" and 
+            actual_precision in ["fp16", "bf16"] and 
+            precision != actual_precision
+        )
+        
+        if should_convert:
+            print(f"[LunaModelRouter] Converting model from {actual_precision} to {precision}")
+            model, converted_path = self._load_with_conversion(model_path, precision, local_weights_dir)
+            return model, output_name, converted_path
+        elif actual_precision not in ["fp16", "bf16"] and precision != "None":
+            # Model is already in a quantized/converted format
+            print(f"[LunaModelRouter] Model is already in {actual_precision} format. Skipping conversion to {precision}")
         
         # Load based on file type
         if model_path.endswith('.gguf'):
@@ -828,7 +872,62 @@ class LunaModelRouter:
             # UNet/diffusion model only
             model = comfy.sd.load_unet(model_path)
         
-        return model, output_name
+        # Return model and the path to use for daemon registration
+        return model, output_name, model_path
+    
+    def _detect_model_precision(self, model_path: str) -> str:
+        """
+        Detect the actual precision of model weights.
+        
+        Loads minimal metadata from safetensors to determine dtype without
+        loading the entire model into memory.
+        
+        Returns:
+            Precision string: "fp16", "bf16", "fp8", "int8", "nf4", or "unknown"
+        """
+        try:
+            from safetensors import safe_open
+            import torch
+            
+            # For .gguf files, assume fp8 or quantized
+            if model_path.endswith('.gguf'):
+                return "fp8"  # GGUF models are typically quantized
+            
+            # For safetensors, peek at metadata
+            if model_path.endswith('.safetensors'):
+                with safe_open(model_path, framework="pt") as f:
+                    # Get first tensor to detect dtype
+                    for key in list(f.keys())[:1]:  # Just check first tensor
+                        tensor_info = f.get_slice(key)
+                        dtype = tensor_info.dtype
+                        
+                        # Map torch dtypes to our precision strings
+                        dtype_map = {
+                            'torch.float16': 'fp16',
+                            'torch.bfloat16': 'bf16',
+                            'torch.float32': 'fp32',
+                            'torch.float8_e4m3fn': 'fp8',
+                            'torch.int8': 'int8',
+                            'torch.float8_e5m2': 'fp8',
+                        }
+                        
+                        dtype_str = str(dtype)
+                        for torch_type, precision_type in dtype_map.items():
+                            if torch_type in dtype_str:
+                                return precision_type
+                        
+                        # If we detect float32, model is unquantized (original)
+                        if 'float32' in dtype_str.lower():
+                            return "fp32"
+                        
+                        return "unknown"
+            
+            # For .pth or .pt files, would need to load - skip for now
+            return "unknown"
+            
+        except Exception as e:
+            print(f"[LunaModelRouter] Warning: Could not detect model precision: {e}")
+            return "unknown"
     
     def _load_with_conversion(
         self,
@@ -850,6 +949,16 @@ class LunaModelRouter:
         
         # Get the base filename
         base_name = os.path.splitext(os.path.basename(model_path))[0]
+        
+        # Strip existing model-type suffixes to avoid duplication
+        # e.g., "model_fp8_e4m3fn_unet" -> "model"
+        #       "model_unet" -> "model"
+        #       "model_clip_g" -> "model"
+        suffix_patterns = ["_fp8_e4m3fn_unet", "_bf16_unet", "_fp16_unet", "_unet", "_clip_g", "_clip_l", "_t5xxl"]
+        for pattern in suffix_patterns:
+            if base_name.endswith(pattern):
+                base_name = base_name[:-len(pattern)]
+                break
         
         # Determine relative subfolder path from checkpoints root
         # e.g., "Illustrious/Realistic" from ".../checkpoints/Illustrious/Realistic/model.safetensors"
@@ -911,14 +1020,20 @@ class LunaModelRouter:
                 import sys
                 import importlib.util
                 
-                # Calculate path to checkpoint_converter.py
-                converter_path = Path(__file__).parent.parent.parent / "utils" / "checkpoint_converter.py"
+                # Calculate path to checkpoint_converter.py using centralized LUNA_PATH
+                if LUNA_PATH:
+                    converter_path = Path(LUNA_PATH) / "utils" / "checkpoint_converter.py"
+                else:
+                    # Fallback: luna_model_router.py is at nodes/loaders/, go up 3 levels
+                    converter_path = Path(__file__).parent.parent.parent / "utils" / "checkpoint_converter.py"
                 
                 if not converter_path.exists():
                     raise FileNotFoundError(f"checkpoint_converter.py not found at {converter_path}")
                 
                 # Load module dynamically
                 spec = importlib.util.spec_from_file_location("checkpoint_converter", converter_path)
+                if spec is None:
+                    raise RuntimeError("Failed to create module spec for checkpoint_converter")
                 converter_module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(converter_module)
                 
@@ -973,7 +1088,8 @@ class LunaModelRouter:
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         
-        return model
+        # Return both the loaded model and the path to the converted file
+        return model, cache_path
     
     def _load_gguf_model(self, path: str) -> Any:
         """Load GGUF model file directly from path.
@@ -1058,7 +1174,7 @@ class LunaModelRouter:
                 print(f"[LunaModelRouter] Registration result: {result}")
                 
                 if result.get("success"):
-                    print(f"[LunaModelRouter] ✓ Registered CLIP with daemon: {model_type} -> {clip_type_str}")
+                    print(f"[LunaModelRouter] [OK] Registered CLIP with daemon: {model_type} -> {clip_type_str}")
                     # Return DaemonCLIP proxy (no source_clip needed - daemon loads from path)
                     daemon_clip_type = {
                         "SD1.5": "sd15",
@@ -1139,9 +1255,10 @@ class LunaModelRouter:
                 
                 import comfy.text_encoders.z_image
                 import comfy.text_encoders.hunyuan_video
+                import comfy.utils  # type: ignore
                 from comfy.sd1_clip import CLIP
                 
-                clip_data = comfy.utils.load_torch_file(full_path, safe_load=True)
+                clip_data = comfy.utils.load_torch_file(full_path, safe_load=True)  # type: ignore
                 
                 # For multi-shard models, merge all shards into single state_dict
                 # Check if this is a sharded model by looking for shard info in the path
@@ -1153,7 +1270,7 @@ class LunaModelRouter:
                     # Merge all shards into single state_dict
                     merged_state_dict = {}
                     for shard_file in shard_files:
-                        shard_data = comfy.utils.load_torch_file(os.path.join(model_dir, shard_file), safe_load=True)
+                        shard_data = comfy.utils.load_torch_file(os.path.join(model_dir, shard_file), safe_load=True)  # type: ignore
                         merged_state_dict.update(shard_data)
                     clip_data = merged_state_dict
                 
@@ -1214,7 +1331,7 @@ class LunaModelRouter:
                 import comfy.text_encoders.hunyuan_video
                 
                 # Load state dict
-                clip_data = comfy.utils.load_torch_file(full_path, safe_load=True)
+                clip_data = comfy.utils.load_torch_file(full_path, safe_load=True)  # type: ignore
                 
                 # For multi-shard models, merge all shards into single state_dict
                 # Check if this is a sharded model by looking for shard info in the path
@@ -1226,7 +1343,7 @@ class LunaModelRouter:
                     # Merge all shards into single state_dict
                     merged_state_dict = {}
                     for shard_file in shard_files:
-                        shard_data = comfy.utils.load_torch_file(os.path.join(model_dir, shard_file), safe_load=True)
+                        shard_data = comfy.utils.load_torch_file(os.path.join(model_dir, shard_file), safe_load=True)  # type: ignore
                         merged_state_dict.update(shard_data)
                     clip_data = merged_state_dict
                 
@@ -1394,7 +1511,7 @@ class LunaModelRouter:
                 print(f"[LunaModelRouter] Registration result: {result}")
                 
                 if result.get("success"):
-                    print(f"[LunaModelRouter] ✓ Registered VAE with daemon: {vae_type}")
+                    print(f"[LunaModelRouter] [OK] Registered VAE with daemon: {vae_type}")
                     # Return DaemonVAE proxy (no source_vae needed - daemon loads from path)
                     return DaemonVAE(source_vae=None, vae_type=vae_type, use_existing=True)
                 else:
@@ -1486,7 +1603,7 @@ class LunaModelRouter:
             )
             
             if result.get('success'):
-                print(f"[LunaModelRouter] ✓ Registered checkpoint with daemon: {os.path.basename(model_name)} ({size_mb:.1f} MB) on {device}")
+                print(f"[LunaModelRouter] [OK] Registered checkpoint with daemon: {os.path.basename(model_name)} ({size_mb:.1f} MB) on {device}")
             else:
                 print(f"[LunaModelRouter] ✗ Checkpoint registration failed: {result.get('message', 'unknown error')}")
             
@@ -1519,6 +1636,10 @@ class LunaModelRouter:
             from luna_daemon.proxy import DaemonModel
             from luna_daemon import client as daemon_client
             
+            # Ensure model_path is absolute (daemon needs full path)
+            if not os.path.isabs(model_path):
+                model_path = os.path.abspath(model_path)
+            
             # Determine Luna model type
             luna_model_type = model_type.replace(" + Vision", "").lower()  # "SDXL" → "sdxl"
             
@@ -1529,8 +1650,8 @@ class LunaModelRouter:
             result = daemon_client.register_model_by_path(model_path, luna_model_type)
             
             if result.get('success'):
-                print(f"[LunaModelRouter] ✓ Model registered with daemon: {luna_model_type} ({result.get('size_mb', 0):.1f} MB)")
-                print(f"[LunaModelRouter] ✓ Using DaemonModel proxy - inference routes through daemon")
+                print(f"[LunaModelRouter] [OK] Model registered with daemon: {luna_model_type} ({result.get('size_mb', 0):.1f} MB)")
+                print(f"[LunaModelRouter] [OK] Using DaemonModel proxy - inference routes through daemon")
                 return proxy
             else:
                 print(f"[LunaModelRouter] ⚠ Model registration with daemon failed: {result.get('message')}, falling back to local")

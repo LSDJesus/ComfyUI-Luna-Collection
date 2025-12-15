@@ -4,37 +4,79 @@ import importlib.util
 import traceback
 from pathlib import Path
 
+# ============================================================================
+# CENTRALIZED PATH MANAGEMENT - Similar to Impact Pack
+# Set up all paths once at initialization time
+# ============================================================================
+
+# The base directory of Luna Collection
+LUNA_PATH = os.path.dirname(os.path.abspath(__file__))
+PACKAGE_ROOT = Path(__file__).parent
+
+# ComfyUI root path (found via folder_paths module)
+try:
+    import folder_paths
+    COMFY_PATH = os.path.dirname(folder_paths.__file__)
+except ImportError:
+    COMFY_PATH = None
+
+# Define all key paths
+NODES_PATH = os.path.join(LUNA_PATH, "nodes")
+DAEMON_PATH = os.path.join(LUNA_PATH, "luna_daemon")
+UTILS_PATH = os.path.join(LUNA_PATH, "utils")
+TESTS_PATH = os.path.join(LUNA_PATH, "tests")
+
+# Add all key directories to sys.path once at import time
+# This prevents scattered sys.path manipulations throughout the codebase
+_PATHS_TO_ADD = [
+    NODES_PATH,
+    DAEMON_PATH,
+    UTILS_PATH,
+    LUNA_PATH,  # For relative imports within the collection
+]
+
+for _path in _PATHS_TO_ADD:
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
+
 # This remains. It tells ComfyUI where to find our JavaScript files.
 WEB_DIRECTORY = "./js"
 
-# The base directory of our collection
-NODE_DIR = os.path.dirname(os.path.abspath(__file__))
-PACKAGE_ROOT = Path(__file__).parent  # For imports in submodules (nodes, luna_daemon, etc.)
-
-# Add utils directory to Python path for imports
-utils_dir = os.path.join(NODE_DIR, "utils")
-if utils_dir not in sys.path:
-    sys.path.insert(0, utils_dir)
+# ============================================================================
+# PUBLICLY EXPORTED PATH CONSTANTS
+# Modules can import these to reference Luna Collection and ComfyUI paths
+# Usage: from ComfyUI-Luna-Collection import LUNA_PATH, COMFY_PATH, NODES_PATH, etc.
+# ============================================================================
+__all__ = [
+    'NODE_CLASS_MAPPINGS',
+    'NODE_DISPLAY_NAME_MAPPINGS',
+    'LUNA_PATH',
+    'COMFY_PATH',
+    'NODES_PATH',
+    'DAEMON_PATH',
+    'UTILS_PATH',
+    'TESTS_PATH',
+    'WEB_DIRECTORY',
+]
 
 # --- NODE DISCOVERY ---
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
 def setup_nodes():
-    nodes_root_dir = os.path.join(NODE_DIR, "nodes")
-    if not os.path.isdir(nodes_root_dir):
+    if not os.path.isdir(NODES_PATH):
         print("lunaCore: No 'nodes' directory found. Skipping node loading.")
         return
 
     # The new, All-Seeing Eye: os.walk()
     # This will traverse the entire directory tree, including subdirectories.
-    for root, dirs, files in os.walk(nodes_root_dir):
+    for root, dirs, files in os.walk(NODES_PATH):
         for filename in files:
             if filename.endswith(".py") and not filename.startswith("__"):
                 try:
                     # Construct a proper module path for nested files
                     # e.g., nodes/loaders/checkpoint_loader.py -> nodes.loaders.checkpoint_loader
-                    relative_path = os.path.relpath(root, nodes_root_dir)
+                    relative_path = os.path.relpath(root, NODES_PATH)
                     if relative_path == ".":
                         module_name_parts = ["nodes", filename[:-3]]
                     else:
@@ -72,28 +114,28 @@ def register_api_routes():
     """Register all API routes for Luna nodes that need them"""
     try:
         # Import and register daemon API routes
-        from nodes.luna_daemon_api import register_routes as register_daemon_routes
+        from nodes.luna_daemon_api import register_routes as register_daemon_routes  # type: ignore
         register_daemon_routes()
     except Exception as e:
         pass  # Silently fail if daemon API not available
     
     try:
         # Import and register other API routes if needed
-        from nodes.luna_civitai_scraper import register_routes as register_civitai_routes
+        from nodes.luna_civitai_scraper import register_routes as register_civitai_routes  # type: ignore
         if callable(register_civitai_routes):
             register_civitai_routes()
     except (ImportError, AttributeError):
         pass
     
     try:
-        from nodes.luna_wildcard_connections import register_routes as register_wildcard_routes
+        from nodes.luna_wildcard_connections import register_routes as register_wildcard_routes  # type: ignore
         if callable(register_wildcard_routes):
             register_wildcard_routes()
     except (ImportError, AttributeError):
         pass
     
     try:
-        from nodes.luna_model_router import register_routes as register_model_router_routes
+        from nodes.luna_model_router import register_routes as register_model_router_routes  # type: ignore
         if callable(register_model_router_routes):
             register_model_router_routes()
     except (ImportError, AttributeError):
@@ -104,7 +146,7 @@ register_api_routes()
 
 # Also hook into PromptServer setup if possible
 try:
-    from server import PromptServer
+    from server import PromptServer  # type: ignore
     if hasattr(PromptServer, 'instance') and PromptServer.instance:
         register_api_routes()
 except ImportError:

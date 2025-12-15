@@ -169,6 +169,17 @@ class DaemonClient:
         """Get daemon info (device, VRAM usage, loaded models/components)"""
         return self._send_request({"cmd": "info"})
     
+    def set_attention_mode(self, mode: str) -> dict:
+        """Dynamically change the daemon's attention mode at runtime
+        
+        Args:
+            mode: Attention mode ("sage", "xformers", "flash", "pytorch", "split", "auto")
+            
+        Returns:
+            dict with 'success' bool and 'message' string
+        """
+        return self._send_request({"cmd": "set_attention_mode", "mode": mode})
+    
     def negotiate_ipc(self) -> bool:
         """
         Negotiate CUDA IPC mode with daemon.
@@ -824,6 +835,7 @@ class DaemonClient:
                      context: Optional[torch.Tensor] = None,
                      model_type: str = 'sdxl',
                      lora_stack: Optional[List[tuple]] = None,
+                     fb_cache_params: Optional[Dict[str, Any]] = None,
                      **kwargs) -> torch.Tensor:
         """
         Execute UNet forward pass through daemon.
@@ -836,6 +848,13 @@ class DaemonClient:
             context: Conditioning/context tensor (B, seq_len, dim)
             model_type: Model type string
             lora_stack: Optional list of (lora_name, model_str, clip_str) tuples
+            fb_cache_params: Optional dict with FB cache config:
+                - enabled: bool
+                - start_percent: float (0.0-1.0)
+                - end_percent: float (0.0-1.0)
+                - residual_diff_threshold: float
+                - max_consecutive_hits: int
+                - object_to_patch: str (default 'diffusion_model')
             **kwargs: Additional model-specific arguments
         
         Returns:
@@ -856,6 +875,9 @@ class DaemonClient:
         
         if lora_stack:
             request["lora_stack"] = lora_stack
+        
+        if fb_cache_params:
+            request["fb_cache_params"] = fb_cache_params
         
         # Add any extra kwargs (control, y, etc.)
         request.update(kwargs)
@@ -1071,9 +1093,10 @@ def model_forward(x: torch.Tensor, timesteps: torch.Tensor,
                  context: Optional[torch.Tensor] = None,
                  model_type: str = 'sdxl',
                  lora_stack: Optional[List[tuple]] = None,
+                 fb_cache_params: Optional[Dict[str, Any]] = None,
                  **kwargs) -> torch.Tensor:
     """Execute UNet forward pass through daemon"""
-    return get_client().model_forward(x, timesteps, context, model_type, lora_stack, **kwargs)
+    return get_client().model_forward(x, timesteps, context, model_type, lora_stack, fb_cache_params, **kwargs)
 
 
 # =============================================================================

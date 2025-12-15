@@ -8,9 +8,18 @@ from pathlib import Path
 from typing import Tuple
 import importlib.util
 
-# Load gguf_converter using importlib to avoid path issues
-# luna_gguf_converter.py is at nodes/utilities/, so go up 3 levels to get to root
-converter_path = Path(__file__).parent.parent.parent / "utils" / "gguf_converter.py"
+# Import centralized path constants
+try:
+    from __init__ import LUNA_PATH
+except (ImportError, ModuleNotFoundError, AttributeError):
+    LUNA_PATH = None
+
+# Load gguf_converter using centralized LUNA_PATH
+if LUNA_PATH:
+    converter_path = Path(LUNA_PATH) / "utils" / "gguf_converter.py"
+else:
+    # Fallback: luna_gguf_converter.py is at nodes/utilities/, go up 3 levels
+    converter_path = Path(__file__).parent.parent.parent / "utils" / "gguf_converter.py"
 
 try:
     spec = importlib.util.spec_from_file_location("gguf_converter", converter_path)

@@ -47,6 +47,14 @@ from typing import TYPE_CHECKING, Tuple, Optional, Any, Dict, List
 import torch
 import numpy as np
 
+# Import centralized path constants from Luna Collection
+try:
+    from __init__ import COMFY_PATH, LUNA_PATH
+except (ImportError, ModuleNotFoundError, AttributeError):
+    # Fallback: construct paths if Luna constants aren't available
+    COMFY_PATH = None
+    LUNA_PATH = None
+
 try:
     import folder_paths
     HAS_COMFY = True
@@ -647,11 +655,19 @@ Respond only with the refined/generated prompt text, no explanations."""
         if not HAS_COMFY or folder_paths is None:
             raise RuntimeError("ComfyUI folder_paths not available")
         
-        # Check common locations
+        # Build search paths with fallback to COMFY_PATH if available
+        search_paths = []
+        
+        # Try COMFY_PATH if available (from centralized __init__.py)
+        if COMFY_PATH:
+            models_base = os.path.join(COMFY_PATH, "models")
+        else:
+            models_base = folder_paths.models_dir
+        
         search_paths = [
-            os.path.join(folder_paths.models_dir, "LLM", "Qwen-VL"),
-            os.path.join(folder_paths.models_dir, "LLM"),
-            os.path.join(folder_paths.models_dir, "text_encoders"),
+            os.path.join(models_base, "LLM", "Qwen-VL"),
+            os.path.join(models_base, "LLM"),
+            os.path.join(models_base, "text_encoders"),
         ]
         
         qwen_patterns = ["Qwen3-VL", "Qwen2.5-VL", "Qwen2-VL"]

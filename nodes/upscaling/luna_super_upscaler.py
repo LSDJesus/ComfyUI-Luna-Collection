@@ -73,7 +73,7 @@ def apply_film_grain(
         images[i:i+1] = (images[i:i+1] + grain_intensity * grain).clamp_(0, 1)
     
     if HAS_COMFY:
-        images = images.to(comfy.model_management.intermediate_device())
+        images = images.to(comfy.model_management.intermediate_device()) # type: ignore
     
     return images
 

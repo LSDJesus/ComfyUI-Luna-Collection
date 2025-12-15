@@ -7,23 +7,11 @@ import os
 import sys
 from enum import Enum
 
-# Add the parent directory to sys.path to enable relative imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Import utils modules directly
-utils_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "utils")
-if utils_path not in sys.path:
-    sys.path.insert(0, utils_path)
-
+# NOTE: sys.path is configured centrally in __init__.py
+# All necessary directories are already added at Luna Collection import time
 
 LunaPerformanceMonitor = None
 try:
-    from pathlib import Path
-    # Go up two levels from nodes/upscaling/ to reach project root
-    root_dir = str(Path(__file__).parent.parent.parent)
-    utils_dir = os.path.join(root_dir, 'utils')
-    if utils_dir not in sys.path:
-        sys.path.insert(0, utils_dir)
     from luna_performance_monitor import LunaPerformanceMonitor
 except ImportError:
     pass  # Performance monitoring is optional
@@ -31,12 +19,6 @@ except ImportError:
 # Import TensorRT Engine
 Engine = None
 try:
-    from pathlib import Path
-    # Go up two levels from nodes/upscaling/ to reach project root
-    root_dir = str(Path(__file__).parent.parent.parent)
-    utils_dir = os.path.join(root_dir, 'utils')
-    if utils_dir not in sys.path:
-        sys.path.insert(0, utils_dir)
     from trt_engine import Engine
 except ImportError:
     pass  # TensorRT is optional (you're using WaveSpeed instead)

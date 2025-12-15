@@ -336,7 +336,7 @@ class Qwen3VLEncoder:
             )
             
             if self._zimage_compatible:
-                logger.info(f"[Qwen3VLEncoder] ✓ Z-IMAGE compatible:")
+                logger.info(f"[Qwen3VLEncoder] [OK] Z-IMAGE compatible:")
                 logger.info(f"  vocab_size: {vocab_size}")
                 logger.info(f"  hidden_size: {hidden_size}")
             else:

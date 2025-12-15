@@ -48,12 +48,8 @@ except ImportError:
 # Import Luna metadata database
 try:
     from pathlib import Path
-    # Go up two levels from nodes/utilities/ to reach project root
-    root_dir = str(Path(__file__).parent.parent.parent)
-    utils_dir = os.path.join(root_dir, 'utils')
-    import sys
-    if utils_dir not in sys.path:
-        sys.path.insert(0, utils_dir)
+    # NOTE: sys.path is configured centrally in __init__.py
+    # All necessary directories are already in sys.path
     from luna_metadata_db import get_db, store_civitai_metadata
     HAS_METADATA_DB = True
 except ImportError:
