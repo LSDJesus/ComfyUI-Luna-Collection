@@ -38,6 +38,8 @@ try:
 except (ImportError, ValueError):
     # Fallback: load core.py directly
     import importlib.util
+    import logging
+    
     core_path = os.path.join(os.path.dirname(__file__), "core.py")
     spec = importlib.util.spec_from_file_location("luna_daemon_core", core_path)
     if spec and spec.loader:
@@ -47,14 +49,8 @@ except (ImportError, ValueError):
         LoRACacheEntry = core_mod.LoRACacheEntry
         LoRANotFoundError = core_mod.LoRANotFoundError
     else:
-        import logging
         logger = logging.getLogger("LunaLoRACache")
-        
-        class LoRACacheEntry:
-            pass
-        
-        class LoRANotFoundError(Exception):
-            pass
+        raise RuntimeError("Could not load core.py - LoRA cache initialization failed")
 
 
 # =============================================================================

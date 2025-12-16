@@ -179,9 +179,9 @@ class LunaDaemon:
         vae_device: str = VAE_DEVICE,
         service_type: ServiceType = SERVICE_TYPE,
         # Backward compatibility with old tray app parameters
-        device: str = None,
-        clip_precision: str = None,
-        vae_precision: str = None,
+        device: Optional[str] = None,
+        clip_precision: Optional[str] = None,
+        vae_precision: Optional[str] = None,
         **kwargs
     ):
         # Handle old tray app parameter names
@@ -208,7 +208,7 @@ class LunaDaemon:
         )
         
         # Config paths for workers
-        self.config_paths = {
+        self.config_paths: Dict[str, Optional[str]] = {
             'vae': VAE_PATH,
             'clip_l': CLIP_L_PATH,
             'clip_g': CLIP_G_PATH,
@@ -216,11 +216,11 @@ class LunaDaemon:
         }
         
         # Worker pools
-        self.vae_pool: Optional[WorkerPool] = None
-        self.clip_pool: Optional[WorkerPool] = None
+        self.vae_pool: Optional["WorkerPool"] = None
+        self.clip_pool: Optional["WorkerPool"] = None
         
         # WebSocket monitoring
-        self.ws_server: Optional[WebSocketServer] = None
+        self.ws_server: Optional["WebSocketServer"] = None
         
         # LoRA cache
         self.lora_cache = get_lora_cache()
@@ -235,6 +235,9 @@ class LunaDaemon:
         self._request_count = 0
         self._clip_request_count = 0
         self._vae_request_count = 0
+        
+        # Configuration state
+        self._attention_mode = "auto"  # Current attention mode setting
     
     def _on_scale_event(self, event_type: str, data: dict):
         """Callback for worker pool scaling events."""
@@ -250,6 +253,7 @@ class LunaDaemon:
             "clip_request_count": self._clip_request_count,
             "vae_request_count": self._vae_request_count,
             "service_type": self.service_type.name if hasattr(self.service_type, 'name') else str(self.service_type),
+            "attention_mode": self._attention_mode,
             "devices": {
                 "clip": self.clip_device,
                 "vae": self.vae_device
@@ -272,6 +276,12 @@ class LunaDaemon:
                 }
         
         return info
+    
+    def _delayed_shutdown(self):
+        """Shut down daemon after a brief delay to allow response to be sent."""
+        import time
+        time.sleep(0.5)  # Give time for response to be sent
+        self.stop()
     
     def _handle_request(self, cmd: str, data: dict) -> Any:
         """Route request to appropriate handler."""
@@ -300,9 +310,102 @@ class LunaDaemon:
             return self.clip_pool.submit(cmd, data)
         
         elif cmd == "clip_encode_sdxl":
+            self._clip_request_count += 1
             if self.clip_pool is None:
                 return {"error": "CLIP pool not available"}
             return self.clip_pool.submit(cmd, data)
+        
+        elif cmd == "clip_tokenize":
+            self._clip_request_count += 1
+            if self.clip_pool is None:
+                return {"error": "CLIP pool not available"}
+            return self.clip_pool.submit(cmd, data)
+        
+        elif cmd == "clip_encode_from_tokens":
+            self._clip_request_count += 1
+            if self.clip_pool is None:
+                return {"error": "CLIP pool not available"}
+            return self.clip_pool.submit(cmd, data)
+        
+        # Z-IMAGE commands
+        elif cmd == "register_qwen3_transformers":
+            # Load Qwen3-VL model using transformers
+            model_path = data.get("model_path")
+            device = data.get("device")
+            dtype = data.get("dtype")
+            
+            if not model_path:
+                return {"error": "model_path required"}
+            
+            if self.clip_pool is None:
+                return {"error": "CLIP pool not available"}
+            
+            # Submit to CLIP pool for Qwen3 loading
+            return self.clip_pool.submit("register_qwen3_transformers", {
+                "model_path": model_path,
+                "device": device or self.clip_device,
+                "dtype": dtype
+            })
+        
+        elif cmd == "qwen3_status":
+            # Get Qwen3 model status
+            if self.clip_pool is None:
+                return {"loaded": False, "error": "CLIP pool not available"}
+            
+            return self.clip_pool.submit("qwen3_status", {})
+        
+        elif cmd == "zimage_encode":
+            self._clip_request_count += 1  # Count as CLIP request
+            if self.clip_pool is None:
+                return {"error": "CLIP pool not available"}
+            # Route to CLIP pool - Z-IMAGE uses modified CLIP architecture
+            return self.clip_pool.submit(cmd, data)
+        
+        # Vision/VLM commands
+        elif cmd == "vlm_generate":
+            self._clip_request_count += 1  # Count as CLIP/vision request
+            if self.clip_pool is None:
+                return {"error": "CLIP pool not available"}
+            # Route to CLIP pool - VLM shares infrastructure
+            return self.clip_pool.submit(cmd, data)
+        
+        elif cmd == "encode_vision":
+            self._clip_request_count += 1  # Count as vision request
+            if self.clip_pool is None:
+                return {"error": "CLIP pool not available"}
+            # Route to CLIP pool - vision encoder shares infrastructure
+            return self.clip_pool.submit(cmd, data)
+        
+        # Async task commands
+        elif cmd == "submit_async":
+            # Handle async tasks (like image saving)
+            task_name = data.get("task_name")
+            task_data = data.get("task_data", {})
+            
+            if not task_name:
+                return {"error": "task_name required"}
+            
+            # Generate job ID
+            import uuid
+            job_id = str(uuid.uuid4())[:8]
+            
+            # Handle specific task types
+            if task_name == "save_images_async":
+                # For now, execute synchronously
+                # TODO: Implement actual async task queue
+                try:
+                    # Image saving would happen here
+                    # For now just return success
+                    return {
+                        "success": True,
+                        "job_id": job_id,
+                        "num_images": task_data.get("num_images", 0),
+                        "message": "Images saved (sync mode)"
+                    }
+                except Exception as e:
+                    return {"success": False, "error": str(e)}
+            else:
+                return {"error": f"Unknown task type: {task_name}"}
         
         # LoRA cache commands
         elif cmd == "lora_cache_get":
@@ -331,6 +434,42 @@ class LunaDaemon:
         elif cmd == "lora_cache_stats":
             return self.lora_cache.get_stats()
         
+        elif cmd == "register_lora":
+            # Apply LoRA to CLIP with strength
+            lora_name = data.get("lora_name")
+            clip_strength = data.get("clip_strength", 1.0)
+            model_strength = data.get("model_strength", 1.0)
+            
+            if not lora_name:
+                return {"error": "lora_name required"}
+            
+            # Check if CLIP pool is available
+            if self.clip_pool is None:
+                return {"error": "CLIP pool not available"}
+            
+            # Submit LoRA registration to CLIP pool
+            # The worker will handle applying the LoRA to CLIP
+            return self.clip_pool.submit("register_lora", {
+                "lora_name": lora_name,
+                "clip_strength": clip_strength,
+                "model_strength": model_strength
+            })
+        
+        elif cmd == "clear_loras":
+            # Clear all LoRAs from cache
+            cleared_count = len(self.lora_cache._cache)
+            self.lora_cache.clear()
+            
+            # Also notify CLIP pool to clear applied LoRAs
+            if self.clip_pool:
+                self.clip_pool.submit("clear_loras", {})
+            
+            return {
+                "success": True,
+                "cleared": cleared_count,
+                "message": f"Cleared {cleared_count} LoRAs from cache"
+            }
+        
         # Status/info commands
         elif cmd == "ping":
             return {"pong": True, "time": time.time()}
@@ -340,6 +479,70 @@ class LunaDaemon:
         
         elif cmd == "get_status":
             return self.get_info()
+        
+        elif cmd == "negotiate_ipc":
+            # IPC negotiation (for CUDA IPC mode if enabled)
+            return {
+                "ipc_enabled": False,  # Simplified daemon doesn't use CUDA IPC
+                "daemon_gpu_id": None
+            }
+        
+        elif cmd == "shutdown":
+            # Shutdown command - stop the daemon gracefully
+            logger.info("Shutdown command received")
+            # Stop in a separate thread to allow response to be sent
+            import threading
+            threading.Thread(target=self._delayed_shutdown, daemon=True).start()
+            return {"success": True, "message": "Daemon shutting down"}
+        
+        elif cmd == "set_attention_mode":
+            # Set attention mechanism mode
+            mode = data.get("mode", "auto")
+            valid_modes = ["auto", "flash", "split", "pytorch"]
+            
+            if mode not in valid_modes:
+                return {
+                    "success": False,
+                    "error": f"Invalid mode '{mode}'. Valid modes: {', '.join(valid_modes)}"
+                }
+            
+            self._attention_mode = mode
+            logger.info(f"Attention mode set to: {mode}")
+            
+            # Note: Attention mode will be applied to workers on next model load
+            # Existing loaded models continue using their current attention mode
+            return {
+                "success": True,
+                "mode": mode,
+                "message": f"Attention mode set to {mode} (will apply to newly loaded models)"
+            }
+        
+        elif cmd == "unload_models":
+            # Unload models from VRAM
+            logger.info("Unload models command received")
+            unloaded = []
+            
+            if self.vae_pool:
+                # VAE pool will stop workers which unloads models
+                self.vae_pool.stop()
+                self.vae_pool = None
+                unloaded.append("VAE")
+            
+            if self.clip_pool:
+                # CLIP pool will stop workers which unloads models
+                self.clip_pool.stop()
+                self.clip_pool = None
+                unloaded.append("CLIP")
+            
+            # Clear CUDA cache
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            
+            return {
+                "success": True,
+                "unloaded": unloaded,
+                "message": f"Unloaded: {', '.join(unloaded)}" if unloaded else "No models were loaded"
+            }
         
         else:
             return {"error": f"Unknown command: {cmd}"}

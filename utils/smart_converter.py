@@ -13,8 +13,16 @@ Used by model_router to simplify conversion logic.
 """
 
 import os
+import sys
 from typing import Tuple, Optional
-from .conversion_cache import (
+from pathlib import Path
+
+# Add utils to path for dynamic imports
+_utils_path = str(Path(__file__).parent)
+if _utils_path not in sys.path:
+    sys.path.insert(0, _utils_path)
+
+from conversion_cache import (
     find_existing_conversion,
     should_convert,
     get_converted_model_path,
@@ -22,7 +30,7 @@ from .conversion_cache import (
     detect_model_precision,
     should_skip_conversion
 )
-from .checkpoint_converter import (
+from checkpoint_converter import (
     convert_to_precision,
     convert_to_gguf,
     convert_to_bnb

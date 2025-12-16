@@ -379,6 +379,38 @@ class DaemonClient:
         self.lora_cache_put(lora_hash, weights)
         return {"success": True}
     
+    def register_lora(self, lora_name: str, clip_strength: float = 1.0, model_strength: float = 1.0) -> dict:
+        """
+        Register and apply LoRA to CLIP with specified strength.
+        
+        Different from lora_cache_put - this actually applies the LoRA
+        transformation to the CLIP model in the daemon.
+        
+        Args:
+            lora_name: Name/path of the LoRA
+            clip_strength: Strength multiplier for CLIP (0.0-2.0, default 1.0)
+            model_strength: Strength multiplier for model (0.0-2.0, default 1.0)
+        
+        Returns:
+            Response dict with success status
+        """
+        result = self._send_request({
+            "cmd": "register_lora",
+            "lora_name": lora_name,
+            "clip_strength": clip_strength,
+            "model_strength": model_strength
+        })
+        return result if isinstance(result, dict) else {"success": True}
+    
+    def get_lora_stats(self) -> dict:
+        """Get LoRA cache statistics (alias for lora_cache_stats)."""
+        return self.lora_cache_stats()
+    
+    def clear_lora_cache(self) -> dict:
+        """Clear all cached LoRAs from daemon memory."""
+        result = self._send_request({"cmd": "clear_loras"})
+        return result if isinstance(result, dict) else {"success": True}
+    
     # =========================================================================
     # Registration Operations (for DaemonVAE/DaemonCLIP)
     # =========================================================================
@@ -390,6 +422,265 @@ class DaemonClient:
     def register_clip(self, clip: Any, clip_type: str) -> dict:
         """Register CLIP with daemon (placeholder - daemon loads from config)."""
         return {"registered": True, "clip_type": clip_type}
+    
+    # =========================================================================
+    # Daemon Control Operations
+    # =========================================================================
+    
+    def start_daemon(self) -> bool:
+        """
+        Start the Luna Daemon process.
+        
+        Launches daemon server as a subprocess. The daemon will run in background
+        and listen for connections.
+        
+        Returns:
+            True if daemon was started successfully, False otherwise
+        """
+        import subprocess
+        import sys
+        import os
+        from pathlib import Path
+        
+        # Check if daemon is already running
+        if self.is_running():
+            return True
+        
+        try:
+            # Find daemon server script
+            daemon_dir = Path(__file__).parent
+            server_script = daemon_dir / "daemon_server.py"
+            
+            if not server_script.exists():
+                raise FileNotFoundError(f"Daemon server script not found: {server_script}")
+            
+            # Launch daemon as subprocess
+            # Use same Python interpreter as current process
+            python_exe = sys.executable
+            
+            # Start detached process
+            if os.name == 'nt':  # Windows
+                # CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS
+                subprocess.Popen(
+                    [python_exe, str(server_script)],
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    stdin=subprocess.DEVNULL
+                )
+            else:  # Unix/Linux/Mac
+                subprocess.Popen(
+                    [python_exe, str(server_script)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    stdin=subprocess.DEVNULL,
+                    start_new_session=True
+                )
+            
+            # Wait a moment for daemon to start
+            import time
+            time.sleep(2)
+            
+            return self.is_running()
+            
+        except Exception as e:
+            print(f"Failed to start daemon: {e}")
+            return False
+    
+    def shutdown(self) -> dict:
+        """
+        Shut down the daemon server.
+        
+        Sends shutdown command to daemon. The daemon will gracefully stop
+        all workers and close connections.
+        
+        Returns:
+            Response dict with success status
+        """
+        try:
+            result = self._send_request({"cmd": "shutdown"})
+            return result if isinstance(result, dict) else {"success": True}
+        except DaemonConnectionError:
+            # Daemon already stopped
+            return {"success": True, "message": "Daemon not running"}
+    
+    def reset_clients(self) -> dict:
+        """
+        Reset all client connections to daemon.
+        
+        Clears connection state and forces reconnection. Useful for
+        recovering from errors.
+        
+        Returns:
+            Response dict with success status
+        """
+        global _client
+        _client = None  # Clear singleton
+        return {"success": True, "message": "Client reset"}
+    
+    def unload_daemon_models(self) -> dict:
+        """
+        Unload all models from daemon VRAM.
+        
+        Frees up daemon GPU memory by unloading VAE/CLIP models.
+        Models will be reloaded on next request.
+        
+        Returns:
+            Response dict with success status
+        """
+        try:
+            result = self._send_request({"cmd": "unload_models"})
+            return result if isinstance(result, dict) else {"success": True}
+        except DaemonConnectionError:
+            return {"success": False, "error": "Daemon not running"}
+    
+    # =========================================================================
+    # Configuration Operations
+    # =========================================================================
+    
+    def set_attention_mode(self, mode: str) -> dict:
+        """
+        Set attention mechanism mode for CLIP/VAE processing.
+        
+        Args:
+            mode: Attention mode - "flash", "split", "pytorch", or "auto"
+                - flash: Flash Attention 2 (fastest, requires flash-attn)
+                - split: Split attention (memory efficient)
+                - pytorch: PyTorch native attention
+                - auto: Automatically choose best available
+        
+        Returns:
+            Response dict with success status and applied mode
+        """
+        try:
+            result = self._send_request({
+                "cmd": "set_attention_mode",
+                "mode": mode
+            })
+            return result if isinstance(result, dict) else {"success": True, "mode": mode}
+        except DaemonConnectionError:
+            return {"success": False, "error": "Daemon not running"}
+    
+    # =========================================================================
+    # Z-IMAGE Operations
+    # =========================================================================
+    
+    def register_qwen3_transformers(
+        self, 
+        model_path: str,
+        device: Optional[str] = None,
+        dtype: Optional[str] = None
+    ) -> dict:
+        """
+        Register Qwen3-VL model using HuggingFace transformers.
+        
+        Note: Use this instead of register_qwen3() since llama-cpp-python
+        doesn't yet support Qwen3-VL GGUF models.
+        
+        Args:
+            model_path: Path to Qwen3 model directory or HF model ID
+            device: Device to load on (e.g., "cuda:0", "cpu")
+            dtype: Data type for model (e.g., "float16", "bfloat16", "auto")
+        
+        Returns:
+            Response dict with success status and model info
+        """
+        result = self._send_request({
+            "cmd": "register_qwen3_transformers",
+            "model_path": model_path,
+            "device": device,
+            "dtype": dtype
+        })
+        return result if isinstance(result, dict) else {"success": True}
+    
+    def get_qwen3_status(self) -> dict:
+        """
+        Get Qwen3-VL model loading status.
+        
+        Returns:
+            Dict with loaded status, model_path, device, etc.
+        """
+        result = self._send_request({"cmd": "qwen3_status"})
+        return result if isinstance(result, dict) else {"loaded": False}
+    
+    def zimage_encode(self, text: str) -> torch.Tensor:
+        """
+        Encode text using Z-IMAGE CLIP (Qwen3-VL based).
+        
+        Args:
+            text: Input text to encode
+        
+        Returns:
+            Encoded conditioning tensor
+        """
+        result = self._send_request({
+            "cmd": "zimage_encode",
+            "text": text
+        })
+        return result
+    
+    # =========================================================================
+    # Vision/VLM Operations
+    # =========================================================================
+    
+    def vlm_generate(self, **kwargs) -> Any:
+        """
+        Generate text using Vision-Language Model.
+        
+        Args:
+            **kwargs: VLM generation parameters (image, prompt, max_tokens, etc.)
+        
+        Returns:
+            Generated text response
+        """
+        request = {"cmd": "vlm_generate"}
+        request.update(kwargs)
+        return self._send_request(request)
+    
+    def encode_vision(self, image) -> torch.Tensor:
+        """
+        Encode image using vision model.
+        
+        Args:
+            image: Image tensor or numpy array
+        
+        Returns:
+            Vision embedding tensor
+        """
+        # Convert to CPU tensor if needed
+        if isinstance(image, torch.Tensor):
+            image = image.detach().cpu()
+        
+        result = self._send_request({
+            "cmd": "encode_vision",
+            "image": image
+        })
+        return result
+    
+    # =========================================================================
+    # Async Task Operations
+    # =========================================================================
+    
+    def submit_async(self, task_name: str, task_data: dict) -> dict:
+        """
+        Submit async task to daemon.
+        
+        Allows daemon to handle tasks asynchronously (like image saving)
+        without blocking ComfyUI workflow execution.
+        
+        Args:
+            task_name: Name of task to execute (e.g., "save_images_async")
+            task_data: Task parameters/data
+        
+        Returns:
+            Response dict with job_id and success status
+        """
+        result = self._send_request({
+            "cmd": "submit_async",
+            "task_name": task_name,
+            "task_data": task_data
+        })
+        return result if isinstance(result, dict) else {"success": True}
 
 
 # =============================================================================
@@ -498,6 +789,21 @@ def upload_lora(lora_hash: str, weights: Dict[str, torch.Tensor]) -> dict:
     return get_client().upload_lora(lora_hash, weights)
 
 
+def register_lora(lora_name: str, clip_strength: float = 1.0, model_strength: float = 1.0) -> dict:
+    """Register and apply LoRA to CLIP."""
+    return get_client().register_lora(lora_name, clip_strength, model_strength)
+
+
+def get_lora_stats() -> dict:
+    """Get LoRA cache statistics."""
+    return get_client().get_lora_stats()
+
+
+def clear_lora_cache() -> dict:
+    """Clear all cached LoRAs."""
+    return get_client().clear_lora_cache()
+
+
 def register_vae(vae: Any, vae_type: str) -> dict:
     """Register VAE with daemon."""
     return get_client().register_vae(vae, vae_type)
@@ -532,8 +838,63 @@ def unregister_checkpoint(instance_id: str) -> dict:
     return {"success": True, "unregistered": True}
 
 
+def start_daemon() -> bool:
+    """Start the Luna Daemon process."""
+    return get_client().start_daemon()
+
+
+def shutdown() -> dict:
+    """Shut down the daemon server."""
+    return get_client().shutdown()
+
+
+def reset_clients() -> dict:
+    """Reset all client connections to daemon."""
+    return get_client().reset_clients()
+
+
 def unload_daemon_models() -> dict:
-    """Legacy daemon model unload (stub)."""
-    return {"success": True, "unloaded": True}
+    """Unload all models from daemon VRAM."""
+    return get_client().unload_daemon_models()
+
+
+def set_attention_mode(mode: str) -> dict:
+    """Set attention mechanism mode for CLIP/VAE processing."""
+    return get_client().set_attention_mode(mode)
+
+
+def register_qwen3_transformers(
+    model_path: str,
+    device: Optional[str] = None,
+    dtype: Optional[str] = None
+) -> dict:
+    """Register Qwen3-VL model using transformers."""
+    return get_client().register_qwen3_transformers(model_path, device, dtype)
+
+
+def get_qwen3_status() -> dict:
+    """Get Qwen3-VL model loading status."""
+    return get_client().get_qwen3_status()
+
+
+def zimage_encode(text: str) -> torch.Tensor:
+    """Encode text using Z-IMAGE CLIP."""
+    return get_client().zimage_encode(text)
+
+
+def vlm_generate(**kwargs) -> Any:
+    """Generate text using Vision-Language Model."""
+    return get_client().vlm_generate(**kwargs)
+
+
+def encode_vision(image) -> torch.Tensor:
+    """Encode image using vision model."""
+    return get_client().encode_vision(image)
+
+
+def submit_async(task_name: str, task_data: dict) -> dict:
+    """Submit async task to daemon."""
+    return get_client().submit_async(task_name, task_data)
+
 
 

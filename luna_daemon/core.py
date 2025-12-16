@@ -61,6 +61,8 @@ class ModelInfo:
 
 
 @dataclass
+
+@dataclass
 class LoRACacheEntry:
     """Entry in the LoRA RAM cache."""
     name: str
@@ -121,13 +123,14 @@ class LoRANotFoundError(DaemonError):
 # Utility Functions
 # =============================================================================
 
-def format_size(size_bytes: int) -> str:
+def format_size(size_bytes: float) -> str:
     """Format byte size to human-readable string."""
+    size = float(size_bytes)
     for unit in ['B', 'KB', 'MB', 'GB']:
-        if size_bytes < 1024:
-            return f"{size_bytes:.1f} {unit}"
-        size_bytes /= 1024
-    return f"{size_bytes:.1f} TB"
+        if size < 1024:
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} TB"
 
 
 def detect_model_family(model_type: str) -> ModelFamily:

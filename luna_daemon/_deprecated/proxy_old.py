@@ -8,8 +8,8 @@ These can be passed to ANY node that expects VAE or CLIP,
 including third-party nodes like FaceDetailer, UltimateSDUpscale, etc.
 
 Architecture:
-    The LunaCheckpointTunnel node receives actual VAE/CLIP objects from
-    a standard checkpoint loader. The proxy classes wrap these objects and:
+    The LunaModelRouter node loads actual VAE/CLIP objects. The proxy 
+    classes wrap these objects and:
     
     1. On first use: Register the model with the daemon (daemon stores it)
     2. On subsequent calls: Route all operations through the daemon

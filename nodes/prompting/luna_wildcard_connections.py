@@ -49,7 +49,7 @@ class ConnectionsDB:
         return cls._instance
     
     @staticmethod
-    def get_connections_path() -> str:
+    def get_connections_path() -> Optional[str]:
         """Get path to connections.json file"""
         # Try registered wildcards path first (if another node registered it)
         try:

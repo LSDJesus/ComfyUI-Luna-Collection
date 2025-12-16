@@ -675,7 +675,7 @@ class LunaModelRouter:
         
         if model_name and model_name != "None":
             output_model, output_model_name, model_path_to_register = self._load_model(
-                model_source, model_name, dynamic_precision, local_weights_dir
+                model_source, model_name, dynamic_precision
             )
             precision_str = f" → {dynamic_precision}" if dynamic_precision != "None" else ""
             status_parts.append(f"MODEL: {model_source}/{os.path.basename(model_name)}{precision_str}")
@@ -809,8 +809,7 @@ class LunaModelRouter:
         self,
         source: str,
         name: str,
-        precision: str,
-        local_weights_dir: str
+        precision: str
     ) -> Tuple[Any, str, str]:
         """Load model from specified source with optional precision conversion."""
         
@@ -893,8 +892,23 @@ class LunaModelRouter:
                 with safe_open(model_path, framework="pt") as f:
                     # Get first tensor to detect dtype
                     for key in list(f.keys())[:1]:  # Just check first tensor
-                        tensor_info = f.get_slice(key)
-                        dtype = tensor_info.dtype
+                        # get_slice returns PySafeSlice which doesn't have dtype attribute
+                        # Use get_tensor instead to get actual dtype
+                        tensor_slice = f.get_tensor(key)
+                        if hasattr(tensor_slice, 'dtype'):
+                            dtype = tensor_slice.dtype
+                        else:
+                            # Fallback: check metadata
+                            metadata = f.metadata()
+                            if metadata and 'format' in metadata:
+                                format_str = metadata['format'].lower()
+                                if 'fp16' in format_str or 'float16' in format_str:
+                                    return 'fp16'
+                                elif 'bf16' in format_str or 'bfloat16' in format_str:
+                                    return 'bf16'
+                                elif 'fp8' in format_str:
+                                    return 'fp8'
+                            return "unknown"
                         
                         # Map torch dtypes to our precision strings
                         dtype_map = {
@@ -927,8 +941,7 @@ class LunaModelRouter:
     def _load_with_conversion(
         self,
         model_path: str,
-        precision: str,
-        local_weights_dir: str = ""
+        precision: str
     ) -> Tuple[Any, str]:
         """
         Load model with precision conversion using smart caching.
@@ -946,7 +959,6 @@ class LunaModelRouter:
         Args:
             model_path: Path to source model
             precision: Target precision (fp16, bf16, fp8_e4m3fn, nf4, int8, Q4_K_M, etc.)
-            local_weights_dir: Deprecated - now ignored (uses standardized paths)
         
         Returns:
             Tuple of (loaded_model, converted_path)

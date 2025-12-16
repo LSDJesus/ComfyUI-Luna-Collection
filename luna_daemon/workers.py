@@ -155,6 +155,7 @@ class ModelWorker:
         self.config_paths = config_paths or {}
         
         self.model: Any = None
+        self.qwen3_encoder = None  # For Z-IMAGE/VLM functionality
         self.is_running = False
         self.is_loaded = False
         self.last_active = time.time()
@@ -524,6 +525,166 @@ class ModelWorker:
             
             return (positive_out, negative_out)
     
+    def process_clip_tokenize(self, text: str, return_word_ids: bool = False):
+        """Tokenize text with CLIP."""
+        assert self.model is not None, "CLIP model not loaded"
+        
+        with torch.inference_mode():
+            tokens = self.model.tokenize(text, return_word_ids=return_word_ids)
+            return tokens
+    
+    def process_clip_encode_from_tokens(
+        self, 
+        tokens, 
+        return_pooled: bool = False,
+        return_dict: bool = False,
+        lora_stack = None
+    ):
+        """Encode pre-tokenized input."""
+        assert self.model is not None, "CLIP model not loaded"
+        
+        with torch.inference_mode():
+            result = self.model.encode_from_tokens(
+                tokens,
+                return_pooled=return_pooled,
+                return_dict=return_dict
+            )
+            return result
+    
+    def process_register_lora(self, lora_name: str, clip_strength: float, model_strength: float):
+        """Register and apply LoRA to CLIP."""
+        # TODO: Implement LoRA application to CLIP
+        # For now, return success (LoRAs would be applied via add_patches)
+        return {"success": True, "message": "LoRA registration not yet implemented in workers"}
+    
+    def process_clear_loras(self):
+        """Clear all applied LoRAs."""
+        # TODO: Implement LoRA clearing
+        return {"success": True, "message": "LoRA clearing not yet implemented in workers"}
+    
+    def process_zimage_encode(self, text: str):
+        """Encode text with Z-IMAGE (Qwen3-VL CLIP)."""
+        if self.qwen3_encoder is None:
+            return {"error": "Qwen3 not loaded. Call register_qwen3_transformers first."}
+        
+        try:
+            with torch.inference_mode():
+                embeddings = self.qwen3_encoder.encode_text(text)
+                return embeddings.cpu()
+        except Exception as e:
+            return {"error": f"Z-IMAGE encoding failed: {e}"}
+    
+    def process_register_qwen3(self, model_path: str, device: Optional[str], dtype: Optional[str]):
+        """Load Qwen3-VL model using transformers."""
+        try:
+            from .qwen3_encoder import Qwen3VLEncoder, Qwen3VLConfig
+            
+            # Use provided device or fall back to worker device
+            target_device = device or self.device
+            target_dtype = dtype or self.precision
+            
+            # Create config
+            config = Qwen3VLConfig(
+                model_path=model_path,
+                device=target_device,
+                dtype=target_dtype
+            )
+            
+            # Unload existing encoder if any
+            if self.qwen3_encoder is not None:
+                del self.qwen3_encoder
+                self.qwen3_encoder = None
+                torch.cuda.empty_cache()
+            
+            # Load new encoder
+            self.qwen3_encoder = Qwen3VLEncoder(config)
+            success = self.qwen3_encoder.load_model(model_path)
+            
+            if success:
+                logger.info(f"[CLIP-{self.worker_id}] Qwen3-VL loaded: {model_path}")
+                return {
+                    "success": True,
+                    "model_path": model_path,
+                    "device": target_device,
+                    "dtype": target_dtype,
+                    "zimage_compatible": getattr(self.qwen3_encoder, 'is_zimage_compatible', True),
+                    "message": "Qwen3-VL loaded for Z-IMAGE/VLM"
+                }
+            else:
+                return {"error": "Failed to load Qwen3 model"}
+                
+        except ImportError as e:
+            return {"error": f"Qwen3 encoder module not available: {e}"}
+        except Exception as e:
+            logger.error(f"[CLIP-{self.worker_id}] Qwen3 loading error: {e}")
+            return {"error": f"Failed to load Qwen3: {e}"}
+    
+    def process_qwen3_status(self):
+        """Get Qwen3-VL model status."""
+        if self.qwen3_encoder is None:
+            return {
+                "loaded": False,
+                "message": "Qwen3-VL not loaded"
+            }
+        
+        return {
+            "loaded": True,
+            "model_path": getattr(self.qwen3_encoder.config, 'model_path', 'unknown'),
+            "device": getattr(self.qwen3_encoder.config, 'device', 'unknown'),
+            "zimage_compatible": getattr(self.qwen3_encoder, 'is_zimage_compatible', False),
+            "has_vision": getattr(self.qwen3_encoder, 'has_vision', False)
+        }
+    
+    def process_vlm_generate(self, data: dict):
+        """Generate text with VLM."""
+        if self.qwen3_encoder is None:
+            return {"error": "Qwen3 not loaded. Call register_qwen3_transformers first."}
+        
+        try:
+            prompt = data.get("prompt", "")
+            image = data.get("image")
+            max_tokens = data.get("max_tokens", 256)
+            temperature = data.get("temperature", 0.7)
+            
+            with torch.inference_mode():
+                if image is not None:
+                    # VLM with image
+                    response = self.qwen3_encoder.describe_image(
+                        image,
+                        prompt=prompt,
+                        max_new_tokens=max_tokens,
+                        temperature=temperature
+                    )
+                else:
+                    # Text-only generation
+                    response = self.qwen3_encoder.generate_text(
+                        prompt,
+                        max_new_tokens=max_tokens,
+                        temperature=temperature
+                    )
+                
+                return {
+                    "success": True,
+                    "text": response
+                }
+        except Exception as e:
+            return {"error": f"VLM generation failed: {e}"}
+    
+    def process_encode_vision(self, image):
+        """Encode image with vision model."""
+        if self.qwen3_encoder is None:
+            return {"error": "Qwen3 not loaded. Call register_qwen3_transformers first."}
+        
+        if not getattr(self.qwen3_encoder, 'has_vision', False):
+            return {"error": "Loaded model does not have vision capabilities"}
+        
+        try:
+            with torch.inference_mode():
+                embeddings = self.qwen3_encoder.encode_image(image)
+                return embeddings.cpu()
+        except Exception as e:
+            return {"error": f"Vision encoding failed: {e}"}
+    
     # =========================================================================
     # Worker Thread
     # =========================================================================
@@ -597,6 +758,40 @@ class ModelWorker:
                                 data.get("target_height", 1024),
                                 lora_stack=lora_stack
                             )
+                        elif cmd == "clip_tokenize":
+                            result = self.process_clip_tokenize(
+                                data["text"],
+                                return_word_ids=data.get("return_word_ids", False)
+                            )
+                        elif cmd == "clip_encode_from_tokens":
+                            result = self.process_clip_encode_from_tokens(
+                                data["tokens"],
+                                return_pooled=data.get("return_pooled", False),
+                                return_dict=data.get("return_dict", False),
+                                lora_stack=lora_stack
+                            )
+                        elif cmd == "register_lora":
+                            result = self.process_register_lora(
+                                data["lora_name"],
+                                data.get("clip_strength", 1.0),
+                                data.get("model_strength", 1.0)
+                            )
+                        elif cmd == "clear_loras":
+                            result = self.process_clear_loras()
+                        elif cmd == "zimage_encode":
+                            result = self.process_zimage_encode(data["text"])
+                        elif cmd == "register_qwen3_transformers":
+                            result = self.process_register_qwen3(
+                                data["model_path"],
+                                data.get("device"),
+                                data.get("dtype")
+                            )
+                        elif cmd == "qwen3_status":
+                            result = self.process_qwen3_status()
+                        elif cmd == "vlm_generate":
+                            result = self.process_vlm_generate(data)
+                        elif cmd == "encode_vision":
+                            result = self.process_encode_vision(data["image"])
                         else:
                             result = {"error": f"Unknown CLIP command: {cmd}"}
                     

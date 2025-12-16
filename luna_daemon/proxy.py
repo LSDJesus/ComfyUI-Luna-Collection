@@ -464,6 +464,28 @@ class DaemonCLIP:
         
         return list(patches.keys())
     
+    def add_lora_by_name(self, lora_name: str, model_strength: float = 1.0, clip_strength: float = 1.0):
+        """
+        Add LoRA by filename - daemon loads from disk and applies.
+        
+        Args:
+            lora_name: LoRA filename (relative to loras folder)
+            model_strength: Strength for model (unused for CLIP-only proxy)
+            clip_strength: Strength for CLIP
+        
+        Returns:
+            Self (for chaining)
+        """
+        try:
+            # Send to daemon to apply LoRA
+            result = daemon_client.register_lora(lora_name, clip_strength, model_strength)
+            if not result.get("success"):
+                print(f"[DaemonCLIP] Warning: Failed to register LoRA '{lora_name}': {result.get('error')}")
+        except Exception as e:
+            print(f"[DaemonCLIP] Warning: Failed to apply LoRA '{lora_name}': {e}")
+        
+        return self
+    
     def load_model(self):
         """No-op for proxy."""
         pass
