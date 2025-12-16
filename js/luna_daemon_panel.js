@@ -18,6 +18,8 @@ let panelState = {
     vramTotal: 0,
     vramPercent: 0,
     requests: 0,
+    clipRequests: 0,
+    vaeRequests: 0,
     uptime: 0,
     modelsLoaded: [],
     checkpoints: [],
@@ -190,8 +192,16 @@ function createPanelContent() {
                 <span class="stat-value" id="luna-device">${panelState.device}</span>
             </div>
             <div class="stat-row">
-                <span class="stat-label">Requests</span>
+                <span class="stat-label">Requests (Total)</span>
                 <span class="stat-value" id="luna-requests">${panelState.requests}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">CLIP Requests</span>
+                <span class="stat-value" id="luna-clip-requests">${panelState.clipRequests}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">VAE Requests</span>
+                <span class="stat-value" id="luna-vae-requests">${panelState.vaeRequests}</span>
             </div>
             <div class="stat-row">
                 <span class="stat-label">Uptime</span>
@@ -320,6 +330,8 @@ async function fetchDaemonStatus() {
             panelState.vramTotal = data.vram_total_gb || 0;
             panelState.vramPercent = data.vram_percent || 0;
             panelState.requests = data.request_count || 0;
+            panelState.clipRequests = data.clip_request_count || 0;
+            panelState.vaeRequests = data.vae_request_count || 0;
             panelState.uptime = data.uptime_seconds || 0;
             panelState.modelsLoaded = data.models_loaded || [];
             panelState.checkpoints = data.checkpoints || [];
@@ -620,6 +632,12 @@ function updatePanelUI() {
     
     const requestsEl = document.getElementById("luna-requests");
     if (requestsEl) requestsEl.textContent = panelState.requests.toString();
+    
+    const clipRequestsEl = document.getElementById("luna-clip-requests");
+    if (clipRequestsEl) clipRequestsEl.textContent = panelState.clipRequests.toString();
+    
+    const vaeRequestsEl = document.getElementById("luna-vae-requests");
+    if (vaeRequestsEl) vaeRequestsEl.textContent = panelState.vaeRequests.toString();
     
     const uptimeEl = document.getElementById("luna-uptime");
     if (uptimeEl) uptimeEl.textContent = formatUptime(panelState.uptime);

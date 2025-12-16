@@ -233,6 +233,8 @@ class LunaDaemon:
         # Stats
         self._start_time = time.time()
         self._request_count = 0
+        self._clip_request_count = 0
+        self._vae_request_count = 0
     
     def _on_scale_event(self, event_type: str, data: dict):
         """Callback for worker pool scaling events."""
@@ -245,6 +247,8 @@ class LunaDaemon:
             "status": "running" if self._running else "stopped",
             "uptime_sec": time.time() - self._start_time,
             "request_count": self._request_count,
+            "clip_request_count": self._clip_request_count,
+            "vae_request_count": self._vae_request_count,
             "service_type": self.service_type.name if hasattr(self.service_type, 'name') else str(self.service_type),
             "devices": {
                 "clip": self.clip_device,
@@ -257,7 +261,7 @@ class LunaDaemon:
         if self.clip_pool:
             info["clip_pool"] = self.clip_pool.get_stats()
         
-        # VRAM info
+        # VRAM info for ALL GPUs
         if torch.cuda.is_available():
             info["vram"] = {}
             for i in range(torch.cuda.device_count()):
@@ -271,21 +275,26 @@ class LunaDaemon:
     
     def _handle_request(self, cmd: str, data: dict) -> Any:
         """Route request to appropriate handler."""
-        self._request_count += 1
+        # Skip counting ping/health check requests
+        if cmd != "ping":
+            self._request_count += 1
         
         # VAE commands
         if cmd == "vae_encode":
+            self._vae_request_count += 1
             if self.vae_pool is None:
                 return {"error": "VAE pool not available"}
             return self.vae_pool.submit(cmd, data)
         
         elif cmd == "vae_decode":
+            self._vae_request_count += 1
             if self.vae_pool is None:
                 return {"error": "VAE pool not available"}
             return self.vae_pool.submit(cmd, data)
         
         # CLIP commands
         elif cmd == "clip_encode":
+            self._clip_request_count += 1
             if self.clip_pool is None:
                 return {"error": "CLIP pool not available"}
             return self.clip_pool.submit(cmd, data)
@@ -337,7 +346,7 @@ class LunaDaemon:
     
     def _handle_client(self, conn: socket.socket, addr):
         """Handle a client connection."""
-        logger.info(f"Client connected: {addr}")
+        logger.debug(f"Client connected: {addr}")
         
         try:
             while self._running:
@@ -393,7 +402,7 @@ class LunaDaemon:
                 conn.close()
             except:
                 pass
-            logger.info(f"Client disconnected: {addr}")
+            logger.debug(f"Client disconnected: {addr}")
     
     def start(self):
         """Start the daemon server."""
