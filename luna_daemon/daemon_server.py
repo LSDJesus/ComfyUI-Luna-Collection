@@ -225,6 +225,12 @@ class LunaDaemon:
         # LoRA cache
         self.lora_cache = get_lora_cache()
         
+        # Model state tracking for workflow multiplexing
+        self.loaded_models: Dict[str, Any] = {}  # {path: loaded_model_object}
+        self.workflow_model_sets: Dict[str, Dict[str, Any]] = {}  # {workflow_id: {model_type, clip_l, clip_g, vae}}
+        self.current_workflow_id: Optional[str] = None  # Track which workflow's models are in workers
+        self.models_lock = threading.Lock()
+        
         # Socket server
         self._running = False
         self._server_socket: Optional[socket.socket] = None
@@ -406,6 +412,131 @@ class LunaDaemon:
                     return {"success": False, "error": str(e)}
             else:
                 return {"error": f"Unknown task type: {task_name}"}
+        
+        # Model loading commands
+        elif cmd == "get_model_proxies":
+            """
+            Request CLIP/VAE proxies for a workflow with specific models.
+            
+            Daemon strategy:
+            1. Check if requested models are already loaded in any worker
+            2. If yes, route workflow to use those workers
+            3. If missing models, spin up new workers to load them
+            4. Track workflow→worker mappings
+            
+            This enables model sharing across workflows while keeping all models loaded.
+            """
+            workflow_id = data.get("workflow_id")
+            model_type = data.get("model_type")
+            models = data.get("models", {})  # Dict of {component: path}
+            
+            if not workflow_id or not model_type or not models:
+                return {"error": "workflow_id, model_type, and models dict required"}
+            
+            try:
+                with self.models_lock:
+                    # Check if this workflow already has a mapping
+                    if workflow_id in self.workflow_model_sets:
+                        existing_set = self.workflow_model_sets[workflow_id]
+                        # Verify models match (same paths)
+                        if existing_set.get("model_type") == model_type:
+                            existing_models = existing_set.get("models", {})
+                            if existing_models == models:
+                                logger.info(f"[Daemon] Reusing existing model set for workflow {workflow_id}")
+                                return {
+                                    "success": True,
+                                    "status": "cached",
+                                    "clip_type": model_type.lower(),
+                                    "vae_type": model_type.lower(),
+                                    "workflow_id": workflow_id
+                                }
+                    
+                    # Need to find/load workers with requested models
+                    # Collect required components and paths
+                    required_components = {}
+                    for component, path in models.items():
+                        if path and path != "None":
+                            required_components[component] = path
+                    
+                    # Find or create workers for this workflow's models
+                    logger.info(f"[Daemon] Setting up models for workflow {workflow_id}: {list(required_components.keys())}")
+                    
+                    # Update config_paths so new workers will load the right models
+                    for component, path in required_components.items():
+                        if component == "vae":
+                            self.config_paths['vae'] = path
+                        elif component in ["clip_l", "clip_g"]:
+                            self.config_paths[component] = path
+                    
+                    # Ensure workers exist
+                    if not self.vae_pool and "vae" in required_components:
+                        self.vae_pool = WorkerPool(
+                            worker_type=WorkerType.VAE,
+                            pool_size=ScalingConfig(max_workers=MAX_VAE_WORKERS, min_workers=MIN_VAE_WORKERS),
+                            model_registry=None,
+                            config_paths=self.config_paths,
+                            precision=VAE_PRECISION,
+                            device=VAE_DEVICE
+                        )
+                        self.vae_pool.start()
+                        logger.info("[Daemon] VAE pool started")
+                    
+                    if not self.clip_pool and any(c in required_components for c in ["clip_l", "clip_g"]):
+                        self.clip_pool = WorkerPool(
+                            worker_type=WorkerType.CLIP,
+                            pool_size=ScalingConfig(max_workers=MAX_CLIP_WORKERS, min_workers=MIN_CLIP_WORKERS),
+                            model_registry=None,
+                            config_paths=self.config_paths,
+                            precision=CLIP_PRECISION,
+                            device=CLIP_DEVICE
+                        )
+                        self.clip_pool.start()
+                        logger.info("[Daemon] CLIP pool started")
+                    
+                    # Store this workflow's model set
+                    self.workflow_model_sets[workflow_id] = {
+                        "model_type": model_type,
+                        "models": required_components,
+                        "created_at": time.time()
+                    }
+                    
+                    logger.info(f"[Daemon] [OK] Models ready for workflow {workflow_id} ({model_type})")
+                    return {
+                        "success": True,
+                        "status": "loaded",
+                        "clip_type": model_type.lower(),
+                        "vae_type": model_type.lower(),
+                        "workflow_id": workflow_id
+                    }
+            except Exception as e:
+                logger.error(f"[Daemon] get_model_proxies error: {e}")
+                import traceback
+                traceback.print_exc()
+                return {"error": str(e)}
+        
+        elif cmd == "load_vae_model":
+            vae_path = data.get("vae_path")
+            if not vae_path:
+                return {"error": "vae_path required"}
+            
+            # Store the VAE path for workers to use
+            self.config_paths['vae'] = vae_path
+            logger.info(f"[Daemon] Updated VAE path: {vae_path}")
+            return {"success": True, "vae_path": vae_path}
+        
+        elif cmd == "load_clip_model":
+            clip_path = data.get("clip_path")
+            clip_type = data.get("clip_type", "sdxl")
+            
+            if not clip_path:
+                return {"error": "clip_path required"}
+            
+            # For SDXL and multi-component models, clip_path is typically the CLIP_G
+            # Store both clip_l and clip_g as the same path (worker will handle)
+            self.config_paths['clip_g'] = clip_path
+            self.config_paths['clip_l'] = clip_path  # Fallback if only one CLIP needed
+            logger.info(f"[Daemon] Updated CLIP paths: {clip_path} (type: {clip_type})")
+            return {"success": True, "clip_path": clip_path, "clip_type": clip_type}
         
         # LoRA cache commands
         elif cmd == "lora_cache_get":

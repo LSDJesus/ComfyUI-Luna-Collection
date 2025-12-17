@@ -5,6 +5,12 @@ import comfy.utils
 import folder_paths
 import nodes
 
+from utils.lora_weight_cache import LoRAWeightCache
+
+
+# Global weight cache for LoRA restoration
+_lora_weight_cache = LoRAWeightCache()
+
 
 def is_daemon_clip(clip) -> bool:
     """Check if clip is a DaemonCLIP proxy (routes to Luna Daemon)."""
@@ -165,9 +171,22 @@ class LunaConfigGateway:
         - Standard local: Uses comfy.sd.load_lora_for_models
         
         This centralizes LoRA loading with intelligent routing based on proxy type.
+        
+        Weight Caching:
+        - Before applying LoRAs, caches affected model weights
+        - Allows transient LoRA application with restoration via reset node
+        - Reduces disk I/O on repeated runs with same LoRAs
         """
         if not lora_stack:
             return model, clip
+        
+        # Cache model weights before LoRA application
+        global _lora_weight_cache
+        layers_cached = _lora_weight_cache.cache_weights_for_loras(
+            model, lora_stack, self.find_lora_file
+        )
+        if layers_cached > 0:
+            print(f"[LunaConfigGateway] Cached {layers_cached} layer weights for LoRA restoration")
         
         # Detect proxy types
         use_daemon_clip = is_daemon_clip(clip)

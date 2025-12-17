@@ -154,6 +154,9 @@ class ModelWorker:
         self.lora_registry = lora_registry
         self.config_paths = config_paths or {}
         
+        # Track what models this worker has loaded
+        self.loaded_model_paths: Dict[str, str] = {}  # {component_name: full_path}
+        
         self.model: Any = None
         self.qwen3_encoder = None  # For Z-IMAGE/VLM functionality
         self.is_running = False
@@ -216,14 +219,20 @@ class ModelWorker:
                 logger.info(f"[VAE-{self.worker_id}] VAE loaded from registry ({self.precision})")
             else:
                 vae_path = self._resolve_path(self.config_paths.get('vae', ''), "vae")
+                
                 if not vae_path:
-                    raise RuntimeError(f"VAE model not found")
+                    raise RuntimeError(
+                        "VAE model not configured. "
+                        "Use load_vae_model() to specify which VAE to load, or set VAE_PATH in config.py"
+                    )
                     
                 sd = comfy.utils.load_torch_file(vae_path)
                 if self.precision != "fp32":
                     sd = self._convert_state_dict_precision(sd)
                 self.model = comfy.sd.VAE(sd=sd)
-                logger.info(f"[VAE-{self.worker_id}] VAE loaded from path ({self.precision})")
+                # Track loaded model
+                self.loaded_model_paths['vae'] = vae_path
+                logger.info(f"[VAE-{self.worker_id}] VAE loaded: {vae_path} ({self.precision})")
             
         elif self.worker_type == WorkerType.CLIP:
             logger.info(f"[CLIP-{self.worker_id}] Loading CLIP model...")
@@ -233,13 +242,18 @@ class ModelWorker:
                 logger.info(f"[CLIP-{self.worker_id}] CLIP loaded from registry ({self.precision})")
             else:
                 clip_paths = []
+                
+                # Try configured paths
                 for key in ['clip_l', 'clip_g']:
                     path = self._resolve_path(self.config_paths.get(key, ''), "clip")
                     if path:
                         clip_paths.append(path)
                 
                 if not clip_paths:
-                    raise RuntimeError("No CLIP models found")
+                    raise RuntimeError(
+                        "CLIP model not configured. "
+                        "Use load_clip_model() to specify which CLIP to load, or set CLIP_L_PATH/CLIP_G_PATH in config.py"
+                    )
                 
                 clip_type = comfy.sd.CLIPType.STABLE_DIFFUSION
                 emb_dir = self.config_paths.get('embeddings')
@@ -251,6 +265,13 @@ class ModelWorker:
                     embedding_directory=emb_dir,
                     clip_type=clip_type
                 )
+                
+                # Track loaded models
+                for i, path in enumerate(clip_paths):
+                    if i == 0:
+                        self.loaded_model_paths['clip_l'] = path
+                    elif i == 1:
+                        self.loaded_model_paths['clip_g'] = path
                 
                 if self.precision != "fp32" and hasattr(self.model, 'cond_stage_model'):
                     self.model.cond_stage_model.to(self.dtype)
@@ -268,6 +289,11 @@ class ModelWorker:
             self.model = None
             self.is_loaded = False
             torch.cuda.empty_cache()
+    
+    def reload_model(self):
+        """Reload the model (e.g., after config paths change)."""
+        self.unload_model()
+        self.load_model()
     
     def _cleanup_gpu_memory(self):
         """Aggressive GPU memory cleanup after operations."""

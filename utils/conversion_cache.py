@@ -158,6 +158,10 @@ def get_conversion_output_dir(conversion_type: str) -> str:
     """
     Get standardized output directory for conversion type.
     
+    ComfyUI directory structure:
+    - models/diffusion_models/converted/ ← fp16, bf16, fp8, int8, nf4 (precision/BNB)
+    - models/unet/converted/ ← GGUF Q8_0, Q4_K_M, etc.
+    
     Args:
         conversion_type: 'precision', 'bnb', or 'gguf'
     
@@ -165,16 +169,16 @@ def get_conversion_output_dir(conversion_type: str) -> str:
         Absolute path to output directory
     """
     if conversion_type in ['precision', 'bnb']:
-        # Precision (fp16/bf16/fp8) and BitsAndBytes (nf4/int8) go together
+        # Precision (fp16/bf16/fp8) and BitsAndBytes (nf4/int8) go to diffusion_models
         output_dir = os.path.join(
             folder_paths.get_folder_paths("diffusion_models")[0],
             "converted"
         )
     elif conversion_type == 'gguf':
-        # GGUF models in separate folder
+        # GGUF models go to unet/converted (ComfyUI convention for quantized models)
         output_dir = os.path.join(
-            folder_paths.get_folder_paths("diffusion_models")[0],
-            "gguf"
+            folder_paths.get_folder_paths("unet")[0],
+            "converted"
         )
     else:
         raise ValueError(f"Unknown conversion type: {conversion_type}")

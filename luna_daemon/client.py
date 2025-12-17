@@ -191,7 +191,7 @@ class DaemonClient:
     def vae_encode(
         self, 
         pixels: torch.Tensor, 
-        vae_type: str,
+        workflow_id: str,
         tiled: bool = False, 
         tile_size: int = 512,
         overlap: int = 64
@@ -202,7 +202,7 @@ class DaemonClient:
         result = self._send_request({
             "cmd": "vae_encode",
             "pixels": pixels_cpu,
-            "vae_type": vae_type,
+            "workflow_id": workflow_id,
             "tiled": tiled,
             "tile_size": tile_size,
             "overlap": overlap
@@ -214,7 +214,7 @@ class DaemonClient:
     def vae_decode(
         self, 
         latents: torch.Tensor, 
-        vae_type: str,
+        workflow_id: str,
         tiled: bool = False, 
         tile_size: int = 64,
         overlap: int = 16
@@ -225,7 +225,7 @@ class DaemonClient:
         result = self._send_request({
             "cmd": "vae_decode",
             "latents": latents_cpu,
-            "vae_type": vae_type,
+            "workflow_id": workflow_id,
             "tiled": tiled,
             "tile_size": tile_size,
             "overlap": overlap
@@ -242,7 +242,7 @@ class DaemonClient:
         self, 
         positive: str, 
         negative: str,
-        clip_type: str,
+        workflow_id: str,
         lora_stack: Optional[List[Dict]] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Encode text prompts to CLIP conditioning via daemon."""
@@ -250,7 +250,7 @@ class DaemonClient:
             "cmd": "clip_encode",
             "positive": positive,
             "negative": negative,
-            "clip_type": clip_type
+            "workflow_id": workflow_id
         }
         if lora_stack:
             request["lora_stack"] = lora_stack
@@ -261,7 +261,7 @@ class DaemonClient:
         self,
         positive: str,
         negative: str,
-        clip_type: str = "sdxl",
+        workflow_id: str,
         width: int = 1024,
         height: int = 1024,
         crop_w: int = 0,
@@ -275,7 +275,7 @@ class DaemonClient:
             "cmd": "clip_encode_sdxl",
             "positive": positive,
             "negative": negative,
-            "clip_type": clip_type,
+            "workflow_id": workflow_id,
             "width": width,
             "height": height,
             "crop_w": crop_w,
@@ -291,21 +291,21 @@ class DaemonClient:
     def clip_tokenize(
         self, 
         text: str, 
-        clip_type: str,
+        workflow_id: str,
         return_word_ids: bool = False
     ):
         """Tokenize text via daemon."""
         return self._send_request({
             "cmd": "clip_tokenize",
             "text": text,
-            "clip_type": clip_type,
+            "workflow_id": workflow_id,
             "return_word_ids": return_word_ids
         })
     
     def clip_encode_from_tokens(
         self,
         tokens,
-        clip_type: str,
+        workflow_id: str,
         return_pooled: bool = False,
         return_dict: bool = False,
         lora_stack: Optional[List[Dict]] = None
@@ -314,7 +314,7 @@ class DaemonClient:
         request = {
             "cmd": "clip_encode_from_tokens",
             "tokens": tokens,
-            "clip_type": clip_type,
+            "workflow_id": workflow_id,
             "return_pooled": return_pooled,
             "return_dict": return_dict
         }
@@ -416,12 +416,101 @@ class DaemonClient:
     # =========================================================================
     
     def register_vae(self, vae: Any, vae_type: str) -> dict:
-        """Register VAE with daemon (placeholder - daemon loads from config)."""
+        """Register VAE with daemon (legacy - load_vae_model preferred)."""
         return {"registered": True, "vae_type": vae_type}
     
     def register_clip(self, clip: Any, clip_type: str) -> dict:
-        """Register CLIP with daemon (placeholder - daemon loads from config)."""
+        """Register CLIP with daemon (legacy - load_clip_model preferred)."""
         return {"registered": True, "clip_type": clip_type}
+    
+    def load_vae_model(self, vae_path: str) -> dict:
+        """
+        Tell daemon to load a specific VAE model from file.
+        
+        Args:
+            vae_path: Path to VAE model file (absolute or relative to ComfyUI models/)
+        
+        Returns:
+            Response dict with success status
+        """
+        result = self._send_request({
+            "cmd": "load_vae_model",
+            "vae_path": vae_path
+        })
+        return result if isinstance(result, dict) else {"success": True, "vae_path": vae_path}
+    
+    def register_vae_by_path(self, vae_path: str, vae_type: str) -> dict:
+        """
+        Register VAE model by path.
+        
+        Args:
+            vae_path: Path to VAE model file
+            vae_type: Type of VAE ('sdxl', 'flux', etc.)
+        
+        Returns:
+            Response dict with success status
+        """
+        return self.load_vae_model(vae_path)
+    
+    def get_model_proxies(self, workflow_id: str, model_type: str, models: dict) -> dict:
+        """
+        Request CLIP/VAE proxies for a workflow with specific models.
+        
+        Daemon returns existing proxies if models are already loaded for this workflow,
+        or sideloads new ones if switching models. Enables multiple workflows to
+        share model weights while using different model combinations.
+        
+        Args:
+            workflow_id: Unique identifier for this workflow/instance
+            model_type: Model type (SDXL, Flux, SD1.5, etc.)
+            models: Dict of required models
+                e.g. {"clip_l": "/path/to/clip_l.safetensors", 
+                      "clip_g": "/path/to/clip_g.safetensors",
+                      "vae": "/path/to/vae.safetensors"}
+        
+        Returns:
+            Dict with {"clip": DaemonCLIP, "vae": DaemonVAE, "status": "loaded|new"}
+        """
+        result = self._send_request({
+            "cmd": "get_model_proxies",
+            "workflow_id": workflow_id,
+            "model_type": model_type,
+            "models": models
+        })
+        return result if isinstance(result, dict) else {"error": "Failed to get model proxies"}
+    
+    def register_clip_by_path(self, clip_components: dict, model_type: str, clip_type: str) -> dict:
+        """
+        Register CLIP models by path (loads individual components).
+        
+        Args:
+            clip_components: Dict of {component_type: path} 
+                e.g. {"clip_l": "path/to/clip_l.safetensors", "clip_g": "path/to/clip_g.safetensors"}
+            model_type: Model type (SDXL, Flux, etc.)
+            clip_type: ComfyUI CLIP type string
+        
+        Returns:
+            Response dict with success status
+        """
+        # For now, use the first/primary CLIP component
+        # Prefer clip_g (typically the larger model), fall back to clip_l
+        clip_path = None
+        if "clip_g" in clip_components:
+            clip_path = clip_components["clip_g"]
+        elif "clip_l" in clip_components:
+            clip_path = clip_components["clip_l"]
+        elif clip_components:
+            # Use first available
+            clip_path = next(iter(clip_components.values()))
+        
+        if not clip_path:
+            return {"error": "No CLIP paths provided"}
+        
+        return self.get_model_proxies(workflow_id="legacy", model_type="legacy", models={"clip": clip_path})
+    
+    def load_clip_model(self, clip_path: str, clip_type: str = "sdxl") -> dict:
+        """Legacy method - use get_model_proxies instead."""
+        return {"success": True}
     
     # =========================================================================
     # Daemon Control Operations
@@ -814,6 +903,16 @@ def register_clip(clip: Any, clip_type: str) -> dict:
     return get_client().register_clip(clip, clip_type)
 
 
+def load_vae_model(vae_path: str) -> dict:
+    """Tell daemon to load a specific VAE model from file."""
+    return get_client().load_vae_model(vae_path)
+
+
+def load_clip_model(clip_path: str, clip_type: str = "sdxl") -> dict:
+    """Tell daemon to load a specific CLIP model from file."""
+    return get_client().load_clip_model(clip_path, clip_type)
+
+
 # =============================================================================
 # Legacy Registration Operations (for backward compatibility)
 # =============================================================================
@@ -824,13 +923,13 @@ def register_checkpoint(instance_id: str, name: str, path: str, model_type: str 
 
 
 def register_vae_by_path(vae_path: str, vae_type: str) -> dict:
-    """Legacy VAE registration by path (stub - daemon loads from config)."""
-    return {"success": True, "registered": True, "vae_type": vae_type}
+    """Register VAE model by path."""
+    return get_client().register_vae_by_path(vae_path, vae_type)
 
 
 def register_clip_by_path(clip_components: dict, model_type: str, clip_type: str) -> dict:
-    """Legacy CLIP registration by path (stub - daemon loads from config)."""
-    return {"success": True, "registered": True, "clip_type": clip_type}
+    """Register CLIP models by path (loads individual components)."""
+    return get_client().register_clip_by_path(clip_components, model_type, clip_type)
 
 
 def unregister_checkpoint(instance_id: str) -> dict:
