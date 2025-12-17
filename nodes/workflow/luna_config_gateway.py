@@ -5,7 +5,7 @@ import comfy.utils
 import folder_paths
 import nodes
 
-from utils.lora_weight_cache import LoRAWeightCache
+from lora_weight_cache import LoRAWeightCache
 
 
 # Global weight cache for LoRA restoration

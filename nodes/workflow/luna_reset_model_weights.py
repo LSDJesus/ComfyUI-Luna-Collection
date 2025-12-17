@@ -7,7 +7,7 @@ Works in conjunction with Config Gateway's weight caching.
 Use at end of workflow to prepare model for next run with different LoRA weights.
 """
 
-from utils.lora_weight_cache import LoRAWeightCache
+from lora_weight_cache import LoRAWeightCache
 
 
 # Access global weight cache from Config Gateway
