@@ -88,9 +88,9 @@ def _detect_comfyui_attention_mode():
             return "xformers"
         
         # Fallback to runtime detection functions (less reliable but better than nothing)
-        if hasattr(mm, 'sage_attention_enabled') and mm.sage_attention_enabled():
+        if hasattr(mm, 'sage_attention_enabled') and mm.sage_attention_enabled():  # type: ignore
             return "sage"
-        elif hasattr(mm, 'flash_attention_enabled') and mm.flash_attention_enabled():
+        elif hasattr(mm, 'flash_attention_enabled') and mm.flash_attention_enabled():  # type: ignore
             return "flash"
         
         # Default fallback - pytorch is always available

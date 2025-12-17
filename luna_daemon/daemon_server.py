@@ -32,6 +32,35 @@ logger = logging.getLogger("LunaDaemon")
 # Import Configuration
 # =============================================================================
 
+from enum import Enum, auto
+
+class ServiceType(Enum):
+    FULL = auto()
+    VAE_ONLY = auto()
+    CLIP_ONLY = auto()
+
+# Default values to avoid Pylance "possibly unbound" errors
+DAEMON_HOST = "127.0.0.1"
+DAEMON_PORT = 19283
+DAEMON_WS_PORT = 19284
+CLIP_DEVICE = "cuda:0"
+VAE_DEVICE = "cuda:0"
+VAE_PATH = ""
+CLIP_L_PATH = ""
+CLIP_G_PATH = ""
+EMBEDDINGS_DIR = ""
+MODEL_PRECISION = "fp16"
+CLIP_PRECISION = "fp16"
+VAE_PRECISION = "fp16"
+MAX_VAE_WORKERS = 2
+MAX_CLIP_WORKERS = 2
+MIN_VAE_WORKERS = 0
+MIN_CLIP_WORKERS = 0
+QUEUE_THRESHOLD = 2
+SCALE_UP_DELAY_SEC = 1.0
+IDLE_TIMEOUT_SEC = 30.0
+SERVICE_TYPE = ServiceType.FULL
+
 # Handle both package import and direct script execution
 config_loaded = False
 try:
@@ -43,8 +72,15 @@ try:
         MODEL_PRECISION,
         MAX_VAE_WORKERS, MAX_CLIP_WORKERS, MIN_VAE_WORKERS, MIN_CLIP_WORKERS,
         QUEUE_THRESHOLD, SCALE_UP_DELAY_SEC, IDLE_TIMEOUT_SEC,
-        ServiceType, SERVICE_TYPE
+        SERVICE_TYPE
     )
+    # Try to get ServiceType from config if it exists
+    try:
+        from .config import ServiceType as ConfigServiceType
+        ServiceType = ConfigServiceType  # type: ignore
+    except ImportError:
+        pass
+        
     try:
         from .config import CLIP_PRECISION, VAE_PRECISION
     except ImportError:
@@ -62,59 +98,37 @@ except (ImportError, ValueError):
             config_mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(config_mod)
             
-            DAEMON_HOST = getattr(config_mod, "DAEMON_HOST", "127.0.0.1")
-            DAEMON_PORT = getattr(config_mod, "DAEMON_PORT", 19283)
-            DAEMON_WS_PORT = getattr(config_mod, "DAEMON_WS_PORT", 19284)
-            CLIP_DEVICE = getattr(config_mod, "CLIP_DEVICE", "cuda:0")
-            VAE_DEVICE = getattr(config_mod, "VAE_DEVICE", "cuda:0")
-            VAE_PATH = getattr(config_mod, "VAE_PATH", "")
-            CLIP_L_PATH = getattr(config_mod, "CLIP_L_PATH", "")
-            CLIP_G_PATH = getattr(config_mod, "CLIP_G_PATH", "")
-            EMBEDDINGS_DIR = getattr(config_mod, "EMBEDDINGS_DIR", "")
-            MODEL_PRECISION = getattr(config_mod, "MODEL_PRECISION", "fp16")
+            DAEMON_HOST = getattr(config_mod, "DAEMON_HOST", DAEMON_HOST)
+            DAEMON_PORT = getattr(config_mod, "DAEMON_PORT", DAEMON_PORT)
+            DAEMON_WS_PORT = getattr(config_mod, "DAEMON_WS_PORT", DAEMON_WS_PORT)
+            CLIP_DEVICE = getattr(config_mod, "CLIP_DEVICE", CLIP_DEVICE)
+            VAE_DEVICE = getattr(config_mod, "VAE_DEVICE", VAE_DEVICE)
+            VAE_PATH = getattr(config_mod, "VAE_PATH", VAE_PATH)
+            CLIP_L_PATH = getattr(config_mod, "CLIP_L_PATH", CLIP_L_PATH)
+            CLIP_G_PATH = getattr(config_mod, "CLIP_G_PATH", CLIP_G_PATH)
+            EMBEDDINGS_DIR = getattr(config_mod, "EMBEDDINGS_DIR", EMBEDDINGS_DIR)
+            MODEL_PRECISION = getattr(config_mod, "MODEL_PRECISION", MODEL_PRECISION)
             CLIP_PRECISION = getattr(config_mod, "CLIP_PRECISION", MODEL_PRECISION)
             VAE_PRECISION = getattr(config_mod, "VAE_PRECISION", MODEL_PRECISION)
-            MAX_VAE_WORKERS = getattr(config_mod, "MAX_VAE_WORKERS", 2)
-            MAX_CLIP_WORKERS = getattr(config_mod, "MAX_CLIP_WORKERS", 2)
-            MIN_VAE_WORKERS = getattr(config_mod, "MIN_VAE_WORKERS", 0)
-            MIN_CLIP_WORKERS = getattr(config_mod, "MIN_CLIP_WORKERS", 0)
-            QUEUE_THRESHOLD = getattr(config_mod, "QUEUE_THRESHOLD", 2)
-            SCALE_UP_DELAY_SEC = getattr(config_mod, "SCALE_UP_DELAY_SEC", 1.0)
-            IDLE_TIMEOUT_SEC = getattr(config_mod, "IDLE_TIMEOUT_SEC", 30.0)
-            ServiceType = getattr(config_mod, "ServiceType", None)
-            SERVICE_TYPE = getattr(config_mod, "SERVICE_TYPE", None)
+            MAX_VAE_WORKERS = getattr(config_mod, "MAX_VAE_WORKERS", MAX_VAE_WORKERS)
+            MAX_CLIP_WORKERS = getattr(config_mod, "MAX_CLIP_WORKERS", MAX_CLIP_WORKERS)
+            MIN_VAE_WORKERS = getattr(config_mod, "MIN_VAE_WORKERS", MIN_VAE_WORKERS)
+            MIN_CLIP_WORKERS = getattr(config_mod, "MIN_CLIP_WORKERS", MIN_CLIP_WORKERS)
+            QUEUE_THRESHOLD = getattr(config_mod, "QUEUE_THRESHOLD", QUEUE_THRESHOLD)
+            SCALE_UP_DELAY_SEC = getattr(config_mod, "SCALE_UP_DELAY_SEC", SCALE_UP_DELAY_SEC)
+            IDLE_TIMEOUT_SEC = getattr(config_mod, "IDLE_TIMEOUT_SEC", IDLE_TIMEOUT_SEC)
+            
+            ConfigServiceType = getattr(config_mod, "ServiceType", None)
+            if ConfigServiceType:
+                ServiceType = ConfigServiceType
+            SERVICE_TYPE = getattr(config_mod, "SERVICE_TYPE", SERVICE_TYPE)
             config_loaded = True
     except:
         pass
 
 if not config_loaded:
-    # Fallback defaults
-    DAEMON_HOST = "127.0.0.1"
-    DAEMON_PORT = 19283
-    DAEMON_WS_PORT = 19284
-    CLIP_DEVICE = "cuda:0"
-    VAE_DEVICE = "cuda:0"
-    VAE_PATH = ""
-    CLIP_L_PATH = ""
-    CLIP_G_PATH = ""
-    EMBEDDINGS_DIR = ""
-    MODEL_PRECISION = "fp16"
-    CLIP_PRECISION = "fp16"
-    VAE_PRECISION = "fp16"
-    MAX_VAE_WORKERS = 2
-    MAX_CLIP_WORKERS = 2
-    MIN_VAE_WORKERS = 0
-    MIN_CLIP_WORKERS = 0
-    QUEUE_THRESHOLD = 2
-    SCALE_UP_DELAY_SEC = 1.0
-    IDLE_TIMEOUT_SEC = 30.0
-    
-    from enum import Enum, auto
-    class ServiceType(Enum):
-        FULL = auto()
-        VAE_ONLY = auto()
-        CLIP_ONLY = auto()
-    SERVICE_TYPE = ServiceType.FULL
+    # Fallback defaults already set above
+    pass
 
 # =============================================================================
 # Import Modules
@@ -177,7 +191,7 @@ class LunaDaemon:
         ws_port: int = DAEMON_WS_PORT,
         clip_device: str = CLIP_DEVICE,
         vae_device: str = VAE_DEVICE,
-        service_type: ServiceType = SERVICE_TYPE,
+        service_type: Any = SERVICE_TYPE,
         # Backward compatibility with old tray app parameters
         device: Optional[str] = None,
         clip_precision: Optional[str] = None,
@@ -216,11 +230,11 @@ class LunaDaemon:
         }
         
         # Worker pools
-        self.vae_pool: Optional["WorkerPool"] = None
-        self.clip_pool: Optional["WorkerPool"] = None
+        self.vae_pool: Any = None
+        self.clip_pool: Any = None
         
         # WebSocket monitoring
-        self.ws_server: Optional["WebSocketServer"] = None
+        self.ws_server: Any = None
         
         # LoRA cache
         self.lora_cache = get_lora_cache()
@@ -472,11 +486,10 @@ class LunaDaemon:
                     if not self.vae_pool and "vae" in required_components:
                         self.vae_pool = WorkerPool(
                             worker_type=WorkerType.VAE,
-                            pool_size=ScalingConfig(max_workers=MAX_VAE_WORKERS, min_workers=MIN_VAE_WORKERS),
-                            model_registry=None,
-                            config_paths=self.config_paths,
+                            device=VAE_DEVICE,
                             precision=VAE_PRECISION,
-                            device=VAE_DEVICE
+                            config=self.scaling_config,
+                            config_paths=self.config_paths
                         )
                         self.vae_pool.start()
                         logger.info("[Daemon] VAE pool started")
@@ -484,11 +497,10 @@ class LunaDaemon:
                     if not self.clip_pool and any(c in required_components for c in ["clip_l", "clip_g"]):
                         self.clip_pool = WorkerPool(
                             worker_type=WorkerType.CLIP,
-                            pool_size=ScalingConfig(max_workers=MAX_CLIP_WORKERS, min_workers=MIN_CLIP_WORKERS),
-                            model_registry=None,
-                            config_paths=self.config_paths,
+                            device=CLIP_DEVICE,
                             precision=CLIP_PRECISION,
-                            device=CLIP_DEVICE
+                            config=self.scaling_config,
+                            config_paths=self.config_paths
                         )
                         self.clip_pool.start()
                         logger.info("[Daemon] CLIP pool started")

@@ -93,9 +93,9 @@ class Qwen3VLEncoder:
             config: Configuration for the encoder. If None, uses defaults.
         """
         self.config = config or Qwen3VLConfig()
-        self._model = None
-        self._processor = None
-        self._tokenizer = None
+        self._model: Any = None
+        self._processor: Any = None
+        self._tokenizer: Any = None
         self._device = torch.device(self.config.device)
         self._dtype = self._get_dtype()
         self._loaded = False
@@ -322,7 +322,10 @@ class Qwen3VLEncoder:
                     
             else:
                 # HuggingFace models: get from config
-                config = self._model.config
+                config = getattr(self._model, 'config', None)
+                if config is None:
+                    logger.error("[Qwen3VLEncoder] Model has no config attribute")
+                    return
                 
                 # Check text config (Qwen3-VL has nested config)
                 text_config = getattr(config, 'text_config', config)
@@ -390,6 +393,9 @@ class Qwen3VLEncoder:
             text = [text]
         
         # Tokenize
+        if self._tokenizer is None:
+            raise RuntimeError("Tokenizer not initialized")
+            
         inputs = self._tokenizer(
             text,
             padding=True,
@@ -401,9 +407,10 @@ class Qwen3VLEncoder:
         self._encode_count += len(text)
         
         # For HuggingFace model, extract text embeddings
-        if hasattr(self._model, 'model') and not self._is_gguf:
+        if self._model is not None and hasattr(self._model, 'model') and not self._is_gguf:
             # Get embedding layer
-            embed_layer = self._model.model.get_input_embeddings() if hasattr(self._model.model, 'get_input_embeddings') else None
+            model_attr = getattr(self._model, 'model', None)
+            embed_layer = model_attr.get_input_embeddings() if model_attr is not None and hasattr(model_attr, 'get_input_embeddings') else None
             
             # Get just the embedding layer output (for embeddings_only)
             if output_type == "embeddings_only" and embed_layer is not None:
@@ -414,7 +421,10 @@ class Qwen3VLEncoder:
             
             # Full forward through text encoder
             # We need to run through the transformer layers but not the vision encoder
-            outputs = self._model.model(
+            if model_attr is None:
+                raise RuntimeError("Model attribute 'model' is None")
+                
+            outputs = model_attr(
                 input_ids=inputs.input_ids,
                 attention_mask=inputs.attention_mask,
                 output_hidden_states=True,
@@ -430,9 +440,16 @@ class Qwen3VLEncoder:
             for t in text:
                 # llama-cpp's embed returns a list of floats for the pooled embedding
                 # or we can get per-token embeddings
-                emb = self._model.embed(t)
+                emb: Any = self._model.embed(t)
                 if isinstance(emb, list):
                     emb = torch.tensor(emb, dtype=torch.float32)
+                elif not isinstance(emb, torch.Tensor):
+                    # Handle tuple or other return types from llama-cpp
+                    if isinstance(emb, tuple):
+                        emb = torch.tensor(emb[0], dtype=torch.float32)
+                    else:
+                        emb = torch.tensor(emb, dtype=torch.float32)
+                        
                 if emb.dim() == 1:
                     # Single embedding, expand to sequence format
                     emb = emb.unsqueeze(0).unsqueeze(0)  # [1, 1, dim]
@@ -495,6 +512,8 @@ class Qwen3VLEncoder:
         image: torch.Tensor,
         prompt: str = "Describe this image in detail.",
         max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        max_new_tokens: Optional[int] = None,  # Alias for max_tokens
     ) -> str:
         """
         Generate a description of an image using the VLM.
@@ -503,10 +522,17 @@ class Qwen3VLEncoder:
             image: Image tensor in ComfyUI format [B, H, W, C] or [H, W, C], values 0-1
             prompt: The question or instruction to guide the description
             max_tokens: Maximum tokens to generate (default from config)
+            temperature: Sampling temperature
+            max_new_tokens: Alias for max_tokens
         
         Returns:
             Generated description text
         """
+        if max_new_tokens is not None:
+            max_tokens = max_new_tokens
+            
+        if temperature is None:
+            temperature = self.config.temperature
         if not self._loaded:
             raise RuntimeError("Model not loaded. Call load_model() first.")
         
@@ -514,11 +540,11 @@ class Qwen3VLEncoder:
         
         # Handle GGUF model with vision (via Llava15ChatHandler)
         if self._is_gguf and self._has_vision:
-            return self._describe_image_gguf(image, prompt, max_new_tokens)
+            return self._describe_image_gguf(image, prompt, max_new_tokens, temperature)
         
         # Handle HuggingFace model
         if self._processor is not None:
-            return self._describe_image_hf(image, prompt, max_new_tokens)
+            return self._describe_image_hf(image, prompt, max_new_tokens, temperature)
         
         raise RuntimeError("VLM functions require either HuggingFace model or GGUF with mmproj")
     
@@ -527,6 +553,7 @@ class Qwen3VLEncoder:
         image: torch.Tensor,
         prompt: str,
         max_tokens: int,
+        temperature: float,
     ) -> str:
         """Generate description using GGUF model with Llava chat handler."""
         from PIL import Image
@@ -559,10 +586,10 @@ class Qwen3VLEncoder:
             }
         ]
         
-        response = self._model.create_chat_completion(
+        response = self._model.create_chat_completion(  # type: ignore
             messages=messages,
             max_tokens=max_tokens,
-            temperature=self.config.temperature,
+            temperature=temperature,
         )
         
         result = response['choices'][0]['message']['content']
@@ -575,6 +602,7 @@ class Qwen3VLEncoder:
         image: torch.Tensor,
         prompt: str,
         max_tokens: int,
+        temperature: float,
     ) -> str:
         """Generate description using HuggingFace model."""
         # Convert image tensor to PIL for processor
@@ -613,8 +641,8 @@ class Qwen3VLEncoder:
         output_ids = self._model.generate(
             **inputs,
             max_new_tokens=max_tokens,
-            temperature=self.config.temperature if self.config.temperature > 0 else None,
-            do_sample=self.config.temperature > 0,
+            temperature=temperature if temperature > 0 else None,
+            do_sample=temperature > 0,
         )
         
         # Decode output (skip input tokens)
@@ -635,6 +663,7 @@ class Qwen3VLEncoder:
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         system_prompt: Optional[str] = None,
+        max_new_tokens: Optional[int] = None,  # Alias for max_tokens
     ) -> str:
         """
         Generate text completion using the LLM.
@@ -643,14 +672,18 @@ class Qwen3VLEncoder:
         Uses the same model weights as CLIP encoding - no duplicate loading!
         
         Args:
-            prompt: The input prompt/question
+            prompt: The user prompt
             max_tokens: Maximum tokens to generate
-            temperature: Sampling temperature (0 = deterministic)
+            temperature: Sampling temperature
             system_prompt: Optional system prompt
-        
-        Returns:
-            Generated text
+            max_new_tokens: Alias for max_tokens
         """
+        if max_new_tokens is not None:
+            max_tokens = max_new_tokens
+            
+        if temperature is None:
+            temperature = self.config.temperature
+            
         if not self._loaded:
             raise RuntimeError("Model not loaded. Call load_model() first.")
         
@@ -677,7 +710,7 @@ class Qwen3VLEncoder:
         
         messages.append({"role": "user", "content": prompt})
         
-        response = self._model.create_chat_completion(
+        response = self._model.create_chat_completion(  # type: ignore
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature if temperature > 0 else 0.0,

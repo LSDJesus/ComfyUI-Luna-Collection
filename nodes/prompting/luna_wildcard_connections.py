@@ -76,6 +76,8 @@ class ConnectionsDB:
     def load(self, force_reload: bool = False) -> Dict:
         """Load connections database with caching"""
         path = self.get_connections_path()
+        if not path:
+            return self._get_empty_db()
         
         if not os.path.exists(path):
             return self._get_empty_db()
@@ -96,6 +98,8 @@ class ConnectionsDB:
     def save(self, data: Dict) -> bool:
         """Save connections database"""
         path = self.get_connections_path()
+        if not path:
+            return False
         
         try:
             os.makedirs(os.path.dirname(path), exist_ok=True)

@@ -33,8 +33,8 @@ import torch
 import hashlib
 from typing import Optional, Dict, Any, List
 
-from . import client as daemon_client
-from .client import DaemonConnectionError, ModelMismatchError
+from .. import client as daemon_client
+from ..client import DaemonConnectionError, ModelMismatchError
 
 
 # =============================================================================
@@ -1066,7 +1066,7 @@ class DaemonModel:
         self._ensure_registered()
         
         try:
-            return daemon_client.model_forward(
+            return daemon_client.model_forward(  # type: ignore
                 x=x,
                 timesteps=timesteps,
                 context=context,

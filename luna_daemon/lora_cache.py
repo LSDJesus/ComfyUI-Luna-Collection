@@ -31,6 +31,13 @@ try:
     HAS_SAFETENSORS = True
 except ImportError:
     HAS_SAFETENSORS = False
+    # Define a dummy object to avoid Pylance errors
+    class DummySafetensors:
+        class torch:
+            @staticmethod
+            def load_file(*args, **kwargs):
+                raise ImportError("safetensors not installed")
+    safetensors = DummySafetensors()
 
 # Try relative import first, fallback to direct
 try:
@@ -92,7 +99,7 @@ class LoRACache:
         self.lora_base_path = lora_base_path
         
         # LRU cache: OrderedDict maintains insertion order
-        self._cache: OrderedDict[str, LoRACacheEntry] = OrderedDict()
+        self._cache: Any = OrderedDict()
         self._current_size_bytes = 0
         self._lock = threading.RLock()
         
@@ -114,7 +121,7 @@ class LoRACache:
             return os.path.join(self.lora_base_path, lora_name)
         # Try to use folder_paths if available
         try:
-            import folder_paths
+            import folder_paths  # type: ignore
             return folder_paths.get_full_path("loras", lora_name)
         except:
             return lora_name
@@ -330,7 +337,7 @@ def get_lora_cache() -> LoRACache:
         # Try to get lora path from folder_paths
         lora_path = None
         try:
-            import folder_paths
+            import folder_paths  # type: ignore
             lora_paths = folder_paths.get_folder_paths("loras")
             if lora_paths:
                 lora_path = lora_paths[0]

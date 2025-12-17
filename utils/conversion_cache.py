@@ -399,7 +399,7 @@ def get_conversion_stats(conversion_type: str = 'precision') -> dict:
 # Conversion Suggestion
 # =============================================================================
 
-def suggest_conversion(source_path: str, target_precision: str) -> Tuple[str, str]:
+def suggest_conversion(source_path: str, target_precision: str) -> Tuple[str, Optional[str]]:
     """
     Suggest best conversion approach.
     

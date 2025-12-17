@@ -142,7 +142,7 @@ class ModelWorker:
         result_queues: Dict[int, queue.Queue],
         model_registry: Optional[Any] = None,
         lora_registry: Optional[Any] = None,
-        config_paths: Optional[Dict[str, str]] = None
+        config_paths: Optional[Dict[str, Optional[str]]] = None
     ):
         self.worker_id = worker_id
         self.worker_type = worker_type
@@ -158,7 +158,7 @@ class ModelWorker:
         self.loaded_model_paths: Dict[str, str] = {}  # {component_name: full_path}
         
         self.model: Any = None
-        self.qwen3_encoder = None  # For Z-IMAGE/VLM functionality
+        self.qwen3_encoder: Any = None  # For Z-IMAGE/VLM functionality
         self.is_running = False
         self.is_loaded = False
         self.last_active = time.time()
@@ -185,7 +185,7 @@ class ModelWorker:
             
         if HAS_FOLDER_PATHS:
             try:
-                full_path = folder_paths.get_full_path(type_name, path_or_name)
+                full_path = folder_paths.get_full_path(type_name, path_or_name)  # type: ignore
                 if full_path:
                     return full_path
             except:
@@ -218,7 +218,7 @@ class ModelWorker:
                 self.model = self.model_registry.get_vae_model(self.precision)
                 logger.info(f"[VAE-{self.worker_id}] VAE loaded from registry ({self.precision})")
             else:
-                vae_path = self._resolve_path(self.config_paths.get('vae', ''), "vae")
+                vae_path = self._resolve_path(self.config_paths.get('vae') or '', "vae")
                 
                 if not vae_path:
                     raise RuntimeError(
@@ -245,7 +245,7 @@ class ModelWorker:
                 
                 # Try configured paths
                 for key in ['clip_l', 'clip_g']:
-                    path = self._resolve_path(self.config_paths.get(key, ''), "clip")
+                    path = self._resolve_path(self.config_paths.get(key) or '', "clip")
                     if path:
                         clip_paths.append(path)
                 
@@ -880,7 +880,7 @@ class WorkerPool:
         on_scale_event: Optional[Callable[[str, dict], None]] = None,
         model_registry: Optional[Any] = None,
         lora_registry: Optional[Any] = None,
-        config_paths: Optional[Dict[str, str]] = None
+        config_paths: Optional[Dict[str, Optional[str]]] = None
     ):
         self.worker_type = worker_type
         self.device = device

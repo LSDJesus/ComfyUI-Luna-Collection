@@ -809,7 +809,7 @@ def apply_fb_cache_transient(model: Any, fb_config: Optional[FBCacheConfig], mod
     
     try:
         cache_ctx = try_apply_fb_cache(model, fb_config, model_type)
-        with cache_ctx:
+        with cache_ctx:  # type: ignore
             yield
     
     except Exception as e:

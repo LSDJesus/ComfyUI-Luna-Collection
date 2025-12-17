@@ -40,6 +40,8 @@ def convert_to_precision(
     
     precision_path = Path(__file__).parent / "precision_converter.py"
     spec = importlib.util.spec_from_file_location("precision_converter", precision_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load precision_converter from {precision_path}")
     precision_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(precision_module)
     convert_checkpoint_precision = precision_module.convert_checkpoint_precision
@@ -78,6 +80,8 @@ def convert_to_gguf(
     
     gguf_path = Path(__file__).parent / "gguf_converter.py"
     spec = importlib.util.spec_from_file_location("gguf_converter", gguf_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load gguf_converter from {gguf_path}")
     gguf_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(gguf_module)
     convert_checkpoint_to_gguf = gguf_module.convert_checkpoint_to_gguf
@@ -121,6 +125,8 @@ def convert_to_bnb(
     
     bnb_path = Path(__file__).parent / "bitsandbytes_converter.py"
     spec = importlib.util.spec_from_file_location("bitsandbytes_converter", bnb_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Could not load bitsandbytes_converter from {bnb_path}")
     bnb_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(bnb_module)
     convert_checkpoint_to_bnb = bnb_module.convert_checkpoint_to_bnb

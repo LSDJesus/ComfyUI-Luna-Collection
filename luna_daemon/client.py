@@ -917,7 +917,7 @@ def load_clip_model(clip_path: str, clip_type: str = "sdxl") -> dict:
 # Legacy Registration Operations (for backward compatibility)
 # =============================================================================
 
-def register_checkpoint(instance_id: str, name: str, path: str, model_type: str = None, size_mb: float = None, device: str = None, dtype: str = None) -> dict:
+def register_checkpoint(instance_id: str, name: str, path: str, model_type: Optional[str] = None, size_mb: Optional[float] = None, device: Optional[str] = None, dtype: Optional[str] = None) -> dict:
     """Legacy checkpoint registration (stub - daemon loads from config)."""
     return {"success": True, "registered": True, "message": "Models managed via config"}
 

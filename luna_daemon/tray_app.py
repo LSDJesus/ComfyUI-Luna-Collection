@@ -18,6 +18,7 @@ import threading
 import time
 import socket
 import logging
+from typing import Any
 from pathlib import Path
 from datetime import datetime
 
@@ -27,6 +28,10 @@ try:
     HAS_TRAY = True
 except ImportError:
     HAS_TRAY = False
+    from typing import Any
+    pystray: Any = None
+    Image: Any = None
+    ImageDraw: Any = None
     print("Warning: pystray not installed. Run: pip install pystray pillow")
 
 # Set up file logging (when running hidden in background)
@@ -112,7 +117,7 @@ class LunaDaemonTray:
             self.ATTENTION_MODE = ATTENTION_MODE
         except Exception as e:
             print(f"Error importing daemon: {e}")
-            self.DynamicDaemon = None
+            self.DynamicDaemon: Any = None
     
     def create_icon_image(self, color='green'):
         """Create a simple colored circle icon"""

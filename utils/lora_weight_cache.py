@@ -17,7 +17,7 @@ Benefits:
 """
 
 import torch
-from typing import Dict, Optional, Any, Set
+from typing import Dict, Optional, Any, Set, Callable
 import copy
 
 
@@ -40,7 +40,7 @@ class LoRAWeightCache:
         self, 
         model: Any, 
         lora_stack: list,
-        lora_resolver_fn: Optional[callable] = None
+        lora_resolver_fn: Optional[Callable] = None
     ) -> int:
         """
         Cache model weights that will be affected by LoRAs.
@@ -118,7 +118,7 @@ class LoRAWeightCache:
         self,
         model: Any,
         lora_stack: list,
-        lora_resolver_fn: Optional[callable] = None
+        lora_resolver_fn: Optional[Callable] = None
     ) -> Set[str]:
         """
         Identify which model layers will be affected by the LoRA stack.
@@ -147,7 +147,7 @@ class LoRAWeightCache:
                     continue
                 
                 # Load LoRA to check keys (lightweight - just metadata)
-                lora_data = comfy.utils.load_torch_file(lora_path, safe_load=True)
+                lora_data = comfy.utils.load_torch_file(lora_path, safe_load=True)  # type: ignore
                 
                 # Extract affected layer names (strip LoRA-specific suffixes)
                 for key in lora_data.keys():
