@@ -170,16 +170,39 @@ def get_conversion_output_dir(conversion_type: str) -> str:
     """
     if conversion_type in ['precision', 'bnb']:
         # Precision (fp16/bf16/fp8) and BitsAndBytes (nf4/int8) go to diffusion_models
-        output_dir = os.path.join(
-            folder_paths.get_folder_paths("diffusion_models")[0],
-            "converted"
-        )
+        # Try diffusion_models first, fall back to checkpoints folder
+        try:
+            diffusion_paths = folder_paths.get_folder_paths("diffusion_models")
+            if diffusion_paths:
+                output_dir = os.path.join(diffusion_paths[0], "converted")
+                print(f"[ConversionCache] Using diffusion_models path: {output_dir}")
+            else:
+                raise ValueError("Empty diffusion_models path list")
+        except (KeyError, ValueError, IndexError):
+            # Fallback: check if checkpoints folder exists and create diffusion_models alongside it
+            try:
+                checkpoint_paths = folder_paths.get_folder_paths("checkpoints")
+                if checkpoint_paths:
+                    models_dir = os.path.dirname(checkpoint_paths[0])
+                    output_dir = os.path.join(models_dir, "diffusion_models", "converted")
+                    print(f"[ConversionCache] Using fallback diffusion_models path: {output_dir}")
+                else:
+                    raise ValueError("No checkpoint paths found either")
+            except:
+                # Final fallback: use models root
+                output_dir = os.path.join(
+                    os.path.dirname(os.path.dirname(folder_paths.get_folder_paths("checkpoints")[0])),
+                    "diffusion_models",
+                    "converted"
+                )
+                print(f"[ConversionCache] Using final fallback path: {output_dir}")
     elif conversion_type == 'gguf':
         # GGUF models go to unet/converted (ComfyUI convention for quantized models)
-        output_dir = os.path.join(
-            folder_paths.get_folder_paths("unet")[0],
-            "converted"
-        )
+        unet_paths = folder_paths.get_folder_paths("unet")
+        if not unet_paths:
+            raise ValueError("No unet folder found in ComfyUI")
+        output_dir = os.path.join(unet_paths[0], "converted")
+        print(f"[ConversionCache] Using unet path: {output_dir}")
     else:
         raise ValueError(f"Unknown conversion type: {conversion_type}")
     

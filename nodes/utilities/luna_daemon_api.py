@@ -96,41 +96,71 @@ def register_routes():
                     "running": False,
                 })
             
-            # Get detailed info from daemon
+            # Get detailed info from daemon using the module-level function
             info = daemon_client.get_daemon_info()
             
             # Build models list for display
             models_loaded = []
-            if info.get("loaded_vae"):
-                models_loaded.append(f"VAE: {info['loaded_vae']}")
-            if info.get("loaded_clip"):
-                clip_names = info['loaded_clip']
-                if isinstance(clip_names, list):
-                    models_loaded.append(f"CLIP: {', '.join(clip_names)}")
-                else:
-                    models_loaded.append(f"CLIP: {clip_names}")
+            vae_pool = info.get("vae_pool", {})
+            clip_pool = info.get("clip_pool", {})
+            
+            # Collect loaded models from pool stats
+            if vae_pool.get("loaded_models"):
+                for model_name in vae_pool.get("loaded_models", []):
+                    models_loaded.append(f"VAE: {model_name}")
+            
+            if clip_pool.get("loaded_models"):
+                for model_name in clip_pool.get("loaded_models", []):
+                    models_loaded.append(f"CLIP: {model_name}")
+            
+            # Get VRAM info
+            vram_info = info.get("vram", {})
+            total_vram_gb = sum(v.get("total_gb", 0) for v in vram_info.values())
+            used_vram_gb = sum(v.get("used_gb", 0) for v in vram_info.values())
+            
+            # Build GPU array for multi-GPU display
+            gpus = []
+            for device_id, vram in vram_info.items():
+                used = vram.get("used_gb", 0)
+                total = vram.get("total_gb", 0)
+                reserved = used  # For daemon, used = reserved
+                percent = (used / total * 100) if total > 0 else 0
+                
+                # Determine if this is the daemon device
+                is_daemon_device = device_id == f"cuda:{info.get('devices', {}).get('clip', '0').split(':')[1]}"
+                
+                gpus.append({
+                    "id": device_id.split(":")[-1],
+                    "name": f"GPU {device_id.split(':')[-1]}",
+                    "used_gb": round(used, 2),
+                    "reserved_gb": round(reserved, 2),
+                    "total_gb": round(total, 1),
+                    "percent": round(percent, 1),
+                    "is_daemon_device": is_daemon_device
+                })
             
             return web.json_response({
                 "running": True,
-                "device": info.get("device", CLIP_DEVICE),
-                "vram_used_gb": info.get("vram_used_gb", 0),
-                "vram_allocated_gb": info.get("vram_allocated_gb", 0),
-                "vram_total_gb": info.get("vram_total_gb", 0),
-                "vram_percent": info.get("vram_percent", 0),
+                "device": info.get("devices", {}).get("clip", CLIP_DEVICE),
+                "vram_used_gb": round(used_vram_gb, 2),
+                "vram_allocated_gb": round(used_vram_gb, 2),  # For daemon, allocated = used
+                "vram_total_gb": round(total_vram_gb, 1),
+                "vram_percent": round((used_vram_gb / total_vram_gb * 100) if total_vram_gb > 0 else 0, 1),
                 "request_count": info.get("request_count", 0),
-                "uptime_seconds": int(info.get("uptime_seconds", 0)),
+                "clip_request_count": info.get("clip_request_count", 0),
+                "vae_request_count": info.get("vae_request_count", 0),
+                "uptime_seconds": int(info.get("uptime_sec", 0)),
                 "models_loaded": models_loaded,
-                "checkpoints": info.get("checkpoints", []),
-                "gpus": info.get("gpus", []),
-                "vae_loaded": info.get("vae_loaded", False),
-                "clip_loaded": info.get("clip_loaded", False),
-                "loaded_vae": info.get("loaded_vae"),
-                "loaded_vae_path": info.get("loaded_vae_path"),
-                "loaded_clip": info.get("loaded_clip"),
-                "loaded_clip_paths": info.get("loaded_clip_paths"),
+                "checkpoints": [],  # TODO: Track checkpoints in daemon
+                "gpus": gpus,
+                "vae_loaded": vae_pool.get("workers_count", 0) > 0,
+                "clip_loaded": clip_pool.get("workers_count", 0) > 0,
             })
             
         except Exception as e:
+            import traceback
+            logger.error(f"[Luna.DaemonAPI] Error getting daemon status: {e}")
+            logger.error(traceback.format_exc())
             return web.json_response({
                 "running": False,
                 "error": str(e),

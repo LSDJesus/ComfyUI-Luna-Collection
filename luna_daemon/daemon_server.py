@@ -495,6 +495,12 @@ class LunaDaemon:
                         )
                         self.vae_pool.start()
                         logger.info("[Daemon] VAE pool started")
+                        
+                        # EAGER LOADING: Force VAE workers to load models NOW
+                        logger.info("[Daemon] Preloading VAE models (eager loading)...")
+                        if not self.vae_pool.preload_models(timeout=60.0):
+                            return {"error": "Failed to preload VAE models - check daemon logs for details"}
+                        logger.info("[Daemon] ✓ VAE models preloaded successfully")
                     
                     if not self.clip_pool and any(c in required_components for c in ["clip_l", "clip_g"]):
                         self.clip_pool = WorkerPool(
@@ -506,6 +512,21 @@ class LunaDaemon:
                         )
                         self.clip_pool.start()
                         logger.info("[Daemon] CLIP pool started")
+                        
+                        # EAGER LOADING: Force workers to load models NOW (not lazily)
+                        # This catches errors early in ModelRouter instead of later in ConfigGateway
+                        logger.info("[Daemon] Preloading CLIP models (eager loading)...")
+                        if not self.clip_pool.preload_models(timeout=60.0):
+                            return {"error": "Failed to preload CLIP models - check daemon logs for details"}
+                        logger.info("[Daemon] ✓ CLIP models preloaded successfully")
+                    
+                    if not self.vae_pool and "vae" in required_components:
+                        # VAE pool already created above, but if not, create it here
+                        if self.vae_pool:
+                            logger.info("[Daemon] Preloading VAE models (eager loading)...")
+                            if not self.vae_pool.preload_models(timeout=60.0):
+                                return {"error": "Failed to preload VAE models - check daemon logs for details"}
+                            logger.info("[Daemon] ✓ VAE models preloaded successfully")
                     
                     # Store this workflow's model set
                     self.workflow_model_sets[workflow_id] = {

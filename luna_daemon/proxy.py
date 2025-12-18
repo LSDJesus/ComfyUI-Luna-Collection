@@ -402,6 +402,34 @@ class DaemonCLIP:
         except DaemonConnectionError as e:
             raise RuntimeError(f"Daemon error: {e}")
     
+    def encode_from_tokens_scheduled(self, tokens, **kwargs):
+        """Encode tokens via daemon with scheduling support (ComfyUI 0.3.0+)."""
+        # Call encode_from_tokens with return_dict=True to get both cond and pooled
+        self._check_daemon()
+        self._ensure_registered()
+        
+        try:
+            result = daemon_client.clip_encode_from_tokens(
+                tokens, 
+                self.clip_type,
+                return_pooled=True,
+                return_dict=True,
+                lora_stack=self.lora_stack if self.lora_stack else None
+            )
+            
+            # Result should be a dict with 'cond' and 'pooled_output'
+            # Convert to ComfyUI's expected format: [[cond, {"pooled_output": pooled}]]
+            if isinstance(result, dict):
+                cond = result.get('cond')
+                pooled = result.get('pooled_output')
+                if cond is not None and pooled is not None:
+                    return [[cond, {"pooled_output": pooled}]]
+            
+            # Fallback: if result is already in the right format, return it
+            return result
+        except DaemonConnectionError as e:
+            raise RuntimeError(f"Daemon error: {e}")
+    
     def encode(self, text: str):
         """Convenience method: tokenize and encode text."""
         tokens = self.tokenize(text)

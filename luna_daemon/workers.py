@@ -575,6 +575,13 @@ class ModelWorker:
                 return_pooled=return_pooled,
                 return_dict=return_dict
             )
+            
+            # If return_dict is True, ensure we return a proper dict format
+            if return_dict and isinstance(result, tuple):
+                # Result is (cond, pooled) - convert to dict
+                cond, pooled = result
+                return {"cond": cond, "pooled_output": pooled}
+            
             return result
     
     def process_register_lora(self, lora_name: str, clip_strength: float, model_strength: float):
@@ -760,13 +767,19 @@ class ModelWorker:
                                 tile_size=data.get("tile_size", 64),
                                 overlap=data.get("overlap", 16)
                             )
+                        elif cmd == "preload":
+                            # Preload command - model is already loaded by lazy load above
+                            result = {"success": True, "preloaded": True}
                         else:
                             result = {"error": f"Unknown VAE command: {cmd}"}
                     
                     elif self.worker_type == WorkerType.CLIP:
                         lora_stack = data.get("lora_stack")
                         
-                        if cmd == "clip_encode":
+                        if cmd == "preload":
+                            # Preload command - model is already loaded by lazy load above
+                            result = {"success": True, "preloaded": True}
+                        elif cmd == "clip_encode":
                             result = self.process_clip_encode(
                                 data["positive"],
                                 data.get("negative", ""),
@@ -1077,10 +1090,22 @@ class WorkerPool:
     def get_stats(self) -> dict:
         """Get pool statistics."""
         with self.lock:
+            # Collect loaded model paths from workers
+            loaded_models = set()
+            for worker in self.workers:
+                if worker.loaded_model_paths:
+                    for component, path in worker.loaded_model_paths.items():
+                        if path:
+                            # Get just the filename for display
+                            import os
+                            loaded_models.add(os.path.basename(path))
+            
             return {
                 "type": self.worker_type.value,
                 "active_workers": len(self.workers),
                 "queue_depth": self.request_queue.qsize(),
                 "total_requests": sum(w.request_count for w in self.workers),
                 "worker_ids": [w.worker_id for w in self.workers],
+                "workers_count": len(self.workers),
+                "loaded_models": list(loaded_models),
             }
