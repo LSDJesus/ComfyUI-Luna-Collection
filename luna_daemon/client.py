@@ -492,21 +492,10 @@ class DaemonClient:
         Returns:
             Response dict with success status
         """
-        # For now, use the first/primary CLIP component
-        # Prefer clip_g (typically the larger model), fall back to clip_l
-        clip_path = None
-        if "clip_g" in clip_components:
-            clip_path = clip_components["clip_g"]
-        elif "clip_l" in clip_components:
-            clip_path = clip_components["clip_l"]
-        elif clip_components:
-            # Use first available
-            clip_path = next(iter(clip_components.values()))
-        
-        if not clip_path:
+        if not clip_components:
             return {"error": "No CLIP paths provided"}
         
-        return self.get_model_proxies(workflow_id="legacy", model_type="legacy", models={"clip": clip_path})
+        return self.get_model_proxies(workflow_id="legacy", model_type="legacy", models=clip_components)
     
     def load_clip_model(self, clip_path: str, clip_type: str = "sdxl") -> dict:
         """Legacy method - use get_model_proxies instead."""

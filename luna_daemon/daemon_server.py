@@ -482,14 +482,16 @@ class LunaDaemon:
                         elif component in ["clip_l", "clip_g"]:
                             self.config_paths[component] = path
                     
-                    # Ensure workers exist
+                    logger.info(f"[Daemon] Updated config_paths: {self.config_paths}")
+                    
+                    # Ensure workers exist (they'll use the updated config_paths)
                     if not self.vae_pool and "vae" in required_components:
                         self.vae_pool = WorkerPool(
                             worker_type=WorkerType.VAE,
                             device=VAE_DEVICE,
                             precision=VAE_PRECISION,
                             config=self.scaling_config,
-                            config_paths=self.config_paths
+                            config_paths=self.config_paths.copy()  # Pass a copy to ensure workers get current state
                         )
                         self.vae_pool.start()
                         logger.info("[Daemon] VAE pool started")
@@ -500,7 +502,7 @@ class LunaDaemon:
                             device=CLIP_DEVICE,
                             precision=CLIP_PRECISION,
                             config=self.scaling_config,
-                            config_paths=self.config_paths
+                            config_paths=self.config_paths.copy()  # Pass a copy to ensure workers get current state
                         )
                         self.clip_pool.start()
                         logger.info("[Daemon] CLIP pool started")
