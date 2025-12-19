@@ -12,6 +12,12 @@ This is the main entry point for the daemon.
 
 import os
 import sys
+
+# CRITICAL: Force PyTorch to use legacy CUDA allocator for IPC support
+# The options in this PyTorch version are 'native' and 'cudaMallocAsync'
+# 'native' is the standard caching allocator which supports legacy IPC
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "backend:native"
+
 import socket
 import pickle
 import threading
@@ -36,7 +42,6 @@ from enum import Enum, auto
 
 class ServiceType(Enum):
     FULL = auto()
-    VAE_ONLY = auto()
     CLIP_ONLY = auto()
 
 # Default values to avoid Pylance "possibly unbound" errors
@@ -44,17 +49,12 @@ DAEMON_HOST = "127.0.0.1"
 DAEMON_PORT = 19283
 DAEMON_WS_PORT = 19284
 CLIP_DEVICE = "cuda:0"
-VAE_DEVICE = "cuda:0"
-VAE_PATH = ""
 CLIP_L_PATH = ""
 CLIP_G_PATH = ""
 EMBEDDINGS_DIR = ""
 MODEL_PRECISION = "fp16"
 CLIP_PRECISION = "fp16"
-VAE_PRECISION = "fp16"
-MAX_VAE_WORKERS = 2
 MAX_CLIP_WORKERS = 2
-MIN_VAE_WORKERS = 0
 MIN_CLIP_WORKERS = 0
 QUEUE_THRESHOLD = 2
 SCALE_UP_DELAY_SEC = 1.0
@@ -67,10 +67,10 @@ try:
     # Try relative imports first (package context)
     from .config import (
         DAEMON_HOST, DAEMON_PORT, DAEMON_WS_PORT,
-        CLIP_DEVICE, VAE_DEVICE,
-        VAE_PATH, CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
+        CLIP_DEVICE,
+        CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
         MODEL_PRECISION,
-        MAX_VAE_WORKERS, MAX_CLIP_WORKERS, MIN_VAE_WORKERS, MIN_CLIP_WORKERS,
+        MAX_CLIP_WORKERS, MIN_CLIP_WORKERS,
         QUEUE_THRESHOLD, SCALE_UP_DELAY_SEC, IDLE_TIMEOUT_SEC,
         SERVICE_TYPE
     )
@@ -82,10 +82,9 @@ try:
         pass
         
     try:
-        from .config import CLIP_PRECISION, VAE_PRECISION
+        from .config import CLIP_PRECISION
     except ImportError:
         CLIP_PRECISION = MODEL_PRECISION
-        VAE_PRECISION = MODEL_PRECISION
     config_loaded = True
 except (ImportError, ValueError):
     # Fallback: direct import when run as __main__
@@ -102,17 +101,12 @@ except (ImportError, ValueError):
             DAEMON_PORT = getattr(config_mod, "DAEMON_PORT", DAEMON_PORT)
             DAEMON_WS_PORT = getattr(config_mod, "DAEMON_WS_PORT", DAEMON_WS_PORT)
             CLIP_DEVICE = getattr(config_mod, "CLIP_DEVICE", CLIP_DEVICE)
-            VAE_DEVICE = getattr(config_mod, "VAE_DEVICE", VAE_DEVICE)
-            VAE_PATH = getattr(config_mod, "VAE_PATH", VAE_PATH)
             CLIP_L_PATH = getattr(config_mod, "CLIP_L_PATH", CLIP_L_PATH)
             CLIP_G_PATH = getattr(config_mod, "CLIP_G_PATH", CLIP_G_PATH)
             EMBEDDINGS_DIR = getattr(config_mod, "EMBEDDINGS_DIR", EMBEDDINGS_DIR)
             MODEL_PRECISION = getattr(config_mod, "MODEL_PRECISION", MODEL_PRECISION)
             CLIP_PRECISION = getattr(config_mod, "CLIP_PRECISION", MODEL_PRECISION)
-            VAE_PRECISION = getattr(config_mod, "VAE_PRECISION", MODEL_PRECISION)
-            MAX_VAE_WORKERS = getattr(config_mod, "MAX_VAE_WORKERS", MAX_VAE_WORKERS)
             MAX_CLIP_WORKERS = getattr(config_mod, "MAX_CLIP_WORKERS", MAX_CLIP_WORKERS)
-            MIN_VAE_WORKERS = getattr(config_mod, "MIN_VAE_WORKERS", MIN_VAE_WORKERS)
             MIN_CLIP_WORKERS = getattr(config_mod, "MIN_CLIP_WORKERS", MIN_CLIP_WORKERS)
             QUEUE_THRESHOLD = getattr(config_mod, "QUEUE_THRESHOLD", QUEUE_THRESHOLD)
             SCALE_UP_DELAY_SEC = getattr(config_mod, "SCALE_UP_DELAY_SEC", SCALE_UP_DELAY_SEC)
@@ -175,10 +169,10 @@ except (ImportError, ValueError):
 
 class LunaDaemon:
     """
-    Main daemon server with VAE/CLIP worker pools and monitoring.
+    Main daemon server with CLIP worker pool and monitoring.
     
     Simplified architecture:
-    - Workers handle VAE encode/decode and CLIP encoding
+    - Workers handle CLIP encoding
     - WebSocket broadcasts status to JS panel
     - LoRA cache stores state_dicts in RAM
     - Socket server handles client requests
@@ -190,30 +184,24 @@ class LunaDaemon:
         port: int = DAEMON_PORT,
         ws_port: int = DAEMON_WS_PORT,
         clip_device: str = CLIP_DEVICE,
-        vae_device: str = VAE_DEVICE,
         service_type: Any = SERVICE_TYPE,
         # Backward compatibility with old tray app parameters
         device: Optional[str] = None,
         clip_precision: Optional[str] = None,
-        vae_precision: Optional[str] = None,
         **kwargs
     ):
         # Handle old tray app parameter names
         if device is not None:
             clip_device = device
-            vae_device = device
         
         self.host = host
         self.port = port
         self.ws_port = ws_port
         self.clip_device = clip_device
-        self.vae_device = vae_device
         self.service_type = service_type
         
         # Scaling configuration
         self.scaling_config = ScalingConfig(
-            min_vae_workers=MIN_VAE_WORKERS,
-            max_vae_workers=MAX_VAE_WORKERS,
             min_clip_workers=MIN_CLIP_WORKERS,
             max_clip_workers=MAX_CLIP_WORKERS,
             queue_threshold=QUEUE_THRESHOLD,
@@ -223,14 +211,31 @@ class LunaDaemon:
         
         # Config paths for workers
         self.config_paths: Dict[str, Optional[str]] = {
-            'vae': VAE_PATH,
             'clip_l': CLIP_L_PATH,
             'clip_g': CLIP_G_PATH,
             'embeddings': EMBEDDINGS_DIR
         }
         
+        # Weight registry for CUDA IPC weight sharing
+        try:
+            from .weight_registry import WeightRegistry
+        except (ImportError, ValueError):
+            # Fallback: direct import when run as __main__
+            import importlib.util
+            daemon_dir = os.path.dirname(os.path.abspath(__file__))
+            registry_path = os.path.join(daemon_dir, "weight_registry.py")
+            spec = importlib.util.spec_from_file_location("luna_weight_registry", registry_path)
+            if spec and spec.loader:
+                registry_mod = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(registry_mod)
+                WeightRegistry = registry_mod.WeightRegistry
+            else:
+                raise ImportError("Could not load weight_registry module")
+        
+        self.weight_registry = WeightRegistry(device=clip_device)
+        logger.info(f"[Daemon] Weight registry initialized on {clip_device}")
+        
         # Worker pools
-        self.vae_pool: Any = None
         self.clip_pool: Any = None
         
         # WebSocket monitoring
@@ -254,7 +259,6 @@ class LunaDaemon:
         self._start_time = time.time()
         self._request_count = 0
         self._clip_request_count = 0
-        self._vae_request_count = 0
         
         # Configuration state
         self._attention_mode = "auto"  # Current attention mode setting
@@ -271,17 +275,12 @@ class LunaDaemon:
             "uptime_sec": time.time() - self._start_time,
             "request_count": self._request_count,
             "clip_request_count": self._clip_request_count,
-            "vae_request_count": self._vae_request_count,
             "service_type": self.service_type.name if hasattr(self.service_type, 'name') else str(self.service_type),
             "attention_mode": self._attention_mode,
             "devices": {
-                "clip": self.clip_device,
-                "vae": self.vae_device
+                "clip": self.clip_device
             }
         }
-        
-        if self.vae_pool:
-            info["vae_pool"] = self.vae_pool.get_stats()
         if self.clip_pool:
             info["clip_pool"] = self.clip_pool.get_stats()
         
@@ -309,21 +308,8 @@ class LunaDaemon:
         if cmd != "ping":
             self._request_count += 1
         
-        # VAE commands
-        if cmd == "vae_encode":
-            self._vae_request_count += 1
-            if self.vae_pool is None:
-                return {"error": "VAE pool not available"}
-            return self.vae_pool.submit(cmd, data)
-        
-        elif cmd == "vae_decode":
-            self._vae_request_count += 1
-            if self.vae_pool is None:
-                return {"error": "VAE pool not available"}
-            return self.vae_pool.submit(cmd, data)
-        
         # CLIP commands
-        elif cmd == "clip_encode":
+        if cmd == "clip_encode":
             self._clip_request_count += 1
             if self.clip_pool is None:
                 return {"error": "CLIP pool not available"}
@@ -477,31 +463,12 @@ class LunaDaemon:
                     
                     # Update config_paths so new workers will load the right models
                     for component, path in required_components.items():
-                        if component == "vae":
-                            self.config_paths['vae'] = path
-                        elif component in ["clip_l", "clip_g"]:
+                        if component in ["clip_l", "clip_g"]:
                             self.config_paths[component] = path
                     
                     logger.info(f"[Daemon] Updated config_paths: {self.config_paths}")
                     
                     # Ensure workers exist (they'll use the updated config_paths)
-                    if not self.vae_pool and "vae" in required_components:
-                        self.vae_pool = WorkerPool(
-                            worker_type=WorkerType.VAE,
-                            device=VAE_DEVICE,
-                            precision=VAE_PRECISION,
-                            config=self.scaling_config,
-                            config_paths=self.config_paths.copy()  # Pass a copy to ensure workers get current state
-                        )
-                        self.vae_pool.start()
-                        logger.info("[Daemon] VAE pool started")
-                        
-                        # EAGER LOADING: Force VAE workers to load models NOW
-                        logger.info("[Daemon] Preloading VAE models (eager loading)...")
-                        if not self.vae_pool.preload_models(timeout=60.0):
-                            return {"error": "Failed to preload VAE models - check daemon logs for details"}
-                        logger.info("[Daemon] ✓ VAE models preloaded successfully")
-                    
                     if not self.clip_pool and any(c in required_components for c in ["clip_l", "clip_g"]):
                         self.clip_pool = WorkerPool(
                             worker_type=WorkerType.CLIP,
@@ -518,15 +485,7 @@ class LunaDaemon:
                         logger.info("[Daemon] Preloading CLIP models (eager loading)...")
                         if not self.clip_pool.preload_models(timeout=60.0):
                             return {"error": "Failed to preload CLIP models - check daemon logs for details"}
-                        logger.info("[Daemon] ✓ CLIP models preloaded successfully")
-                    
-                    if not self.vae_pool and "vae" in required_components:
-                        # VAE pool already created above, but if not, create it here
-                        if self.vae_pool:
-                            logger.info("[Daemon] Preloading VAE models (eager loading)...")
-                            if not self.vae_pool.preload_models(timeout=60.0):
-                                return {"error": "Failed to preload VAE models - check daemon logs for details"}
-                            logger.info("[Daemon] ✓ VAE models preloaded successfully")
+                        logger.info("[Daemon] [OK] CLIP models preloaded successfully")
                     
                     # Store this workflow's model set
                     self.workflow_model_sets[workflow_id] = {
@@ -549,15 +508,7 @@ class LunaDaemon:
                 traceback.print_exc()
                 return {"error": str(e)}
         
-        elif cmd == "load_vae_model":
-            vae_path = data.get("vae_path")
-            if not vae_path:
-                return {"error": "vae_path required"}
-            
-            # Store the VAE path for workers to use
-            self.config_paths['vae'] = vae_path
-            logger.info(f"[Daemon] Updated VAE path: {vae_path}")
-            return {"success": True, "vae_path": vae_path}
+
         
         elif cmd == "load_clip_model":
             clip_path = data.get("clip_path")
@@ -647,11 +598,70 @@ class LunaDaemon:
             return self.get_info()
         
         elif cmd == "negotiate_ipc":
-            # IPC negotiation (for CUDA IPC mode if enabled)
+            # IPC negotiation - check if client and daemon are on compatible GPUs
+            client_gpu_id = data.get("client_gpu_id")
+            daemon_gpu_id = int(self.clip_device.split(":")[-1]) if ":" in self.clip_device else 0
+            
+            # Enable IPC if client is on same GPU as daemon (or can do peer access)
+            ipc_enabled = (client_gpu_id == daemon_gpu_id) if client_gpu_id is not None else False
+            
             return {
-                "ipc_enabled": False,  # Simplified daemon doesn't use CUDA IPC
-                "daemon_gpu_id": None
+                "ipc_enabled": ipc_enabled,
+                "daemon_gpu_id": daemon_gpu_id
             }
+        
+        elif cmd == "load_clip_weights":
+            # Load CLIP into weight registry and return IPC handles
+            clip_l_path = data.get("clip_l_path")
+            clip_g_path = data.get("clip_g_path")
+            model_key = data.get("model_key")
+            
+            if not (clip_l_path or clip_g_path):
+                return {"success": False, "error": "clip_l_path or clip_g_path required"}
+            
+            try:
+                key = self.weight_registry.load_clip(clip_l_path, clip_g_path, model_key)
+                handles_result = self.weight_registry.get_handles(key)
+                if handles_result:
+                    response = {"success": True, "model_key": key}
+                    response.update(handles_result)
+                    return response
+                else:
+                    return {"success": False, "error": "Failed to get handles"}
+            except Exception as e:
+                logger.error(f"[Daemon] load_clip_weights error: {e}")
+                return {"success": False, "error": str(e)}
+        
+        elif cmd == "get_weight_handles":
+            # Get IPC handles for previously loaded model
+            model_key = data.get("model_key")
+            
+            if not model_key:
+                return {"success": False, "error": "model_key required"}
+            
+            handles = self.weight_registry.get_handles(str(model_key))
+            
+            if handles:
+                response = {"success": True}
+                response.update(handles)
+                return response
+            else:
+                return {"success": False, "error": f"Model not found: {model_key}"}
+        
+        elif cmd == "list_loaded_weights":
+            # List all models in weight registry
+            models = self.weight_registry.list_loaded_models()
+            return {"success": True, "models": models}
+        
+        elif cmd == "unload_weights":
+            # Unload model from weight registry
+            model_key = data.get("model_key")
+            
+            if not model_key:
+                return {"success": False, "error": "model_key required"}
+            
+            success = self.weight_registry.unload(str(model_key))
+            return {"success": success}
         
         elif cmd == "shutdown":
             # Shutdown command - stop the daemon gracefully
@@ -687,12 +697,6 @@ class LunaDaemon:
             # Unload models from VRAM
             logger.info("Unload models command received")
             unloaded = []
-            
-            if self.vae_pool:
-                # VAE pool will stop workers which unloads models
-                self.vae_pool.stop()
-                self.vae_pool = None
-                unloaded.append("VAE")
             
             if self.clip_pool:
                 # CLIP pool will stop workers which unloads models
@@ -788,19 +792,7 @@ class LunaDaemon:
             service = service  # Already enum
         
         if service in (ServiceType.FULL, CoreServiceType.FULL) or str(service) == "ServiceType.FULL":
-            # Start VAE pool
-            self.vae_pool = WorkerPool(
-                worker_type=WorkerType.VAE,
-                device=self.vae_device,
-                precision=VAE_PRECISION,
-                config=self.scaling_config,
-                on_scale_event=self._on_scale_event,
-                config_paths=self.config_paths
-            )
-            self.vae_pool.start()
-            logger.info(f"[VAE] Worker pool started on {self.vae_device}")
-            
-            # Start CLIP pool
+            # Start CLIP pool (VAE loads locally)
             self.clip_pool = WorkerPool(
                 worker_type=WorkerType.CLIP,
                 device=self.clip_device,
@@ -811,18 +803,6 @@ class LunaDaemon:
             )
             self.clip_pool.start()
             logger.info(f"[CLIP] Worker pool started on {self.clip_device}")
-        
-        elif service in (ServiceType.VAE_ONLY, CoreServiceType.VAE_ONLY) or "VAE" in str(service):
-            self.vae_pool = WorkerPool(
-                worker_type=WorkerType.VAE,
-                device=self.vae_device,
-                precision=VAE_PRECISION,
-                config=self.scaling_config,
-                on_scale_event=self._on_scale_event,
-                config_paths=self.config_paths
-            )
-            self.vae_pool.start()
-            logger.info(f"[VAE] Worker pool started on {self.vae_device}")
         
         elif service in (ServiceType.CLIP_ONLY, CoreServiceType.CLIP_ONLY) or "CLIP" in str(service):
             self.clip_pool = WorkerPool(
@@ -884,8 +864,6 @@ class LunaDaemon:
         self._running = False
         
         # Stop pools
-        if self.vae_pool:
-            self.vae_pool.stop()
         if self.clip_pool:
             self.clip_pool.stop()
         

@@ -1,5 +1,12 @@
 import os
 import sys
+
+# CRITICAL: Force PyTorch to use legacy CUDA allocator for IPC support
+# This must be set before torch.cuda is initialized.
+# On RTX 5090, PyTorch 2.9+ defaults to cudaMallocAsync which breaks IPC.
+if "PYTORCH_CUDA_ALLOC_CONF" not in os.environ:
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "backend:native"
+
 import importlib.util
 import traceback
 from pathlib import Path

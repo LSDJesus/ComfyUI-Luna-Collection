@@ -343,7 +343,7 @@ class Qwen3VLEncoder:
                 logger.info(f"  vocab_size: {vocab_size}")
                 logger.info(f"  hidden_size: {hidden_size}")
             else:
-                logger.warning(f"[Qwen3VLEncoder] ✗ Z-IMAGE incompatible:")
+                logger.warning(f"[Qwen3VLEncoder] [FAIL] Z-IMAGE incompatible:")
                 logger.warning(f"  vocab_size: {vocab_size} (expected {self.ZIMAGE_VOCAB_SIZE})")
                 logger.warning(f"  hidden_size: {hidden_size} (expected {self.ZIMAGE_HIDDEN_SIZE})")
                 

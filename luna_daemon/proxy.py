@@ -132,27 +132,31 @@ def detect_vae_type(vae) -> str:
 
 
 # =============================================================================
-# Daemon VAE Proxy
+# Daemon VAE Proxy (CUDA IPC Weight Sharing Version)
 # =============================================================================
 
 class DaemonVAE:
     """
-    A VAE proxy that routes all encode/decode operations to the Luna Daemon.
+    A VAE proxy that uses CUDA IPC shared weights from Luna Daemon.
     
-    This object can be passed to any ComfyUI node that expects a VAE,
-    including third-party nodes like FaceDetailer, UltimateSDUpscale, etc.
+    Instead of sending encode/decode requests over sockets, this loads
+    IPC handles to shared GPU weights and executes operations locally.
+    
+    Zero overhead - multiple instances share the same VAE weights in GPU memory.
     """
     
     def __init__(
         self, 
+        vae_path: str,
         source_vae: Optional[Any] = None,
         vae_type: Optional[str] = None,
-        use_existing: bool = False
+        use_ipc: bool = True
     ):
+        self.vae_path = vae_path
         self.source_vae = source_vae
-        self.use_existing = use_existing
-        self._registered = False
-        self._memory_used = 0
+        self.use_ipc = use_ipc
+        self._model_key: Optional[str] = None
+        self._shared_vae: Optional[Any] = None
         
         if vae_type is None and source_vae is not None:
             self.vae_type = detect_vae_type(source_vae)
@@ -162,20 +166,48 @@ class DaemonVAE:
         self.device = torch.device("cpu")
         self.output_device = torch.device("cpu")
         self.dtype = torch.float32
+        
+        # Try to load shared weights on init
+        if use_ipc:
+            self._setup_shared_weights()
     
-    def _ensure_registered(self):
-        """Ensure VAE is registered with daemon before use."""
-        if self._registered or self.use_existing:
-            return
-        
-        if self.source_vae is None:
-            raise RuntimeError("DaemonVAE has no source VAE and use_existing=False")
-        
+    def _setup_shared_weights(self):
+        """Load VAE via IPC shared weights."""
         try:
-            daemon_client.register_vae(self.source_vae, self.vae_type)
-            self._registered = True
+            # Ask daemon to load VAE and get IPC handles
+            print(f"[DaemonVAE] Loading shared weights for {self.vae_path}")
+            result = daemon_client.load_vae_weights(self.vae_path)
+            
+            if result.get("success"):
+                self._model_key = result["model_key"]
+                ipc_handles = result["ipc_handles"]
+                
+                # Create local VAE using shared weights
+                try:
+                    from .ipc_models import SharedVAE
+                except (ImportError, ValueError):
+                    # Fallback: direct import
+                    import importlib.util
+                    daemon_dir = os.path.dirname(os.path.abspath(__file__))
+                    ipc_path = os.path.join(daemon_dir, "ipc_models.py")
+                    spec = importlib.util.spec_from_file_location("luna_ipc_models", ipc_path)
+                    if spec and spec.loader:
+                        ipc_mod = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(ipc_mod)
+                        SharedVAE = ipc_mod.SharedVAE
+                    else:
+                        raise ImportError("Could not load ipc_models module")
+                
+                self._shared_vae = SharedVAE(ipc_handles, self.vae_path)
+                
+                print(f"[DaemonVAE] [OK] Using shared weights (key={self._model_key})")
+            else:
+                print(f"[DaemonVAE] Failed to load shared weights: {result.get('error')}")
+                self.use_ipc = False
+                
         except Exception as e:
-            raise RuntimeError(f"Failed to register VAE with daemon: {e}")
+            print(f"[DaemonVAE] IPC setup failed, falling back to socket mode: {e}")
+            self.use_ipc = False
     
     def _check_daemon(self):
         """Verify daemon is running."""
@@ -186,68 +218,58 @@ class DaemonVAE:
             )
     
     def encode(self, pixel_samples: torch.Tensor, auto_tile: bool = False) -> torch.Tensor:
-        """Encode pixels to latent space via daemon."""
-        print(f"[DaemonVAE] encode() - type={self.vae_type}, shape={pixel_samples.shape}")
-        self._check_daemon()
-        self._ensure_registered()
-        
-        try:
-            return daemon_client.vae_encode(
-                pixel_samples, 
-                self.vae_type,
-                tiled=auto_tile,
-                tile_size=512,
-                overlap=64
-            )
-        except ModelMismatchError as e:
-            raise RuntimeError(str(e))
-        except DaemonConnectionError as e:
-            raise RuntimeError(f"Daemon error: {e}")
+        """Encode pixels to latent space using shared weights."""
+        if self.use_ipc and self._shared_vae:
+            # Local execution with shared weights - ZERO socket overhead!
+            return self._shared_vae.encode(pixel_samples)
+        else:
+            # Fallback: socket-based request/response (old slow method)
+            self._check_daemon()
+            try:
+                return daemon_client.vae_encode(
+                    pixel_samples, 
+                    self.vae_type,
+                    tiled=auto_tile,
+                    tile_size=512,
+                    overlap=64
+                )
+            except (ModelMismatchError, DaemonConnectionError) as e:
+                raise RuntimeError(f"Daemon error: {e}")
     
     def decode(self, samples_in: torch.Tensor, vae_options: Optional[Dict] = None,
                auto_tile: bool = False) -> torch.Tensor:
-        """Decode latents to pixels via daemon."""
-        print(f"[DaemonVAE] decode() - type={self.vae_type}, shape={samples_in.shape}")
-        self._check_daemon()
-        self._ensure_registered()
-        
-        try:
-            return daemon_client.vae_decode(
-                samples_in, 
-                self.vae_type,
-                tiled=auto_tile,
-                tile_size=64,
-                overlap=16
-            )
-        except ModelMismatchError as e:
-            raise RuntimeError(str(e))
-        except DaemonConnectionError as e:
-            raise RuntimeError(f"Daemon error: {e}")
+        """Decode latents to pixels using shared weights."""
+        if self.use_ipc and self._shared_vae:
+            # Local execution with shared weights - ZERO socket overhead!
+            return self._shared_vae.decode(samples_in)
+        else:
+            # Fallback: socket-based request/response (old slow method)
+            self._check_daemon()
+            try:
+                return daemon_client.vae_decode(
+                    samples_in, 
+                    self.vae_type,
+                    tiled=auto_tile,
+                    tile_size=64,
+                    overlap=16
+                )
+            except (ModelMismatchError, DaemonConnectionError) as e:
+                raise RuntimeError(f"Daemon error: {e}")
     
     def encode_tiled(self, pixel_samples: torch.Tensor, 
                      tile_x: int = 512, tile_y: int = 512, 
                      overlap: int = 64, **kwargs) -> torch.Tensor:
         """Tiled encoding for large images."""
-        self._check_daemon()
-        self._ensure_registered()
-        
-        try:
-            return daemon_client.vae_encode(
-                pixel_samples,
-                self.vae_type,
-                tiled=True,
-                tile_size=min(tile_x, tile_y),
-                overlap=overlap
-            )
-        except (ModelMismatchError, DaemonConnectionError) as e:
-            raise RuntimeError(str(e))
+        # For now, call regular encode - tiling can be added to SharedVAE if needed
+        return self.encode(pixel_samples, auto_tile=True)
     
     def decode_tiled(self, samples: torch.Tensor,
                      tile_x: int = 64, tile_y: int = 64,
                      overlap: int = 16, **kwargs) -> torch.Tensor:
         """Tiled decoding for large latents."""
-        self._check_daemon()
-        self._ensure_registered()
+        # For now, call regular decode - tiling can be added to SharedVAE if needed
+        return self.decode(samples, auto_tile=True)
+
         
         try:
             return daemon_client.vae_decode(

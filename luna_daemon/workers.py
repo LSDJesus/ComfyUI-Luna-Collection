@@ -229,7 +229,12 @@ class ModelWorker:
                 sd = comfy.utils.load_torch_file(vae_path)
                 if self.precision != "fp32":
                     sd = self._convert_state_dict_precision(sd)
+                
+                # Create VAE and explicitly move to target device
                 self.model = comfy.sd.VAE(sd=sd)
+                if hasattr(self.model, 'first_stage_model'):
+                    self.model.first_stage_model.to(self.device)
+                
                 # Track loaded model
                 self.loaded_model_paths['vae'] = vae_path
                 logger.info(f"[VAE-{self.worker_id}] VAE loaded: {vae_path} ({self.precision})")
@@ -259,12 +264,28 @@ class ModelWorker:
                 emb_dir = self.config_paths.get('embeddings')
                 if emb_dir and not os.path.exists(emb_dir):
                     emb_dir = None
+                
+                # Force device context before loading
+                # ComfyUI's load_clip() will use the current default device
+                import comfy.model_management
+                old_device = comfy.model_management.get_torch_device()
+                try:
+                    # Temporarily set default device to our target device
+                    comfy.model_management.set_vram_to = self.device
                     
-                self.model = comfy.sd.load_clip(
-                    ckpt_paths=clip_paths,
-                    embedding_directory=emb_dir,
-                    clip_type=clip_type
-                )
+                    self.model = comfy.sd.load_clip(
+                        ckpt_paths=clip_paths,
+                        embedding_directory=emb_dir,
+                        clip_type=clip_type
+                    )
+                    
+                    # Explicitly move model to our device
+                    if hasattr(self.model, 'cond_stage_model'):
+                        self.model.cond_stage_model.to(self.device)
+                    
+                finally:
+                    # Restore original device
+                    comfy.model_management.set_vram_to = old_device
                 
                 # Track loaded models
                 for i, path in enumerate(clip_paths):

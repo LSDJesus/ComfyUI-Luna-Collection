@@ -1415,31 +1415,20 @@ class LunaModelRouter:
         daemon_running: bool,
         use_daemon: bool
     ) -> Any:
-        """Load VAE with optional daemon routing."""
+        """Load VAE with optional daemon routing (CUDA IPC weight sharing)."""
         
         vae_path = folder_paths.get_full_path("vae", vae_name)
         if not vae_path or not os.path.exists(vae_path):
             raise FileNotFoundError(f"VAE not found: {vae_name}")
         
-        # Route through daemon if available (path-based for efficiency)
-        if daemon_running and use_daemon and DaemonVAE is not None and daemon_client is not None:
-            try:
-                # Register VAE by path (daemon loads from disk)
-                vae_type = self._detect_vae_type_from_path(vae_path)
-                print(f"[LunaModelRouter] Registering VAE with daemon: {vae_path} (type={vae_type})")
-                result = daemon_client.register_vae_by_path(vae_path, vae_type)
-                print(f"[LunaModelRouter] Registration result: {result}")
-                
-                if result.get("success"):
-                    print(f"[LunaModelRouter] [OK] Registered VAE with daemon: {vae_type}")
-                    # Return DaemonVAE proxy (no source_vae needed - daemon loads from path)
-                    return DaemonVAE(source_vae=None, vae_type=vae_type, use_existing=True)
-                else:
-                    print(f"[LunaModelRouter] ✗ Daemon VAE registration failed: {result.get('error')}")
-            except Exception as e:
-                print(f"[LunaModelRouter] ✗ Daemon VAE exception, using local: {e}")
+        # NOTE: VAE is loaded locally (not via daemon)
+        # VAE is only 168MB and loads in 1-2 seconds locally
+        # The bottleneck is CLIP (1.6GB), which is handled by daemon
+        # For multi-instance workflows, power users can use managed spawning
+        # with torch.multiprocessing IPC (planned feature)
         
-        # Load VAE locally as fallback
+        # Load VAE locally
+        print(f"[LunaModelRouter] Loading VAE locally: {vae_name}")
         try:
             try:
                 from nodes import VAELoader  # type: ignore

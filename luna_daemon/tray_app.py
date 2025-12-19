@@ -244,11 +244,11 @@ class LunaDaemonTray:
         """Show daemon status"""
         status = self.check_daemon_status()
         if status:
-            msg = "✓ Daemon is running and responsive"
+            msg = "[OK] Daemon is running and responsive"
             if self.icon:
                 self.icon.icon = self.create_icon_image('green')
         else:
-            msg = "✗ Daemon is not responding"
+            msg = "[FAIL] Daemon is not responding"
             if self.icon:
                 self.icon.icon = self.create_icon_image('red')
         

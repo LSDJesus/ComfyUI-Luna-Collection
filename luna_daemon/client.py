@@ -185,6 +185,84 @@ class DaemonClient:
         return False
     
     # =========================================================================
+    # Weight Registry Operations (CUDA IPC Weight Sharing)
+    # =========================================================================
+    
+    def load_vae_weights(self, vae_path: str, model_key: Optional[str] = None) -> Dict:
+        """
+        Load VAE weights in daemon and get IPC handles.
+        
+        Args:
+            vae_path: Path to VAE safetensors file
+            model_key: Optional key for registry
+        
+        Returns:
+            Dict with success, model_key, and ipc_handles
+        """
+        return self._send_request({
+            "cmd": "load_vae_weights",
+            "vae_path": vae_path,
+            "model_key": model_key
+        })
+    
+    def load_clip_weights(self, clip_l_path: Optional[str] = None, 
+                         clip_g_path: Optional[str] = None,
+                         model_key: Optional[str] = None) -> Dict:
+        """
+        Load CLIP weights in daemon and get IPC handles.
+        
+        Args:
+            clip_l_path: Path to CLIP-L safetensors
+            clip_g_path: Path to CLIP-G safetensors (for SDXL)
+            model_key: Optional key for registry
+        
+        Returns:
+            Dict with success, model_key, and ipc_handles
+        """
+        return self._send_request({
+            "cmd": "load_clip_weights",
+            "clip_l_path": clip_l_path,
+            "clip_g_path": clip_g_path,
+            "model_key": model_key
+        })
+    
+    def get_weight_handles(self, model_key: str) -> Dict:
+        """
+        Get IPC handles for a previously loaded model.
+        
+        Args:
+            model_key: Key from load_vae_weights or load_clip_weights
+        
+        Returns:
+            Dict with success and ipc_handles
+        """
+        return self._send_request({
+            "cmd": "get_weight_handles",
+            "model_key": model_key
+        })
+    
+    def list_loaded_weights(self) -> List[str]:
+        """Get list of all loaded model keys in weight registry."""
+        result = self._send_request({"cmd": "list_loaded_weights"})
+        return result.get("models", [])
+    
+    def unload_weights(self, model_key: str) -> bool:
+        """
+        Unload model from weight registry.
+        
+        Args:
+            model_key: Key to unload
+        
+        Returns:
+            True if unloaded successfully
+        """
+        result = self._send_request({
+            "cmd": "unload_weights",
+            "model_key": model_key
+        })
+        return result.get("success", False)
+    
+    # =========================================================================
     # VAE Operations
     # =========================================================================
     
@@ -900,6 +978,33 @@ def load_vae_model(vae_path: str) -> dict:
 def load_clip_model(clip_path: str, clip_type: str = "sdxl") -> dict:
     """Tell daemon to load a specific CLIP model from file."""
     return get_client().load_clip_model(clip_path, clip_type)
+
+
+def load_vae_weights(vae_path: str, model_key: Optional[str] = None) -> Dict:
+    """Load VAE weights in daemon and get IPC handles (module-level convenience)."""
+    return get_client().load_vae_weights(vae_path, model_key)
+
+
+def load_clip_weights(clip_l_path: Optional[str] = None, 
+                      clip_g_path: Optional[str] = None,
+                      model_key: Optional[str] = None) -> Dict:
+    """Load CLIP weights in daemon and get IPC handles (module-level convenience)."""
+    return get_client().load_clip_weights(clip_l_path, clip_g_path, model_key)
+
+
+def get_weight_handles(model_key: str) -> Dict:
+    """Get IPC handles for a previously loaded model (module-level convenience)."""
+    return get_client().get_weight_handles(model_key)
+
+
+def list_loaded_weights() -> List[str]:
+    """Get list of all loaded model keys in weight registry (module-level convenience)."""
+    return get_client().list_loaded_weights()
+
+
+def unload_weights(model_key: str) -> bool:
+    """Unload model from weight registry (module-level convenience)."""
+    return get_client().unload_weights(model_key)
 
 
 # =============================================================================
