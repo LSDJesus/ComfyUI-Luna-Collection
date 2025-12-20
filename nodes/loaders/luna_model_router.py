@@ -519,7 +519,7 @@ class LunaModelRouter:
     # fp8: 75% VRAM reduction, native on Ada/Blackwell
     # BnB: QLoRA-compatible quantization, widely used for fine-tuning
     # GGUF: Integer quantization using GPU tensor cores
-    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "nf4", "int8", "gguf_Q8_0", "gguf_Q4_K_M"]
+    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "fp8_e4m3fn_scaled", "fp8_e5m2", "nf4", "gguf_Q8_0", "gguf_Q4_K_M"]
     
     # Daemon routing modes
     DAEMON_MODES = ["auto", "force_daemon", "force_local"]
@@ -1006,10 +1006,53 @@ class LunaModelRouter:
             raise
     
     def _load_safetensors_model(self, path: str) -> Any:
-        """Load safetensors model file (UNet only)."""
+        """Load safetensors model file (UNet only).
+        
+        Routes to specialized loaders for quantized formats:
+        - INT8: Uses LunaINT8Loader for dequantization
+        - NF4: Uses LunaNF4Loader for dequantization
+        - Other: Uses standard comfy.sd.load_unet()
+        """
+        import os
+        from pathlib import Path
+        import json
+        
         print(f"[LunaModelRouter] Loading safetensors: {path}")
-        model = comfy.sd.load_unet(path)
-        return model
+        
+        # Check for Luna metadata to identify quantization type
+        dtype_hint = None
+        try:
+            with open(path, 'rb') as f:
+                header_len_bytes = f.read(8)
+                if len(header_len_bytes) == 8:
+                    header_len = int.from_bytes(header_len_bytes, 'little')
+                    header_json = f.read(header_len).decode('utf-8')
+                    header = json.loads(header_json)
+                    if '__metadata__' in header and isinstance(header['__metadata__'], dict):
+                        dtype_hint = header['__metadata__'].get('luna_dtype')
+        except Exception:
+            pass
+        
+        # Route to appropriate loader
+        if dtype_hint == 'int8':
+            print(f"[LunaModelRouter] Detected INT8 format, using specialized loader")
+            from .luna_quantized_loader import LunaINT8Loader
+            loader = LunaINT8Loader()
+            result = loader.load_int8_unet(path, target_dtype="auto")
+            return result[0]
+        
+        elif dtype_hint == 'nf4':
+            print(f"[LunaModelRouter] Detected NF4 format, using specialized loader")
+            from .luna_quantized_loader import LunaNF4Loader
+            loader = LunaNF4Loader()
+            result = loader.load_nf4_unet(path)
+            return result[0]
+        
+        else:
+            # Standard float format (fp16, bf16, fp8, etc.)
+            print(f"[LunaModelRouter] Using standard UNet loader")
+            model = comfy.sd.load_unet(path)
+            return model
     
     def _load_gguf_model(self, path: str) -> Any:
         """Load GGUF model file directly from path.

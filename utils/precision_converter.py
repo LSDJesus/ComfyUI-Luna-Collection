@@ -8,10 +8,43 @@ Supports:
 """
 
 import os
-from typing import Tuple
+import json
+from typing import Tuple, Dict
 
 import torch
 from safetensors.torch import load_file, save_file
+
+
+def get_original_metadata(source_path: str) -> Dict[str, str]:
+    """
+    Extract metadata from source safetensors file.
+    
+    Args:
+        source_path: Path to source safetensors file
+    
+    Returns:
+        Dictionary with original metadata
+    """
+    metadata = {}
+    
+    try:
+        with open(source_path, 'rb') as f:
+            # Read safetensors header
+            header_len_bytes = f.read(8)
+            if len(header_len_bytes) < 8:
+                return metadata
+            
+            header_len = int.from_bytes(header_len_bytes, 'little')
+            header_json = f.read(header_len).decode('utf-8')
+            header = json.loads(header_json)
+            
+            # Extract __metadata__ if it exists
+            if '__metadata__' in header and isinstance(header['__metadata__'], dict):
+                metadata.update(header['__metadata__'])
+    except Exception as e:
+        print(f"[PrecisionConverter] Warning: Could not extract source metadata: {e}")
+    
+    return metadata
 
 
 def get_unet_keys(state_dict: dict) -> dict:
@@ -38,7 +71,7 @@ def convert_checkpoint_precision(
     Args:
         source_checkpoint: Path to source .safetensors
         output_path: Path to save converted checkpoint
-        precision: Target precision (bf16, fp16, fp8_e4m3fn)
+        precision: Target precision (bf16, fp16, fp8_e4m3fn, fp8_e4m3fn_scaled)
         unet_only: Extract only UNet weights (default True, always recommended)
     
     Returns:
@@ -49,6 +82,8 @@ def convert_checkpoint_precision(
         "bf16": torch.bfloat16,
         "fp16": torch.float16,
         "fp8_e4m3fn": torch.float8_e4m3fn,
+        "fp8_e4m3fn_scaled": torch.float8_e4m3fn,  # Scaled version uses same dtype, metadata distinguishes it
+        "fp8_e5m2": torch.float8_e5m2,  # Better exponent range for 30-series GPUs
     }
     
     target_dtype = dtype_map.get(precision)
@@ -78,10 +113,19 @@ def convert_checkpoint_precision(
             # Keep non-float tensors as-is (e.g., int, bool)
             new_dict[key] = tensor
     
-    # Save
+    # Save with metadata
     print(f"[LunaPrecision] Saving to {output_path}...")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    save_file(new_dict, output_path)
+    
+    # Merge original metadata with Luna tags
+    metadata = get_original_metadata(source_checkpoint)
+    dtype_str = str(target_dtype).replace("torch.", "")
+    metadata.update({
+        "luna_dtype": dtype_str,
+        "luna_unet_only": "true",
+        "luna_converted_from": os.path.basename(source_checkpoint)
+    })
+    save_file(new_dict, output_path, metadata=metadata)
     
     converted_size = os.path.getsize(output_path) / (1024 * 1024)
     reduction = (1 - converted_size / original_size) * 100

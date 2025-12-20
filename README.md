@@ -1,12 +1,33 @@
 # 🌙 ComfyUI Luna Collection
 
-![Version](https://img.shields.io/badge/version-v2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v2.1.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.10+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-yellow.svg)
 
 **A production-grade ComfyUI infrastructure for advanced model management, multi-workflow VRAM sharing, and high-throughput image generation.**
 
 Luna Collection is a vertically integrated image generation stack designed for enterprise-scale workflows. It provides workflow-aware daemon architecture for intelligent model multiplexing, unified model routing for all architectures (SD1.5/SDXL/Flux/SD3/Z-IMAGE), transient LoRA caching for zero-reload workflows, hierarchical YAML wildcards, comprehensive prompt engineering tools, and deep integration with external tools.
+
+---
+
+## 📝 Latest Updates (v2.1)
+
+✨ **Luna Batch Upscale Refine** - Production-grade tiled upscaler with scaffolding noise + chess-pattern batching
+- Auto-detect upscale factor (1x/2x/4x/8x/16x)
+- Latent-space tiling for 64x smaller tensor operations
+- Sigmoid blending mode + feathering control
+- GPU Lanczos supersampling (e.g., refine 4x, output 2x)
+- Tiled VAE decode prevents boundary artifacts
+
+🎯 **FP8 Precision Expansion** - Now supports all three FP8 variants
+- `fp8_e4m3fn` - RTX 40-series native (5090/4090)
+- `fp8_e4m3fn_scaled` - RTX 40-series recommended
+- `fp8_e5m2` - RTX 30-series better exponent range
+
+🦙 **Qwen3-VL GGUF Support** - Z-IMAGE now works with quantized GGUF models
+- Uses patched llama-cpp-python fork
+- Q8_0 for quality, Q4_K_M for efficiency
+- Auto-detect format, mmproj auto-loads
 
 ---
 
@@ -624,6 +645,24 @@ CLIP/VAE selectors update automatically based on `model_type`:
 | SD3 | CLIP-L | CLIP-G | T5-XXL | disabled | SD3 VAE |
 | Z-IMAGE | Qwen3-VL (full) | disabled | disabled | mmproj (auto) | Any VAE |
 
+**Z-IMAGE + Qwen3-VL GGUF Support (NEW in v2.1):**
+
+Z-IMAGE now supports GGUF-quantized Qwen3-VL models via patched [llama-cpp-python](https://github.com/JamePeng/llama-cpp-python):
+
+```bash
+# Install the fork with Qwen3-VL support
+pip install git+https://github.com/JamePeng/llama-cpp-python
+
+# Then use GGUF Qwen3-VL models directly in Model Router
+# The daemon auto-detects format and routes through llama-cpp-python
+```
+
+**Qwen3-VL Format Options:**
+- `.safetensors` (HuggingFace) - Full precision, large VRAM
+- `.gguf` (GGUF quantized) - Q8_0 for quality, Q4_K_M for efficiency
+- Auto-detection: Model Router checks file extension and loads appropriately
+- mmproj auto-loads if in same folder as model (for vision support)
+
 ### Precision Conversion Targets
 
 Converted models are saved to precision-specific directories:
@@ -634,13 +673,21 @@ models/
 │   └── illustriousXL.safetensors (6.5GB source)
 ├── unet/
 │   ├── fp8/
-│   │   └── illustriousXL_unet.safetensors (2.1GB)
+│   │   ├── illustriousXL_unet_fp8_e4m3fn.safetensors (2.1GB)
+│   │   ├── illustriousXL_unet_fp8_e4m3fn_scaled.safetensors (2.1GB)
+│   │   └── illustriousXL_unet_fp8_e5m2.safetensors (2.1GB)
 │   ├── gguf/
 │   │   ├── illustriousXL_Q8_0.gguf (3.2GB)
 │   │   └── illustriousXL_Q4_K_M.gguf (1.8GB)
 │   └── bf16/
 │       └── illustriousXL_unet.safetensors (3.3GB)
 ```
+
+**Precision Options by Hardware:**
+- **RTX 40-series (5090/4090)**: Use `fp8_e4m3fn` or `fp8_e4m3fn_scaled` for native hardware acceleration
+- **RTX 40-series (RTX 5090)**: `fp8_e4m3fn_scaled` recommended for best quality
+- **RTX 30-series (3090/3080Ti)**: Use `fp8_e5m2` (better exponent range) or `gguf_Q8_0` (best quality)
+- **All GPUs**: `gguf_Q8_0` provides quality closest to FP16 with efficient VRAM usage
 
 ---
 
@@ -657,13 +704,15 @@ Savings over 2000 runs: (800ms - 50ms) × 2000 = **25 minutes saved**
 
 ### Precision Conversion Impact
 
-| Format | Size | VRAM | Load Time | Inference Speed |
-|--------|------|------|-----------|-----------------|
-| FP16 (baseline) | 6.5GB | 6.5GB | 12s | 1.0× |
-| BF16 | 6.5GB | 6.5GB | 12s | 1.0× |
-| FP8 | 3.3GB | 3.3GB | 8s | 0.95× |
-| GGUF Q8_0 | 3.2GB | 3.2GB | 9s | 0.90× |
-| GGUF Q4_K_M | 1.8GB | 1.8GB | 7s | 0.80× |
+| Format | Size | VRAM | Load Time | Inference Speed | Hardware |
+|--------|------|------|-----------|-----------------|----------|
+| FP16 (baseline) | 6.5GB | 6.5GB | 12s | 1.0× | All |
+| BF16 | 6.5GB | 6.5GB | 12s | 1.0× | All |
+| FP8 E4M3FN | 3.3GB | 3.3GB | 8s | 0.97× | RTX 40+ |
+| FP8 E4M3FN Scaled | 3.3GB | 3.3GB | 8s | 0.98× | RTX 40+ (recommended) |
+| FP8 E5M2 | 3.3GB | 3.3GB | 8s | 0.96× | RTX 30/20 (better range) |
+| GGUF Q8_0 | 3.2GB | 3.2GB | 9s | 0.92× | All (best quality) |
+| GGUF Q4_K_M | 1.8GB | 1.8GB | 7s | 0.80× | All (aggressive compression) |
 
 ### Multi-Workflow VRAM Sharing
 
@@ -815,9 +864,19 @@ MIT License - see LICENSE file for details
 | **Luna Simple Upscaler** | Clean model-based upscaling |
 | **Luna Advanced Upscaler** | Supersampling, modulus rounding |
 | **Luna Ultimate SD Upscale** | Tile-based SD upscaling |
+| **Luna Batch Upscale Refine** | ⚡ NEW: Chess-pattern tiling with scaffolding noise (v2.1) |
 | **Luna Super Upscaler ⚡** | SeedVR2-powered mega-resolution upscaling (3B/7B DiT models) |
 | **Luna Super Upscaler (Simple)** | Streamlined version with minimal inputs |
 | **Luna Multi Saver** | Batch saving with templates |
+
+**Luna Batch Upscale Refine** (NEW in v2.1):
+- **Scaffolding Noise**: Preserves original noise structure to prevent hallucinations
+- **Chess Pattern Batching**: 2-pass refinement with automatic seam healing
+- **Auto-Grid**: Grid size = Upscale Factor + 1 (e.g., 4x upscaler → 5x5 grid)
+- **Sigmoid Blending**: Smooth S-curve blending with feathering control  
+- **GPU Lanczos**: Supersampling downscale (e.g., refine at 4x, output at 2x)
+- **Tiled VAE**: Seamless decoding prevents boundary artifacts
+- **VRAM Optimized**: ~4-5GB for RTX 5090 vs 7-8GB traditional upscalers
 
 > **Note:** Luna Super Upscaler requires [SeedVR2](https://github.com/Seed-VR/SeedVR2-Video-Upscaler-ComfyUI) as a dependency. Install it separately in your `custom_nodes/` folder.
 

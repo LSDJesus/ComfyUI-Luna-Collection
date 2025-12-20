@@ -28,10 +28,12 @@ import folder_paths
 
 def detect_model_precision(model_path: str) -> Optional[str]:
     """
-    Detect actual precision of a model by inspecting its weights.
+    Detect actual precision of a model by inspecting metadata or weights.
     
-    Reads the first tensor from the model to determine its dtype.
-    This prevents converting fp16 → fp16 or creating duplicate "_fp8_e4m3fn_fp8_e4m3fn" files.
+    First checks for 'luna_dtype' metadata (set by Luna converters).
+    Falls back to inspecting tensor dtypes if metadata not found.
+    
+    This prevents converting fp16 → fp16 or creating duplicate files.
     
     Args:
         model_path: Path to model file (.safetensors or .gguf)
@@ -45,8 +47,13 @@ def detect_model_precision(model_path: str) -> Optional[str]:
     
     try:
         if model_path.endswith('.gguf'):
-            # GGUF files store quantization info in header
-            # Try to detect from filename first
+            # GGUF files store Luna metadata in the header
+            import gguf
+            with gguf.GGUFReader(model_path) as reader:
+                if hasattr(reader, 'get_field') and reader.get_field('luna.dtype'):
+                    return reader.get_field('luna.dtype').parts[0].decode()
+            
+            # Fallback to filename if Luna metadata not present
             basename = Path(model_path).stem.lower()
             if 'q4' in basename:
                 return 'Q4'
@@ -57,10 +64,7 @@ def detect_model_precision(model_path: str) -> Optional[str]:
             else:
                 return 'GGUF'
         
-        # Safetensors - read first tensor to check dtype
-        from safetensors.torch import load_file
-        
-        # Load just metadata (faster than full load)
+        # Safetensors - check metadata first, then inspect tensors
         try:
             with open(model_path, 'rb') as f:
                 # SAFETENSORS header: first 8 bytes are length of JSON header
@@ -74,7 +78,12 @@ def detect_model_precision(model_path: str) -> Optional[str]:
                 import json
                 header = json.loads(header_json)
                 
-                # Get first tensor's dtype
+                # Check for Luna metadata first (most reliable)
+                metadata = header.get('__metadata__', {})
+                if isinstance(metadata, dict) and 'luna_dtype' in metadata:
+                    return metadata['luna_dtype']
+                
+                # Fallback: Get first tensor's dtype
                 for tensor_name, tensor_info in header.items():
                     if tensor_name == '__metadata__':
                         continue
@@ -169,45 +178,41 @@ def get_conversion_output_dir(conversion_type: str) -> str:
         Absolute path to output directory
     """
     if conversion_type in ['precision', 'bnb']:
-        # Precision (fp16/bf16/fp8) and BitsAndBytes (nf4/int8) go to diffusion_models
-        # Try diffusion_models first, fall back to checkpoints folder
+        # Precision (fp16/bf16/fp8) and BitsAndBytes (nf4/int8) go to diffusion_models/converted
         try:
-            diffusion_paths = folder_paths.get_folder_paths("diffusion_models")
-            if diffusion_paths:
-                output_dir = os.path.join(diffusion_paths[0], "converted")
+            diffusion_models_paths = folder_paths.get_folder_paths("diffusion_models")
+            if diffusion_models_paths:
+                output_dir = os.path.join(diffusion_models_paths[0], "converted")
                 print(f"[ConversionCache] Using diffusion_models path: {output_dir}")
             else:
-                raise ValueError("Empty diffusion_models path list")
-        except (KeyError, ValueError, IndexError):
-            # Fallback: check if checkpoints folder exists and create diffusion_models alongside it
-            try:
-                checkpoint_paths = folder_paths.get_folder_paths("checkpoints")
-                if checkpoint_paths:
-                    models_dir = os.path.dirname(checkpoint_paths[0])
-                    output_dir = os.path.join(models_dir, "diffusion_models", "converted")
-                    print(f"[ConversionCache] Using fallback diffusion_models path: {output_dir}")
-                else:
-                    raise ValueError("No checkpoint paths found either")
-            except:
-                # Final fallback: use models root
-                output_dir = os.path.join(
-                    os.path.dirname(os.path.dirname(folder_paths.get_folder_paths("checkpoints")[0])),
-                    "diffusion_models",
-                    "converted"
-                )
-                print(f"[ConversionCache] Using final fallback path: {output_dir}")
+                raise ValueError("No diffusion_models paths found")
+        except Exception as e:
+            print(f"[ConversionCache] Warning: Could not determine conversion path: {e}")
+            # Absolute fallback - create in models folder
+            output_dir = os.path.join(os.getcwd(), "models", "diffusion_models", "converted")
+            print(f"[ConversionCache] Using fallback path: {output_dir}")
+    
     elif conversion_type == 'gguf':
         # GGUF models go to unet/converted (ComfyUI convention for quantized models)
-        unet_paths = folder_paths.get_folder_paths("unet")
-        if not unet_paths:
-            raise ValueError("No unet folder found in ComfyUI")
-        output_dir = os.path.join(unet_paths[0], "converted")
-        print(f"[ConversionCache] Using unet path: {output_dir}")
+        try:
+            unet_paths = folder_paths.get_folder_paths("unet")
+            if unet_paths:
+                output_dir = os.path.join(unet_paths[0], "converted")
+                print(f"[ConversionCache] Using unet path: {output_dir}")
+            else:
+                raise ValueError("No unet paths found")
+        except Exception as e:
+            print(f"[ConversionCache] Warning: Could not determine GGUF path: {e}")
+            output_dir = os.path.join(os.getcwd(), "models", "unet", "converted")
+            print(f"[ConversionCache] Using fallback path: {output_dir}")
+
+    
     else:
         raise ValueError(f"Unknown conversion type: {conversion_type}")
     
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
+
 
 
 def generate_converted_filename(
@@ -438,8 +443,8 @@ def suggest_conversion(source_path: str, target_precision: str) -> Tuple[str, Op
     Returns:
         Tuple of (conversion_type, existing_model_path or None)
     """
-    precision_types = ['fp16', 'bf16', 'fp8', 'fp8_e4m3fn']
-    bnb_types = ['nf4', 'int8']
+    precision_types = ['fp16', 'bf16', 'fp8', 'fp8_e4m3fn', 'fp8_e4m3fn_scaled', 'fp8_e5m2']
+    bnb_types = ['nf4']
     gguf_types = ['Q4_0', 'Q4_K_S', 'Q4_K_M', 'Q5_0', 'Q5_K_M', 'Q8_0']
     
     if target_precision in precision_types:

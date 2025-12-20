@@ -37,7 +37,7 @@ def get_unet_keys(state_dict: dict) -> dict:
     return unet_keys
 
 
-def write_f16_gguf(source_checkpoint: str, tensors: Dict, output_path: str, unet_only: bool = True):
+def write_f16_gguf(source_checkpoint: str, tensors: Dict, output_path: str, unet_only: bool = True, target_quant: str = "F16"):
     """Write tensors to F16 GGUF file."""
     if not HAS_GGUF:
         raise RuntimeError("gguf library required: pip install gguf")
@@ -48,6 +48,7 @@ def write_f16_gguf(source_checkpoint: str, tensors: Dict, output_path: str, unet
         "general.quantization": "F16",
         "luna.source_file": source_checkpoint,
         "luna.unet_only": "true" if unet_only else "false",
+        "luna.dtype": target_quant,  # What the final dtype will be after quantization
     }
     
     writer = gguf.GGUFWriter(output_path, arch="stable-diffusion")
@@ -186,7 +187,7 @@ def convert_checkpoint_to_gguf(
         f16_path = output_path.replace(".gguf", "_f16_temp.gguf")
     
     print(f"[LunaGGUF] Step 1/2: Writing F16 GGUF...")
-    write_f16_gguf(source_checkpoint, valid_tensors, f16_path, unet_only)
+    write_f16_gguf(source_checkpoint, valid_tensors, f16_path, unet_only, quantization)
     
     f16_mb = os.path.getsize(f16_path) / (1024 * 1024)
     print(f"[LunaGGUF] F16: {f16_mb:.1f} MB")

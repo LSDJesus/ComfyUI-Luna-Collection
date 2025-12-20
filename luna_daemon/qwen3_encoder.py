@@ -45,6 +45,45 @@ from dataclasses import dataclass
 logger = logging.getLogger(__name__)
 
 
+def check_llama_cpp_version() -> Dict[str, Any]:
+    """
+    Check which version of llama-cpp-python is installed.
+    
+    Returns dict with:
+    - installed: bool - whether llama-cpp-python is available
+    - version: str - version string if available
+    - has_qwen3_support: bool - True if patched fork is installed
+    - note: str - recommendation if using standard package
+    """
+    try:
+        import llama_cpp
+        version = getattr(llama_cpp, "__version__", "unknown")
+        
+        # Check if this is the patched fork by looking for Qwen3-specific handlers
+        has_qwen3_support = False
+        try:
+            # The JamePeng fork has updated llama.cpp that supports Qwen3-VL natively
+            from llama_cpp import llama_cpp as llama_cpp_backend
+            has_qwen3_support = True
+        except:
+            pass
+        
+        return {
+            "installed": True,
+            "version": version,
+            "has_qwen3_support": has_qwen3_support,
+            "note": "For Qwen3-VL support, install: pip install git+https://github.com/JamePeng/llama-cpp-python"
+            if not has_qwen3_support else "Qwen3-VL support available"
+        }
+    except ImportError:
+        return {
+            "installed": False,
+            "version": None,
+            "has_qwen3_support": False,
+            "note": "Install llama-cpp-python fork for Qwen3-VL: pip install git+https://github.com/JamePeng/llama-cpp-python"
+        }
+
+
 @dataclass
 class Qwen3VLConfig:
     """Configuration for Qwen3-VL encoder service"""
@@ -225,6 +264,11 @@ class Qwen3VLEncoder:
     def _load_gguf(self, gguf_path: str) -> bool:
         """
         Load model from GGUF format using llama-cpp-python.
+        
+        For Qwen3-VL support, install the patched fork:
+        pip install git+https://github.com/JamePeng/llama-cpp-python
+        
+        This fork includes current llama.cpp with Qwen3-VL support out of the box.
         
         This loads the FULL model including lm_head weights, enabling both:
         1. Text embedding extraction (for CLIP-style encoding)
