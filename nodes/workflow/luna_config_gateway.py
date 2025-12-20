@@ -64,8 +64,8 @@ class LunaConfigGateway:
                 "clip_skip": ("INT", {"default": -2, "min": -24, "max": -1}),
                 "clip_skip_timing": (["before_lora", "after_lora"], {"default": "after_lora", "tooltip": "Apply CLIP skip before or after LoRA loading. Usually 'after_lora' is correct."}),
                 # Sampler/scheduler
-                "sampler": (comfy.samplers.KSampler.SAMPLERS, {"default": "dpmpp_2m"}),
-                "scheduler": (comfy.samplers.KSampler.SCHEDULERS, {"default": "karras"}),
+                "sampler": (comfy.samplers.SAMPLER_NAMES, {"default": "dpmpp_2m"}),
+                "scheduler": (comfy.samplers.SCHEDULER_NAMES, {"default": "karras"}),
             },
             "optional": {
                 # Model name for metadata

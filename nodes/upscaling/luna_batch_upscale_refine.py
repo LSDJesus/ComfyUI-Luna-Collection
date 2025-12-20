@@ -37,8 +37,8 @@ class LunaBatchUpscaleRefine:
                 "steps": ("INT", {"default": 20, "min": 1, "max": 100}),
                 "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0, "step": 0.1}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "sampler": (comfy.samplers.KSampler.SAMPLERS,),
-                "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                "sampler": (comfy.samplers.SAMPLER_NAMES,),
+                "scheduler": (comfy.samplers.SCHEDULER_NAMES,),
                 
                 # BLENDING CONTROLS
                 "blending_mode": (["Sigmoid", "Linear"], {"default": "Sigmoid"}),
@@ -47,11 +47,11 @@ class LunaBatchUpscaleRefine:
                 "use_tiled_vae": ("BOOLEAN", {"default": True, "tooltip": "Use VAE Tiled Decode to prevent seams/OOM"}),
             },
             "optional": {
+                "luna_pipe": ("LUNA_PIPE",),
                 "model": ("MODEL",),
+                "vae": ("VAE",),
                 "positive": ("CONDITIONING",),
                 "negative": ("CONDITIONING",),
-                "vae": ("VAE",),
-                "luna_pipe": ("LUNA_PIPE",),
             }
         }
     

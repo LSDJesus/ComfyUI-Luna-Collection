@@ -11,8 +11,6 @@ This pattern eliminates the need for set/get nodes or anything_anywhere nodes.
 
 import comfy.samplers
 
-# Define scheduler list explicitly to ensure consistency with receiving nodes
-SCHEDULER_LIST = comfy.samplers.KSampler.SCHEDULERS
 
 class LunaPipeExpander:
     """
@@ -31,8 +29,8 @@ class LunaPipeExpander:
         "LATENT",
         "INT", "INT", "INT", "INT",
         "FLOAT", "FLOAT",
-        comfy.samplers.KSampler.SAMPLERS,
-        SCHEDULER_LIST
+        comfy.samplers.SAMPLER_NAMES,
+        comfy.samplers.SCHEDULER_NAMES
     )
     RETURN_NAMES = (
         "model", "clip", "vae",
