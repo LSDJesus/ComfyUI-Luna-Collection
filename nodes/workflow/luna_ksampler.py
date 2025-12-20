@@ -201,13 +201,89 @@ class LunaKSamplerAdvanced:
                 force_full_denoise=force_full_denoise
             )
 
+
+class LunaKSamplerHeadless:
+    """
+    Pipe-only KSampler variant with zero manual inputs.
+    
+    Perfect for Config Gateway workflows where all parameters come via LUNA_PIPE.
+    Single connection, zero confusion about which inputs are active.
+    """
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "luna_pipe": ("LUNA_PIPE", {
+                    "tooltip": "Complete pipeline: model, conditioning, latent, seed, steps, cfg, denoise, sampler, scheduler"
+                }),
+            }
+        }
+
+    RETURN_TYPES = ("LATENT",)
+    FUNCTION = "sample"
+    CATEGORY = "Luna/Workflow"
+    
+    def sample(self, luna_pipe):
+        """
+        Execute sampling from LUNA_PIPE only.
+        
+        Extracts all parameters from pipe:
+        - model, positive, negative, latent
+        - seed, steps, cfg, denoise
+        - sampler, scheduler
+        
+        Uses inference_mode() for VRAM optimization.
+        """
+        if luna_pipe is None:
+            raise ValueError("[LunaKSamplerHeadless] LUNA_PIPE is required")
+        
+        try:
+            (
+                model, clip, vae,
+                positive, negative,
+                latent_image,
+                width, height, seed, steps, cfg, denoise,
+                sampler, scheduler
+            ) = luna_pipe
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"[LunaKSamplerHeadless] Invalid LUNA_PIPE format: {e}")
+        
+        # Validate all required inputs from pipe
+        if not all([model, positive, negative, latent_image]):
+            raise ValueError(
+                "[LunaKSamplerHeadless] LUNA_PIPE missing required fields: "
+                "model, positive, negative, or latent_image"
+            )
+        
+        print(f"[LunaKSamplerHeadless] Sampling: {steps} steps, cfg={cfg}, denoise={denoise}")
+        
+        # Use inference_mode to prevent gradient tracking
+        with torch.inference_mode():
+            result = common_ksampler(
+                model,
+                seed,
+                steps,
+                cfg,
+                sampler,
+                scheduler,
+                positive,
+                negative,
+                latent_image,
+                denoise=denoise
+            )
+        
+        return result
+
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "LunaKSampler": LunaKSampler,
     "LunaKSamplerAdvanced": LunaKSamplerAdvanced,
+    "LunaKSamplerHeadless": LunaKSamplerHeadless,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "LunaKSampler": "Luna KSampler (Memory Optimized)",
     "LunaKSamplerAdvanced": "Luna KSampler Advanced (Memory Optimized)",
+    "LunaKSamplerHeadless": "Luna KSampler Headless (Pipe Only)",
 }

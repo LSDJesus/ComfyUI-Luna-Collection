@@ -49,9 +49,16 @@ def detect_model_precision(model_path: str) -> Optional[str]:
         if model_path.endswith('.gguf'):
             # GGUF files store Luna metadata in the header
             import gguf
-            with gguf.GGUFReader(model_path) as reader:
-                if hasattr(reader, 'get_field') and reader.get_field('luna.dtype'):
-                    return reader.get_field('luna.dtype').parts[0].decode()
+            reader = gguf.GGUFReader(model_path)
+            if hasattr(reader, 'get_field'):
+                field_value = reader.get_field('luna.dtype')
+                if field_value and hasattr(field_value, 'parts') and field_value.parts:
+                    value = field_value.parts[0]
+                    # Handle both bytes and string types
+                    if isinstance(value, bytes):
+                        return value.decode()
+                    else:
+                        return str(value)
             
             # Fallback to filename if Luna metadata not present
             basename = Path(model_path).stem.lower()
@@ -182,7 +189,16 @@ def get_conversion_output_dir(conversion_type: str) -> str:
         try:
             diffusion_models_paths = folder_paths.get_folder_paths("diffusion_models")
             if diffusion_models_paths:
-                output_dir = os.path.join(diffusion_models_paths[0], "converted")
+                # folder_paths returns [models/unet, models/diffusion_models]
+                # We want models/diffusion_models, so find the one that doesn't contain 'unet' 
+                # or default to the last path
+                output_dir = None
+                for path in diffusion_models_paths:
+                    if 'diffusion_models' in path:
+                        output_dir = os.path.join(path, "converted")
+                        break
+                if output_dir is None:
+                    output_dir = os.path.join(diffusion_models_paths[-1], "converted")
                 print(f"[ConversionCache] Using diffusion_models path: {output_dir}")
             else:
                 raise ValueError("No diffusion_models paths found")

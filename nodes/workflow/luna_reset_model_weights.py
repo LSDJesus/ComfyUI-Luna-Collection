@@ -46,7 +46,7 @@ class LunaResetModelWeights:
     RETURN_TYPES = ("MODEL", "*")
     RETURN_NAMES = ("model", "passthrough")
     FUNCTION = "reset_weights"
-    CATEGORY = "Luna/workflow"
+    CATEGORY = "Luna/Workflow"
     
     DESCRIPTION = """
 Restores model weights to pristine state after LoRA application.
