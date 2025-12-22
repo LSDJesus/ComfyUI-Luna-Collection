@@ -30,6 +30,14 @@ except (ImportError, AttributeError):
     )
 
 
+def get_scheduler_names():
+    """Get current scheduler names dynamically to avoid type mismatches."""
+    try:
+        return list(comfy.samplers.KSampler.SCHEDULERS)
+    except (AttributeError, TypeError):
+        return list(comfy.samplers.SCHEDULER_NAMES)
+
+
 class LunaKSampler:
     """
     Memory-efficient KSampler using inference_mode() optimization.
@@ -46,7 +54,7 @@ class LunaKSampler:
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step": 0.1, "round": 0.01}),
                 "sampler_name": (comfy.samplers.SAMPLER_NAMES, ),
-                "scheduler": (comfy.samplers.SCHEDULER_NAMES, ),
+                "scheduler": (get_scheduler_names(), ),
                 "denoise": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01}),
             },
             "optional": {
@@ -136,6 +144,9 @@ class LunaKSampler:
                 denoise=denoise
             )
         
+        # Clear GPU memory cache of temporary computation buffers
+        torch.cuda.empty_cache()
+        
         return result
 
 
@@ -157,7 +168,7 @@ class LunaKSamplerAdvanced:
                 "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0, "step": 0.1, "round": 0.01}),
                 "sampler_name": (comfy.samplers.SAMPLER_NAMES, ),
-                "scheduler": (comfy.samplers.SCHEDULER_NAMES, ),
+                "scheduler": (get_scheduler_names(), ),
                 "positive": ("CONDITIONING", ),
                 "negative": ("CONDITIONING", ),
                 "latent_image": ("LATENT", ),
@@ -184,7 +195,7 @@ class LunaKSamplerAdvanced:
         
         # Wrap in inference_mode for memory optimization
         with torch.inference_mode():
-            return common_ksampler(
+            result = common_ksampler(
                 model, 
                 noise_seed, 
                 steps, 
@@ -200,6 +211,11 @@ class LunaKSamplerAdvanced:
                 last_step=end_at_step,
                 force_full_denoise=force_full_denoise
             )
+        
+        # Clear GPU memory cache of temporary computation buffers
+        torch.cuda.empty_cache()
+        
+        return result
 
 
 class LunaKSamplerHeadless:
@@ -231,7 +247,7 @@ class LunaKSamplerHeadless:
         Extracts all parameters from pipe:
         - model, positive, negative, latent
         - seed, steps, cfg, denoise
-        - sampler, scheduler
+        - sampler, scheduler (uses dynamic scheduler list)
         
         Uses inference_mode() for VRAM optimization.
         """
@@ -272,6 +288,9 @@ class LunaKSamplerHeadless:
                 latent_image,
                 denoise=denoise
             )
+        
+        # Clear GPU memory cache of temporary computation buffers
+        torch.cuda.empty_cache()
         
         return result
 

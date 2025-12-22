@@ -10,7 +10,15 @@ Luna Collection is a vertically integrated image generation stack designed for e
 
 ---
 
-## 📝 Latest Updates (v2.1)
+## 📝 Latest Updates (v2.2)
+
+🎨 **Luna Semantic Detailer Suite** - Surgical pyramid-based refinement system
+- **Pyramid Noise Generator**: Model-aware aspect ratio selection (SDXL buckets), multi-scale scaffolds with variance correction
+- **Scaffold Upscaler**: GPU-accelerated Lanczos, edge-preserving + texture coherence for artifact-free upscaling
+- **SAM3 Detector**: Semantic concept detection with pre-encoded conditioning, per-concept prompts, hierarchical layers
+- **Semantic Detailer**: Batched 1:1 refinement at 1024px, chainable for multi-layer LoRA specialization, dual canvas (pixel+latent) for perfect integration
+- **Chess Refiner**: Global tile refinement with supersampling (0.25-1.0x), chess pattern for seamless blending, refinement mask awareness
+- **Full daemon integration**: SAM3 runs on secondary GPU, shared CLIP encoding for multi-detection batching
 
 ✨ **Luna Batch Upscale Refine** - Production-grade tiled upscaler with scaffolding noise + chess-pattern batching
 - Auto-detect upscale factor (1x/2x/4x/8x/16x)
@@ -157,6 +165,106 @@ Flow: Router → Precision Convert → InferenceModeWrapper → Daemon Proxies
 │  └── __legacy/txt__ compat │  │  └── Centralized params    │
 └────────────────────────────┘  └────────────────────────────┘
 ```
+
+---
+
+## 🎨 Luna Semantic Detailer Suite
+
+**A hierarchical, multi-pass refinement system for surgical image enhancement.** Replaces blind tiled upscaling with semantic-aware pyramidal refinement.
+
+### 🏗️ Workflow Architecture
+
+```
+1. Pyramid Noise Generator
+   ├─ Model-aware (SDXL, SD1.5, Flux)
+   ├─ Aspect ratio selection (1:1, 16:9, 3:2, etc.)
+   ├─ Outputs: full_scaffold (4K), draft_scaffold (1K)
+   └─ Variance correction: σ=1.0 preserved at all scales
+
+2. Draft Generation
+   ├─ KSampler on draft_scaffold (1K fast)
+   ├─ VAE decode to pixels (1K neutral image)
+   └─ Input to detector for fast analysis
+
+3. Scaffold Upscaler
+   ├─ Lanczos GPU-accelerated upscale (no upscale model)
+   ├─ Edge preservation + texture coherence
+   ├─ Creates neutral 4K canvas (no AI artifacts)
+   └─ Outputs: upscaled_pixels (4K), full_scaffold_passthrough
+
+4. SAM3 Detector
+   ├─ Detects objects on 1K draft (fast)
+   ├─ Per-concept prompts (face, eye, hand, etc.)
+   ├─ Hierarchical layers (0=structural, 1+=details)
+   ├─ Encodes prompts with CLIP upfront
+   └─ Outputs: LUNA_DETECTION_PIPE (coordinates + conditioning)
+
+5. Semantic Detailer (Chainable, Multi-Layer)
+   ├─ Extracts crops from 4K canvas
+   ├─ Refinement at 1024×1024 (optimal for SDXL/Flux)
+   ├─ Batched sampling with per-concept conditioning
+   ├─ Supports enlarge_crops for small inputs
+   ├─ Outputs: refined_image + refined_latent + detection_pipe (passthrough)
+   └─ Chaining: Layer 0 → Layer 1 → Layer 2 (cumulative refinement)
+
+6. Chess Refiner (Final Global Pass)
+   ├─ Chess-pattern tiling (even/odd for seamless blending)
+   ├─ Uses full_scaffold for 1:1 noise density
+   ├─ Optional supersampling (0.25-1.0x scale)
+   ├─ Smoothstep blending (invisible seams)
+   └─ Outputs: final_image (2K supersampled)
+```
+
+### 🔬 Key Mathematical Principles
+
+**Variance Preservation:**
+```
+When downscaling noise: σ_new = σ_original / scale_factor
+Solution: Multiply by scale_factor to restore σ = 1.0
+Example: 4K→1K (4x) = multiply by 4.0
+```
+
+**1024px Standard:**
+- SDXL native training resolution
+- Optimal for anatomical features
+- True GPU batch processing
+
+**Smoothstep Blending:**
+- Polynomial: t²(3-2t)
+- C¹ continuity (no visible seams)
+- Better than linear alpha blending
+
+### 💡 Use Cases
+
+**Pyramid Workflow (4K Refinement):**
+```
+Pyramid Noise (4K) → Draft (1K) → Scaffold Up (4K)
+→ Detect → Semantic Detailer (surgical) → Chess (global) → 2K output
+```
+✅ Maximum quality  
+✅ True 1:1 noise preservation  
+✅ Multi-layer specialization possible
+
+**Traditional Workflow (1K Base):**
+```
+1K image → batch_upscale_refine (4x to 4K)
+→ Semantic Detailer (enlarge_crops=True) → Final output
+```
+✅ Compatible with existing workflows  
+✅ Uses same detailer nodes  
+✅ Upscales detected regions
+
+**Layered LoRA Refinement:**
+```
+Base generation (1:1)
+→ Detailer Layer 0 + face_lora (detailed faces)
+→ Detailer Layer 1 + eye_lora (iris details)
+→ Detailer Layer 2 + clothing_lora (fabric texture)
+→ Chess Refiner (global coherence)
+```
+✅ Each layer specializes  
+✅ Per-layer conditioning  
+✅ No quality degradation from multi-pass
 
 ---
 

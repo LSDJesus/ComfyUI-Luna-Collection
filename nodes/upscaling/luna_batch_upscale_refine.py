@@ -171,7 +171,7 @@ class LunaBatchUpscaleRefine:
             
         scaffolding_noise = self._upscale_noise(base_noise, target_lat_h, target_lat_w)
 
-        # 5. MANUAL NOISE INJECTION
+        # 5. SETUP SAMPLER (no manual noise injection - sampler handles it)
         sampler_obj = comfy.samplers.KSampler(
             model, steps=steps, device=device, sampler=sampler, scheduler=scheduler, 
             denoise=1.0, model_options=model.model_options
@@ -179,12 +179,10 @@ class LunaBatchUpscaleRefine:
         
         total_steps = len(sampler_obj.sigmas) - 1
         start_step = int(total_steps * (1.0 - denoise))
-        initial_sigma = sampler_obj.sigmas[start_step]
         
-        # Create the Noisy Canvas (In-Place to save VRAM)
+        # Keep canvas CLEAN - sampler will combine with scaffold noise properly
         canvas_samples = upscaled_lat['samples'].clone()
-        canvas_samples.add_(scaffolding_noise * initial_sigma)
-        canvas = {'samples': canvas_samples}
+        canvas = {'samples': canvas_samples, 'scaffold_noise': scaffolding_noise}
         
         # 6. SEQUENTIAL CHESS REFINEMENT
         # Pass 1: EVENS
@@ -294,26 +292,46 @@ class LunaBatchUpscaleRefine:
             chunk = tiles_data[i:i + batch_size]
             batch_samples = torch.cat([t['samples'] for t in chunk], dim=0)
             
-            # Generate Random Noise for Sampler
-            torch.manual_seed(seed)
-            sampler_noise = torch.randn_like(batch_samples)
+            # Extract scaffold noise tiles (1:1 matching, no resize)
+            # If scaffold noise exists, use it; otherwise fall back to random
+            if 'noise' in chunk[0]:
+                batch_noise = torch.cat([t['noise'] for t in chunk], dim=0)
+            else:
+                torch.manual_seed(seed)
+                batch_noise = torch.randn_like(batch_samples)
             
-            print(f"[Luna] {parity.upper()} Batch {i//batch_size + 1}: Processing {len(chunk)} tiles")
+            # Pre-inject scaffold noise at starting sigma
+            initial_sigma_val = sampler_obj.sigmas[start_step].item()
+            noised_samples = batch_samples + batch_noise * initial_sigma_val
             
+            print(f"[Luna] {parity.upper()} Batch {i//batch_size + 1}: Processing {len(chunk)} tiles, σ={initial_sigma_val:.4f}")
+            
+            # Sample with pre-noised latent (like KSampler Advanced with add_noise="disable")
             with torch.inference_mode():
-                refined_chunk = comfy.sample.sample_custom(
+                refined_chunk = comfy.sample.sample(
                     model,
-                    noise=sampler_noise,
+                    noise=torch.zeros_like(noised_samples),  # Zero noise (already pre-noised)
+                    steps=steps,
                     cfg=cfg,
-                    sampler=sampler_name,
-                    sigmas=sigmas,
+                    sampler_name=sampler_name,
+                    scheduler=scheduler_name,
                     positive=pos,
                     negative=neg,
-                    latent_image=batch_samples,
+                    latent_image=noised_samples,   # Pre-noised with scaffold
+                    denoise=denoise,
+                    disable_noise=True,            # Don't add more noise!
+                    start_step=start_step,
+                    last_step=None,
+                    force_full_denoise=True,
                     noise_mask=None,
-                    seed=seed,
-                    disable_noise=True
+                    sigmas=None,
+                    callback=None,
+                    disable_pbar=False,
+                    seed=seed
                 )
+            
+            # Clear GPU memory cache of temporary computation buffers
+            torch.cuda.empty_cache()
             
             self._composite_chunk(canvas, refined_chunk, chunk, mask)
             
@@ -360,8 +378,9 @@ class LunaBatchUpscaleRefine:
             
         return mask
 
-    def _extract_specific_tiles(self, lat, parity, rows, cols, th, tw, oh, ow):
-        s = lat['samples']
+    def _extract_specific_tiles(self, canvas, parity, rows, cols, th, tw, oh, ow):
+        s = canvas['samples']
+        scaffold = canvas.get('scaffold_noise')  # May be None for legacy calls
         H, W = s.shape[2], s.shape[3]
         stride_h, stride_w = th - oh, tw - ow
         extracted = []
@@ -379,10 +398,15 @@ class LunaBatchUpscaleRefine:
                     
                     y1, x1 = y0 + th, x0 + tw
                     
-                    extracted.append({
+                    tile_data = {
                         'samples': s[:, :, y0:y1, x0:x1], 
                         'coords': (y0, x0, y1, x1)
-                    })
+                    }
+                    # Also extract matching scaffold noise tile
+                    if scaffold is not None:
+                        tile_data['noise'] = scaffold[:, :, y0:y1, x0:x1]
+                    
+                    extracted.append(tile_data)
         return extracted
 
     def _composite_chunk(self, canvas, refined_batch, chunk_info, mask):

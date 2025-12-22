@@ -549,12 +549,187 @@ class DaemonCLIP:
 
 
 # =============================================================================
+# DaemonSAM3 - Proxy for SAM3 Object Detection
+# =============================================================================
+
+class DaemonSAM3:
+    """
+    Proxy for SAM3 model running on Luna Daemon.
+    
+    Routes detection requests to the daemon's SAM3 model, which stays loaded
+    and shared across all ComfyUI instances.
+    
+    Architecture:
+    - Image (PIL) is serialized and sent to daemon
+    - Daemon runs SAM3 grounding on its GPU
+    - Returns lightweight detection data (coordinates, masks)
+    - Image is discarded after detection (one-way transfer)
+    
+    Usage:
+        sam3 = DaemonSAM3("sam3_h.safetensors", device="cuda:1")
+        detections = sam3.ground(pil_image, "face", threshold=0.25)
+    """
+    
+    def __init__(self, model_name: str = "sam3_h.safetensors", device: str = "cuda:1"):
+        """
+        Initialize SAM3 proxy.
+        
+        Args:
+            model_name: SAM3 model filename in models/sam3/
+            device: Device for SAM3 on daemon (cuda:0, cuda:1, cpu)
+        """
+        self.model_name = model_name
+        self.device = device
+        self._loaded = False
+    
+    def load_model(self) -> bool:
+        """
+        Load SAM3 model on daemon (if not already loaded).
+        
+        Returns:
+            True if loaded successfully, False otherwise
+        """
+        try:
+            result = daemon_client.load_sam3(
+                model_name=self.model_name,
+                device=self.device
+            )
+            
+            if result.get("success"):
+                self._loaded = True
+                print(f"[DaemonSAM3] Model loaded: {self.model_name} on {self.device}")
+                return True
+            else:
+                print(f"[DaemonSAM3] Failed to load model: {result.get('error')}")
+                return False
+                
+        except Exception as e:
+            print(f"[DaemonSAM3] Error loading model: {e}")
+            return False
+    
+    def ground(
+        self,
+        image,  # PIL Image
+        text_prompt: str,
+        threshold: float = 0.25
+    ) -> List[Dict[str, Any]]:
+        """
+        Run SAM3 grounding detection.
+        
+        Args:
+            image: PIL Image to detect objects in
+            text_prompt: Text description of what to find (e.g., "face", "hands")
+            threshold: Confidence threshold (0.0 to 1.0)
+        
+        Returns:
+            List of detection dicts with keys:
+            - bbox: [x1, y1, x2, y2] in pixel coordinates
+            - mask: 2D array (H, W) binary mask
+            - confidence: float score
+        """
+        # Ensure model is loaded
+        if not self._loaded:
+            if not self.load_model():
+                return []
+        
+        try:
+            # Serialize PIL image
+            import pickle
+            image_bytes = pickle.dumps(image)
+            
+            # Send to daemon using the dedicated function
+            result = daemon_client.sam3_detect(
+                image_bytes=image_bytes,
+                text_prompt=text_prompt,
+                threshold=threshold
+            )
+            
+            if result.get("success"):
+                detections = result.get("detections", [])
+                
+                # Deserialize masks (they come as nested lists)
+                import numpy as np
+                for det in detections:
+                    if "mask" in det:
+                        det["mask"] = np.array(det["mask"])
+                
+                return detections
+            else:
+                print(f"[DaemonSAM3] Detection failed: {result.get('error')}")
+                return []
+                
+        except Exception as e:
+            print(f"[DaemonSAM3] Error during detection: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+    
+    def ground_batch(
+        self,
+        image,  # PIL Image
+        prompts: List[Dict[str, Any]],
+        default_threshold: float = 0.25
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Run SAM3 grounding detection for multiple prompts efficiently.
+        
+        Reuses backbone features across prompts for significant speedup.
+        
+        Args:
+            image: PIL Image to detect objects in
+            prompts: List of prompt configs, each can be:
+                - str: Just the prompt text
+                - dict: {"prompt": str, "threshold": float, "label": str}
+            default_threshold: Default confidence threshold
+        
+        Returns:
+            Dict mapping label → list of detections
+        """
+        # Ensure model is loaded
+        if not self._loaded:
+            if not self.load_model():
+                return {}
+        
+        try:
+            import pickle
+            import numpy as np
+            image_bytes = pickle.dumps(image)
+            
+            result = daemon_client.sam3_detect_batch(
+                image_bytes=image_bytes,
+                prompts=prompts,
+                threshold=default_threshold
+            )
+            
+            if result.get("success"):
+                results_by_label = result.get("results_by_label", {})
+                
+                # Deserialize masks
+                for label, detections in results_by_label.items():
+                    for det in detections:
+                        if "mask" in det:
+                            det["mask"] = np.array(det["mask"])
+                
+                return results_by_label
+            else:
+                print(f"[DaemonSAM3] Batch detection failed: {result.get('error')}")
+                return {}
+                
+        except Exception as e:
+            print(f"[DaemonSAM3] Error during batch detection: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
+
+
+# =============================================================================
 # Exports
 # =============================================================================
 
 __all__ = [
     'DaemonVAE',
     'DaemonCLIP',
+    'DaemonSAM3',
     'InferenceModeWrapper',
     'wrap_model_for_inference',
     'detect_vae_type',

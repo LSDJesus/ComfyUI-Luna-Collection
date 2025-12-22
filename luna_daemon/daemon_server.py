@@ -248,6 +248,12 @@ class LunaDaemon:
         self.loaded_models: Dict[str, Any] = {}  # {path: loaded_model_object}
         self.workflow_model_sets: Dict[str, Dict[str, Any]] = {}  # {workflow_id: {model_type, clip_l, clip_g, vae}}
         self.current_workflow_id: Optional[str] = None  # Track which workflow's models are in workers
+        
+        # SAM3 model registry (shared across all instances)
+        self.sam3_model: Optional[Any] = None
+        self.sam3_processor: Optional[Any] = None  # Sam3Processor instance
+        self.sam3_model_name: Optional[str] = None
+        self.sam3_device: str = clip_device  # Use same device as CLIP by default
         self.models_lock = threading.Lock()
         
         # Socket server
@@ -381,6 +387,326 @@ class LunaDaemon:
                 return {"error": "CLIP pool not available"}
             # Route to CLIP pool - vision encoder shares infrastructure
             return self.clip_pool.submit(cmd, data)
+        
+        # SAM3 commands
+        elif cmd == "load_sam3":
+            # Load SAM3 model for object detection using official sam3 pip package
+            model_name = data.get("model_name")
+            device = data.get("device", self.sam3_device)
+            
+            if not model_name:
+                return {"error": "model_name required"}
+            
+            try:
+                # Check if already loaded
+                if self.sam3_model is not None and self.sam3_model_name == model_name:
+                    logger.info(f"[Daemon] SAM3 model '{model_name}' already loaded")
+                    return {"success": True, "status": "already_loaded", "model_name": model_name}
+                
+                # Load SAM3 model using official pip package
+                logger.info(f"[Daemon] Loading SAM3 model '{model_name}' on {device}")
+                
+                from sam3.model_builder import build_sam3_image_model
+                from sam3.model.sam3_image_processor import Sam3Processor
+                from pathlib import Path
+                
+                # Get BPE vocabulary path
+                # Try sam3 package assets first (source install), then Luna's bundled copy
+                import sam3
+                sam3_pkg_path = Path(sam3.__file__).parent
+                bpe_path = sam3_pkg_path / "assets" / "bpe_simple_vocab_16e6.txt.gz"
+                
+                if not bpe_path.exists():
+                    # Fall back to Luna's bundled copy
+                    luna_bpe = Path(__file__).parent.parent / "luna_sam3_assets" / "bpe_simple_vocab_16e6.txt.gz"
+                    if luna_bpe.exists():
+                        bpe_path = luna_bpe
+                        logger.info(f"[Daemon] Using Luna bundled BPE vocabulary")
+                    else:
+                        return {"error": f"BPE vocabulary file not found. Expected at {bpe_path} or {luna_bpe}"}
+                
+                # Get model checkpoint path (optional)
+                import folder_paths
+                checkpoint_path = None
+                if model_name:
+                    potential_path = os.path.join(folder_paths.models_dir, "sam3", model_name)
+                    if os.path.exists(potential_path):
+                        # Check if it's a safetensors file (not supported by SAM3 loader)
+                        if potential_path.endswith('.safetensors'):
+                            return {"error": f"SAM3 model '{model_name}' is in safetensors format. Please use a .pt or .pth checkpoint, or set model_name to empty to download from HuggingFace."}
+                        checkpoint_path = potential_path
+                        logger.info(f"[Daemon] Using local SAM3 model: {checkpoint_path}")
+                
+                # Build model (downloads from HF if no local checkpoint)
+                sam3_model = build_sam3_image_model(
+                    bpe_path=str(bpe_path),
+                    checkpoint_path=checkpoint_path,
+                    device=device,
+                    load_from_HF=(checkpoint_path is None)
+                )
+                
+                # Ensure model is on the correct device
+                sam3_model = sam3_model.to(device)
+                sam3_model.eval()
+                
+                # Create processor with explicit device
+                processor = Sam3Processor(sam3_model)
+                processor.device = device  # Ensure processor uses correct device
+                
+                # Fix SAM3 device mismatch bug - txt_ids on CPU but language_features on CUDA
+                # Approach: Wrap the model's forward methods to ensure all internal tensors use correct device
+                # This is more robust than trying to patch internal tokenization logic
+                
+                import types
+                import torch
+                
+                # Patch the text_tokenizer.encode to return tensors on the correct device
+                if hasattr(sam3_model, 'text_tokenizer') and hasattr(sam3_model.text_tokenizer, 'encode'):
+                    _original_tokenize = sam3_model.text_tokenizer.encode
+                    
+                    def encode_to_device(*args, **kwargs):
+                        """Ensure tokenizer output is on the model's device"""
+                        result = _original_tokenize(*args, **kwargs)
+                        
+                        # Move result to device if it's a tensor
+                        if isinstance(result, torch.Tensor):
+                            return result.to(device)
+                        # Handle dict of tensors
+                        elif isinstance(result, dict):
+                            return {k: v.to(device) if isinstance(v, torch.Tensor) else v 
+                                   for k, v in result.items()}
+                        # Handle list/tuple of tensors
+                        elif isinstance(result, (list, tuple)):
+                            moved = [item.to(device) if isinstance(item, torch.Tensor) else item 
+                                    for item in result]
+                            return type(result)(moved)
+                        
+                        return result
+                    
+                    sam3_model.text_tokenizer.encode = encode_to_device
+                    logger.info(f"[Daemon] Patched SAM3 text_tokenizer to use {device}")
+                
+                # Store references
+                self.sam3_model = sam3_model
+                self.sam3_processor = processor
+                self.sam3_model_name = model_name
+                self.sam3_device = device
+                
+                logger.info(f"[Daemon] SAM3 model loaded successfully on {device}: {model_name}")
+                return {"success": True, "status": "loaded", "model_name": model_name}
+                
+            except Exception as e:
+                logger.error(f"[Daemon] Error loading SAM3: {e}")
+                import traceback
+                traceback.print_exc()
+                return {"error": str(e)}
+        
+        elif cmd == "sam3_detect":
+            # Run SAM3 grounding detection using official sam3 API
+            image_data = data.get("image")  # PIL image (pickled)
+            text_prompt = data.get("text_prompt")
+            threshold = data.get("threshold", 0.25)
+            
+            if image_data is None or not text_prompt:
+                return {"error": "image and text_prompt required"}
+            
+            if self.sam3_model is None or self.sam3_processor is None:
+                return {"error": "SAM3 model not loaded. Call load_sam3 first."}
+            
+            try:
+                # Deserialize PIL image
+                import pickle as pkl
+                pil_image = pkl.loads(image_data)
+                
+                # Run SAM3 grounding using official API
+                logger.info(f"[Daemon] Running SAM3 detection for '{text_prompt}'")
+                
+                with torch.inference_mode():
+                    # Set the image
+                    inference_state = self.sam3_processor.set_image(pil_image)
+                    
+                    # Prompt with text
+                    output = self.sam3_processor.set_text_prompt(
+                        state=inference_state,
+                        prompt=text_prompt
+                    )
+                
+                # Extract results
+                masks = output.get("masks", [])
+                boxes = output.get("boxes", [])
+                scores = output.get("scores", [])
+                
+                if len(scores) == 0:
+                    logger.info(f"[Daemon] No detections found for '{text_prompt}'")
+                    return {"success": True, "detections": []}
+                
+                # Convert to tensors if needed for filtering
+                if not isinstance(scores, torch.Tensor):
+                    scores = torch.tensor(scores)
+                if not isinstance(boxes, torch.Tensor):
+                    boxes = torch.tensor(boxes)
+                
+                # Filter by threshold
+                keep_mask = scores > threshold
+                
+                # Convert to serializable format
+                detections = []
+                for i in range(len(scores)):
+                    if keep_mask[i]:
+                        # Handle mask - could be tensor or numpy
+                        mask_data = masks[i]
+                        if isinstance(mask_data, torch.Tensor):
+                            mask_data = mask_data.cpu().numpy()
+                        
+                        # Handle box
+                        box_data = boxes[i]
+                        if isinstance(box_data, torch.Tensor):
+                            box_data = box_data.cpu().tolist()
+                        elif hasattr(box_data, 'tolist'):
+                            box_data = box_data.tolist()
+                        
+                        # Handle score
+                        score_val = scores[i]
+                        if isinstance(score_val, torch.Tensor):
+                            score_val = score_val.cpu().item()
+                        
+                        detections.append({
+                            "bbox": box_data,
+                            "mask": mask_data.tolist() if hasattr(mask_data, 'tolist') else mask_data,
+                            "confidence": float(score_val)
+                        })
+                
+                logger.info(f"[Daemon] SAM3 found {len(detections)} detections")
+                return {
+                    "success": True,
+                    "detections": detections,
+                    "num_detections": len(detections)
+                }
+                
+            except Exception as e:
+                logger.error(f"[Daemon] Error in SAM3 detection: {e}")
+                import traceback
+                traceback.print_exc()
+                return {"error": str(e)}
+        
+        elif cmd == "sam3_detect_batch":
+            # Run SAM3 grounding detection for MULTIPLE prompts efficiently
+            # Reuses backbone features across prompts for speed
+            image_data = data.get("image")  # PIL image (pickled)
+            prompts = data.get("prompts")   # List of {"prompt": str, "threshold": float, "label": str}
+            default_threshold = data.get("threshold", 0.25)
+            
+            if image_data is None or not prompts:
+                return {"error": "image and prompts list required"}
+            
+            if self.sam3_model is None or self.sam3_processor is None:
+                return {"error": "SAM3 model not loaded. Call load_sam3 first."}
+            
+            try:
+                import pickle as pkl
+                import torch
+                pil_image = pkl.loads(image_data)
+                
+                logger.info(f"[Daemon] Running SAM3 batch detection for {len(prompts)} prompts")
+                
+                with torch.inference_mode():
+                    # Set the image ONCE (computes backbone features)
+                    inference_state = self.sam3_processor.set_image(pil_image)
+                    
+                    all_results = {}
+                    
+                    # Run each prompt (reuses backbone features)
+                    for prompt_info in prompts:
+                        if isinstance(prompt_info, str):
+                            # Simple string prompt
+                            prompt_text = prompt_info
+                            threshold = default_threshold
+                            label = prompt_text
+                        else:
+                            # Dict with prompt, threshold, label
+                            prompt_text = prompt_info.get("prompt", prompt_info.get("text", ""))
+                            threshold = prompt_info.get("threshold", default_threshold)
+                            label = prompt_info.get("label", prompt_text)
+                        
+                        if not prompt_text:
+                            continue
+                        
+                        # Run detection for this prompt
+                        output = self.sam3_processor.set_text_prompt(
+                            state=inference_state,
+                            prompt=prompt_text
+                        )
+                        
+                        masks = output.get("masks", [])
+                        boxes = output.get("boxes", [])
+                        scores = output.get("scores", [])
+                        
+                        # Convert and filter
+                        if not isinstance(scores, torch.Tensor):
+                            scores = torch.tensor(scores) if len(scores) > 0 else torch.tensor([])
+                        if not isinstance(boxes, torch.Tensor):
+                            boxes = torch.tensor(boxes) if len(boxes) > 0 else torch.tensor([])
+                        
+                        detections = []
+                        for i in range(len(scores)):
+                            score_val = scores[i].item() if isinstance(scores[i], torch.Tensor) else float(scores[i])
+                            if score_val > threshold:
+                                mask_data = masks[i]
+                                if isinstance(mask_data, torch.Tensor):
+                                    mask_data = mask_data.cpu().numpy()
+                                
+                                box_data = boxes[i]
+                                if isinstance(box_data, torch.Tensor):
+                                    box_data = box_data.cpu().tolist()
+                                elif hasattr(box_data, 'tolist'):
+                                    box_data = box_data.tolist()
+                                
+                                detections.append({
+                                    "bbox": box_data,
+                                    "mask": mask_data.tolist() if hasattr(mask_data, 'tolist') else mask_data,
+                                    "confidence": score_val,
+                                    "label": label
+                                })
+                        
+                        all_results[label] = detections
+                        logger.info(f"[Daemon] SAM3 '{prompt_text}': {len(detections)} detections")
+                
+                # Flatten all detections with labels
+                all_detections = []
+                for label, dets in all_results.items():
+                    all_detections.extend(dets)
+                
+                return {
+                    "success": True,
+                    "results_by_label": all_results,
+                    "detections": all_detections,
+                    "num_detections": len(all_detections)
+                }
+                
+            except Exception as e:
+                logger.error(f"[Daemon] Error in SAM3 batch detection: {e}")
+                import traceback
+                traceback.print_exc()
+                return {"error": str(e)}
+        
+        elif cmd == "unload_sam3":
+            # Unload SAM3 model to free VRAM
+            try:
+                if self.sam3_model is not None:
+                    model_name = self.sam3_model_name
+                    del self.sam3_model
+                    del self.sam3_processor
+                    self.sam3_model = None
+                    self.sam3_processor = None
+                    self.sam3_model_name = None
+                    torch.cuda.empty_cache()
+                    logger.info(f"[Daemon] SAM3 model '{model_name}' unloaded")
+                    return {"success": True, "status": "unloaded", "model_name": model_name}
+                else:
+                    return {"success": True, "status": "not_loaded"}
+            except Exception as e:
+                logger.error(f"[Daemon] Error unloading SAM3: {e}")
+                return {"error": str(e)}
         
         # Async task commands
         elif cmd == "submit_async":

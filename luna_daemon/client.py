@@ -838,6 +838,77 @@ class DaemonClient:
         })
         return result if isinstance(result, dict) else {"success": True}
 
+    # =========================================================================
+    # SAM3 Operations
+    # =========================================================================
+    
+    def load_sam3(self, model_name: str, device: str = "cuda:1") -> dict:
+        """
+        Load SAM3 model on daemon.
+        
+        Args:
+            model_name: SAM3 model filename in models/sam3/
+            device: Device for SAM3 (cuda:0, cuda:1, cpu)
+        
+        Returns:
+            Response dict with success status
+        """
+        result = self._send_request({
+            "cmd": "load_sam3",
+            "model_name": model_name,
+            "device": device
+        })
+        return result if isinstance(result, dict) else {"success": False, "error": "Invalid response"}
+    
+    def sam3_detect(self, image_bytes: bytes, text_prompt: str, threshold: float = 0.25) -> dict:
+        """
+        Run SAM3 grounding detection via daemon.
+        
+        Args:
+            image_bytes: Pickled PIL Image bytes
+            text_prompt: Text description of what to find (e.g., "face", "hands")
+            threshold: Confidence threshold (0.0 to 1.0)
+        
+        Returns:
+            Response dict with detections list
+        """
+        result = self._send_request({
+            "cmd": "sam3_detect",
+            "image": image_bytes,
+            "text_prompt": text_prompt,
+            "threshold": threshold
+        })
+        return result if isinstance(result, dict) else {"success": False, "error": "Invalid response"}
+    
+    def sam3_detect_batch(self, image_bytes: bytes, prompts: list, threshold: float = 0.25) -> dict:
+        """
+        Run SAM3 grounding detection for multiple prompts efficiently.
+        
+        Args:
+            image_bytes: Pickled PIL Image bytes
+            prompts: List of prompts (strings or dicts with prompt/threshold/label)
+            threshold: Default confidence threshold
+        
+        Returns:
+            Response dict with results_by_label and detections
+        """
+        result = self._send_request({
+            "cmd": "sam3_detect_batch",
+            "image": image_bytes,
+            "prompts": prompts,
+            "threshold": threshold
+        })
+        return result if isinstance(result, dict) else {"success": False, "error": "Invalid response"}
+    
+    def unload_sam3(self) -> dict:
+        """
+        Unload SAM3 model from daemon to free VRAM.
+        
+        Returns:
+            Response dict with success status
+        """
+        result = self._send_request({"cmd": "unload_sam3"})
+        return result if isinstance(result, dict) else {"success": True}
 
 # =============================================================================
 # Singleton Client Instance
@@ -1090,4 +1161,62 @@ def submit_async(task_name: str, task_data: dict) -> dict:
     return get_client().submit_async(task_name, task_data)
 
 
+# =============================================================================
+# SAM3 Convenience Functions
+# =============================================================================
 
+def load_sam3(model_name: str, device: str = "cuda:1") -> dict:
+    """Load SAM3 model on daemon."""
+    return get_client().load_sam3(model_name, device)
+
+
+def sam3_detect(image_bytes: bytes, text_prompt: str, threshold: float = 0.25) -> dict:
+    """Run SAM3 grounding detection via daemon."""
+    return get_client().sam3_detect(image_bytes, text_prompt, threshold)
+
+
+def sam3_detect_batch(image_bytes: bytes, prompts: list, threshold: float = 0.25) -> dict:
+    """
+    Run SAM3 grounding detection for multiple prompts efficiently.
+    
+    Reuses backbone features across prompts for speed.
+    
+    Args:
+        image_bytes: Pickled PIL Image bytes
+        prompts: List of prompts - can be strings or dicts with:
+            - prompt/text: The text to search for
+            - threshold: Optional per-prompt threshold
+            - label: Optional label for grouping results
+        threshold: Default threshold if not specified per-prompt
+    
+    Returns:
+        Dict with:
+            - results_by_label: Dict mapping label → list of detections
+            - detections: Flat list of all detections
+            - num_detections: Total count
+    """
+    return get_client().sam3_detect_batch(image_bytes, prompts, threshold)
+
+
+def unload_sam3() -> dict:
+    """Unload SAM3 model from daemon."""
+    return get_client().unload_sam3()
+
+
+def send_request(cmd: str, data: dict) -> Any:
+    """
+    Generic request sender for daemon commands.
+    
+    This is a convenience function for custom commands that don't have
+    dedicated wrapper functions yet.
+    
+    Args:
+        cmd: Command name
+        data: Request data dict (cmd will be added automatically)
+    
+    Returns:
+        Response from daemon
+    """
+    request = {"cmd": cmd}
+    request.update(data)
+    return get_client()._send_request(request)
