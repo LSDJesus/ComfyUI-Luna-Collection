@@ -39,90 +39,28 @@ logger = logging.getLogger("LunaDaemon")
 # =============================================================================
 
 from enum import Enum, auto
+from .config import (
+    DAEMON_HOST,
+    DAEMON_PORT,
+    DAEMON_WS_PORT,
+    CLIP_DEVICE,
+    VAE_DEVICE,
+    CLIP_L_PATH,
+    CLIP_G_PATH,
+    EMBEDDINGS_DIR,
+    MODEL_PRECISION,
+    CLIP_PRECISION,
+    MAX_CLIP_WORKERS,
+    MIN_CLIP_WORKERS,
+    QUEUE_THRESHOLD,
+    SCALE_UP_DELAY_SEC,
+    IDLE_TIMEOUT_SEC,
+    SERVICE_TYPE,
+    ServiceType,
+)
 
-class ServiceType(Enum):
-    FULL = auto()
-    CLIP_ONLY = auto()
-
-# Default values to avoid Pylance "possibly unbound" errors
-DAEMON_HOST = "127.0.0.1"
-DAEMON_PORT = 19283
-DAEMON_WS_PORT = 19284
-CLIP_DEVICE = "cuda:0"
-CLIP_L_PATH = ""
-CLIP_G_PATH = ""
-EMBEDDINGS_DIR = ""
-MODEL_PRECISION = "fp16"
-CLIP_PRECISION = "fp16"
-MAX_CLIP_WORKERS = 2
-MIN_CLIP_WORKERS = 0
-QUEUE_THRESHOLD = 2
-SCALE_UP_DELAY_SEC = 1.0
-IDLE_TIMEOUT_SEC = 30.0
-SERVICE_TYPE = ServiceType.FULL
-
-# Handle both package import and direct script execution
-config_loaded = False
-try:
-    # Try relative imports first (package context)
-    from .config import (
-        DAEMON_HOST, DAEMON_PORT, DAEMON_WS_PORT,
-        CLIP_DEVICE,
-        CLIP_L_PATH, CLIP_G_PATH, EMBEDDINGS_DIR,
-        MODEL_PRECISION,
-        MAX_CLIP_WORKERS, MIN_CLIP_WORKERS,
-        QUEUE_THRESHOLD, SCALE_UP_DELAY_SEC, IDLE_TIMEOUT_SEC,
-        SERVICE_TYPE
-    )
-    # Try to get ServiceType from config if it exists
-    try:
-        from .config import ServiceType as ConfigServiceType
-        ServiceType = ConfigServiceType  # type: ignore
-    except ImportError:
-        pass
-        
-    try:
-        from .config import CLIP_PRECISION
-    except ImportError:
-        CLIP_PRECISION = MODEL_PRECISION
-    config_loaded = True
-except (ImportError, ValueError):
-    # Fallback: direct import when run as __main__
-    try:
-        import importlib.util
-        daemon_dir = os.path.dirname(os.path.abspath(__file__))
-        config_path = os.path.join(daemon_dir, "config.py")
-        spec = importlib.util.spec_from_file_location("luna_daemon_config", config_path)
-        if spec and spec.loader:
-            config_mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(config_mod)
-            
-            DAEMON_HOST = getattr(config_mod, "DAEMON_HOST", DAEMON_HOST)
-            DAEMON_PORT = getattr(config_mod, "DAEMON_PORT", DAEMON_PORT)
-            DAEMON_WS_PORT = getattr(config_mod, "DAEMON_WS_PORT", DAEMON_WS_PORT)
-            CLIP_DEVICE = getattr(config_mod, "CLIP_DEVICE", CLIP_DEVICE)
-            CLIP_L_PATH = getattr(config_mod, "CLIP_L_PATH", CLIP_L_PATH)
-            CLIP_G_PATH = getattr(config_mod, "CLIP_G_PATH", CLIP_G_PATH)
-            EMBEDDINGS_DIR = getattr(config_mod, "EMBEDDINGS_DIR", EMBEDDINGS_DIR)
-            MODEL_PRECISION = getattr(config_mod, "MODEL_PRECISION", MODEL_PRECISION)
-            CLIP_PRECISION = getattr(config_mod, "CLIP_PRECISION", MODEL_PRECISION)
-            MAX_CLIP_WORKERS = getattr(config_mod, "MAX_CLIP_WORKERS", MAX_CLIP_WORKERS)
-            MIN_CLIP_WORKERS = getattr(config_mod, "MIN_CLIP_WORKERS", MIN_CLIP_WORKERS)
-            QUEUE_THRESHOLD = getattr(config_mod, "QUEUE_THRESHOLD", QUEUE_THRESHOLD)
-            SCALE_UP_DELAY_SEC = getattr(config_mod, "SCALE_UP_DELAY_SEC", SCALE_UP_DELAY_SEC)
-            IDLE_TIMEOUT_SEC = getattr(config_mod, "IDLE_TIMEOUT_SEC", IDLE_TIMEOUT_SEC)
-            
-            ConfigServiceType = getattr(config_mod, "ServiceType", None)
-            if ConfigServiceType:
-                ServiceType = ConfigServiceType
-            SERVICE_TYPE = getattr(config_mod, "SERVICE_TYPE", SERVICE_TYPE)
-            config_loaded = True
-    except:
-        pass
-
-if not config_loaded:
-    # Fallback defaults already set above
-    pass
+logger.info(f"[Config] Loaded from config.py")
+logger.info(f"[Config] CLIP_DEVICE={CLIP_DEVICE}, VAE_DEVICE={VAE_DEVICE}")
 
 # =============================================================================
 # Import Modules
