@@ -385,6 +385,92 @@ def register_routes():
             return web.json_response({"status": "error", "message": str(e)})
 
 
+    @PromptServer.instance.routes.get("/luna/daemon/devices")
+    async def get_devices(request):
+        """Get current device configuration and available GPUs"""
+        if not DAEMON_AVAILABLE or daemon_client is None:
+            return web.json_response({"success": False, "error": "Daemon client not available"})
+        
+        try:
+            if not daemon_client.is_daemon_running():
+                return web.json_response({"success": False, "error": "Daemon is not running"})
+            
+            result = daemon_client.get_devices()
+            return web.json_response(result)
+                
+        except Exception as e:
+            return web.json_response({"success": False, "error": str(e)})
+
+
+    @PromptServer.instance.routes.post("/luna/daemon/set-clip-device")
+    async def set_clip_device(request):
+        """Change CLIP device"""
+        if not DAEMON_AVAILABLE or daemon_client is None:
+            return web.json_response({"success": False, "error": "Daemon client not available"})
+        
+        try:
+            data = await request.json()
+            device = data.get("device")
+            
+            if not device:
+                return web.json_response({"success": False, "error": "device parameter required"})
+            
+            if not daemon_client.is_daemon_running():
+                return web.json_response({"success": False, "error": "Daemon is not running"})
+            
+            result = daemon_client.set_clip_device(device)
+            return web.json_response(result)
+                
+        except Exception as e:
+            return web.json_response({"success": False, "error": str(e)})
+
+
+    @PromptServer.instance.routes.post("/luna/daemon/set-vae-device")
+    async def set_vae_device(request):
+        """Change VAE device"""
+        if not DAEMON_AVAILABLE or daemon_client is None:
+            return web.json_response({"success": False, "error": "Daemon client not available"})
+        
+        try:
+            data = await request.json()
+            device = data.get("device")
+            
+            if not device:
+                return web.json_response({"success": False, "error": "device parameter required"})
+            
+            if not daemon_client.is_daemon_running():
+                return web.json_response({"success": False, "error": "Daemon is not running"})
+            
+            result = daemon_client.set_vae_device(device)
+            return web.json_response(result)
+                
+        except Exception as e:
+            return web.json_response({"success": False, "error": str(e)})
+
+
+    @PromptServer.instance.routes.post("/luna/daemon/set-llm-device")
+    async def set_llm_device(request):
+        """Change LLM device"""
+        if not DAEMON_AVAILABLE or daemon_client is None:
+            return web.json_response({"success": False, "error": "Daemon client not available"})
+        
+        try:
+            data = await request.json()
+            device = data.get("device")
+            
+            if not device:
+                return web.json_response({"success": False, "error": "device parameter required"})
+            
+            if not daemon_client.is_daemon_running():
+                return web.json_response({"success": False, "error": "Daemon is not running"})
+            
+            result = daemon_client.set_llm_device(device)
+            return web.json_response(result)
+                
+        except Exception as e:
+            return web.json_response({"success": False, "error": str(e)})
+
+
 # Try to register routes immediately if PromptServer.instance exists
 register_routes()
 

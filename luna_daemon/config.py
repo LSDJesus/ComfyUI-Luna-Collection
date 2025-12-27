@@ -201,7 +201,7 @@ IDLE_TIMEOUT_SEC = 60.0      # Idle time before scaling down
 # =============================================================================
 
 # VRAM budget for dynamic scaling
-VRAM_LIMIT_GB = 20.0         # Maximum VRAM to use
+VRAM_LIMIT_GB = 10.0         # Maximum VRAM to use
 VRAM_SAFETY_MARGIN_GB = 2.0  # Buffer to prevent OOM
 
 # LoRA registry cache size
@@ -226,7 +226,7 @@ QWEN3_VL_AUTO_LOAD = False
 # Qwen3-VL inference settings
 QWEN3_VL_MAX_TEXT_LENGTH = 256   # Max tokens for CLIP-style encoding
 QWEN3_VL_MAX_NEW_TOKENS = 512    # Max tokens for VLM generation
-QWEN3_VL_TEMPERATURE = 0.7       # VLM generation temperature
+QWEN3_VL_TEMPERATURE = 0.5       # VLM generation temperature
 
 # =============================================================================
 # Logging

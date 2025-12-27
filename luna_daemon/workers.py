@@ -1108,6 +1108,31 @@ class WorkerPool:
                 worker.stop()
             self.workers.clear()
     
+    def set_device(self, new_device: str) -> bool:
+        """
+        Change the device for all workers.
+        
+        Requires stopping and restarting all workers as they hold model references.
+        """
+        old_device = self.device
+        self.device = new_device
+        
+        logger.info(f"[{self.worker_type.value.upper()}] Device change requested: {old_device} -> {new_device}")
+        
+        # Stop all current workers
+        with self.lock:
+            for worker in self.workers:
+                worker.stop()
+            self.workers.clear()
+        
+        # Briefly wait for workers to shut down
+        time.sleep(0.5)
+        
+        # Workers will be recreated on demand with the new device
+        logger.info(f"[{self.worker_type.value.upper()}] Device changed to {new_device}. Workers will be recreated on next request.")
+        
+        return True
+    
     def get_stats(self) -> dict:
         """Get pool statistics."""
         with self.lock:

@@ -718,6 +718,83 @@ class DaemonClient:
             return {"success": False, "error": "Daemon not running"}
     
     # =========================================================================
+    # Device Configuration
+    # =========================================================================
+    
+    def get_devices(self) -> dict:
+        """
+        Get current device configuration and available GPUs.
+        
+        Returns:
+            Response dict with:
+                - devices: Current device assignment {clip, vae, llm}
+                - available_gpus: List of available GPU device strings
+                - has_cuda: Whether CUDA is available
+        """
+        try:
+            result = self._send_request({"cmd": "get_devices"})
+            return result if isinstance(result, dict) else {"success": False, "error": "Invalid response"}
+        except DaemonConnectionError:
+            return {"success": False, "error": "Daemon not running"}
+    
+    def set_clip_device(self, device: str) -> dict:
+        """
+        Change the device for CLIP model.
+        
+        Args:
+            device: Device string - "cuda:0", "cuda:1", etc., or "cpu"
+        
+        Returns:
+            Response dict with success status and old/new device
+        """
+        try:
+            result = self._send_request({
+                "cmd": "set_clip_device",
+                "device": device
+            })
+            return result if isinstance(result, dict) else {"success": False, "error": "Invalid response"}
+        except DaemonConnectionError:
+            return {"success": False, "error": "Daemon not running"}
+    
+    def set_vae_device(self, device: str) -> dict:
+        """
+        Change the device for VAE model.
+        
+        Args:
+            device: Device string - "cuda:0", "cuda:1", etc., or "cpu"
+        
+        Returns:
+            Response dict with success status and old/new device
+        """
+        try:
+            result = self._send_request({
+                "cmd": "set_vae_device",
+                "device": device
+            })
+            return result if isinstance(result, dict) else {"success": False, "error": "Invalid response"}
+        except DaemonConnectionError:
+            return {"success": False, "error": "Daemon not running"}
+    
+    def set_llm_device(self, device: str) -> dict:
+        """
+        Change the device for LLM models (Qwen3, etc.).
+        
+        Args:
+            device: Device string - "cuda:0", "cuda:1", etc., or "cpu"
+        
+        Returns:
+            Response dict with success status and old/new device
+        """
+        try:
+            result = self._send_request({
+                "cmd": "set_llm_device",
+                "device": device
+            })
+            return result if isinstance(result, dict) else {"success": False, "error": "Invalid response"}
+        except DaemonConnectionError:
+            return {"success": False, "error": "Daemon not running"}
+    
+    # =========================================================================
     # Z-IMAGE Operations
     # =========================================================================
     
@@ -1125,6 +1202,26 @@ def unload_daemon_models() -> dict:
 def set_attention_mode(mode: str) -> dict:
     """Set attention mechanism mode for CLIP/VAE processing."""
     return get_client().set_attention_mode(mode)
+
+
+def get_devices() -> dict:
+    """Get current device configuration and available GPUs."""
+    return get_client().get_devices()
+
+
+def set_clip_device(device: str) -> dict:
+    """Change the device for CLIP model."""
+    return get_client().set_clip_device(device)
+
+
+def set_vae_device(device: str) -> dict:
+    """Change the device for VAE model."""
+    return get_client().set_vae_device(device)
+
+
+def set_llm_device(device: str) -> dict:
+    """Change the device for LLM models (Qwen3, etc.)."""
+    return get_client().set_llm_device(device)
 
 
 def register_qwen3_transformers(

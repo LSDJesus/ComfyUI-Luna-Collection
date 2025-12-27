@@ -39,28 +39,106 @@ logger = logging.getLogger("LunaDaemon")
 # =============================================================================
 
 from enum import Enum, auto
-from .config import (
-    DAEMON_HOST,
-    DAEMON_PORT,
-    DAEMON_WS_PORT,
-    CLIP_DEVICE,
-    VAE_DEVICE,
-    CLIP_L_PATH,
-    CLIP_G_PATH,
-    EMBEDDINGS_DIR,
-    MODEL_PRECISION,
-    CLIP_PRECISION,
-    MAX_CLIP_WORKERS,
-    MIN_CLIP_WORKERS,
-    QUEUE_THRESHOLD,
-    SCALE_UP_DELAY_SEC,
-    IDLE_TIMEOUT_SEC,
-    SERVICE_TYPE,
-    ServiceType,
-)
 
-logger.info(f"[Config] Loaded from config.py")
+# Try to load config - first as relative import, then as fallback
+DAEMON_HOST = "127.0.0.1"
+DAEMON_PORT = 19283
+DAEMON_WS_PORT = 19284
+CLIP_DEVICE = "cuda:1"
+VAE_DEVICE = "cuda:0"
+CLIP_L_PATH = ""
+CLIP_G_PATH = ""
+EMBEDDINGS_DIR = ""
+MODEL_PRECISION = "fp16"
+CLIP_PRECISION = "fp16"
+MAX_CLIP_WORKERS = 2
+MIN_CLIP_WORKERS = 0
+QUEUE_THRESHOLD = 2
+SCALE_UP_DELAY_SEC = 1.0
+IDLE_TIMEOUT_SEC = 30.0
+SERVICE_TYPE = "full"
+
+config_loaded = False
+config_source = "hardcoded defaults"
+
+try:
+    # Try relative import first (package context)
+    logger.info("[Config] Attempting package import from .config")
+    from .config import (
+        DAEMON_HOST,
+        DAEMON_PORT,
+        DAEMON_WS_PORT,
+        CLIP_DEVICE,
+        VAE_DEVICE,
+        CLIP_L_PATH,
+        CLIP_G_PATH,
+        EMBEDDINGS_DIR,
+        MODEL_PRECISION,
+        CLIP_PRECISION,
+        MAX_CLIP_WORKERS,
+        MIN_CLIP_WORKERS,
+        QUEUE_THRESHOLD,
+        SCALE_UP_DELAY_SEC,
+        IDLE_TIMEOUT_SEC,
+        SERVICE_TYPE,
+        ServiceType,
+    )
+    logger.info("[Config] [OK] Loaded config via package import (.config)")
+    config_loaded = True
+    config_source = "package import"
+except (ImportError, ValueError) as e:
+    logger.warning(f"[Config] Package import failed: {e}")
+    logger.info("[Config] Attempting fallback import from config file...")
+    
+    try:
+        import importlib.util
+        daemon_dir = os.path.dirname(os.path.abspath(__file__))
+        config_path = os.path.join(daemon_dir, "config.py")
+        
+        if not os.path.exists(config_path):
+            raise FileNotFoundError(f"Config file not found: {config_path}")
+        
+        spec = importlib.util.spec_from_file_location("luna_daemon_config", config_path)
+        if not spec or not spec.loader:
+            raise ImportError(f"Could not create module spec for {config_path}")
+        
+        config_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config_mod)
+        
+        # Extract all values from loaded config
+        DAEMON_HOST = getattr(config_mod, "DAEMON_HOST", DAEMON_HOST)
+        DAEMON_PORT = getattr(config_mod, "DAEMON_PORT", DAEMON_PORT)
+        DAEMON_WS_PORT = getattr(config_mod, "DAEMON_WS_PORT", DAEMON_WS_PORT)
+        CLIP_DEVICE = getattr(config_mod, "CLIP_DEVICE", CLIP_DEVICE)
+        VAE_DEVICE = getattr(config_mod, "VAE_DEVICE", VAE_DEVICE)
+        CLIP_L_PATH = getattr(config_mod, "CLIP_L_PATH", CLIP_L_PATH)
+        CLIP_G_PATH = getattr(config_mod, "CLIP_G_PATH", CLIP_G_PATH)
+        EMBEDDINGS_DIR = getattr(config_mod, "EMBEDDINGS_DIR", EMBEDDINGS_DIR)
+        MODEL_PRECISION = getattr(config_mod, "MODEL_PRECISION", MODEL_PRECISION)
+        CLIP_PRECISION = getattr(config_mod, "CLIP_PRECISION", CLIP_PRECISION)
+        MAX_CLIP_WORKERS = getattr(config_mod, "MAX_CLIP_WORKERS", MAX_CLIP_WORKERS)
+        MIN_CLIP_WORKERS = getattr(config_mod, "MIN_CLIP_WORKERS", MIN_CLIP_WORKERS)
+        QUEUE_THRESHOLD = getattr(config_mod, "QUEUE_THRESHOLD", QUEUE_THRESHOLD)
+        SCALE_UP_DELAY_SEC = getattr(config_mod, "SCALE_UP_DELAY_SEC", SCALE_UP_DELAY_SEC)
+        IDLE_TIMEOUT_SEC = getattr(config_mod, "IDLE_TIMEOUT_SEC", IDLE_TIMEOUT_SEC)
+        SERVICE_TYPE = getattr(config_mod, "SERVICE_TYPE", SERVICE_TYPE)
+        
+        # Try to get ServiceType class
+        try:
+            ServiceType = getattr(config_mod, "ServiceType")
+        except AttributeError:
+            logger.warning("[Config] ServiceType not found in config, using default")
+        
+        logger.info("[Config] [OK] Loaded config via fallback import (importlib)")
+        config_loaded = True
+        config_source = "fallback import"
+    except Exception as e:
+        logger.error(f"[Config] Fallback import failed: {e}", exc_info=True)
+        logger.warning("[Config] [WARN] Using hardcoded defaults - this may not match your config.py")
+
+logger.info(f"[Config] Source: {config_source}")
 logger.info(f"[Config] CLIP_DEVICE={CLIP_DEVICE}, VAE_DEVICE={VAE_DEVICE}")
+logger.info(f"[Config] DAEMON_HOST={DAEMON_HOST}:{DAEMON_PORT}")
 
 # =============================================================================
 # Import Modules
@@ -136,6 +214,8 @@ class LunaDaemon:
         self.port = port
         self.ws_port = ws_port
         self.clip_device = clip_device
+        self.vae_device = VAE_DEVICE  # From config.py
+        self.llm_device = getattr(globals(), 'LLM_DEVICE', clip_device)  # Optional LLM device, default to CLIP device
         self.service_type = service_type
         
         # Scaling configuration
@@ -396,7 +476,6 @@ class LunaDaemon:
                 # This is more robust than trying to patch internal tokenization logic
                 
                 import types
-                import torch
                 
                 # Patch the text_tokenizer.encode to return tensors on the correct device
                 if hasattr(sam3_model, 'text_tokenizer') and hasattr(sam3_model.text_tokenizer, 'encode'):
@@ -542,7 +621,6 @@ class LunaDaemon:
             
             try:
                 import pickle as pkl
-                import torch
                 pil_image = pkl.loads(image_data)
                 
                 logger.info(f"[Daemon] Running SAM3 batch detection for {len(prompts)} prompts")
@@ -976,6 +1054,125 @@ class LunaDaemon:
                 "success": True,
                 "unloaded": unloaded,
                 "message": f"Unloaded: {', '.join(unloaded)}" if unloaded else "No models were loaded"
+            }
+        
+        # Device configuration commands
+        elif cmd == "get_devices":
+            """Get current device configuration and available GPUs."""
+            logger.info("[Daemon] Handling get_devices request")
+            available_gpus = []
+            if torch.cuda.is_available():
+                available_gpus = [f"cuda:{i}" for i in range(torch.cuda.device_count())]
+            
+            response = {
+                "success": True,
+                "devices": {
+                    "clip": self.clip_device,
+                    "vae": self.vae_device,
+                    "llm": getattr(self, "llm_device", self.clip_device),  # Fallback to clip_device if not set
+                },
+                "available_gpus": available_gpus,
+                "has_cuda": torch.cuda.is_available(),
+            }
+            logger.info(f"[Daemon] Returning get_devices response: {response}")
+            return response
+        
+        elif cmd == "set_clip_device":
+            """Change CLIP device at runtime."""
+            device = data.get("device")
+            if not device:
+                return {"error": "device parameter required"}
+            
+            # Validate device
+            if device.startswith("cuda:"):
+                try:
+                    device_id = int(device.split(":")[-1])
+                    if device_id >= torch.cuda.device_count():
+                        return {"error": f"Invalid CUDA device: {device}. Available: 0-{torch.cuda.device_count()-1}"}
+                except (ValueError, IndexError):
+                    return {"error": f"Invalid device format: {device}"}
+            elif device != "cpu":
+                return {"error": f"Invalid device: {device}. Use 'cpu' or 'cuda:N'"}
+            
+            old_device = self.clip_device
+            self.clip_device = device
+            
+            # Try to move CLIP models if loaded
+            if self.clip_pool:
+                try:
+                    self.clip_pool.set_device(device)
+                    logger.info(f"[Daemon] CLIP device changed: {old_device} -> {device}")
+                    return {
+                        "success": True,
+                        "old_device": old_device,
+                        "new_device": device,
+                        "message": f"CLIP device changed to {device}"
+                    }
+                except Exception as e:
+                    self.clip_device = old_device  # Revert on error
+                    return {"error": f"Failed to change CLIP device: {e}"}
+            
+            return {
+                "success": True,
+                "old_device": old_device,
+                "new_device": device,
+                "message": f"CLIP device set to {device} (will apply on next model load)"
+            }
+        
+        elif cmd == "set_vae_device":
+            """Change VAE device at runtime."""
+            device = data.get("device")
+            if not device:
+                return {"error": "device parameter required"}
+            
+            # Validate device
+            if device.startswith("cuda:"):
+                try:
+                    device_id = int(device.split(":")[-1])
+                    if device_id >= torch.cuda.device_count():
+                        return {"error": f"Invalid CUDA device: {device}. Available: 0-{torch.cuda.device_count()-1}"}
+                except (ValueError, IndexError):
+                    return {"error": f"Invalid device format: {device}"}
+            elif device != "cpu":
+                return {"error": f"Invalid device: {device}. Use 'cpu' or 'cuda:N'"}
+            
+            old_device = self.vae_device
+            self.vae_device = device
+            
+            logger.info(f"[Daemon] VAE device changed: {old_device} -> {device}")
+            return {
+                "success": True,
+                "old_device": old_device,
+                "new_device": device,
+                "message": f"VAE device set to {device} (will apply on next operation)"
+            }
+        
+        elif cmd == "set_llm_device":
+            """Change LLM device at runtime."""
+            device = data.get("device")
+            if not device:
+                return {"error": "device parameter required"}
+            
+            # Validate device
+            if device.startswith("cuda:"):
+                try:
+                    device_id = int(device.split(":")[-1])
+                    if device_id >= torch.cuda.device_count():
+                        return {"error": f"Invalid CUDA device: {device}. Available: 0-{torch.cuda.device_count()-1}"}
+                except (ValueError, IndexError):
+                    return {"error": f"Invalid device format: {device}"}
+            elif device != "cpu":
+                return {"error": f"Invalid device: {device}. Use 'cpu' or 'cuda:N'"}
+            
+            old_device = getattr(self, "llm_device", self.clip_device)
+            self.llm_device = device
+            
+            logger.info(f"[Daemon] LLM device changed: {old_device} -> {device}")
+            return {
+                "success": True,
+                "old_device": old_device,
+                "new_device": device,
+                "message": f"LLM device set to {device} (will apply on next model load)"
             }
         
         else:

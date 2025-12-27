@@ -252,6 +252,15 @@ function createPanelContent() {
         </div>
         
         <div class="section">
+            <div class="section-title">Device Configuration</div>
+            <div id="luna-device-config">
+                <div style="text-align: center; padding: 12px; opacity: 0.6;">
+                    Loading devices...
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
             <div class="section-title">Daemon Models</div>
             <div class="models-list" id="luna-models">
                 ${panelState.modelsLoaded.length > 0 
@@ -511,6 +520,213 @@ async function unloadModels() {
     }
 }
 
+async function loadDeviceConfig() {
+    """Load available GPUs and current device configuration"""
+    try {
+        const response = await api.fetchApi("/luna/daemon/devices");
+        if (response.ok) {
+            const data = await response.json();
+            return data;
+        }
+    } catch (e) {
+        console.error("Failed to load device config:", e);
+    }
+    return null;
+}
+
+async function setClipDevice(device) {
+    """Change CLIP device"""
+    try {
+        const response = await api.fetchApi("/luna/daemon/set-clip-device", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device })
+        });
+        
+        if (!response.ok) {
+            const data = await response.json();
+            panelState.error = data.error || "Failed to set CLIP device";
+            updatePanelUI();
+            return false;
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+            panelState.error = null;
+            await fetchDaemonStatus();
+            await updateDeviceUI();
+            return true;
+        } else {
+            panelState.error = data.error || "Failed to set CLIP device";
+            updatePanelUI();
+            return false;
+        }
+    } catch (e) {
+        panelState.error = "Request failed: " + e.message;
+        updatePanelUI();
+        return false;
+    }
+}
+
+async function setVaeDevice(device) {
+    """Change VAE device"""
+    try {
+        const response = await api.fetchApi("/luna/daemon/set-vae-device", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device })
+        });
+        
+        if (!response.ok) {
+            const data = await response.json();
+            panelState.error = data.error || "Failed to set VAE device";
+            updatePanelUI();
+            return false;
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+            panelState.error = null;
+            await fetchDaemonStatus();
+            await updateDeviceUI();
+            return true;
+        } else {
+            panelState.error = data.error || "Failed to set VAE device";
+            updatePanelUI();
+            return false;
+        }
+    } catch (e) {
+        panelState.error = "Request failed: " + e.message;
+        updatePanelUI();
+        return false;
+    }
+}
+
+async function setLlmDevice(device) {
+    """Change LLM device"""
+    try {
+        const response = await api.fetchApi("/luna/daemon/set-llm-device", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ device })
+        });
+        
+        if (!response.ok) {
+            const data = await response.json();
+            panelState.error = data.error || "Failed to set LLM device";
+            updatePanelUI();
+            return false;
+        }
+        
+        const data = await response.json();
+        if (data.success) {
+            panelState.error = null;
+            await fetchDaemonStatus();
+            await updateDeviceUI();
+            return true;
+        } else {
+            panelState.error = data.error || "Failed to set LLM device";
+            updatePanelUI();
+            return false;
+        }
+    } catch (e) {
+        panelState.error = "Request failed: " + e.message;
+        updatePanelUI();
+        return false;
+    }
+}
+
+async function updateDeviceUI() {
+    """Update the device configuration UI with available GPUs"""
+    const deviceConfig = document.getElementById("luna-device-config");
+    if (!deviceConfig) return;
+    
+    try {
+        const devices = await loadDeviceConfig();
+        if (!devices || !devices.success) {
+            deviceConfig.innerHTML = `<div style="opacity: 0.5">Unable to load device info</div>`;
+            return;
+        }
+        
+        const { devices: current, available_gpus } = devices;
+        
+        // Build HTML for device selectors
+        let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        
+        // CLIP Device
+        html += `
+            <div>
+                <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">CLIP Device</div>
+                <select id="luna-clip-device-select" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--comfy-input-bg); color: var(--fg-color);">
+                    ${available_gpus.map(gpu => `<option value="${gpu}" ${current.clip === gpu ? 'selected' : ''}>${gpu}</option>`).join('')}
+                    <option value="cpu" ${current.clip === 'cpu' ? 'selected' : ''}>cpu</option>
+                </select>
+            </div>
+        `;
+        
+        // VAE Device
+        html += `
+            <div>
+                <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">VAE Device</div>
+                <select id="luna-vae-device-select" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--comfy-input-bg); color: var(--fg-color);">
+                    ${available_gpus.map(gpu => `<option value="${gpu}" ${current.vae === gpu ? 'selected' : ''}>${gpu}</option>`).join('')}
+                    <option value="cpu" ${current.vae === 'cpu' ? 'selected' : ''}>cpu</option>
+                </select>
+            </div>
+        `;
+        
+        // LLM Device
+        html += `
+            <div>
+                <div style="font-size: 11px; opacity: 0.7; margin-bottom: 4px;">LLM Device</div>
+                <select id="luna-llm-device-select" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--comfy-input-bg); color: var(--fg-color);">
+                    ${available_gpus.map(gpu => `<option value="${gpu}" ${current.llm === gpu ? 'selected' : ''}>${gpu}</option>`).join('')}
+                    <option value="cpu" ${current.llm === 'cpu' ? 'selected' : ''}>cpu</option>
+                </select>
+            </div>
+        `;
+        
+        html += '</div>';
+        
+        deviceConfig.innerHTML = html;
+        
+        // Attach change listeners
+        const clipSelect = deviceConfig.querySelector("#luna-clip-device-select");
+        const vaeSelect = deviceConfig.querySelector("#luna-vae-device-select");
+        const llmSelect = deviceConfig.querySelector("#luna-llm-device-select");
+        
+        if (clipSelect) {
+            clipSelect.onchange = async (e) => {
+                const success = await setClipDevice(e.target.value);
+                if (success) {
+                    console.log(`[Luna] CLIP device changed to ${e.target.value}`);
+                }
+            };
+        }
+        
+        if (vaeSelect) {
+            vaeSelect.onchange = async (e) => {
+                const success = await setVaeDevice(e.target.value);
+                if (success) {
+                    console.log(`[Luna] VAE device changed to ${e.target.value}`);
+                }
+            };
+        }
+        
+        if (llmSelect) {
+            llmSelect.onchange = async (e) => {
+                const success = await setLlmDevice(e.target.value);
+                if (success) {
+                    console.log(`[Luna] LLM device changed to ${e.target.value}`);
+                }
+            };
+        }
+    } catch (e) {
+        deviceConfig.innerHTML = `<div style="opacity: 0.5; color: #f87171;">Error loading devices</div>`;
+        console.error("Device UI error:", e);
+    }
+}
+
 function attachPanelEventListeners() {
     const panel = document.querySelector(".luna-daemon-panel");
     if (!panel) return;
@@ -690,6 +906,11 @@ function updatePanelUI() {
                 unloadBtn.remove();
             }
         }
+    }
+    
+    // Update device configuration UI
+    if (panelState.running && !panelState.error) {
+        updateDeviceUI();
     }
     
     // Update error message
