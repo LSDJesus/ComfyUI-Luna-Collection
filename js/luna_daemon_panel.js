@@ -521,7 +521,7 @@ async function unloadModels() {
 }
 
 async function loadDeviceConfig() {
-    """Load available GPUs and current device configuration"""
+    // Load available GPUs and current device configuration
     try {
         const response = await api.fetchApi("/luna/daemon/devices");
         if (response.ok) {
@@ -535,7 +535,7 @@ async function loadDeviceConfig() {
 }
 
 async function setClipDevice(device) {
-    """Change CLIP device"""
+    // Change CLIP device
     try {
         const response = await api.fetchApi("/luna/daemon/set-clip-device", {
             method: "POST",
@@ -569,7 +569,7 @@ async function setClipDevice(device) {
 }
 
 async function setVaeDevice(device) {
-    """Change VAE device"""
+    // Change VAE device
     try {
         const response = await api.fetchApi("/luna/daemon/set-vae-device", {
             method: "POST",
@@ -603,7 +603,7 @@ async function setVaeDevice(device) {
 }
 
 async function setLlmDevice(device) {
-    """Change LLM device"""
+    // Change LLM device
     try {
         const response = await api.fetchApi("/luna/daemon/set-llm-device", {
             method: "POST",
@@ -637,7 +637,7 @@ async function setLlmDevice(device) {
 }
 
 async function updateDeviceUI() {
-    """Update the device configuration UI with available GPUs"""
+    // Update the device configuration UI with available GPUs
     const deviceConfig = document.getElementById("luna-device-config");
     if (!deviceConfig) return;
     

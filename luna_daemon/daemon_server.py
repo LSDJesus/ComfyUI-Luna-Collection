@@ -16,7 +16,7 @@ import sys
 # CRITICAL: Force PyTorch to use legacy CUDA allocator for IPC support
 # The options in this PyTorch version are 'native' and 'cudaMallocAsync'
 # 'native' is the standard caching allocator which supports legacy IPC
-os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "backend:native"
+os.environ["PYTORCH_ALLOC_CONF"] = "backend:native"
 
 import socket
 import pickle
@@ -328,8 +328,8 @@ class LunaDaemon:
     
     def _handle_request(self, cmd: str, data: dict) -> Any:
         """Route request to appropriate handler."""
-        # Skip counting ping/health check requests
-        if cmd != "ping":
+        # Skip counting ping/health check/status requests
+        if cmd not in ("ping", "get_info", "status"):
             self._request_count += 1
         
         # CLIP commands

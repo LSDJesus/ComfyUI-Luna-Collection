@@ -163,20 +163,50 @@ class LunaChessTileTest:
         print(f"  Tile size: {tile_size}px ({tile_lat} latent)")
         print(f"  Testing tile: row={tile_row}, col={tile_col}")
         
-        # Calculate tile coordinates in latent space
-        # Simple grid: just place tiles at even intervals
-        y0_lat = tile_row * tile_lat
-        x0_lat = tile_col * tile_lat
+        # Calculate grid using SAME logic as chess refiner
+        rows = int(round(lat_h / tile_lat)) + 1
+        cols = int(round(lat_w / tile_lat)) + 1
+        rows = max(1, rows)
+        cols = max(1, cols)
+        
+        # Calculate overlap
+        if rows > 1:
+            total_coverage_h = rows * tile_lat
+            excess_h = total_coverage_h - lat_h
+            overlap_h = excess_h // (rows - 1)
+        else:
+            overlap_h = 0
+        
+        if cols > 1:
+            total_coverage_w = cols * tile_lat
+            excess_w = total_coverage_w - lat_w
+            overlap_w = excess_w // (cols - 1)
+        else:
+            overlap_w = 0
+        
+        stride_h = tile_lat - overlap_h
+        stride_w = tile_lat - overlap_w
+        
+        print(f"  Grid: {rows}×{cols} tiles (total {rows * cols})")
+        print(f"  Overlap: {overlap_h}×{overlap_w} latent")
+        print(f"  Stride: {stride_h}×{stride_w} latent")
+        
+        # Validate tile indices
+        if tile_row >= rows or tile_col >= cols:
+            raise ValueError(f"Tile ({tile_row}, {tile_col}) out of bounds for {rows}×{cols} grid")
+        
+        # Calculate tile coordinates using stride (SAME as chess refiner)
+        y0_lat = tile_row * stride_h
+        x0_lat = tile_col * stride_w
+        
+        # Edge snapping (SAME as chess refiner)
+        if tile_row == rows - 1:
+            y0_lat = lat_h - tile_lat
+        if tile_col == cols - 1:
+            x0_lat = lat_w - tile_lat
+        
         y1_lat = min(y0_lat + tile_lat, lat_h)
         x1_lat = min(x0_lat + tile_lat, lat_w)
-        
-        # Clamp to image bounds
-        if y1_lat > lat_h:
-            y0_lat = max(0, lat_h - tile_lat)
-            y1_lat = lat_h
-        if x1_lat > lat_w:
-            x0_lat = max(0, lat_w - tile_lat)
-            x1_lat = lat_w
         
         # Pixel coordinates
         y0_pix = y0_lat * 8
@@ -210,27 +240,27 @@ class LunaChessTileTest:
         initial_sigma = sampler_obj.sigmas[0]
         print(f"  Denoise: {denoise}, Initial sigma: {initial_sigma:.4f}, Steps: {len(sampler_obj.sigmas)-1}")
         
-        # Pre-inject scaffold noise
-        initial_sigma_val = initial_sigma.item() if isinstance(initial_sigma, torch.Tensor) else initial_sigma
-        noised_latent = canvas_lat_crop + noise_crop * initial_sigma_val
+        # Ensure noise is on correct device
+        noise_crop = noise_crop.to(device)
         
-        print(f"  Pre-noise stats: min={noised_latent.min():.4f}, max={noised_latent.max():.4f}, mean={noised_latent.mean():.4f}")
+        print(f"  Canvas latent stats: min={canvas_lat_crop.min():.4f}, max={canvas_lat_crop.max():.4f}, mean={canvas_lat_crop.mean():.4f}")
+        print(f"  Scaffold noise stats: min={noise_crop.min():.4f}, max={noise_crop.max():.4f}, std={noise_crop.std():.4f}")
         
-        # Refine tile
+        # Refine tile - pass scaffold noise to sampler, it will scale by appropriate sigma
         print(f"[LunaChessTileTest] Refining tile...")
         with torch.inference_mode():
             refined_latent = comfy.sample.sample(
                 model,
-                noise=torch.zeros_like(noised_latent),
+                noise=noise_crop,                   # Scaffold noise - sampler scales it
                 steps=steps,
                 cfg=cfg,
                 sampler_name=sampler,
                 scheduler=scheduler,
                 positive=positive,
                 negative=negative,
-                latent_image=noised_latent,
+                latent_image=canvas_lat_crop,       # Clean latent
                 denoise=denoise,
-                disable_noise=True,
+                disable_noise=False,                # Let sampler inject scaled noise
                 start_step=None,
                 last_step=None,
                 force_full_denoise=True,

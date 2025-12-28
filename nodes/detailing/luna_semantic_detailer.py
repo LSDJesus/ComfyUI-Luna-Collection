@@ -193,7 +193,7 @@ class LunaSemanticDetailer:
         # Get image dimensions
         b, h, w, c = image.shape
         
-        # Prepare crops and metadata (no prompts needed, using pre-encoded conditioning)
+        # Prepare crops and metadata
         crop_data = self._prepare_crops(
             image, full_scaffold, list(detections), h, w
         )
@@ -203,22 +203,20 @@ class LunaSemanticDetailer:
             empty_mask = previous_refinement_mask if previous_refinement_mask is not None else torch.zeros(b, h, w, device=device)
             return (image, full_latent, detection_pipe, empty_mask)
         
-        # Initialize sampler
-        sampler_obj = comfy.samplers.KSampler(
-            model,
-            steps=steps,
-            device=device,
-            sampler=sampler,
-            scheduler=scheduler,
-            denoise=1.0,
-            model_options=model.model_options
-        )
+        # Crop global conditioning for each detection region
+        # Import the helper from chess refiner
+        from .luna_chess_refiner import crop_conditioning_for_tile
         
-        # Calculate start step based on denoise
-        total_steps = len(sampler_obj.sigmas) - 1
-        start_step = int(total_steps * (1.0 - denoise))
-        sigmas = sampler_obj.sigmas[start_step:]
-        initial_sigma = sampler_obj.sigmas[start_step]
+        canvas_size_px = (w, h)
+        cropped_global_positive = []
+        
+        for crop_info in crop_data:
+            crop_x1, crop_y1, crop_x2, crop_y2 = crop_info["original_box"]
+            tile_region_px = (crop_x1, crop_y1, crop_x2, crop_y2)
+            
+            # Crop global conditioning to this detection region (no scaling needed - same resolution)
+            cropped_pos = crop_conditioning_for_tile(positive, tile_region_px, canvas_size_px, scale_from=1.0)
+            cropped_global_positive.append(cropped_pos)
         
         # Process crops in batches
         refined_crops = []
@@ -235,9 +233,21 @@ class LunaSemanticDetailer:
             # Encode pixels to latent
             batch_latents = vae.encode(batch_pixels.permute(0, 3, 1, 2))
             
-            # Get pre-encoded conditioning for this batch
+            # Build conditioning for this batch
             batch_indices = range(i, min(i + tile_batch_size, len(crop_data)))
-            batch_positive = [positive_list[idx] for idx in batch_indices]
+            batch_positive = []
+            
+            for idx in batch_indices:
+                # Start with cropped global conditioning
+                combined_cond = cropped_global_positive[idx]
+                
+                # If concept override exists, concatenate it
+                if idx < len(positive_list) and positive_list[idx] is not None:
+                    concept_cond = positive_list[idx]
+                    # Concatenate: cropped global + concept override
+                    combined_cond = combined_cond + concept_cond
+                
+                batch_positive.append(combined_cond)
             
             # Replicate negative for batch
             batch_negative = self._replicate_conditioning(negative, len(batch))
@@ -246,25 +256,21 @@ class LunaSemanticDetailer:
             device = batch_latents.device
             batch_noise = batch_noise.to(device)
             
-            # Pre-inject scaffold noise at starting sigma
-            initial_sigma_val = initial_sigma.item() if isinstance(initial_sigma, torch.Tensor) else initial_sigma
-            noised_latents = batch_latents + batch_noise * initial_sigma_val
-            
-            # Sample with pre-noised latent (like KSampler Advanced with add_noise="disable")
+            # Pass scaffold noise to sampler - it will scale by appropriate sigma based on denoise
             with torch.inference_mode():
                 refined_latent = comfy.sample.sample(
                     model,
-                    noise=torch.zeros_like(noised_latents),  # Zero noise (already pre-noised)
+                    noise=batch_noise,              # Scaffold noise - sampler scales it
                     steps=steps,
                     cfg=cfg,
                     sampler_name=sampler,
                     scheduler=scheduler,
                     positive=batch_positive,
                     negative=batch_negative,
-                    latent_image=noised_latents,   # Pre-noised with scaffold
+                    latent_image=batch_latents,    # Clean latent
                     denoise=denoise,
-                    disable_noise=True,            # Don't add more noise!
-                    start_step=start_step,
+                    disable_noise=False,           # Let sampler inject scaled noise
+                    start_step=None,               # Let denoise handle the schedule
                     last_step=None,
                     force_full_denoise=True,
                     noise_mask=None,

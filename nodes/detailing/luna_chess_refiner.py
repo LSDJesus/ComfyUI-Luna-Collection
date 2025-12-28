@@ -27,6 +27,78 @@ import comfy.model_management
 import comfy.sampler_helpers
 
 
+def crop_conditioning_for_tile(conditioning, tile_region_px, canvas_size_px, scale_from=1.0):
+    """
+    Crop conditioning to match a specific tile region.
+    
+    Critical for tiled refinement - tells the model which spatial region
+    it's working on instead of trying to generate the entire image in each tile.
+    
+    Args:
+        conditioning: ComfyUI conditioning tuple
+        tile_region_px: (x0, y0, x1, y1) in pixel space
+        canvas_size_px: (width, height) of full canvas in pixels
+        scale_from: Scale factor if conditioning was created at different resolution
+                   (e.g., 4.0 if conditioning is from 1K but canvas is 4K)
+    
+    Returns:
+        Cropped conditioning for the tile
+    """
+    x0, y0, x1, y1 = tile_region_px
+    canvas_w, canvas_h = canvas_size_px
+    
+    cropped = []
+    for emb, cond_dict in conditioning:
+        cond_dict = cond_dict.copy()
+        
+        # Crop area conditioning if present
+        if "area" in cond_dict:
+            # Area format: (h, w, y, x) in latent space (1/8 pixels)
+            h, w, y, x = cond_dict["area"]
+            
+            # Scale up area coords if conditioning was created at different resolution
+            if scale_from != 1.0:
+                h = int(h * scale_from)
+                w = int(w * scale_from)
+                y = int(y * scale_from)
+                x = int(x * scale_from)
+            
+            # Convert to pixel space
+            area_x0, area_y0 = x * 8, y * 8
+            area_x1, area_y1 = area_x0 + w * 8, area_y0 + h * 8
+            
+            # Check intersection with tile
+            intersect_x0 = max(area_x0, x0)
+            intersect_y0 = max(area_y0, y0)
+            intersect_x1 = min(area_x1, x1)
+            intersect_y1 = min(area_y1, y1)
+            
+            if intersect_x0 < intersect_x1 and intersect_y0 < intersect_y1:
+                # There's an intersection - adjust area to tile-relative coords
+                rel_x0 = intersect_x0 - x0
+                rel_y0 = intersect_y0 - y0
+                rel_x1 = intersect_x1 - x0
+                rel_y1 = intersect_y1 - y0
+                
+                # Convert back to latent space
+                cond_dict["area"] = (
+                    (rel_y1 - rel_y0) // 8,  # h
+                    (rel_x1 - rel_x0) // 8,  # w
+                    rel_y0 // 8,              # y
+                    rel_x0 // 8               # x
+                )
+            else:
+                # No intersection - remove area conditioning
+                if "area" in cond_dict:
+                    del cond_dict["area"]
+                if "strength" in cond_dict:
+                    del cond_dict["strength"]
+        
+        cropped.append([emb, cond_dict])
+    
+    return cropped
+
+
 def get_scheduler_names():
     """Get current scheduler names dynamically to avoid type mismatches."""
     try:
@@ -128,7 +200,14 @@ class LunaChessRefiner:
             },
             "optional": {
                 "refinement_mask": ("MASK", {
-                    "tooltip": "Mask from Semantic Detailer (reduces denoise in refined areas)"
+                    "tooltip": "Mask from Semantic Detailer (reduces noise in refined areas)"
+                }),
+                "mask_noise_factor": ("FLOAT", {
+                    "default": 0.5,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.05,
+                    "tooltip": "Noise multiplier for masked (already refined) areas. 0.5 = half noise in those regions"
                 }),
             }
         }
@@ -152,7 +231,8 @@ class LunaChessRefiner:
         tile_batch_size: int,
         scale: float,
         feathering: float,
-        refinement_mask = None
+        refinement_mask = None,
+        mask_noise_factor: float = 0.5
     ) -> tuple:
         """
         Perform global tiled refinement with chess pattern.
@@ -182,22 +262,6 @@ class LunaChessRefiner:
             print(f"  ⚠️  Warning: Only 1 tile detected. Chess refinement ineffective.")
             print(f"     Suggest reducing tile_size to {max(32, tile_lat // 2)}px for multiple tiles.")
         
-        # Initialize sampler for sigma calculation only
-        sampler_obj = comfy.samplers.KSampler(
-            model,
-            steps=steps,
-            device=device,
-            sampler=sampler,
-            scheduler=scheduler,
-            denoise=denoise,  # Use actual denoise for sigma calculation
-            model_options=model.model_options
-        )
-        
-        # Get the initial sigma for pre-noising (first sigma in the denoised schedule)
-        initial_sigma = sampler_obj.sigmas[0]
-        
-        print(f"  Denoise: {denoise}, Initial sigma: {initial_sigma:.4f}, Steps: {len(sampler_obj.sigmas)-1}")
-        
         # Extract noise slices from master scaffold (matching latent dimensions)
         scaff_samples = full_scaffold["samples"]
         noise_slices = scaff_samples[:, :, :lat_h, :lat_w]
@@ -210,15 +274,30 @@ class LunaChessRefiner:
         # Generate blend mask for tiles
         blend_mask = self._create_blend_mask(tile_lat, tile_lat, overlap_h, overlap_w, feathering, device)
         
+        # Prepare refinement mask in latent space if provided
+        latent_refinement_mask = None
+        if refinement_mask is not None:
+            # Refinement mask is in pixel space [B, H, W], resize to latent space
+            mask_tensor = refinement_mask
+            if mask_tensor.dim() == 2:
+                mask_tensor = mask_tensor.unsqueeze(0)  # Add batch dim
+            latent_refinement_mask = F.interpolate(
+                mask_tensor.unsqueeze(1).float(),  # [B, 1, H, W]
+                size=(lat_h, lat_w),
+                mode='bilinear',
+                align_corners=False
+            ).squeeze(1).to(device)  # [B, H, W]
+            print(f"  Refinement mask provided: noise in masked areas scaled by {mask_noise_factor}")
+        
         # Progress tracking
         total_tiles = rows * cols
         pbar = comfy.utils.ProgressBar(total_tiles)
         
         # Chess Pass 1: EVEN tiles
         latent_canvas, pixel_canvas = self._process_chess_pass(
-            latent_canvas, pixel_canvas, noise_slices, "even", rows, cols, tile_lat, overlap_h, overlap_w,
+            latent_canvas, latent_original, pixel_canvas, noise_slices, "even", rows, cols, tile_lat, overlap_h, overlap_w,
             model, positive, negative, vae, steps, cfg, seed, sampler, scheduler,
-            initial_sigma, tile_batch_size, blend_mask, refinement_mask, denoise, feathering, pbar
+            tile_batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar
         )
         
         # Clear GPU cache between passes
@@ -226,9 +305,9 @@ class LunaChessRefiner:
         
         # Chess Pass 2: ODD tiles
         latent_canvas, pixel_canvas = self._process_chess_pass(
-            latent_canvas, pixel_canvas, noise_slices, "odd", rows, cols, tile_lat, overlap_h, overlap_w,
+            latent_canvas, latent_original, pixel_canvas, noise_slices, "odd", rows, cols, tile_lat, overlap_h, overlap_w,
             model, positive, negative, vae, steps, cfg, seed + 1, sampler, scheduler,
-            initial_sigma, tile_batch_size, blend_mask, refinement_mask, denoise, feathering, pbar
+            tile_batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar
         )
         
         # Clear GPU cache (pixel canvas is already on CPU, fully built)
@@ -279,15 +358,18 @@ class LunaChessRefiner:
         return rows, cols, overlap_h, overlap_w
     
     def _process_chess_pass(
-        self, latent_canvas, pixel_canvas, noise, parity, rows, cols, tile_size, ov_h, ov_w,
+        self, latent_canvas, latent_original, pixel_canvas, noise, parity, rows, cols, tile_size, ov_h, ov_w,
         model, pos, neg, vae, steps, cfg, seed, sampler_name, scheduler_name,
-        initial_sigma, batch_size, blend_mask, refinement_mask, denoise, feathering, pbar
+        batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar
     ):
         """
         Process one chess pass (even or odd tiles).
         
         Key fix: Extract tiles from latent_original (unchanged), composite onto latent_canvas.
         This prevents artifacts from refining partially-refined latents.
+        
+        If latent_refinement_mask is provided, create per-tile noise_masks that reduce
+        noise in already-refined areas by mask_noise_factor.
         
         Returns both updated latent_canvas (GPU) and pixel_canvas (CPU).
         """
@@ -319,10 +401,23 @@ class LunaChessRefiner:
                     lat_crop = latent_original[:, :, y0:y1, x0:x1]
                     noise_crop = noise[:, :, y0:y1, x0:x1]
                     
+                    # Extract refinement mask crop if available
+                    mask_crop = None
+                    if latent_refinement_mask is not None:
+                        mask_crop = latent_refinement_mask[:, y0:y1, x0:x1]
+                    
                     tiles_data.append({
                         "latent": lat_crop,
                         "noise": noise_crop,
-                        "coords": (y0, x0, y1, x1)
+                        "mask": mask_crop,
+                        "coords": (y0, x0, y1, x1),
+                        "grid_pos": (yi, xi),  # Store grid position for edge detection
+                        "is_edge": {
+                            "top": yi == 0,
+                            "bottom": yi == rows - 1,
+                            "left": xi == 0,
+                            "right": xi == cols - 1
+                        }
                     })
         
         # Process in batches
@@ -334,34 +429,53 @@ class LunaChessRefiner:
             # Stack scaffold noise slices (1:1 matching, no resize needed)
             batch_scaffold_noise = torch.cat([t["noise"] for t in chunk], dim=0)
             
+            # Crop conditioning for each tile in the batch
+            # CRITICAL: Each tile needs conditioning that matches its spatial region
+            canvas_size_px = (W * 8, H * 8)  # Latent to pixel space (note: W, H order matches canvas shape)
+            
+            # Use global conditioning for the batch - same conditioning for all tiles
+            # This matches how Ultimate SD Upscale works (no per-tile conditioning)
+            batch_positive = pos
+            batch_negative = neg
+            
+            # Create noise_mask if refinement mask provided
+            # noise_mask: 1.0 = full noise, mask_noise_factor = reduced noise in refined areas
+            batch_noise_mask = None
+            if chunk[0]["mask"] is not None:
+                mask_crops = torch.cat([t["mask"] for t in chunk], dim=0)  # [B, H, W]
+                # Convert to noise scaling: unrefined=1.0, refined=mask_noise_factor
+                # mask_crops: 1.0 where refined, 0.0 where unrefined
+                batch_noise_mask = 1.0 - mask_crops * (1.0 - mask_noise_factor)
+                batch_noise_mask = batch_noise_mask.unsqueeze(1).to(device)  # [B, 1, H, W]
+            
             # Ensure same device
             batch_scaffold_noise = batch_scaffold_noise.to(device)
             
-            # Pre-inject scaffold noise at the starting sigma level
-            initial_sigma_val = initial_sigma.item() if isinstance(initial_sigma, torch.Tensor) else initial_sigma
-            noised_latents = batch_latents + batch_scaffold_noise * initial_sigma_val
+            # Apply noise mask to scaffold noise if available
+            if batch_noise_mask is not None:
+                batch_scaffold_noise = batch_scaffold_noise * batch_noise_mask
+                print(f"[LunaChessRefiner] {parity.upper()} Batch {i//batch_size + 1}: {len(chunk)} tiles, denoise={denoise}, mask_factor={mask_noise_factor}")
+            else:
+                print(f"[LunaChessRefiner] {parity.upper()} Batch {i//batch_size + 1}: {len(chunk)} tiles, denoise={denoise}")
             
-            print(f"[LunaChessRefiner] {parity.upper()} Batch {i//batch_size + 1}: {len(chunk)} tiles, σ={initial_sigma_val:.4f}")
-            
-            # Sample with disable_noise=True since we pre-noised
-            # This is like KSampler Advanced with add_noise="disable"
+            # Pass scaffold noise to sampler - it will scale by appropriate sigma based on denoise
             with torch.inference_mode():
                 refined_batch = comfy.sample.sample(
                     model,
-                    noise=torch.zeros_like(noised_latents),  # Zero noise (already pre-noised)
+                    noise=batch_scaffold_noise,     # Scaffold noise (optionally masked)
                     steps=steps,
                     cfg=cfg,
                     sampler_name=sampler_name,
                     scheduler=scheduler_name,
-                    positive=pos,
-                    negative=neg,
-                    latent_image=noised_latents,    # Pre-noised with scaffold
-                    denoise=denoise,                # Let sampler handle the schedule!
-                    disable_noise=True,             # Don't add more noise!
+                    positive=batch_positive,        # List of per-tile conditioning
+                    negative=batch_negative,        # List of per-tile conditioning
+                    latent_image=batch_latents,     # Clean latent canvas
+                    denoise=denoise,                # Sampler handles sigma schedule
+                    disable_noise=False,            # Let sampler inject scaled noise
                     start_step=None,                # Let denoise handle it
                     last_step=None,
                     force_full_denoise=True,
-                    noise_mask=None,
+                    noise_mask=None,                # We pre-scaled the noise instead
                     sigmas=None,                    # Let sampler calculate from denoise
                     callback=None,
                     disable_pbar=False,
@@ -390,14 +504,16 @@ class LunaChessRefiner:
             del refined_pixels_list
             
             # Composite latent tiles onto latent canvas (GPU)
-            self._composite_latent_tiles(latent_canvas, refined_batch, chunk, blend_mask)
+            self._composite_latent_tiles(latent_canvas, refined_batch, chunk, blend_mask, parity)
             
             # Free GPU memory before pixel compositing
-            del refined_batch, batch_latents, batch_scaffold_noise, noised_latents
+            del refined_batch, batch_latents, batch_scaffold_noise
+            if batch_noise_mask is not None:
+                del batch_noise_mask
             torch.cuda.empty_cache()
             
             # Composite pixel tiles onto pixel canvas (CPU)
-            self._composite_pixel_tiles(pixel_canvas, refined_pixels, chunk, tile_size, ov_h, ov_w, feathering)
+            self._composite_pixel_tiles(pixel_canvas, refined_pixels, chunk, tile_size, ov_h, ov_w, feathering, parity)
             
             # Free pixel batch
             del refined_pixels
@@ -410,35 +526,44 @@ class LunaChessRefiner:
         
         return latent_canvas, pixel_canvas
     
-    def _composite_latent_tiles(self, latent_canvas, refined_batch, chunk_info, mask):
+    def _composite_latent_tiles(self, latent_canvas, refined_batch, chunk_info, mask, parity):
         """Composite refined latent tiles onto latent canvas (GPU operation)."""
+        # Even pass: no blending (first tiles placed)
+        # Odd pass: blend with mask
+        use_blending = (parity == "odd")
+        
         for i, info in enumerate(chunk_info):
             refined_tile = refined_batch[i]
             y0, x0, y1, x1 = info["coords"]
             
-            current_bg = latent_canvas[:, :, y0:y1, x0:x1]
-            
-            # Ensure same device
-            device = latent_canvas.device
-            refined_tile = refined_tile.to(device)
-            mask_tile = mask.to(device)
-            
-            # Blend with mask
-            diff = refined_tile - current_bg
-            diff = diff * mask_tile
-            current_bg = current_bg + diff
-            
-            latent_canvas[:, :, y0:y1, x0:x1] = current_bg
+            if use_blending:
+                current_bg = latent_canvas[:, :, y0:y1, x0:x1]
+                
+                # Ensure same device
+                device = latent_canvas.device
+                refined_tile = refined_tile.to(device)
+                mask_tile = mask.to(device)
+                
+                # Blend with mask
+                diff = refined_tile - current_bg
+                diff = diff * mask_tile
+                current_bg = current_bg + diff
+                
+                latent_canvas[:, :, y0:y1, x0:x1] = current_bg
+            else:
+                # Even pass: direct paste, no blending
+                latent_canvas[:, :, y0:y1, x0:x1] = refined_tile.to(latent_canvas.device)
     
-    def _composite_pixel_tiles(self, pixel_canvas, refined_pixels, chunk_info, tile_size, ov_h, ov_w, feathering):
+    def _composite_pixel_tiles(self, pixel_canvas, refined_pixels, chunk_info, tile_size, ov_h, ov_w, feathering, parity):
         """Composite refined pixel tiles onto pixel canvas (CPU operation)."""
-        # Create pixel-space blend mask
+        # Even pass: no feathering (first tiles)
+        # Odd pass: feather only edges that overlap with even tiles
+        use_feathering = (parity == "odd")
+        
         pixel_tile_h = tile_size * 8
         pixel_tile_w = tile_size * 8
         pixel_ov_h = ov_h * 8
         pixel_ov_w = ov_w * 8
-        
-        pixel_mask = self._create_pixel_blend_mask(pixel_tile_h, pixel_tile_w, pixel_ov_h, pixel_ov_w, feathering)
         
         for i, info in enumerate(chunk_info):
             refined_tile = refined_pixels[i:i+1]  # Keep batch dim [1, H, W, C]
@@ -450,17 +575,36 @@ class LunaChessRefiner:
             y1 = y1_lat * 8
             x1 = x1_lat * 8
             
-            current_bg = pixel_canvas[:, y0:y1, x0:x1, :]
-            
-            # Blend with mask (all CPU)
-            diff = refined_tile - current_bg
-            diff = diff * pixel_mask
-            current_bg = current_bg + diff
-            
-            pixel_canvas[:, y0:y1, x0:x1, :] = current_bg
+            if use_feathering:
+                # Create edge-specific mask for odd tiles
+                # Only feather edges that aren't on the canvas boundary
+                is_edge = info["is_edge"]
+                pixel_mask = self._create_edge_aware_blend_mask(
+                    pixel_tile_h, pixel_tile_w, 
+                    pixel_ov_h, pixel_ov_w, 
+                    feathering,
+                    feather_top=not is_edge["top"],
+                    feather_bottom=not is_edge["bottom"],
+                    feather_left=not is_edge["left"],
+                    feather_right=not is_edge["right"]
+                )
+                
+                current_bg = pixel_canvas[:, y0:y1, x0:x1, :]
+                
+                # Blend with mask (all CPU)
+                diff = refined_tile - current_bg
+                diff = diff * pixel_mask
+                current_bg = current_bg + diff
+                
+                pixel_canvas[:, y0:y1, x0:x1, :] = current_bg
+            else:
+                # Even pass: direct paste, no feathering
+                pixel_canvas[:, y0:y1, x0:x1, :] = refined_tile
     
-    def _create_pixel_blend_mask(self, h, w, ov_h, ov_w, feather):
-        """Create blend mask for pixel tiles (CPU)."""
+    def _create_edge_aware_blend_mask(self, h, w, ov_h, ov_w, feather, 
+                                       feather_top=True, feather_bottom=True, 
+                                       feather_left=True, feather_right=True):
+        """Create blend mask with selective edge feathering."""
         mask = torch.ones((1, h, w, 1))  # BHWC format for pixels
         
         def smoothstep(length):
@@ -471,17 +615,27 @@ class LunaChessRefiner:
                 t = torch.clamp(t, 0.0, 1.0)
             return t * t * (3.0 - 2.0 * t)
         
+        # Only apply feathering to edges that should be blended
         if ov_h > 0:
             curve = smoothstep(ov_h).view(1, -1, 1, 1)
-            mask[:, :ov_h, :, :] *= curve
-            mask[:, -ov_h:, :, :] *= curve.flip(1)
+            if feather_top:
+                mask[:, :ov_h, :, :] *= curve
+            if feather_bottom:
+                mask[:, -ov_h:, :, :] *= curve.flip(1)
         
         if ov_w > 0:
             curve = smoothstep(ov_w).view(1, 1, -1, 1)
-            mask[:, :, :ov_w, :] *= curve
-            mask[:, :, -ov_w:, :] *= curve.flip(2)
+            if feather_left:
+                mask[:, :, :ov_w, :] *= curve
+            if feather_right:
+                mask[:, :, -ov_w:, :] *= curve.flip(2)
         
         return mask
+    
+    def _create_pixel_blend_mask(self, h, w, ov_h, ov_w, feather):
+        """Create blend mask for pixel tiles (CPU). DEPRECATED - use _create_edge_aware_blend_mask"""
+        return self._create_edge_aware_blend_mask(h, w, ov_h, ov_w, feather, 
+                                                   True, True, True, True)
     
     def _composite_tiles(self, canvas, refined_batch, chunk_info, mask):
         """Composite refined tiles onto canvas with blending."""
