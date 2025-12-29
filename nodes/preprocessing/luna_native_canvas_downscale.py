@@ -37,6 +37,10 @@ class LunaNativeCanvasDownscale:
                     "step": 0.5,
                     "tooltip": "Downscale factor (4.0 = 4K→1K, 2.0 = 2K→1K)"
                 }),
+                "variance_correction": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Apply variance correction after downscaling. Disable for low-variance 'flat' generation."
+                }),
             }
         }
     
@@ -50,7 +54,8 @@ class LunaNativeCanvasDownscale:
         latent_4k: dict,
         positive_4k,
         negative_4k,
-        scale_factor: float
+        scale_factor: float,
+        variance_correction: bool = True
     ) -> tuple:
         """
         Downscale latent and conditioning from target resolution to model native.
@@ -75,15 +80,23 @@ class LunaNativeCanvasDownscale:
             mode='area'
         )
         
-        # Variance correction for downscaling
-        # When downscaling, we're averaging pixels - need to scale variance
-        # Area mode naturally handles this, but we add a small correction
-        variance_scale = scale_factor ** 0.5  # Square root for 2D scaling
-        downscaled_samples = downscaled_samples * variance_scale
+        # Variance correction for downscaling (optional)
+        if variance_correction:
+            # When downscaling, we're averaging pixels - need to scale variance
+            # Area mode naturally handles this, but we add a correction
+            variance_scale = scale_factor ** 0.5  # Square root for 2D scaling
+            downscaled_samples = downscaled_samples * variance_scale
+            print(f"[LunaNativeCanvasDownscale] ✓ Variance correction applied (×{variance_scale:.2f})")
+        else:
+            # Skip correction - creates low-variance "flat" generation
+            print(f"[LunaNativeCanvasDownscale] ⚠ Variance correction DISABLED - flat generation mode")
         
         latent_1k = {"samples": downscaled_samples}
         
         # Downscale conditioning area coordinates
+        
+        if not variance_correction:
+            print(f"[LunaNativeCanvasDownscale] → Expect soft/flat 1K generation, detail added by upscale+refinement")
         positive_1k = self._downscale_conditioning(positive_4k, scale_factor)
         negative_1k = self._downscale_conditioning(negative_4k, scale_factor)
         

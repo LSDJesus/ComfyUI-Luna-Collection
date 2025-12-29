@@ -748,9 +748,9 @@ class LunaBatchPromptLoader:
                     "control_after_generate": True,
                     "tooltip": "Current index in the prompt list. Use increment/randomize to step through entries."
                 }),
-                "lora_output": (["stack_only", "inline_only", "both"], {
+                "lora_output": (["stack_only", "inline_only", "both", "none"], {
                     "default": "stack_only",
-                    "tooltip": "stack_only: LORA_STACK output only\ninline_only: Append <lora:> tags to prompt\nboth: Both outputs"
+                    "tooltip": "stack_only: LORA_STACK output only\ninline_only: Append <lora:> tags to prompt\nboth: Both outputs\nnone: Strip inline LoRAs from prompt, return empty stack"
                 }),
                 "lora_validation": (["include_all", "only_existing"], {
                     "default": "include_all",
@@ -963,36 +963,58 @@ class LunaBatchPromptLoader:
             lora_stack = []
             inline_lora_strings = []
             
-            for lora in loras:
-                name = lora.get("name", "")
-                model_strength = float(lora.get("model_strength", lora.get("weight", 1.0)))
-                clip_strength = float(lora.get("clip_strength", model_strength))
+            # Handle "none" mode - strip inline LoRAs from prompt and skip lora_stack
+            if lora_output == "none":
+                # Strip any <lora:...> tags from the prompt
+                pos_prompt = re.sub(r'<lora:[^>]+>', '', pos_prompt).strip()
+                neg_prompt = re.sub(r'<lora:[^>]+>', '', neg_prompt).strip()
+                # lora_stack remains empty
+            else:
+                for lora in loras:
+                    name = lora.get("name", "")
+                    model_strength = float(lora.get("model_strength", lora.get("weight", 1.0)))
+                    clip_strength = float(lora.get("clip_strength", model_strength))
+                    
+                    # Resolve path and validate if needed
+                    resolved_name = name
+                    if lora_validation == "only_existing":
+                        resolved_path = self.resolve_lora_path(name)
+                        if resolved_path is None:
+                            # Skip this LoRA - doesn't exist
+                            print(f"[LunaBatchPromptLoader] Skipping LoRA '{name}' - not found on disk")
+                            continue
+                        resolved_name = resolved_path
+                    
+                    # Add to stack (unless inline_only)
+                    if lora_output != "inline_only":
+                        lora_stack.append((resolved_name, model_strength, clip_strength))
+                    
+                    # Build inline string (unless stack_only)
+                    if lora_output != "stack_only":
+                        # Format: <lora:name:model:clip> or <lora:name:weight> if same
+                        if abs(model_strength - clip_strength) < 0.001:
+                            inline_lora_strings.append(f"<lora:{resolved_name}:{model_strength:.2f}>")
+                        else:
+                            inline_lora_strings.append(f"<lora:{resolved_name}:{model_strength:.2f}:{clip_strength:.2f}>")
                 
-                # Resolve path and validate if needed
-                resolved_name = name
-                if lora_validation == "only_existing":
-                    resolved_path = self.resolve_lora_path(name)
-                    if resolved_path is None:
-                        # Skip this LoRA - doesn't exist
-                        print(f"[LunaBatchPromptLoader] Skipping LoRA '{name}' - not found on disk")
-                        continue
-                    resolved_name = resolved_path
-                
-                # Add to stack (unless inline_only)
-                if lora_output != "inline_only":
-                    lora_stack.append((resolved_name, model_strength, clip_strength))
-                
-                # Build inline string (unless stack_only)
-                if lora_output != "stack_only":
-                    # Format: <lora:name:model:clip> or <lora:name:weight> if same
-                    if abs(model_strength - clip_strength) < 0.001:
-                        inline_lora_strings.append(f"<lora:{resolved_name}:{model_strength:.2f}>")
-                    else:
-                        inline_lora_strings.append(f"<lora:{resolved_name}:{model_strength:.2f}:{clip_strength:.2f}>")
+                # Append inline LoRAs to positive prompt if needed (avoid duplicates)
+                if inline_lora_strings and lora_output in ("inline_only", "both"):
+                    # Filter out LoRAs that already exist in the prompt
+                    new_loras = []
+                    for lora_str in inline_lora_strings:
+                        # Extract LoRA name from <lora:name:...> to check for existing tags
+                        lora_name = lora_str.split(':')[1] if ':' in lora_str else ""
+                        # Check if this LoRA already exists in prompt
+                        if not re.search(rf'<lora:{re.escape(lora_name)}[^>]*>', pos_prompt):
+                            new_loras.append(lora_str)
+                    
+                    # Only append if there are new LoRAs to add
+                    if new_loras:
+                        pos_prompt = pos_prompt.strip() + " " + " ".join(new_loras)
             
-            # Append inline LoRAs to positive prompt if needed
-            if inline_lora_strings and lora_output in ("inline_only", "both"):
-                pos_prompt = pos_prompt.strip() + " " + " ".join(inline_lora_strings)
+            # Strip inline LoRAs when using stack_only (to avoid duplication with lora_stack)
+            if lora_output == "stack_only" and loras:
+                pos_prompt = re.sub(r'<lora:[^>]+>', '', pos_prompt).strip()
             
             return (pos_prompt, neg_prompt, lora_stack, extracted_seed, current_index, total, list_complete, img_width, img_height)
             

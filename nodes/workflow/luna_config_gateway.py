@@ -41,7 +41,8 @@ class LunaConfigGateway:
     FUNCTION = "process"
 
     # Regex to extract <lora:name:weight> or <lora:name:model_weight:clip_weight>
-    LORA_PATTERN = re.compile(r'<lora:([^:>]+):([^:>]+)(?::([^>]+))?>')
+    # Weights must be numeric (float or int), allowing negative values and scientific notation
+    LORA_PATTERN = re.compile(r'<lora:([^:>]+):(-?\d+\.?\d*(?:[eE][+-]?\d+)?)(?::(-?\d+\.?\d*(?:[eE][+-]?\d+)?))?>')
 
     @classmethod
     def INPUT_TYPES(cls):
