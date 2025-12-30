@@ -120,6 +120,7 @@ def register_routes():
             
             # Build GPU array for multi-GPU display
             gpus = []
+            daemon_clip_device = info.get("devices", {}).get("clip", "cuda:0")
             for device_id, vram in vram_info.items():
                 used = vram.get("used_gb", 0)
                 total = vram.get("total_gb", 0)
@@ -127,11 +128,14 @@ def register_routes():
                 percent = (used / total * 100) if total > 0 else 0
                 
                 # Determine if this is the daemon device
-                is_daemon_device = device_id == f"cuda:{info.get('devices', {}).get('clip', '0').split(':')[1]}"
+                is_daemon_device = (device_id == daemon_clip_device)
+                
+                # Get GPU name from device ID
+                gpu_id_num = device_id.split(":")[-1] if ":" in device_id else "0"
                 
                 gpus.append({
-                    "id": device_id.split(":")[-1],
-                    "name": f"GPU {device_id.split(':')[-1]}",
+                    "id": gpu_id_num,
+                    "name": f"GPU {gpu_id_num}",
                     "used_gb": round(used, 2),
                     "reserved_gb": round(reserved, 2),
                     "total_gb": round(total, 1),

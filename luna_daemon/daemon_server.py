@@ -283,6 +283,7 @@ class LunaDaemon:
         self._start_time = time.time()
         self._request_count = 0
         self._clip_request_count = 0
+        self._vae_request_count = 0  # Track VAE requests separately
         
         # Configuration state
         self._attention_mode = "auto"  # Current attention mode setting
@@ -299,10 +300,13 @@ class LunaDaemon:
             "uptime_sec": time.time() - self._start_time,
             "request_count": self._request_count,
             "clip_request_count": self._clip_request_count,
+            "vae_request_count": self._vae_request_count,  # Add VAE request count
             "service_type": self.service_type.name if hasattr(self.service_type, 'name') else str(self.service_type),
             "attention_mode": self._attention_mode,
             "devices": {
-                "clip": self.clip_device
+                "clip": self.clip_device,
+                "vae": self.vae_device if hasattr(self, 'vae_device') else self.clip_device,
+                "llm": self.llm_device if hasattr(self, 'llm_device') else self.clip_device
             }
         }
         if self.clip_pool:
@@ -739,18 +743,33 @@ class LunaDaemon:
             
             # Handle specific task types
             if task_name == "save_images_async":
-                # For now, execute synchronously
-                # TODO: Implement actual async task queue
+                # Execute image saving in background thread
                 try:
-                    # Image saving would happen here
-                    # For now just return success
+                    import threading
+                    
+                    num_images = len(task_data.get("images", []))
+                    
+                    def save_worker():
+                        """Background worker for saving images"""
+                        try:
+                            self._save_images_worker(task_data, job_id)
+                        except Exception as e:
+                            logger.error(f"[Daemon] Image save worker error (Job {job_id}): {e}", exc_info=True)
+                    
+                    # Launch background thread
+                    thread = threading.Thread(target=save_worker, daemon=True, name=f"ImgSave-{job_id}")
+                    thread.start()
+                    
+                    logger.info(f"[Daemon] Image save job {job_id} submitted ({num_images} images)")
+                    
                     return {
                         "success": True,
                         "job_id": job_id,
-                        "num_images": task_data.get("num_images", 0),
-                        "message": "Images saved (sync mode)"
+                        "num_images": num_images,
+                        "message": f"Image save job submitted (ID: {job_id})"
                     }
                 except Exception as e:
+                    logger.error(f"[Daemon] Failed to submit image save job: {e}", exc_info=True)
                     return {"success": False, "error": str(e)}
             else:
                 return {"error": f"Unknown task type: {task_name}"}
@@ -1318,6 +1337,152 @@ class LunaDaemon:
             except Exception as e:
                 if self._running:
                     logger.error(f"Accept error: {e}")
+    
+    def _save_images_worker(self, task_data: Dict[str, Any], job_id: str):
+        """Background worker that actually saves images to disk"""
+        try:
+            import json
+            import numpy as np
+            from PIL import Image
+            from PIL.PngImagePlugin import PngInfo
+            from datetime import datetime
+            
+            # Try to import piexif for EXIF support
+            try:
+                import piexif
+                import piexif.helper
+                has_piexif = True
+            except ImportError:
+                has_piexif = False
+            
+            # Extract all parameters from task_data
+            save_path = task_data.get("save_path", "")
+            filename_template = task_data.get("filename", "")
+            model_name_raw = task_data.get("model_name", "")
+            quality_gate = task_data.get("quality_gate", "disabled")
+            min_quality_threshold = task_data.get("min_quality_threshold", 0.3)
+            png_compression = task_data.get("png_compression", 4)
+            lossy_quality = task_data.get("lossy_quality", 90)
+            lossless_webp = task_data.get("lossless_webp", False)
+            embed_workflow = task_data.get("embed_workflow", True)
+            filename_index = task_data.get("filename_index", 0)
+            custom_metadata = task_data.get("custom_metadata", "")
+            metadata = task_data.get("metadata", {})
+            prompt = task_data.get("prompt")
+            extra_pnginfo = task_data.get("extra_pnginfo", {})
+            images = task_data.get("images", [])
+            output_dir = task_data.get("output_dir", "")
+            timestamp_str = task_data.get("timestamp", datetime.now().isoformat())
+            
+            # Parse timestamp
+            try:
+                timestamp = datetime.fromisoformat(timestamp_str)
+            except:
+                timestamp = datetime.now()
+            
+            saved_count = 0
+            
+            for img_data in images:
+                image_np = img_data.get("image")
+                affix = img_data.get("affix", "IMAGE")
+                fmt = img_data.get("format", "png")
+                use_subdir = img_data.get("subdir", True)
+                
+                if image_np is None:
+                    continue
+                
+                # Ensure numpy array
+                if not isinstance(image_np, np.ndarray):
+                    image_np = np.array(image_np)
+                
+                # Ensure proper range [0-255] uint8
+                if image_np.dtype != np.uint8:
+                    if image_np.max() <= 1.0:
+                        image_np = (image_np * 255).astype(np.uint8)
+                    else:
+                        image_np = image_np.astype(np.uint8)
+                
+                # Convert to PIL Image
+                pil_img = Image.fromarray(image_np)
+                
+                # Build save directory
+                if save_path:
+                    if use_subdir:
+                        save_dir = os.path.join(output_dir, save_path, affix)
+                    else:
+                        save_dir = os.path.join(output_dir, save_path)
+                else:
+                    if use_subdir:
+                        save_dir = os.path.join(output_dir, affix)
+                    else:
+                        save_dir = output_dir
+                
+                os.makedirs(save_dir, exist_ok=True)
+                
+                # Build filename
+                batch_timestamp = timestamp.strftime("%Y_%m_%d_%H%M%S")
+                
+                # Parse model name
+                model_name = os.path.basename(model_name_raw)
+                for ext in ('.safetensors', '.ckpt', '.pt', '.pth', '.bin', '.gguf'):
+                    if model_name.lower().endswith(ext):
+                        model_name = model_name[:-len(ext)]
+                        break
+                
+                # Simple filename generation
+                if filename_template:
+                    filename_base = filename_template.replace("%model_name%", model_name)
+                    filename_base = filename_base.replace("%index%", str(filename_index))
+                else:
+                    filename_base = f"{batch_timestamp}_{model_name}"
+                
+                ext = fmt.lower()
+                if ext == "jpeg":
+                    ext = "jpg"
+                
+                final_filename = f"{filename_base}_{affix}.{ext}"
+                file_path = os.path.join(save_dir, final_filename)
+                
+                # Save with metadata
+                if ext == 'png':
+                    png_metadata = None
+                    if embed_workflow:
+                        png_metadata = PngInfo()
+                        if prompt is not None:
+                            png_metadata.add_text("prompt", json.dumps(prompt))
+                        if extra_pnginfo is not None:
+                            for key in extra_pnginfo:
+                                png_metadata.add_text(key, json.dumps(extra_pnginfo[key]))
+                        if metadata:
+                            png_metadata.add_text("luna_metadata", json.dumps(metadata))
+                    
+                    pil_img.save(file_path, compress_level=png_compression, pnginfo=png_metadata)
+                
+                elif ext == 'webp':
+                    if lossless_webp:
+                        pil_img.save(file_path, lossless=True)
+                    else:
+                        pil_img.save(file_path, quality=lossy_quality)
+                
+                elif ext == 'jpg':
+                    # JPEG with EXIF metadata
+                    exif_data = None
+                    if embed_workflow and has_piexif:
+                        exif_dict = {"0th": {}, "Exif": {}, "GPS": {}}
+                        if metadata:
+                            user_comment = json.dumps(metadata)
+                            exif_dict["Exif"][piexif.ExifIFD.UserComment] = piexif.helper.UserComment.dump(user_comment)
+                        exif_data = piexif.dump(exif_dict)
+                    
+                    pil_img.save(file_path, quality=lossy_quality, exif=exif_data if exif_data else None)
+                
+                saved_count += 1
+                logger.debug(f"[Daemon] Saved image: {file_path}")
+            
+            logger.info(f"[Daemon] Image save job {job_id} complete ({saved_count} images saved)")
+            
+        except Exception as e:
+            logger.error(f"[Daemon] Image save worker error (Job {job_id}): {e}", exc_info=True)
     
     def stop(self):
         """Stop the daemon server."""

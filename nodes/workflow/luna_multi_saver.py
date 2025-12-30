@@ -46,22 +46,22 @@ class LunaMultiSaver:
                 "min_quality_threshold": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05, "tooltip": "Minimum quality score required for saving (0.3 recommended for filtering obviously bad images)"}),
             },
             "optional": {
-                "model_name": ("STRING", {"tooltip": "Full model path/name from checkpoint loader (e.g. Illustrious/3DCG/hsUltrahdCG_v60.safetensors)"}),
+                "model_name": ("STRING", {"tooltip": "(Deprecated) Model name - now auto-extracted from metadata input. Only needed if not using LunaConfigGateway."}),
                 "image_1": ("IMAGE", {"tooltip": "First image"}),
                 "image_2": ("IMAGE", {"tooltip": "Second image"}),
                 "image_3": ("IMAGE", {"tooltip": "Third image"}),
                 "image_4": ("IMAGE", {"tooltip": "Fourth image"}),
                 "image_5": ("IMAGE", {"tooltip": "Fifth image"}),
-                "affix_1": ("STRING", {"default": "RAW", "tooltip": "Affix name for image_1"}),
+                "affix_1": ("STRING", {"default": "ORIG", "tooltip": "Affix name for image_1"}),
                 "affix_2": ("STRING", {"default": "UPSCALED", "tooltip": "Affix name for image_2"}),
                 "affix_3": ("STRING", {"default": "DETAILED", "tooltip": "Affix name for image_3"}),
-                "affix_4": ("STRING", {"default": "IMAGE4", "tooltip": "Affix name for image_4"}),
+                "affix_4": ("STRING", {"default": "FINAL", "tooltip": "Affix name for image_4"}),
                 "affix_5": ("STRING", {"default": "IMAGE5", "tooltip": "Affix name for image_5"}),
-                "format_1": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_1"}),
-                "format_2": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_2"}),
-                "format_3": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_3"}),
-                "format_4": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_4"}),
-                "format_5": (["png", "webp", "jpeg"], {"default": "png", "tooltip": "Format for image_5"}),
+                "format_1": (["png", "webp", "jpeg", "no save"], {"default": "webp", "tooltip": "Format for image_1. Select 'no save' to skip saving this image."}),
+                "format_2": (["png", "webp", "jpeg", "no save"], {"default": "webp", "tooltip": "Format for image_2. Select 'no save' to skip saving this image."}),
+                "format_3": (["png", "webp", "jpeg", "no save"], {"default": "webp", "tooltip": "Format for image_3. Select 'no save' to skip saving this image."}),
+                "format_4": (["png", "webp", "jpeg", "no save"], {"default": "webp", "tooltip": "Format for image_4. Select 'no save' to skip saving this image."}),
+                "format_5": (["png", "webp", "jpeg", "no save"], {"default": "webp", "tooltip": "Format for image_5. Select 'no save' to skip saving this image."}),
                 "subdir_1": ("BOOLEAN", {"default": True, "label_on": "Subdir", "label_off": "Root", "tooltip": "Save image_1 to affix subdirectory"}),
                 "subdir_2": ("BOOLEAN", {"default": True, "label_on": "Subdir", "label_off": "Root", "tooltip": "Save image_2 to affix subdirectory"}),
                 "subdir_3": ("BOOLEAN", {"default": True, "label_on": "Subdir", "label_off": "Root", "tooltip": "Save image_3 to affix subdirectory"}),
@@ -556,9 +556,16 @@ class LunaMultiSaver:
                    png_compression=4, lossy_quality=90, lossless_webp=False, embed_workflow=True,
                    filename_index=0, custom_metadata="", metadata=None, prompt=None, extra_pnginfo=None):
 
-        # Use model_name as the raw model path for template processing
-        # model_name input contains the full path like "Illustrious/3DCG/hsUltrahdCG_v60.safetensors"
-        model_name_raw = model_name
+        # Extract model_name from metadata if available, otherwise use input
+        # Priority: metadata > model_name input > empty string
+        if metadata and isinstance(metadata, dict):
+            model_name_raw = metadata.get("model_name", metadata.get("model", ""))
+        else:
+            model_name_raw = model_name or ""
+        
+        if not model_name_raw and model_name:
+            # Fallback to direct input if metadata doesn't have it
+            model_name_raw = model_name
 
         # Generate single timestamp for all images in this batch
         batch_timestamp = datetime.now().strftime("%Y_%m_%d_%H%M%S")
@@ -577,6 +584,12 @@ class LunaMultiSaver:
         discarded_images = []
         
         for image, affix, subdir, fmt in images_data:
+            # Skip images with "no save" format
+            if fmt == "no save":
+                if image is not None:
+                    print(f"[LunaMultiSaver] Skipping {affix} - format set to 'no save'")
+                continue
+            
             if image is not None:
                 passed, score, mode_info = self.quality_check_image(image, min_quality_threshold, quality_gate)
                 if passed:

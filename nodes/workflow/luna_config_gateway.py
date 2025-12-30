@@ -70,7 +70,7 @@ class LunaConfigGateway:
             },
             "optional": {
                 # Model name for metadata
-                "model_name": ("STRING", {"default": "", "forceInput": True, "tooltip": "Model name for metadata (auto-strips extensions)"}),
+                "model_name": ("STRING", {"default": "", "tooltip": "Model name for metadata (auto-strips extensions). Optional - leave disconnected if you don't need model name in metadata."}),
                 # Prompts - raw text that may contain <lora:...> tags
                 "positive_prompt": ("STRING", {"default": "", "forceInput": True, "multiline": True, "dynamicPrompts": True}),
                 "negative_prompt": ("STRING", {"default": "", "forceInput": True, "multiline": True, "dynamicPrompts": True}),
@@ -114,9 +114,11 @@ class LunaConfigGateway:
                     "step": 0.01,
                     "tooltip": "Residual diff tolerance for cache hits (0.0=strict, higher=more caching but less accurate)"
                 }),
-                "fb_cache_object_to_patch": (("diffusion_model",), {
-                    "default": "diffusion_model",
-                    "tooltip": "Model object to patch (typically 'diffusion_model')"
+                "fb_cache_max_consecutive_hits": ("INT", {
+                    "default": -1,
+                    "min": -1,
+                    "max": 100,
+                    "tooltip": "Max consecutive cache hits allowed (-1=unlimited, 0=disabled, 1+=limit). Limits how many cached results can be used in a row."
                 }),
             }
         }
@@ -246,7 +248,7 @@ class LunaConfigGateway:
                 model_name="", positive_prompt="", negative_prompt="", lora_stack=None,
                 vision_embed=None, vision_strength=1.0,
                 fb_cache_enabled=False, fb_cache_start=0.0, fb_cache_end=1.0, fb_cache_threshold=0.1,
-                fb_cache_object_to_patch="diffusion_model"):
+                fb_cache_max_consecutive_hits=-1):
         
         # Clean model name
         if model_name:
@@ -285,20 +287,27 @@ class LunaConfigGateway:
         # Configure FB cache if enabled
         if fb_cache_enabled:
             try:
-                from luna_daemon.wavespeed_utils import apply_fb_cache_to_model
+                # Import from utils (already in sys.path via __init__.py)
+                from fbcache_wrapper import apply_fbcache_to_model
                 
-                model = apply_fb_cache_to_model(
+                print(f"[LunaConfigGateway] Applying FB cache: start={fb_cache_start:.0%}, end={fb_cache_end:.0%}, threshold={fb_cache_threshold}, max_hits={fb_cache_max_consecutive_hits}")
+                
+                model = apply_fbcache_to_model(
                     model,
-                    start_percent=fb_cache_start,
-                    end_percent=fb_cache_end,
                     residual_diff_threshold=fb_cache_threshold,
-                    object_to_patch=fb_cache_object_to_patch
+                    start=fb_cache_start,
+                    end=fb_cache_end,
+                    max_consecutive_cache_hits=fb_cache_max_consecutive_hits
                 )
-                print(f"[LunaConfigGateway] FB cache enabled: {fb_cache_start:.0%}-{fb_cache_end:.0%} (threshold={fb_cache_threshold}, patch={fb_cache_object_to_patch})")
-            except ImportError:
-                print("[LunaConfigGateway] Warning: FB cache not available (wavespeed_utils not found)")
+                print(f"[LunaConfigGateway] ✓ FB cache successfully applied!")
+            except ImportError as e:
+                import traceback
+                print(f"[LunaConfigGateway] ERROR: FB cache import failed - {e}")
+                traceback.print_exc()
             except Exception as e:
-                print(f"[LunaConfigGateway] Warning: FB cache error: {e}")
+                import traceback
+                print(f"[LunaConfigGateway] ERROR: FB cache application failed - {e}")
+                traceback.print_exc()
         
         # Apply CLIP skip after LoRAs if specified
         if clip_skip_timing == "after_lora":
