@@ -8,16 +8,22 @@ perfect variance preservation.
 Architecture:
 - Chess pattern (even/odd passes) for seamless blending
 - Uses master noise scaffold (1:1 noise density)
-- Dynamic CLIP-ViT routing (daemon or local) for structural anchoring
+- IP-Adapter structural anchoring with TRUE BATCHING
 - Optional supersampling via Lanczos downscale
 - Respects refinement mask (lighter touch on semantic-refined areas)
 - Batched tile processing for VRAM efficiency
+
+IP-Adapter Batching:
+- Latent[i] only "sees" Adapter Embed[i] (PyTorch attention physics)
+- No broadcasting if batch dims match: [N, 4, H, W] + [N, 16, 2048]
+- One patch, one sample call, N distinct results
 
 Workflow Integration:
     Semantic Detailer → Chess Refiner → Final Output (2K supersampled)
 """
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 import numpy as np
@@ -27,8 +33,26 @@ import comfy.utils
 import comfy.model_management
 import comfy.sampler_helpers
 
-# Dynamic vision routing
-from .vision_routing import VisionRouter, get_vision_router
+# Dynamic vision routing (for CLIP-ViT encoding)
+try:
+    from .vision_routing import VisionRouter, get_vision_router
+except ImportError:
+    # Fallback for ComfyUI's dynamic loading
+    import sys
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+    from vision_routing import VisionRouter, get_vision_router
+
+# IP-Adapter for proper attention injection
+try:
+    from custom_nodes.comfyui_ipadapter_plus.IPAdapterPlus import IPAdapter
+    from custom_nodes.comfyui_ipadapter_plus.CrossAttentionPatch import Attn2Replace, ipadapter_attention
+    HAS_IPADAPTER = True
+except ImportError:
+    HAS_IPADAPTER = False
+    IPAdapter = None
 
 
 def crop_conditioning_for_tile(conditioning, tile_region_px, canvas_size_px, scale_from=1.0):
@@ -137,10 +161,7 @@ class LunaChessRefiner:
         return {
             "required": {
                 "image": ("IMAGE", {
-                    "tooltip": "Image to refine (from Semantic Detailer or Scaffold Upscaler)"
-                }),
-                "latent": ("LATENT", {
-                    "tooltip": "Latent of image (with semantic refinements if chained)"
+                    "tooltip": "4K pixel image (from Semantic Detailer or Prep Upscaler)"
                 }),
                 "full_scaffold": ("LATENT", {
                     "tooltip": "Full-resolution noise from Pyramid Generator"
@@ -216,9 +237,19 @@ class LunaChessRefiner:
                 "clip_vision": ("CLIP_VISION", {
                     "tooltip": "CLIP-ViT model for structural anchoring (encodes each tile)"
                 }),
+                "ip_adapter": ("IPADAPTER", {
+                    "tooltip": "IP-Adapter model for proper vision→attention injection"
+                }),
                 "use_structural_anchor": ("BOOLEAN", {
                     "default": True,
-                    "tooltip": "Enable per-tile CLIP-ViT encoding for structural preservation"
+                    "tooltip": "Enable per-tile CLIP-ViT + IP-Adapter for structural preservation"
+                }),
+                "ip_adapter_weight": ("FLOAT", {
+                    "default": 0.4,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.05,
+                    "tooltip": "IP-Adapter strength for tile refinement (lower than detailer for global coherence)"
                 }),
             }
         }
@@ -226,7 +257,6 @@ class LunaChessRefiner:
     def refine(
         self,
         image: torch.Tensor,
-        latent: dict,
         full_scaffold: dict,
         model,
         vae,
@@ -245,10 +275,15 @@ class LunaChessRefiner:
         refinement_mask = None,
         mask_noise_factor: float = 0.5,
         clip_vision = None,
-        use_structural_anchor: bool = True
+        ip_adapter = None,
+        use_structural_anchor: bool = True,
+        ip_adapter_weight: float = 0.4
     ) -> tuple:
         """
         Perform global tiled refinement with chess pattern.
+        
+        All work happens in pixel space - crops from 4K canvas, encodes fresh,
+        refines, decodes, and pastes back to 4K pixel canvas.
         
         Returns:
             Tuple of (final_image,)
@@ -257,11 +292,14 @@ class LunaChessRefiner:
         
         # Get dimensions
         b, h, w, c = image.shape
-        lat_samples = latent["samples"]
-        lat_h, lat_w = lat_samples.shape[2], lat_samples.shape[3]
+        
+        # Extract noise from master scaffold (needed for refinement)
+        scaff_samples = full_scaffold["samples"]
+        lat_h, lat_w = scaff_samples.shape[2], scaff_samples.shape[3]
+        noise_slices = scaff_samples[:, :, :lat_h, :lat_w]
         
         print(f"[LunaChessRefiner] Starting refinement:")
-        print(f"  Image: {w}×{h}, Latent: {lat_w}×{lat_h}")
+        print(f"  Image: {w}×{h} pixels, Scaffold: {lat_w}×{lat_h} latent")
         print(f"  Tile: {tile_size}px, Denoise: {denoise}, Scale: {scale}")
         
         # Calculate grid
@@ -275,14 +313,8 @@ class LunaChessRefiner:
             print(f"  ⚠️  Warning: Only 1 tile detected. Chess refinement ineffective.")
             print(f"     Suggest reducing tile_size to {max(32, tile_lat // 2)}px for multiple tiles.")
         
-        # Extract noise slices from master scaffold (matching latent dimensions)
-        scaff_samples = full_scaffold["samples"]
-        noise_slices = scaff_samples[:, :, :lat_h, :lat_w]
-        
-        # Create working canvases
-        latent_original = lat_samples.clone()  # Keep original for tile extraction
-        latent_canvas = lat_samples.clone()    # GPU - for compositing results
-        pixel_canvas = image.clone().cpu()     # CPU
+        # Create working pixel canvas (CPU)
+        pixel_canvas = image.clone().cpu()
         
         # Generate blend mask for tiles
         blend_mask = self._create_blend_mask(tile_lat, tile_lat, overlap_h, overlap_w, feathering, device)
@@ -306,41 +338,50 @@ class LunaChessRefiner:
         total_tiles = rows * cols
         pbar = comfy.utils.ProgressBar(total_tiles)
         
-        # Determine if we're using structural anchoring
-        # Initialize vision router for dynamic daemon/local routing
+        # Initialize vision router for CLIP-ViT encoding (daemon or local)
         vision_router = None
-        use_anchor = use_structural_anchor
+        use_anchor = use_structural_anchor and (clip_vision is not None or ip_adapter is not None)
         
         if use_structural_anchor:
-            vision_router = get_vision_router(clip_vision)
-            if vision_router.available:
-                if vision_router.using_daemon:
-                    print(f"[LunaChessRefiner] ✓ CLIP-ViT routing: DAEMON (GPU offload)")
+            if ip_adapter is not None and HAS_IPADAPTER:
+                print(f"[LunaChessRefiner] ✓ IP-Adapter structural anchoring ENABLED (weight={ip_adapter_weight})")
+                vision_router = get_vision_router(clip_vision)
+            elif clip_vision is not None:
+                vision_router = get_vision_router(clip_vision)
+                if vision_router.available:
+                    if vision_router.using_daemon:
+                        print(f"[LunaChessRefiner] ✓ CLIP-ViT routing: DAEMON")
+                    else:
+                        print(f"[LunaChessRefiner] ✓ CLIP-ViT routing: LOCAL")
+                    # Without IP-Adapter, vision won't be properly injected
+                    print(f"[LunaChessRefiner] ⚠ No IP-Adapter provided - using text-only!")
+                    use_anchor = False
                 else:
-                    print(f"[LunaChessRefiner] ✓ CLIP-ViT routing: LOCAL")
+                    print(f"[LunaChessRefiner] ⚠ No vision encoder available, using text-only")
+                    use_anchor = False
             else:
-                print(f"[LunaChessRefiner] ⚠ No vision encoder available, using text-only")
+                print(f"[LunaChessRefiner] ⚠ No clip_vision or ip_adapter provided")
                 use_anchor = False
         else:
             print(f"[LunaChessRefiner] Using text-only conditioning")
         
         # Chess Pass 1: EVEN tiles
-        latent_canvas, pixel_canvas = self._process_chess_pass(
-            latent_canvas, latent_original, pixel_canvas, noise_slices, "even", rows, cols, tile_lat, overlap_h, overlap_w,
+        pixel_canvas = self._process_chess_pass(
+            pixel_canvas, noise_slices, "even", rows, cols, tile_lat, overlap_h, overlap_w,
             model, positive, negative, vae, steps, cfg, seed, sampler, scheduler,
             tile_batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar,
-            vision_router, use_anchor, image
+            vision_router, use_anchor, image, ip_adapter, ip_adapter_weight
         )
         
         # Clear GPU cache between passes
         torch.cuda.empty_cache()
         
         # Chess Pass 2: ODD tiles
-        latent_canvas, pixel_canvas = self._process_chess_pass(
-            latent_canvas, latent_original, pixel_canvas, noise_slices, "odd", rows, cols, tile_lat, overlap_h, overlap_w,
+        pixel_canvas = self._process_chess_pass(
+            pixel_canvas, noise_slices, "odd", rows, cols, tile_lat, overlap_h, overlap_w,
             model, positive, negative, vae, steps, cfg, seed + 1, sampler, scheduler,
             tile_batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar,
-            vision_router, use_anchor, image
+            vision_router, use_anchor, image, ip_adapter, ip_adapter_weight
         )
         
         # Clear GPU cache (pixel canvas is already on CPU, fully built)
@@ -391,10 +432,10 @@ class LunaChessRefiner:
         return rows, cols, overlap_h, overlap_w
     
     def _process_chess_pass(
-        self, latent_canvas, latent_original, pixel_canvas, noise, parity, rows, cols, tile_size, ov_h, ov_w,
+        self, pixel_canvas, noise, parity, rows, cols, tile_size, ov_h, ov_w,
         model, pos, neg, vae, steps, cfg, seed, sampler_name, scheduler_name,
         batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar,
-        vision_router=None, use_anchor=False, full_image=None
+        vision_router=None, use_anchor=False, full_image=None, ip_adapter=None, ip_adapter_weight=0.4
     ):
         """
         Process one chess pass (even or odd tiles).
@@ -405,18 +446,21 @@ class LunaChessRefiner:
         Flow per batch:
         1. Crop pixel tiles from pixel_canvas
         2. Batch encode all tiles → fresh latents with proper VAE context
-        3. CLIP-ViT encode via dynamic router (daemon or local)
+        3. Encode via CLIP-ViT (daemon or local), apply via IP-Adapter
         4. Slice scaffold noise (this is fine - no encoding issues)
-        5. Refine with fresh latents + scaffold noise + anchored conditioning
-        6. Composite refined latents and pixels back
+        5. Refine with patched model + scaffold noise + text conditioning
+        6. Decode and composite refined pixels back to pixel_canvas
         
-        Returns both updated latent_canvas (GPU) and pixel_canvas (CPU).
+        IP-Adapter: Batch dimension preserved - Latent[i] sees Embed[i]
+        
+        Returns updated pixel_canvas (CPU).
         """
         stride_h = tile_size - ov_h
         stride_w = tile_size - ov_w
         
-        H, W = latent_canvas.shape[2], latent_canvas.shape[3]
-        device = latent_canvas.device
+        # Get dimensions from noise scaffold
+        H, W = noise.shape[2], noise.shape[3]
+        device = noise.device
         
         # Pixel dimensions (latent * 8)
         pixel_H = H * 8
@@ -490,32 +534,38 @@ class LunaChessRefiner:
             
             batch_scaffold_noise = torch.cat(noise_crops, dim=0)
             
-            # STEP 4: CLIP-ViT structural anchoring via dynamic router
-            anchored_positive = pos
-            if use_anchor and vision_router is not None and full_image is not None:
+            # STEP 4: IP-ADAPTER STRUCTURAL ANCHORING (TRUE BATCHING)
+            # Key insight: Latent[i] only sees Embed[i] - no averaging!
+            work_model = model
+            chunk_size = len(chunk)
+            
+            if use_anchor and ip_adapter is not None and vision_router is not None and full_image is not None:
                 # Get crop coordinates in pixel space
-                tile_crop_coords = [(t["coords_px"][1], t["coords_px"][0], t["coords_px"][3], t["coords_px"][2]) 
-                                   for t in chunk]  # (x1, y1, x2, y2)
-                
-                # Actually we need (x1, y1, x2, y2) format - let me fix
                 tile_crop_coords = []
                 for t in chunk:
                     y0_px, x0_px, y1_px, x1_px = t["coords_px"]
                     tile_crop_coords.append((x0_px, y0_px, x1_px, y1_px))
                 
-                # Use router - handles daemon vs local automatically
+                # Encode via CLIP-ViT (daemon or local)
                 vision_embeds_list = vision_router.encode_crops(
                     full_image=full_image,
                     crop_coords=tile_crop_coords,
                     tile_size=tile_size * 8  # Pixel size
                 )
                 
-                # Stack embeddings for batch fusion
-                if vision_embeds_list:
-                    vision_embeds = torch.cat(vision_embeds_list, dim=0)
-                    anchored_positive = self._fuse_vision_conditioning_batch(
-                        pos, vision_embeds, len(chunk)
+                if vision_embeds_list and len(vision_embeds_list) == chunk_size:
+                    # Stack into batch: [N, seq_len, embed_dim]
+                    vision_batch = torch.cat(vision_embeds_list, dim=0)
+                    uncond_batch = torch.zeros_like(vision_batch)
+                    
+                    # Apply IP-Adapter patch - batch dimension preserved!
+                    work_model = self._apply_ip_adapter_batch(
+                        model, ip_adapter, vision_batch, uncond_batch,
+                        weight=ip_adapter_weight
                     )
+            
+            # Replicate positive conditioning for batch
+            anchored_positive = self._replicate_conditioning(pos, chunk_size)
             
             # STEP 5: Extract refinement mask crops if available
             batch_noise_mask = None
@@ -543,17 +593,17 @@ class LunaChessRefiner:
                 print(f"[LunaChessRefiner] {parity.upper()} Batch {i//batch_size + 1}: {len(chunk)} tiles, "
                       f"fresh VAE encode, denoise={denoise}")
             
-            # STEP 6: Refine with fresh latents + scaffold noise + anchored conditioning
-            # Pass scaffold noise to sampler - it will scale by appropriate sigma based on denoise
+            # STEP 6: Refine with patched model + scaffold noise + text conditioning
+            # Use work_model (patched with IP-Adapter if available)
             with torch.inference_mode():
                 refined_batch = comfy.sample.sample(
-                    model,
+                    work_model,                     # Patched model (or original if no IP-Adapter)
                     noise=batch_scaffold_noise,     # Scaffold noise (optionally masked)
                     steps=steps,
                     cfg=cfg,
                     sampler_name=sampler_name,
                     scheduler=scheduler_name,
-                    positive=anchored_positive,     # With CLIP-ViT anchor if enabled
+                    positive=anchored_positive,     # Replicated for batch
                     negative=neg,
                     latent_image=batch_latents,     # Fresh tile-encoded latents! ✨
                     denoise=denoise,
@@ -588,20 +638,14 @@ class LunaChessRefiner:
             refined_pixels = torch.cat(refined_pixels_list, dim=0)
             del refined_pixels_list
             
-            # STEP 7: Composite latent tiles onto latent canvas (GPU)
-            self._composite_latent_tiles(latent_canvas, refined_batch, chunk, blend_mask, parity)
+            # STEP 7: Composite pixel tiles onto pixel canvas (CPU)
+            self._composite_pixel_tiles(pixel_canvas, refined_pixels, chunk, tile_size, ov_h, ov_w, feathering, parity)
             
-            # Free GPU memory before pixel compositing
-            del refined_batch, batch_latents, batch_scaffold_noise, pixel_batch, pixel_batch_vae
+            # Free memory
+            del refined_batch, batch_latents, batch_scaffold_noise, pixel_batch, pixel_batch_vae, refined_pixels
             if batch_noise_mask is not None:
                 del batch_noise_mask
             torch.cuda.empty_cache()
-            
-            # STEP 8: Composite pixel tiles onto pixel canvas (CPU)
-            self._composite_pixel_tiles(pixel_canvas, refined_pixels, chunk, tile_size, ov_h, ov_w, feathering, parity)
-            
-            # Free pixel batch
-            del refined_pixels
             
             # Update progress
             pbar.update(len(chunk))
@@ -609,35 +653,7 @@ class LunaChessRefiner:
             # Allow interruption
             comfy.model_management.throw_exception_if_processing_interrupted()
         
-        return latent_canvas, pixel_canvas
-    
-    def _composite_latent_tiles(self, latent_canvas, refined_batch, chunk_info, mask, parity):
-        """Composite refined latent tiles onto latent canvas (GPU operation)."""
-        # Even pass: no blending (first tiles placed)
-        # Odd pass: blend with mask
-        use_blending = (parity == "odd")
-        
-        for i, info in enumerate(chunk_info):
-            refined_tile = refined_batch[i]
-            y0, x0, y1, x1 = info["coords_lat"]  # Use latent coords
-            
-            if use_blending:
-                current_bg = latent_canvas[:, :, y0:y1, x0:x1]
-                
-                # Ensure same device
-                device = latent_canvas.device
-                refined_tile = refined_tile.to(device)
-                mask_tile = mask.to(device)
-                
-                # Blend with mask
-                diff = refined_tile - current_bg
-                diff = diff * mask_tile
-                current_bg = current_bg + diff
-                
-                latent_canvas[:, :, y0:y1, x0:x1] = current_bg
-            else:
-                # Even pass: direct paste, no blending
-                latent_canvas[:, :, y0:y1, x0:x1] = refined_tile.to(latent_canvas.device)
+        return pixel_canvas
     
     def _composite_pixel_tiles(self, pixel_canvas, refined_pixels, chunk_info, tile_size, ov_h, ov_w, feathering, parity):
         """Composite refined pixel tiles onto pixel canvas (CPU operation)."""
@@ -787,20 +803,127 @@ class LunaChessRefiner:
         # Convert back BCHW → BHWC
         return downscaled_chw.permute(0, 2, 3, 1)
     
-    def _fuse_vision_conditioning_batch(self, text_cond, vision_embeds: torch.Tensor, batch_size: int):
-        """
-        Fuse CLIP-ViT vision embeddings with text conditioning for a batch of tiles.
+    def _replicate_conditioning(self, cond, count: int):
+        """Replicate conditioning for batch"""
+        if count == 1:
+            return cond
         
-        Creates structural anchors by blending vision features with text embeddings.
-        This preserves the spatial structure of each tile during refinement.
+        # ComfyUI conditioning format: list of [tensor, dict]
+        replicated = []
+        for c in cond:
+            tensor, opts = c
+            # Repeat tensor along batch dimension
+            batched_tensor = tensor.repeat(count, 1, 1)
+            replicated.append([batched_tensor, opts])
+        
+        return replicated
+    
+    def _apply_ip_adapter_batch(
+        self,
+        model,
+        ip_adapter,
+        vision_batch: torch.Tensor,
+        uncond_batch: torch.Tensor,
+        weight: float = 0.4
+    ):
+        """
+        Apply IP-Adapter patch to model with batched vision embeddings.
+        
+        KEY INSIGHT: PyTorch attention maps Latent[i] → Embed[i] when batch dims match.
+        This enables TRUE BATCHING - N tiles get N distinct vision anchors in ONE pass.
         
         Args:
-            text_cond: ComfyUI conditioning [(tensor [1, 77, dim], dict), ...]
-            vision_embeds: CLIP-ViT outputs [N, 257, vision_dim] (CLS + 256 patches per tile)
-            batch_size: Number of tiles in this batch
+            model: ComfyUI model to patch
+            ip_adapter: IP-Adapter state dict
+            vision_batch: Batched vision embeddings [N, seq_len, embed_dim]
+            uncond_batch: Batched uncond embeddings [N, seq_len, embed_dim]
+            weight: IP-Adapter strength
         
         Returns:
-            Fused conditioning with vision embeddings incorporated
+            Patched model clone
+        """
+        import comfy.model_management as model_management
+        
+        device = model_management.get_torch_device()
+        dtype = model_management.unet_dtype()
+        
+        # Clone model to avoid modifying original
+        work_model = model.clone()
+        
+        # Move embeddings to correct device/dtype
+        vision_batch = vision_batch.to(device=device, dtype=dtype)
+        uncond_batch = uncond_batch.to(device=device, dtype=dtype)
+        
+        # Detect IP-Adapter configuration
+        is_plus = (
+            "proj.3.weight" in ip_adapter.get("image_proj", {}) or
+            "latents" in ip_adapter.get("image_proj", {}) or
+            "perceiver_resampler.proj_in.weight" in ip_adapter.get("image_proj", {})
+        )
+        
+        # Get output cross-attention dim
+        if "ip_adapter" in ip_adapter and "1.to_k_ip.weight" in ip_adapter["ip_adapter"]:
+            output_cross_attention_dim = ip_adapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+        else:
+            output_cross_attention_dim = 2048  # SDXL default
+        
+        is_sdxl = output_cross_attention_dim == 2048
+        
+        # Import IP-Adapter components
+        if not HAS_IPADAPTER:
+            print("[LunaChessRefiner] ⚠ IPAdapterPlus not available, skipping vision injection")
+            return model
+        
+        # Create IPAdapter module
+        cross_attention_dim = 1280 if is_plus and is_sdxl else output_cross_attention_dim
+        clip_embeddings_dim = vision_batch.shape[-1]
+        clip_extra_context_tokens = 16 if is_plus else 4
+        
+        ipa = IPAdapter(
+            ip_adapter,
+            cross_attention_dim=cross_attention_dim,
+            output_cross_attention_dim=output_cross_attention_dim,
+            clip_embeddings_dim=clip_embeddings_dim,
+            clip_extra_context_tokens=clip_extra_context_tokens,
+            is_sdxl=is_sdxl,
+            is_plus=is_plus,
+            is_full=False,
+            is_faceid=False,
+            is_portrait_unnorm=False,
+        ).to(device, dtype=dtype)
+        
+        # Project embeddings through IP-Adapter
+        # Batch dimension is preserved: [N, seq, dim] → [N, tokens, cross_dim]
+        cond_embeds, uncond_embeds = ipa.get_image_embeds(vision_batch, uncond_batch, batch_size=0)
+        
+        # Set up patch kwargs - batch dimension preserved!
+        patch_kwargs = {
+            "ipadapter": ipa,
+            "weight": weight,
+            "cond": cond_embeds,
+            "uncond": uncond_embeds,
+            "weight_type": "linear",
+            "mask": None,
+            "sigma_start": 0.0,
+            "sigma_end": 1.0,
+            "unfold_batch": False,  # CRITICAL: Keep False to preserve per-item mapping
+            "embeds_scaling": "V only",
+        }
+        
+        # Apply attention patch
+        work_model.set_model_attn2_replace(
+            Attn2Replace(ipadapter_attention, **patch_kwargs),
+            patch_kwargs
+        )
+        
+        return work_model
+    
+    def _fuse_vision_conditioning_batch(self, text_cond, vision_embeds: torch.Tensor, batch_size: int):
+        """
+        DEPRECATED: Use _apply_ip_adapter_batch instead.
+        
+        This naive fusion doesn't properly inject vision features into attention.
+        Kept for backward compatibility but IP-Adapter is the correct approach.
         """
         fused = []
         

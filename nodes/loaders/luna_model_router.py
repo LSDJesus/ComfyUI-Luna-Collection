@@ -496,13 +496,14 @@ class LunaModelRouter:
     New in this version:
     - LLM output: Full language model for prompt generation (Z-IMAGE: Qwen3-VL)
     - CLIP_VISION output: Vision encoder for image→embedding conversion
+    - IP_ADAPTER output: IP-Adapter model for structural anchoring in LSD pipeline
     - Smart loading: Vision components only load if CLIP_VISION is connected
     - mmproj auto-detection: Loads from same folder as Qwen3 model
     """
     
     CATEGORY = "Luna"
-    RETURN_TYPES = ("MODEL", "CLIP", "VAE", "LLM", "CLIP_VISION", "STRING", "STRING")
-    RETURN_NAMES = ("model", "clip", "vae", "llm", "clip_vision", "model_name", "status")
+    RETURN_TYPES = ("MODEL", "CLIP", "VAE", "LLM", "CLIP_VISION", "IPADAPTER", "STRING", "STRING")
+    RETURN_NAMES = ("model", "clip", "vae", "llm", "clip_vision", "ip_adapter", "model_name", "status")
     FUNCTION = "load"
     OUTPUT_NODE = False
     
@@ -522,6 +523,29 @@ class LunaModelRouter:
     PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "fp8_e4m3fn_scaled", "fp8_e5m2", "nf4", "gguf_Q8_0", "gguf_Q4_K_M"]
     
     # Daemon routing modes
+    DAEMON_MODES = ["auto", "force_daemon", "force_local"]
+    
+    @classmethod
+    def _get_ipadapter_list(cls) -> list:
+        """Get list of available IP-Adapter models."""
+        if not HAS_COMFY:
+            return ["None"]
+        
+        try:
+            # Register ipadapter folder if not already registered
+            if "ipadapter" not in folder_paths.folder_names_and_paths:
+                import os
+                ipadapter_path = os.path.join(folder_paths.models_dir, "ipadapter")
+                if os.path.exists(ipadapter_path):
+                    folder_paths.folder_names_and_paths["ipadapter"] = (
+                        [ipadapter_path], 
+                        folder_paths.supported_pt_extensions
+                    )
+            
+            ipadapter_list = folder_paths.get_filename_list("ipadapter")
+            return ["None"] + ipadapter_list
+        except:
+            return ["None"]
     DAEMON_MODES = ["auto", "force_daemon", "force_local"]
     
     @classmethod
@@ -600,6 +624,12 @@ class LunaModelRouter:
                     "tooltip": "VAE for encoding/decoding. 'None' uses VAE from checkpoint."
                 }),
                 
+                # === IP-Adapter for LSD structural anchoring ===
+                "ip_adapter_name": (cls._get_ipadapter_list(), {
+                    "default": "None",
+                    "tooltip": "IP-Adapter model for structural anchoring. Used by LSD detailing pipeline."
+                }),
+                
                 # === Daemon Mode ===
                 "daemon_mode": (cls.DAEMON_MODES, {
                     "default": "auto",
@@ -625,10 +655,11 @@ class LunaModelRouter:
         clip_3: str,
         clip_4: str,
         vae_name: str,
+        ip_adapter_name: str,
         daemon_mode: str,
         dynprompt=None,
         unique_id=None
-    ) -> Tuple[Any, Any, Any, Any, Any, str, str]:
+    ) -> Tuple[Any, Any, Any, Any, Any, Any, str, str]:
         """
         Load model with explicit configuration and runtime CLIP validation.
         
@@ -638,6 +669,7 @@ class LunaModelRouter:
             vae: VAE for encode/decode
             llm: Full LLM for prompt generation (Z-IMAGE only, None for others)
             clip_vision: Vision encoder for image→embedding (if vision model type)
+            ip_adapter: IP-Adapter model for LSD structural anchoring
             model_name: String for Config Gateway
             status: Detailed loading status
         """
@@ -730,7 +762,15 @@ class LunaModelRouter:
                 else:
                     status_parts.append("VISION: CLIP-H/SigLIP loaded")
         
-        # === STEP 6: Load VAE ===
+        # === STEP 6: Load IP-Adapter (for LSD structural anchoring) ===
+        output_ip_adapter = None
+        
+        if ip_adapter_name and ip_adapter_name != "None":
+            output_ip_adapter = self._load_ip_adapter(ip_adapter_name, model_type)
+            if output_ip_adapter is not None:
+                status_parts.append(f"IP-Adapter: {os.path.basename(ip_adapter_name)}")
+        
+        # === STEP 7: Load VAE ===
         output_vae = None
         
         if vae_name and vae_name != "None":
@@ -750,7 +790,7 @@ class LunaModelRouter:
         
         print(f"[LunaModelRouter] {status}")
         
-        return (output_model, output_clip, output_vae, output_llm, output_clip_vision, output_model_name, status)
+        return (output_model, output_clip, output_vae, output_llm, output_clip_vision, output_ip_adapter, output_model_name, status)
     
     def _is_daemon_running_direct(self) -> bool:
         """
@@ -1489,6 +1529,66 @@ class LunaModelRouter:
             vae = comfy.sd.VAE(sd=sd)  # type: ignore
         
         return vae
+    
+    def _load_ip_adapter(
+        self,
+        ip_adapter_name: str,
+        model_type: str
+    ) -> Any:
+        """
+        Load IP-Adapter model for LSD structural anchoring.
+        
+        Args:
+            ip_adapter_name: Filename of IP-Adapter model
+            model_type: Model architecture for compatibility detection
+        
+        Returns:
+            Loaded IP-Adapter state dict, or None if loading fails
+        """
+        # Get the full path
+        try:
+            ip_adapter_path = folder_paths.get_full_path("ipadapter", ip_adapter_name)
+        except:
+            # Fallback if ipadapter folder not registered
+            ip_adapter_path = os.path.join(folder_paths.models_dir, "ipadapter", ip_adapter_name)
+        
+        if not ip_adapter_path or not os.path.exists(ip_adapter_path):
+            print(f"[LunaModelRouter] ⚠ IP-Adapter not found: {ip_adapter_name}")
+            return None
+        
+        print(f"[LunaModelRouter] Loading IP-Adapter: {ip_adapter_name}")
+        
+        try:
+            # Try to use IPAdapterPlus loader if available
+            try:
+                from custom_nodes.comfyui_ipadapter_plus.utils import ipadapter_model_loader
+                ip_adapter = ipadapter_model_loader(ip_adapter_path)
+            except ImportError:
+                # Fallback to direct loading
+                ip_adapter = comfy.utils.load_torch_file(ip_adapter_path)  # type: ignore
+            
+            # Validate compatibility with model type
+            is_sdxl = "SDXL" in model_type or "Flux" in model_type
+            if "ip_adapter" in ip_adapter and "1.to_k_ip.weight" in ip_adapter["ip_adapter"]:
+                output_dim = ip_adapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+                model_is_sdxl = output_dim == 2048
+                
+                if is_sdxl != model_is_sdxl:
+                    print(f"[LunaModelRouter] ⚠ IP-Adapter mismatch: model is {'SDXL' if is_sdxl else 'SD1.5'}, "
+                          f"IP-Adapter is {'SDXL' if model_is_sdxl else 'SD1.5'}")
+            
+            # Add metadata for downstream use
+            ip_adapter["_luna_path"] = ip_adapter_path
+            ip_adapter["_luna_is_sdxl"] = is_sdxl
+            
+            print(f"[LunaModelRouter] ✓ IP-Adapter loaded: {ip_adapter_name}")
+            return ip_adapter
+            
+        except Exception as e:
+            print(f"[LunaModelRouter] ✗ Failed to load IP-Adapter: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
     
     def _detect_vae_type_from_path(self, vae_path: str) -> str:
         """Detect VAE type from path/filename."""

@@ -9,17 +9,23 @@ Architecture:
 - Coordinate mapping from normalized (0-1) to full scaffold pixels
 - 1:1 square expansion with padding (1.15x, snapped to 256px)
 - Fresh VAE encoding of pixel crops (proper convolutional context)
-- Dynamic CLIP-ViT routing (daemon or local)
+- IP-Adapter structural anchoring with TRUE BATCHING
 - Batched sampling with individual prompts per detection
 - Smoothstep alpha blending for seamless compositing
 
 Mathematical Foundation:
 - All crops refined at 1024×1024 (optimal for SDXL/Flux)
-- CLIP-ViT encodes each crop for structural preservation
+- IP-Adapter injects vision features per-crop (no averaging!)
 - Smoothstep blending: t²(3-2t) for C¹ continuity
+
+IP-Adapter Batching:
+- Latent[i] only "sees" Adapter Embed[i] (PyTorch attention physics)
+- No broadcasting if batch dims match: [N, 4, H, W] + [N, 16, 2048]
+- One patch, one sample call, N distinct results
 """
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import comfy.samplers
@@ -27,8 +33,26 @@ import comfy.sample
 import comfy.utils
 import comfy.model_management
 
-# Dynamic vision routing
-from .vision_routing import VisionRouter, get_vision_router
+# Dynamic vision routing (for CLIP-ViT encoding)
+try:
+    from .vision_routing import VisionRouter, get_vision_router
+except ImportError:
+    # Fallback for ComfyUI's dynamic loading
+    import sys
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if current_dir not in sys.path:
+        sys.path.insert(0, current_dir)
+    from vision_routing import VisionRouter, get_vision_router
+
+# IP-Adapter for proper attention injection (import directly from IPAdapterPlus)
+try:
+    from custom_nodes.comfyui_ipadapter_plus.IPAdapterPlus import IPAdapter
+    from custom_nodes.comfyui_ipadapter_plus.CrossAttentionPatch import Attn2Replace, ipadapter_attention
+    HAS_IPADAPTER = True
+except ImportError:
+    HAS_IPADAPTER = False
+    IPAdapter = None
 
 
 def get_scheduler_names():
@@ -57,8 +81,8 @@ class LunaSemanticDetailer:
     """
     
     CATEGORY = "Luna/Detailing"
-    RETURN_TYPES = ("IMAGE", "LATENT", "LUNA_DETECTION_PIPE", "MASK")
-    RETURN_NAMES = ("refined_image", "refined_latent", "detection_pipe", "refinement_mask")
+    RETURN_TYPES = ("IMAGE", "LUNA_DETECTION_PIPE", "MASK")
+    RETURN_NAMES = ("refined_image", "detection_pipe", "refinement_mask")
     FUNCTION = "refine"
     
     @classmethod
@@ -66,10 +90,7 @@ class LunaSemanticDetailer:
         return {
             "required": {
                 "image": ("IMAGE", {
-                    "tooltip": "Upscaled image from Scaffold Upscaler"
-                }),
-                "full_latent": ("LATENT", {
-                    "tooltip": "Encoded latent of upscaled image (for latent compositing)"
+                    "tooltip": "Upscaled 4K image from Prep Upscaler"
                 }),
                 "full_scaffold": ("LATENT", {
                     "tooltip": "Full-resolution noise from Pyramid Generator"
@@ -127,9 +148,19 @@ class LunaSemanticDetailer:
                 "clip_vision": ("CLIP_VISION", {
                     "tooltip": "CLIP-ViT model for structural anchoring (encodes each crop)"
                 }),
+                "ip_adapter": ("IPADAPTER", {
+                    "tooltip": "IP-Adapter model for proper vision→attention injection"
+                }),
                 "use_structural_anchor": ("BOOLEAN", {
                     "default": True,
-                    "tooltip": "Enable per-crop CLIP-ViT encoding for structural preservation"
+                    "tooltip": "Enable per-crop CLIP-ViT + IP-Adapter for structural preservation"
+                }),
+                "ip_adapter_weight": ("FLOAT", {
+                    "default": 0.5,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.05,
+                    "tooltip": "IP-Adapter strength (0=text only, 1=full image guidance)"
                 }),
             }
         }
@@ -137,7 +168,6 @@ class LunaSemanticDetailer:
     def refine(
         self,
         image: torch.Tensor,
-        full_latent: dict,
         full_scaffold: dict,
         detection_pipe: dict,
         model,
@@ -155,16 +185,25 @@ class LunaSemanticDetailer:
         enlarge_crops: bool,
         previous_refinement_mask = None,
         clip_vision = None,
-        use_structural_anchor: bool = True
+        ip_adapter = None,
+        use_structural_anchor: bool = True,
+        ip_adapter_weight: float = 0.5
     ) -> tuple:
         """
         Perform surgical refinement on detected objects.
         
+        All work happens in pixel space - crops from 4K canvas, encodes fresh,
+        refines, decodes, and pastes back to 4K pixel canvas.
+        
         Args:
-            image: Upscaled pixels [B, H, W, C]
+            image: 4K pixel canvas [B, H, W, C]
             full_scaffold: Full-res noise {"samples": tensor}
-            detection_data: Detection dict from SAM3
+            detection_pipe: Detection dict from SAM3
             ... (standard diffusion params)
+            
+        Returns:
+            Tuple of (refined_image, detection_pipe, refinement_mask)
+        """
             
         Returns:
             Tuple of (refined_image, refinement_mask)
@@ -235,25 +274,37 @@ class LunaSemanticDetailer:
         # Process crops in batches
         refined_crops = []
         
-        # Initialize vision router for dynamic daemon/local routing
+        # Initialize vision router for CLIP-ViT encoding (daemon or local)
         vision_router = None
-        use_anchor = use_structural_anchor
+        use_anchor = use_structural_anchor and (clip_vision is not None or ip_adapter is not None)
         
         if use_structural_anchor:
-            vision_router = get_vision_router(clip_vision)
-            if vision_router.available:
-                if vision_router.using_daemon:
-                    print(f"[LunaSemanticDetailer] ✓ CLIP-ViT routing: DAEMON (GPU offload)")
+            if ip_adapter is not None and HAS_IPADAPTER:
+                print(f"[LunaSemanticDetailer] ✓ IP-Adapter structural anchoring ENABLED (weight={ip_adapter_weight})")
+                # Vision router for encoding, IP-Adapter for injection
+                vision_router = get_vision_router(clip_vision)
+            elif clip_vision is not None:
+                vision_router = get_vision_router(clip_vision)
+                if vision_router.available:
+                    if vision_router.using_daemon:
+                        print(f"[LunaSemanticDetailer] ✓ CLIP-ViT routing: DAEMON (GPU offload)")
+                    else:
+                        print(f"[LunaSemanticDetailer] ✓ CLIP-ViT routing: LOCAL")
+                    # Note: Without IP-Adapter, vision embeds won't be properly injected
+                    print(f"[LunaSemanticDetailer] ⚠ No IP-Adapter provided - vision encoding won't affect output!")
+                    use_anchor = False
                 else:
-                    print(f"[LunaSemanticDetailer] ✓ CLIP-ViT routing: LOCAL")
+                    print(f"[LunaSemanticDetailer] ⚠ No vision encoder available, using text-only")
+                    use_anchor = False
             else:
-                print(f"[LunaSemanticDetailer] ⚠ No vision encoder available, using text-only")
+                print(f"[LunaSemanticDetailer] ⚠ No clip_vision or ip_adapter provided")
                 use_anchor = False
         else:
             print(f"[LunaSemanticDetailer] Using text-only conditioning")
         
         for i in range(0, len(crop_data), tile_batch_size):
             batch = crop_data[i:i + tile_batch_size]
+            batch_size = len(batch)
             
             print(f"[LunaSemanticDetailer] Processing batch {i//tile_batch_size + 1}/{(len(crop_data) + tile_batch_size - 1)//tile_batch_size}")
             
@@ -264,21 +315,38 @@ class LunaSemanticDetailer:
             # Encode pixels to latent (FRESH encoding with proper context!)
             batch_latents = vae.encode(batch_pixels.permute(0, 3, 1, 2))
             
-            # CLIP-ViT structural anchoring via dynamic router
-            vision_embeds_list = None
-            if use_anchor and vision_router is not None:
+            # === IP-ADAPTER STRUCTURAL ANCHORING (TRUE BATCHING) ===
+            # Key insight: Latent[i] only sees Embed[i] - no averaging!
+            work_model = model
+            
+            if use_anchor and ip_adapter is not None and vision_router is not None:
                 # Get crop coordinates for this batch
                 batch_crop_coords = [
                     (c["original_box"][0], c["original_box"][1], c["original_box"][2], c["original_box"][3])
                     for c in batch
                 ]
                 
-                # Use router - it handles daemon vs local automatically
+                # Encode crops with CLIP-ViT (daemon or local)
                 vision_embeds_list = vision_router.encode_crops(
                     full_image=image,
                     crop_coords=batch_crop_coords,
                     tile_size=1024
                 )
+                
+                if vision_embeds_list and len(vision_embeds_list) == batch_size:
+                    # Stack into batch: [N, seq_len, embed_dim]
+                    vision_batch = torch.cat(vision_embeds_list, dim=0)
+                    
+                    # Create uncond (zeros) with matching batch size
+                    uncond_batch = torch.zeros_like(vision_batch)
+                    
+                    # Apply IP-Adapter patch to model clone
+                    # The patch preserves batch dimension - Latent[i] sees Embed[i]
+                    work_model = self._apply_ip_adapter_batch(
+                        model, ip_adapter, vision_batch, uncond_batch, 
+                        weight=ip_adapter_weight
+                    )
+                    print(f"[LunaSemanticDetailer] ✓ IP-Adapter patch applied: {batch_size} crops → {vision_batch.shape}")
             
             # Build conditioning for this batch
             batch_indices = range(i, min(i + tile_batch_size, len(crop_data)))
@@ -294,12 +362,6 @@ class LunaSemanticDetailer:
                     # Concatenate: cropped global + concept override
                     combined_cond = combined_cond + concept_cond
                 
-                # Fuse with CLIP-ViT vision embedding if available
-                if vision_embeds_list is not None and j < len(vision_embeds_list):
-                    combined_cond = self._fuse_vision_conditioning(
-                        combined_cond, vision_embeds_list[j]
-                    )
-                
                 batch_positive.append(combined_cond)
             
             # Replicate negative for batch
@@ -310,9 +372,10 @@ class LunaSemanticDetailer:
             batch_noise = batch_noise.to(device)
             
             # Pass scaffold noise to sampler - it will scale by appropriate sigma based on denoise
+            # Use work_model (patched with IP-Adapter if available)
             with torch.inference_mode():
                 refined_latent = comfy.sample.sample(
-                    model,
+                    work_model,                     # Patched model (or original if no IP-Adapter)
                     noise=batch_noise,              # Scaffold noise - sampler scales it
                     steps=steps,
                     cfg=cfg,
@@ -333,35 +396,27 @@ class LunaSemanticDetailer:
                     seed=seed + i
                 )
             
-            # Ensure refined latent stays on GPU
-            device = batch_latents.device
-            if refined_latent.device != device:
-                refined_latent = refined_latent.to(device)
-            
-            # Decode to pixels (pixels can go to CPU later if needed)
+            # Decode to pixels
             refined_pixels = vae.decode(refined_latent).permute(0, 2, 3, 1)
             
-            # Move pixels to CPU to save VRAM (they won't go back to GPU)
+            # Move pixels to CPU to save VRAM
             refined_pixels = refined_pixels.cpu()
             
-            # Store both (latents stay on GPU, pixels on CPU)
+            # Store pixels only (no need for latent anymore)
             refined_crops.extend([
-                {
-                    "pixels": refined_pixels[j:j+1],
-                    "latent": refined_latent[j:j+1]  # Stays on GPU
-                }
+                {"pixels": refined_pixels[j:j+1]}
                 for j in range(refined_pixels.shape[0])
             ])
             
             # Clear VRAM
+            del refined_latent, batch_latents
             torch.cuda.empty_cache()
             
             # Allow interruption
             comfy.model_management.throw_exception_if_processing_interrupted()
         
-        # Composite back onto canvas (both pixel and latent)
+        # Composite back onto 4K pixel canvas
         working_canvas_pixels = image.clone()
-        working_canvas_latent = full_latent["samples"].clone()
         
         # Start with previous refinement mask or create new
         if previous_refinement_mask is not None:
@@ -372,7 +427,6 @@ class LunaSemanticDetailer:
         for crop_info, refined_crop in zip(crop_data, refined_crops):
             self._composite_crop(
                 working_canvas_pixels,
-                working_canvas_latent,
                 refinement_mask,
                 refined_crop,
                 crop_info,
@@ -382,10 +436,7 @@ class LunaSemanticDetailer:
         
         print(f"[LunaSemanticDetailer] Refinement complete")
         
-        # Wrap latent back into dict
-        refined_latent_dict = {"samples": working_canvas_latent}
-        
-        return (working_canvas_pixels, refined_latent_dict, detection_pipe, refinement_mask)
+        return (working_canvas_pixels, detection_pipe, refinement_mask)
     
     def _prepare_crops(
         self,
@@ -521,7 +572,6 @@ class LunaSemanticDetailer:
     def _composite_crop(
         self,
         pixel_canvas: torch.Tensor,
-        latent_canvas: torch.Tensor,
         mask_canvas: torch.Tensor,
         refined_data: dict,
         crop_info: dict,
@@ -530,17 +580,15 @@ class LunaSemanticDetailer:
         enlarge_crops: bool
     ):
         """
-        Composite refined crop back onto both pixel and latent canvases with smoothstep blending.
+        Composite refined crop back onto 4K pixel canvas with smoothstep blending.
         
         If enlarge_crops=True: Paste refined crop at 1024×1024 (allows upscaling small regions)
         If enlarge_crops=False: Resize back to original crop size (default, for 4K inputs)
         """
         x1, y1, x2, y2 = crop_info["original_box"]
-        lat_x1, lat_y1, lat_x2, lat_y2 = crop_info["original_box_latent"]
         orig_w, orig_h = crop_info["original_size"]
         
         refined_pixels = refined_data["pixels"]
-        refined_latent = refined_data["latent"]
         
         # Determine target size for pasting
         if enlarge_crops:
@@ -571,21 +619,12 @@ class LunaSemanticDetailer:
             else:
                 refined_resized = refined_pixels
             
-            # Update coordinates for latent
-            paste_lat_x1 = paste_x1 // 8
-            paste_lat_y1 = paste_y1 // 8
-            paste_lat_x2 = paste_x2 // 8
-            paste_lat_y2 = paste_y2 // 8
-            
-            refined_latent_resized = refined_latent[:, :, :paste_lat_y2-paste_lat_y1, :paste_lat_x2-paste_lat_x1]
-            
             # Use full mask (no resizing needed)
             mask_resized = crop_info["mask_1024"][:actual_paste_h, :actual_paste_w]
             
         else:
             # Default behavior: resize back to original crop size
             paste_x1, paste_y1, paste_x2, paste_y2 = x1, y1, x2, y2
-            paste_lat_x1, paste_lat_y1, paste_lat_x2, paste_lat_y2 = lat_x1, lat_y1, lat_x2, lat_y2
             
             # Always resize refined output back to original crop size
             # (we scaled up or down to 1024, now scale back)
@@ -595,16 +634,6 @@ class LunaSemanticDetailer:
                 mode='bicubic',
                 align_corners=False
             ).permute(0, 2, 3, 1)
-            
-            # Resize refined latent back to original latent size
-            orig_lat_h = (lat_y2 - lat_y1)
-            orig_lat_w = (lat_x2 - lat_x1)
-            refined_latent_resized = F.interpolate(
-                refined_latent,
-                size=(orig_lat_h, orig_lat_w),
-                mode='bicubic',
-                align_corners=False
-            )
             
             # Resize mask back to original size
             mask_resized = F.interpolate(
@@ -622,26 +651,6 @@ class LunaSemanticDetailer:
         mask_3d = mask_smooth.unsqueeze(0).unsqueeze(-1)
         blended_pixels = current_region * (1 - mask_3d) + refined_resized * mask_3d
         pixel_canvas[:, paste_y1:paste_y2, paste_x1:paste_x2, :] = blended_pixels
-        
-        # Blend latent onto latent canvas
-        current_latent_region = latent_canvas[:, :, paste_lat_y1:paste_lat_y2, paste_lat_x1:paste_lat_x2]
-        
-        # Resize mask for latent space
-        lat_h = paste_lat_y2 - paste_lat_y1
-        lat_w = paste_lat_x2 - paste_lat_x1
-        mask_latent = F.interpolate(
-            mask_smooth.unsqueeze(0).unsqueeze(0),
-            size=(lat_h, lat_w),
-            mode='bilinear',
-            align_corners=False
-        )
-        
-        # Apply smoothstep to latent mask
-        mask_latent_smooth = self._smoothstep(mask_latent[0, 0])
-        mask_latent_4d = mask_latent_smooth.unsqueeze(0).unsqueeze(0)
-        
-        blended_latent = current_latent_region * (1 - mask_latent_4d) + refined_latent_resized * mask_latent_4d
-        latent_canvas[:, :, paste_lat_y1:paste_lat_y2, paste_lat_x1:paste_lat_x2] = blended_latent
         
         # Update refinement mask (pixel space)
         mask_canvas[:, paste_y1:paste_y2, paste_x1:paste_x2] = torch.maximum(
@@ -677,12 +686,116 @@ class LunaSemanticDetailer:
         
         return replicated
     
+    def _apply_ip_adapter_batch(
+        self,
+        model,
+        ip_adapter,
+        vision_batch: torch.Tensor,
+        uncond_batch: torch.Tensor,
+        weight: float = 0.5
+    ):
+        """
+        Apply IP-Adapter patch to model with batched vision embeddings.
+        
+        KEY INSIGHT: PyTorch attention maps Latent[i] → Embed[i] when batch dims match.
+        This enables TRUE BATCHING - 9 crops get 9 distinct vision anchors in ONE pass.
+        
+        Args:
+            model: ComfyUI model to patch
+            ip_adapter: IP-Adapter state dict
+            vision_batch: Batched vision embeddings [N, seq_len, embed_dim]
+            uncond_batch: Batched uncond embeddings [N, seq_len, embed_dim]
+            weight: IP-Adapter strength
+        
+        Returns:
+            Patched model clone
+        """
+        import comfy.model_management as model_management
+        
+        device = model_management.get_torch_device()
+        dtype = model_management.unet_dtype()
+        
+        # Clone model to avoid modifying original
+        work_model = model.clone()
+        
+        # Move embeddings to correct device/dtype
+        vision_batch = vision_batch.to(device=device, dtype=dtype)
+        uncond_batch = uncond_batch.to(device=device, dtype=dtype)
+        
+        # Detect IP-Adapter configuration
+        is_plus = (
+            "proj.3.weight" in ip_adapter.get("image_proj", {}) or
+            "latents" in ip_adapter.get("image_proj", {}) or
+            "perceiver_resampler.proj_in.weight" in ip_adapter.get("image_proj", {})
+        )
+        
+        # Get output cross-attention dim
+        if "ip_adapter" in ip_adapter and "1.to_k_ip.weight" in ip_adapter["ip_adapter"]:
+            output_cross_attention_dim = ip_adapter["ip_adapter"]["1.to_k_ip.weight"].shape[1]
+        else:
+            output_cross_attention_dim = 2048  # SDXL default
+        
+        is_sdxl = output_cross_attention_dim == 2048
+        
+        # Import IP-Adapter components
+        try:
+            from custom_nodes.comfyui_ipadapter_plus.IPAdapterPlus import IPAdapter
+            from custom_nodes.comfyui_ipadapter_plus.CrossAttentionPatch import Attn2Replace, ipadapter_attention
+        except ImportError:
+            print("[LunaSemanticDetailer] ⚠ IPAdapterPlus not available, skipping vision injection")
+            return model
+        
+        # Create IPAdapter module
+        cross_attention_dim = 1280 if is_plus and is_sdxl else output_cross_attention_dim
+        clip_embeddings_dim = vision_batch.shape[-1]
+        clip_extra_context_tokens = 16 if is_plus else 4
+        
+        ipa = IPAdapter(
+            ip_adapter,
+            cross_attention_dim=cross_attention_dim,
+            output_cross_attention_dim=output_cross_attention_dim,
+            clip_embeddings_dim=clip_embeddings_dim,
+            clip_extra_context_tokens=clip_extra_context_tokens,
+            is_sdxl=is_sdxl,
+            is_plus=is_plus,
+            is_full=False,
+            is_faceid=False,
+            is_portrait_unnorm=False,
+        ).to(device, dtype=dtype)
+        
+        # Project embeddings through IP-Adapter
+        # Batch dimension is preserved: [N, seq, dim] → [N, tokens, cross_dim]
+        cond_embeds, uncond_embeds = ipa.get_image_embeds(vision_batch, uncond_batch, batch_size=0)
+        
+        # Set up patch kwargs
+        # The critical part: cond_embeds has batch dim N, so Latent[i] sees Embed[i]
+        patch_kwargs = {
+            "ipadapter": ipa,
+            "weight": weight,
+            "cond": cond_embeds,
+            "uncond": uncond_embeds,
+            "weight_type": "linear",
+            "mask": None,
+            "sigma_start": 0.0,
+            "sigma_end": 1.0,
+            "unfold_batch": False,  # CRITICAL: Keep False to preserve per-item mapping
+            "embeds_scaling": "V only",
+        }
+        
+        # Apply attention patch
+        work_model.set_model_attn2_replace(
+            Attn2Replace(ipadapter_attention, **patch_kwargs),
+            patch_kwargs
+        )
+        
+        return work_model
+    
     def _fuse_vision_conditioning(self, text_cond, vision_embed: torch.Tensor):
         """
-        Fuse CLIP-ViT vision embedding with text conditioning.
+        DEPRECATED: Use _apply_ip_adapter_batch instead.
         
-        Creates a structural anchor by concatenating vision features with text embeddings.
-        This preserves the spatial structure of the crop during refinement.
+        This naive fusion doesn't properly inject vision features into attention.
+        Kept for backward compatibility but IP-Adapter is the correct approach.
         
         Args:
             text_cond: ComfyUI conditioning [(tensor [1, 77, dim], dict), ...]

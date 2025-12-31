@@ -24,6 +24,7 @@ import comfy.samplers
 import comfy.sample
 import comfy.model_management
 import comfy.utils
+import folder_paths
 
 
 def get_scheduler_names():
@@ -61,7 +62,8 @@ class LunaPrepUpscaler:
                     "tooltip": "4K noise scaffold (defines target resolution)"
                 }),
                 "vae": ("VAE",),
-                "upscale_model": ("UPSCALE_MODEL", {
+                "upscale_model_name": (folder_paths.get_filename_list("upscale_models"), {
+                    "default": "4x-UltraSharp.pth",
                     "tooltip": "2x or 4x upscale model (4x recommended for supersample benefit)"
                 }),
                 "prep_mode": (["direct", "iterative_quality"], {
@@ -121,7 +123,7 @@ class LunaPrepUpscaler:
         latent_1k: dict,
         scaffold_4k: dict,
         vae,
-        upscale_model,
+        upscale_model_name: str,
         prep_mode: str,
         model=None,
         positive=None,
@@ -140,6 +142,11 @@ class LunaPrepUpscaler:
             (image_4k, scaffold_passthrough)
         """
         device = comfy.model_management.get_torch_device()
+        
+        # Load upscale model
+        upscale_model = self._load_upscale_model(upscale_model_name)
+        if upscale_model is None:
+            raise ValueError(f"Failed to load upscale model: {upscale_model_name}")
         
         # Extract target resolution from scaffold
         scaffold_samples = scaffold_4k["samples"]
@@ -371,6 +378,57 @@ class LunaPrepUpscaler:
         
         # Convert back BCHW → BHWC
         return resized.permute(0, 2, 3, 1)
+    
+    def _load_upscale_model(self, model_name: str):
+        """
+        Load upscale model from models/upscale_models/.
+        
+        Args:
+            model_name: Filename of the upscale model
+        
+        Returns:
+            Loaded upscale model, or None if loading fails
+        """
+        try:
+            model_path = folder_paths.get_full_path("upscale_models", model_name)
+            if not model_path:
+                print(f"[LunaPrepUpscaler] ⚠ Upscale model not found: {model_name}")
+                return None
+            
+            print(f"[LunaPrepUpscaler] Loading upscale model: {model_name}")
+            
+            # Use ComfyUI's upscale model loader
+            from comfy_extras.chainner_models import model_loading
+            upscale_model = model_loading.load_state_dict(model_path)
+            
+            # Wrap in ComfyUI's upscale model format
+            from comfy import model_management
+            
+            class UpscaleModelWrapper:
+                def __init__(self, model):
+                    self.model = model
+                
+                def upscale(self, image):
+                    """Upscale image tensor [B, H, W, C] → [B, H*scale, W*scale, C]"""
+                    device = model_management.get_torch_device()
+                    
+                    # Convert BHWC → BCHW
+                    image_bchw = image.permute(0, 3, 1, 2).to(device)
+                    
+                    # Run upscale model
+                    with torch.no_grad():
+                        upscaled = self.model(image_bchw)
+                    
+                    # Convert back BCHW → BHWC and move to CPU
+                    return upscaled.permute(0, 2, 3, 1).cpu()
+            
+            return UpscaleModelWrapper(upscale_model)
+            
+        except Exception as e:
+            print(f"[LunaPrepUpscaler] ✗ Failed to load upscale model: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
 
 
 # Node registration
