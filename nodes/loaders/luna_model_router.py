@@ -421,54 +421,41 @@ def _resolve_clip_path(clip_name: str) -> Optional[str]:
 
 CLIP_REQUIREMENTS = {
     # model_type: (required_clips, optional_clips, descriptions)
+    # Note: clip_4 (vision encoder) is always optional - just set it to enable IP-Adapter anchoring
     "SD1.5": {
         "required": ["clip_1"],
-        "optional": [],
+        "optional": ["clip_4"],
         "descriptions": {
             "clip_1": "CLIP-L (e.g., clip_l.safetensors)",
+            "clip_4": "Vision encoder (optional, for IP-Adapter)",
         }
     },
     "SDXL": {
         "required": ["clip_1", "clip_2"],
-        "optional": [],
+        "optional": ["clip_4"],
         "descriptions": {
             "clip_1": "CLIP-L (e.g., clip_l.safetensors)",
             "clip_2": "CLIP-G (e.g., clip_g.safetensors)",
-        }
-    },
-    "SDXL + Vision": {
-        "required": ["clip_1", "clip_2", "clip_4"],
-        "optional": [],
-        "descriptions": {
-            "clip_1": "CLIP-L",
-            "clip_2": "CLIP-G", 
-            "clip_4": "Vision encoder (SigLIP or CLIP-H)",
+            "clip_4": "Vision encoder (optional, for IP-Adapter - SigLIP or CLIP-H)",
         }
     },
     "Flux": {
         "required": ["clip_1", "clip_3"],
-        "optional": [],
+        "optional": ["clip_4"],
         "descriptions": {
             "clip_1": "CLIP-L",
             "clip_3": "T5-XXL",
-        }
-    },
-    "Flux + Vision": {
-        "required": ["clip_1", "clip_3", "clip_4"],
-        "optional": [],
-        "descriptions": {
-            "clip_1": "CLIP-L",
-            "clip_3": "T5-XXL",
-            "clip_4": "Vision encoder (SigLIP)",
+            "clip_4": "Vision encoder (optional, for IP-Adapter - SigLIP)",
         }
     },
     "SD3": {
         "required": ["clip_1", "clip_2", "clip_3"],
-        "optional": [],
+        "optional": ["clip_4"],
         "descriptions": {
             "clip_1": "CLIP-L",
             "clip_2": "CLIP-G",
             "clip_3": "T5-XXL",
+            "clip_4": "Vision encoder (optional, for IP-Adapter)",
         }
     },
     "Z-IMAGE": {
@@ -510,8 +497,8 @@ class LunaModelRouter:
     # Source folders
     MODEL_SOURCES = ["checkpoints", "diffusion_models", "unet"]
     
-    # Model architectures
-    MODEL_TYPES = ["SD1.5", "SDXL", "SDXL + Vision", "Flux", "Flux + Vision", "SD3", "Z-IMAGE"]
+    # Model architectures (vision is auto-enabled when clip_4 is set)
+    MODEL_TYPES = ["SD1.5", "SDXL", "Flux", "SD3", "Z-IMAGE"]
     
     # Precision options for dynamic loading
     # None: Use source precision as-is
@@ -748,19 +735,20 @@ class LunaModelRouter:
             clip_count = len([c for c in clip_config.values() if c is not None])
             status_parts.append(f"CLIP: {clip_count} encoder(s)")
         
-        # === STEP 5: Load CLIP_VISION (for vision model types) ===
+        # === STEP 5: Load CLIP_VISION (auto-enabled when clip_4 is set) ===
         output_clip_vision = None
-        is_vision_type = model_type in ["SDXL + Vision", "Flux + Vision", "Z-IMAGE"]
+        has_clip_4 = clip_config.get("clip_4") is not None
+        is_zimage = model_type == "Z-IMAGE"
         
-        if is_vision_type:
+        if has_clip_4 or is_zimage:
             output_clip_vision = self._load_clip_vision(
                 model_type, clip_config, daemon_running, use_daemon
             )
             if output_clip_vision is not None:
-                if model_type == "Z-IMAGE":
+                if is_zimage:
                     status_parts.append("VISION: mmproj loaded")
                 else:
-                    status_parts.append("VISION: CLIP-H/SigLIP loaded")
+                    status_parts.append("VISION: loaded (for IP-Adapter)")
         
         # === STEP 6: Load IP-Adapter (for LSD structural anchoring) ===
         output_ip_adapter = None
@@ -1430,7 +1418,7 @@ class LunaModelRouter:
         """
         Load vision encoder for image→embedding conversion.
         
-        For SDXL+Vision/Flux+Vision: Load CLIP-H or SigLIP from clip_4
+        Automatically loads when clip_4 is set (for IP-Adapter anchoring).
         For Z-IMAGE: Load mmproj from same folder as Qwen3 model
         """
         if model_type == "Z-IMAGE":

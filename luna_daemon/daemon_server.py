@@ -505,18 +505,38 @@ class LunaDaemon:
                 if not bpe_path.exists():
                     return {"error": f"BPE vocabulary file not found at {bpe_path}"}
                 
-                # Get model checkpoint path
+                # Get model checkpoint path using ComfyUI's folder_paths (respects extra_model_paths)
                 import folder_paths
+                
+                # Register sam3 as a model folder if not already registered
+                if "sam3" not in folder_paths.folder_names_and_paths:
+                    sam3_paths = [os.path.join(folder_paths.models_dir, "sam3")]
+                    folder_paths.folder_names_and_paths["sam3"] = (sam3_paths, {".pt", ".pth", ".safetensors"})
+                
                 checkpoint_path = None
                 if model_name:
-                    sam3_models_dir = os.path.join(folder_paths.models_dir, "sam3")
-                    potential_file = os.path.join(sam3_models_dir, model_name)
+                    # Use get_full_path which searches all registered paths including extra_model_paths
+                    checkpoint_path = folder_paths.get_full_path("sam3", model_name)
                     
-                    if os.path.exists(potential_file):
-                        checkpoint_path = potential_file
-                        logger.info(f"[Daemon] Using local SAM3 checkpoint: {checkpoint_path}")
-                    else:
-                        return {"error": f"SAM3 checkpoint not found: {potential_file}"}
+                    if checkpoint_path is None or not os.path.exists(checkpoint_path):
+                        # Fallback: check common locations
+                        fallback_paths = [
+                            os.path.join(folder_paths.models_dir, "sam3", model_name),
+                        ]
+                        for fp in fallback_paths:
+                            if os.path.exists(fp):
+                                checkpoint_path = fp
+                                break
+                    
+                    if checkpoint_path is None or not os.path.exists(checkpoint_path):
+                        # List available models for helpful error
+                        try:
+                            available = folder_paths.get_filename_list("sam3")
+                        except:
+                            available = []
+                        return {"error": f"SAM3 checkpoint not found: {model_name}. Available: {available}"}
+                    
+                    logger.info(f"[Daemon] Using SAM3 checkpoint: {checkpoint_path}")
                 
                 # Build SAM3 video predictor (contains detector for image segmentation)
                 logger.info(f"[Daemon] Building SAM3 model with checkpoint: {checkpoint_path}")

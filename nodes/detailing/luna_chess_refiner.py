@@ -344,8 +344,18 @@ class LunaChessRefiner:
         
         if use_structural_anchor:
             if ip_adapter is not None and HAS_IPADAPTER:
-                print(f"[LunaChessRefiner] ✓ IP-Adapter structural anchoring ENABLED (weight={ip_adapter_weight})")
                 vision_router = get_vision_router(clip_vision)
+                if vision_router.available:
+                    print(f"[LunaChessRefiner] ✓ IP-Adapter structural anchoring ENABLED (weight={ip_adapter_weight})")
+                    if vision_router.using_daemon:
+                        print(f"[LunaChessRefiner] ✓ CLIP-ViT routing: DAEMON")
+                    else:
+                        print(f"[LunaChessRefiner] ✓ CLIP-ViT routing: LOCAL")
+                else:
+                    print(f"[LunaChessRefiner] ⚠ IP-Adapter provided but no CLIP-ViT available!")
+                    print(f"[LunaChessRefiner] ⚠ Provide clip_vision input OR ensure daemon has vision loaded")
+                    use_anchor = False
+                    vision_router = None
             elif clip_vision is not None:
                 vision_router = get_vision_router(clip_vision)
                 if vision_router.available:
@@ -550,27 +560,12 @@ class LunaChessRefiner:
             # Stack into batch [N, H, W, C]
             pixel_batch = torch.cat(pixel_crops, dim=0)
             
-            # Debug: ALWAYS print pixel_batch shape
-            print(f"[LunaChessRefiner] DEBUG pixel_batch: {pixel_batch.shape} (BHWC), batch {i//batch_size+1}")
-            
-            # Debug: Check pixel_batch shape before encoding
-            if pixel_batch.shape[1] == 0 or pixel_batch.shape[2] == 0:
-                print(f"[LunaChessRefiner] ✗ CRITICAL: pixel_batch has zero dimension!")
-                print(f"  pixel_batch.shape: {pixel_batch.shape}")
-                print(f"  Number of crops stacked: {len(pixel_crops)}")
-                print(f"  Individual crop shapes:")
-                for idx, crop in enumerate(pixel_crops):
-                    print(f"    Crop {idx}: {crop.shape}")
-                print(f"  Skipping this batch to avoid VAE error")
-                continue
-            
             # STEP 2: Encode pixels → fresh latents (SINGLE VAE CALL!)
-            # Convert BHWC → BCHW for VAE
-            pixel_batch_vae = pixel_batch.permute(0, 3, 1, 2).to(device)
-            print(f"[LunaChessRefiner] DEBUG pixel_batch_vae: {pixel_batch_vae.shape} (BCHW)")
+            # ComfyUI's vae.encode() expects BHWC format and handles conversion internally
+            pixel_batch_for_vae = pixel_batch.to(device)
             
             with torch.no_grad():
-                batch_latents = vae.encode(pixel_batch_vae)  # Fresh encoding with tile context! ✨
+                batch_latents = vae.encode(pixel_batch_for_vae)  # Fresh encoding with tile context! ✨
             
             # STEP 3: Slice scaffold noise (this is fine - noise has no encoding context)
             noise_crops = []
@@ -689,7 +684,7 @@ class LunaChessRefiner:
             self._composite_pixel_tiles(pixel_canvas, refined_pixels, chunk, tile_size, ov_h, ov_w, feathering, parity)
             
             # Free memory
-            del refined_batch, batch_latents, batch_scaffold_noise, pixel_batch, pixel_batch_vae, refined_pixels
+            del refined_batch, batch_latents, batch_scaffold_noise, pixel_batch, pixel_batch_for_vae, refined_pixels
             if batch_noise_mask is not None:
                 del batch_noise_mask
             torch.cuda.empty_cache()

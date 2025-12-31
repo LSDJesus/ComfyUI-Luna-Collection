@@ -566,11 +566,11 @@ class DaemonSAM3:
     - Image is discarded after detection (one-way transfer)
     
     Usage:
-        sam3 = DaemonSAM3("sam3.safetensors", device="cuda:1")
+        sam3 = DaemonSAM3("sam3_h.safetensors", device="cuda:1")
         detections = sam3.ground(pil_image, "face", threshold=0.25)
     """
     
-    def __init__(self, model_name: str = "sam3.safetensors", device: str = "cuda:1"):
+    def __init__(self, model_name: str = "sam3_h.safetensors", device: str = "cuda:1"):
         """
         Initialize SAM3 proxy.
         

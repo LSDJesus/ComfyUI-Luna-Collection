@@ -42,7 +42,7 @@ def _load_checkpoint_file(checkpoint_path: str) -> dict:
             import torch
             from safetensors.torch import save_file
             state_dict = torch.load("sam3.pt", map_location="cpu", weights_only=True)
-            save_file(state_dict, "sam3.safetensors")
+            save_file(state_dict, "sam3_h.safetensors")
     """
     is_safetensors = checkpoint_path.endswith('.safetensors')
 
@@ -70,7 +70,7 @@ def _load_checkpoint_file(checkpoint_path: str) -> dict:
                 "    import torch\n"
                 "    from safetensors.torch import save_file\n"
                 "    state_dict = torch.load('sam3.pt', map_location='cpu', weights_only=True)\n"
-                "    save_file(state_dict, 'sam3.safetensors')"
+                "    save_file(state_dict, 'sam3_h.safetensors')"
             )
 
         return state_dict
