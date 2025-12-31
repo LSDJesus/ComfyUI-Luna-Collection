@@ -65,7 +65,7 @@ class LunaSAM3Daemon:
     VRAM churn and loading overhead.
     
     Usage:
-        predictor = LunaSAM3Daemon.get_predictor(model_name="sam3_h.safetensors")
+        predictor = LunaSAM3Daemon.get_predictor(model_name="sam3.safetensors")
         # Use predictor for detection
         LunaSAM3Daemon.release_model(model_name)  # Optional explicit cleanup
     """
@@ -73,7 +73,7 @@ class LunaSAM3Daemon:
     @classmethod
     def get_predictor(
         cls,
-        model_name: str = "sam3_h.safetensors",
+        model_name: str = "sam3.safetensors",
         device: Optional[str] = None,
         offload_device: str = "cpu"
     ) -> Any:

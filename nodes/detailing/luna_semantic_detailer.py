@@ -204,10 +204,7 @@ class LunaSemanticDetailer:
         Returns:
             Tuple of (refined_image, detection_pipe, refinement_mask)
         """
-            
-        Returns:
-            Tuple of (refined_image, refinement_mask)
-        """
+        
         device = comfy.model_management.get_torch_device()
         
         # Parse target layers
@@ -231,7 +228,7 @@ class LunaSemanticDetailer:
             print(f"[LunaSemanticDetailer] No detections for layers {target_layer_ids}")
             b, h, w = image.shape[0], image.shape[1], image.shape[2]
             empty_mask = previous_refinement_mask if previous_refinement_mask is not None else torch.zeros(b, h, w, device=device)
-            return (image, full_latent, detection_pipe, empty_mask)
+            return (image, detection_pipe, empty_mask)
         
         detections, positive_list = zip(*filtered_data)
         
@@ -254,7 +251,7 @@ class LunaSemanticDetailer:
         if len(crop_data) == 0:
             print("[LunaSemanticDetailer] No valid crops generated")
             empty_mask = previous_refinement_mask if previous_refinement_mask is not None else torch.zeros(b, h, w, device=device)
-            return (image, full_latent, detection_pipe, empty_mask)
+            return (image, detection_pipe, empty_mask)
         
         # Crop global conditioning for each detection region
         # Import the helper from chess refiner
@@ -453,7 +450,8 @@ class LunaSemanticDetailer:
         - pixel_crop: [1, 1024, 1024, 3]
         - noise_crop: [1, 4, 128, 128]
         - mask_1024: [1024, 1024]
-        - original_box: (x1, y1, x2, y2) in full image        - original_box_latent: (x1, y1, x2, y2) in latent space        - resize_info: dict with scaling info
+        - original_box: (x1, y1, x2, y2) in full image
+        - resize_info: dict with scaling info
         - prompt: str
         """
         crop_data = []

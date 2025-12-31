@@ -473,7 +473,7 @@ class LunaDaemon:
         
         # SAM3 commands
         elif cmd == "load_sam3":
-            # Load SAM3 model for object detection using official sam3 pip package
+            # Load SAM3 model using vendored luna_sam3 library
             model_name = data.get("model_name")
             device = data.get("device", self.sam3_device)
             
@@ -486,93 +486,61 @@ class LunaDaemon:
                     logger.info(f"[Daemon] SAM3 model '{model_name}' already loaded")
                     return {"success": True, "status": "already_loaded", "model_name": model_name}
                 
-                # Load SAM3 model using official pip package
                 logger.info(f"[Daemon] Loading SAM3 model '{model_name}' on {device}")
                 
-                from sam3.model_builder import build_sam3_image_model
-                from sam3.model.sam3_image_processor import Sam3Processor
+                # Import vendored SAM3
                 from pathlib import Path
+                import sys
                 
-                # Get BPE vocabulary path
-                # Try sam3 package assets first (source install), then Luna's bundled copy
-                import sam3
-                sam3_pkg_path = Path(sam3.__file__).parent
-                bpe_path = sam3_pkg_path / "assets" / "bpe_simple_vocab_16e6.txt.gz"
+                # Add ComfyUI-Luna-Collection to sys.path so luna_sam3 can be imported
+                luna_collection_root = Path(__file__).parent.parent
+                if str(luna_collection_root) not in sys.path:
+                    sys.path.insert(0, str(luna_collection_root))
                 
+                from luna_sam3.sam3_video_predictor import Sam3VideoPredictor
+                from luna_sam3.model.sam3_image_processor import Sam3Processor
+                
+                # Get BPE vocabulary path from vendored luna_sam3
+                bpe_path = luna_collection_root / "luna_sam3" / "bpe_simple_vocab_16e6.txt.gz"
                 if not bpe_path.exists():
-                    # Fall back to Luna's bundled copy
-                    luna_bpe = Path(__file__).parent.parent / "luna_sam3_assets" / "bpe_simple_vocab_16e6.txt.gz"
-                    if luna_bpe.exists():
-                        bpe_path = luna_bpe
-                        logger.info(f"[Daemon] Using Luna bundled BPE vocabulary")
-                    else:
-                        return {"error": f"BPE vocabulary file not found. Expected at {bpe_path} or {luna_bpe}"}
+                    return {"error": f"BPE vocabulary file not found at {bpe_path}"}
                 
-                # Get model checkpoint path (optional)
+                # Get model checkpoint path
                 import folder_paths
                 checkpoint_path = None
                 if model_name:
-                    potential_path = os.path.join(folder_paths.models_dir, "sam3", model_name)
-                    if os.path.exists(potential_path):
-                        # Check if it's a safetensors file (not supported by SAM3 loader)
-                        if potential_path.endswith('.safetensors'):
-                            return {"error": f"SAM3 model '{model_name}' is in safetensors format. Please use a .pt or .pth checkpoint, or set model_name to empty to download from HuggingFace."}
-                        checkpoint_path = potential_path
-                        logger.info(f"[Daemon] Using local SAM3 model: {checkpoint_path}")
+                    sam3_models_dir = os.path.join(folder_paths.models_dir, "sam3")
+                    potential_file = os.path.join(sam3_models_dir, model_name)
+                    
+                    if os.path.exists(potential_file):
+                        checkpoint_path = potential_file
+                        logger.info(f"[Daemon] Using local SAM3 checkpoint: {checkpoint_path}")
+                    else:
+                        return {"error": f"SAM3 checkpoint not found: {potential_file}"}
                 
-                # Build model (downloads from HF if no local checkpoint)
-                sam3_model = build_sam3_image_model(
-                    bpe_path=str(bpe_path),
+                # Build SAM3 video predictor (contains detector for image segmentation)
+                logger.info(f"[Daemon] Building SAM3 model with checkpoint: {checkpoint_path}")
+                video_predictor = Sam3VideoPredictor(
                     checkpoint_path=checkpoint_path,
-                    device=device,
-                    load_from_HF=(checkpoint_path is None)
+                    bpe_path=str(bpe_path),
+                    enable_inst_interactivity=True,  # Enable point/box prompts
                 )
                 
-                # Ensure model is on the correct device
+                # Extract image detector and move to target device
+                sam3_model = video_predictor.model.detector  # Sam3Image instance
                 sam3_model = sam3_model.to(device)
                 sam3_model.eval()
                 
-                # Create processor with explicit device
+                # Create processor
                 processor = Sam3Processor(sam3_model)
-                processor.device = device  # Ensure processor uses correct device
+                processor.device = device
                 
-                # Fix SAM3 device mismatch bug - txt_ids on CPU but language_features on CUDA
-                # Approach: Wrap the model's forward methods to ensure all internal tensors use correct device
-                # This is more robust than trying to patch internal tokenization logic
-                
-                import types
-                
-                # Patch the text_tokenizer.encode to return tensors on the correct device
-                if hasattr(sam3_model, 'text_tokenizer') and hasattr(sam3_model.text_tokenizer, 'encode'):
-                    _original_tokenize = sam3_model.text_tokenizer.encode
-                    
-                    def encode_to_device(*args, **kwargs):
-                        """Ensure tokenizer output is on the model's device"""
-                        result = _original_tokenize(*args, **kwargs)
-                        
-                        # Move result to device if it's a tensor
-                        if isinstance(result, torch.Tensor):
-                            return result.to(device)
-                        # Handle dict of tensors
-                        elif isinstance(result, dict):
-                            return {k: v.to(device) if isinstance(v, torch.Tensor) else v 
-                                   for k, v in result.items()}
-                        # Handle list/tuple of tensors
-                        elif isinstance(result, (list, tuple)):
-                            moved = [item.to(device) if isinstance(item, torch.Tensor) else item 
-                                    for item in result]
-                            return type(result)(moved)
-                        
-                        return result
-                    
-                    sam3_model.text_tokenizer.encode = encode_to_device
-                    logger.info(f"[Daemon] Patched SAM3 text_tokenizer to use {device}")
-                
-                # Store references
+                # Store references (keep video_predictor alive for model lifecycle)
                 self.sam3_model = sam3_model
                 self.sam3_processor = processor
                 self.sam3_model_name = model_name
                 self.sam3_device = device
+                self._sam3_video_predictor = video_predictor  # Keep reference
                 
                 logger.info(f"[Daemon] SAM3 model loaded successfully on {device}: {model_name}")
                 return {"success": True, "status": "loaded", "model_name": model_name}
@@ -777,6 +745,8 @@ class LunaDaemon:
                     model_name = self.sam3_model_name
                     del self.sam3_model
                     del self.sam3_processor
+                    if hasattr(self, '_sam3_video_predictor'):
+                        del self._sam3_video_predictor
                     self.sam3_model = None
                     self.sam3_processor = None
                     self.sam3_model_name = None

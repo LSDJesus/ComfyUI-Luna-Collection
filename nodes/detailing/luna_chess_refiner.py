@@ -467,6 +467,17 @@ class LunaChessRefiner:
         pixel_W = W * 8
         tile_size_px = tile_size * 8
         
+        # Debug: Verify pixel_canvas matches expected dimensions
+        actual_canvas_h, actual_canvas_w = pixel_canvas.shape[1], pixel_canvas.shape[2]
+        if actual_canvas_h != pixel_H or actual_canvas_w != pixel_W:
+            print(f"[LunaChessRefiner] ⚠ Canvas size mismatch!")
+            print(f"  Expected (from latent): {pixel_H}×{pixel_W}")
+            print(f"  Actual canvas: {actual_canvas_h}×{actual_canvas_w}")
+            print(f"  Latent scaffold: {H}×{W}")
+            # Adjust pixel dimensions to match actual canvas
+            pixel_H = actual_canvas_h
+            pixel_W = actual_canvas_w
+        
         # Extract tiles for this parity
         tiles_data = []
         target_mod = 0 if parity == "even" else 1
@@ -510,17 +521,53 @@ class LunaChessRefiner:
             
             # STEP 1: Crop PIXELS from canvas (BHWC format)
             pixel_crops = []
+            valid_tiles = []  # Track which tiles produced valid crops
             for t in chunk:
                 y0_px, x0_px, y1_px, x1_px = t["coords_px"]
+                
+                # Validate coordinates to prevent zero-size crops
+                if y0_px >= y1_px or x0_px >= x1_px:
+                    print(f"[LunaChessRefiner] ✗ Invalid crop coords: y={y0_px}:{y1_px}, x={x0_px}:{x1_px}")
+                    continue
+                    
                 pixel_crop = pixel_canvas[:, y0_px:y1_px, x0_px:x1_px, :].clone()
+                
+                # Validate crop shape
+                if pixel_crop.shape[1] == 0 or pixel_crop.shape[2] == 0:
+                    print(f"[LunaChessRefiner] ✗ Zero-size crop: {pixel_crop.shape} from coords y={y0_px}:{y1_px}, x={x0_px}:{x1_px}, canvas={pixel_canvas.shape}")
+                    continue
+                    
                 pixel_crops.append(pixel_crop)
+                valid_tiles.append(t)  # Only add tile if crop is valid
+            
+            if len(pixel_crops) == 0:
+                print(f"[LunaChessRefiner] ✗ No valid pixel crops in batch, skipping")
+                continue
+            
+            # Use only valid tiles from here on
+            chunk = valid_tiles
             
             # Stack into batch [N, H, W, C]
             pixel_batch = torch.cat(pixel_crops, dim=0)
             
+            # Debug: ALWAYS print pixel_batch shape
+            print(f"[LunaChessRefiner] DEBUG pixel_batch: {pixel_batch.shape} (BHWC), batch {i//batch_size+1}")
+            
+            # Debug: Check pixel_batch shape before encoding
+            if pixel_batch.shape[1] == 0 or pixel_batch.shape[2] == 0:
+                print(f"[LunaChessRefiner] ✗ CRITICAL: pixel_batch has zero dimension!")
+                print(f"  pixel_batch.shape: {pixel_batch.shape}")
+                print(f"  Number of crops stacked: {len(pixel_crops)}")
+                print(f"  Individual crop shapes:")
+                for idx, crop in enumerate(pixel_crops):
+                    print(f"    Crop {idx}: {crop.shape}")
+                print(f"  Skipping this batch to avoid VAE error")
+                continue
+            
             # STEP 2: Encode pixels → fresh latents (SINGLE VAE CALL!)
             # Convert BHWC → BCHW for VAE
             pixel_batch_vae = pixel_batch.permute(0, 3, 1, 2).to(device)
+            print(f"[LunaChessRefiner] DEBUG pixel_batch_vae: {pixel_batch_vae.shape} (BCHW)")
             
             with torch.no_grad():
                 batch_latents = vae.encode(pixel_batch_vae)  # Fresh encoding with tile context! ✨

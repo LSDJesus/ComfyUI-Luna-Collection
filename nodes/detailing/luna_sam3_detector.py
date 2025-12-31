@@ -77,7 +77,7 @@ class LunaSAM3Detector:
                     "tooltip": "Base negative conditioning (applied to all detections)"
                 }),
                 "sam3_model_name": ("STRING", {
-                    "default": "sam3_h.safetensors",
+                    "default": "sam3.safetensors",
                     "tooltip": "SAM3 model filename in models/sam3/"
                 }),
                 "device": (["cuda:0", "cuda:1", "cpu"], {

@@ -397,32 +397,13 @@ class LunaPrepUpscaler:
             
             print(f"[LunaPrepUpscaler] Loading upscale model: {model_name}")
             
-            # Use ComfyUI's upscale model loader
+            # Load state dict from file and then use ComfyUI's upscale model loader
             from comfy_extras.chainner_models import model_loading
-            upscale_model = model_loading.load_state_dict(model_path)
+            device = comfy.model_management.get_torch_device()
+            state_dict = torch.load(model_path, weights_only=True)
+            upscale_model = model_loading.load_state_dict(state_dict).eval().to(device)
             
-            # Wrap in ComfyUI's upscale model format
-            from comfy import model_management
-            
-            class UpscaleModelWrapper:
-                def __init__(self, model):
-                    self.model = model
-                
-                def upscale(self, image):
-                    """Upscale image tensor [B, H, W, C] → [B, H*scale, W*scale, C]"""
-                    device = model_management.get_torch_device()
-                    
-                    # Convert BHWC → BCHW
-                    image_bchw = image.permute(0, 3, 1, 2).to(device)
-                    
-                    # Run upscale model
-                    with torch.no_grad():
-                        upscaled = self.model(image_bchw)
-                    
-                    # Convert back BCHW → BHWC and move to CPU
-                    return upscaled.permute(0, 2, 3, 1).cpu()
-            
-            return UpscaleModelWrapper(upscale_model)
+            return upscale_model
             
         except Exception as e:
             print(f"[LunaPrepUpscaler] ✗ Failed to load upscale model: {e}")
