@@ -142,6 +142,16 @@ VAE_PATH = None
 CLIP_L_PATH = None
 CLIP_G_PATH = None
 
+# CLIP Vision model for structural anchoring in LSD pipeline
+# Used by Semantic Detailer and Chess Refiner for per-crop/tile vision encoding
+# Supports CLIP-ViT-H, CLIP-ViT-L, SigLIP, etc.
+# Examples: "clip_vision_h.safetensors", "sigLIP_fp16.safetensors"
+CLIP_VISION_PATH = None
+
+# Device for CLIP Vision (shares with CLIP by default)
+# Set explicitly if you want vision on a different GPU
+CLIP_VISION_DEVICE = None  # None = use CLIP_DEVICE
+
 # Embeddings directory for textual inversions
 # Leave None to automatically use ComfyUI's embeddings directory
 EMBEDDINGS_DIR = None

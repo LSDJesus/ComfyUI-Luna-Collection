@@ -108,8 +108,23 @@ class InferenceModeWrapper:
         return self._inference_count
     
     def clone(self):
-        """Clone the wrapper (needed for some ComfyUI operations)."""
+        """
+        Clone the wrapper AND preserve model_unet_function_wrapper.
+        
+        This is critical for FBCache and other wrappers to persist across
+        operations that clone the model (USDU, detailers, etc.)
+        """
+        # Get the current function wrapper before cloning
+        unet_wrapper = getattr(self._wrapped, 'model_unet_function_wrapper', None)
+        
+        # Clone the inner model
         cloned_model = self._wrapped.clone()
+        
+        # Restore the function wrapper to the clone if it existed
+        if unet_wrapper is not None:
+            cloned_model.set_model_unet_function_wrapper(unet_wrapper)
+        
+        # Wrap the clone
         return InferenceModeWrapper(cloned_model)
     
     def is_clone(self, other) -> bool:

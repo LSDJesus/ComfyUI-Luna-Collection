@@ -82,6 +82,7 @@ class WorkerType(Enum):
     """Types of workers in the pool."""
     VAE = "vae"
     CLIP = "clip"
+    CLIP_VISION = "clip_vision"  # CLIP-ViT image encoder
     IMAGE_SAVE = "image_save"
 
 
@@ -298,6 +299,33 @@ class ModelWorker:
                     self.model.cond_stage_model.to(self.dtype)
                 
                 logger.info(f"[CLIP-{self.worker_id}] CLIP loaded from path ({self.precision})")
+        
+        elif self.worker_type == WorkerType.CLIP_VISION:
+            logger.info(f"[CLIP_VISION-{self.worker_id}] Loading CLIP Vision model...")
+            
+            # Try to load CLIP Vision model
+            vision_path = self._resolve_path(self.config_paths.get('clip_vision') or '', "clip_vision")
+            
+            if not vision_path:
+                raise RuntimeError(
+                    "CLIP Vision model not configured. "
+                    "Use load_clip_vision() to specify which vision model to load, or set CLIP_VISION_PATH in config.py"
+                )
+            
+            # Load using ComfyUI's clip_vision loader
+            import comfy.clip_vision  # type: ignore
+            self.model = comfy.clip_vision.load(vision_path)
+            
+            # Move to target device
+            if hasattr(self.model, 'model'):
+                self.model.model.to(self.device)
+            
+            if self.precision != "fp32":
+                if hasattr(self.model, 'model'):
+                    self.model.model.to(self.dtype)
+            
+            self.loaded_model_paths['clip_vision'] = vision_path
+            logger.info(f"[CLIP_VISION-{self.worker_id}] Vision model loaded: {vision_path} ({self.precision})")
         
         self.is_loaded = True
         torch.cuda.empty_cache()
@@ -616,6 +644,154 @@ class ModelWorker:
         # TODO: Implement LoRA clearing
         return {"success": True, "message": "LoRA clearing not yet implemented in workers"}
     
+    # =========================================================================
+    # CLIP Vision Operations (Structural Anchoring)
+    # =========================================================================
+    
+    def process_vision_encode(
+        self,
+        image: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Encode a single image with CLIP Vision model.
+        
+        Args:
+            image: Image tensor [1, H, W, 3] or [H, W, 3]
+        
+        Returns:
+            Vision embedding [1, 257, vision_dim]
+        """
+        assert self.model is not None, "CLIP Vision model not loaded"
+        
+        with torch.inference_mode():
+            # Ensure proper shape
+            if image.dim() == 3:
+                image = image.unsqueeze(0)
+            
+            # Move to device
+            image = image.to(self.device)
+            
+            # Encode using ComfyUI's clip_vision
+            output = self.model.encode_image(image)
+            
+            # Extract embedding
+            if hasattr(output, 'last_hidden_state'):
+                embedding = output.last_hidden_state
+            elif hasattr(output, 'image_embeds'):
+                embedding = output.image_embeds
+            else:
+                embedding = output
+            
+            result = embedding.cpu()
+            
+            del image, output
+            self._cleanup_gpu_memory()
+            
+            return result
+    
+    def process_vision_encode_batch(
+        self,
+        images: torch.Tensor
+    ) -> torch.Tensor:
+        """
+        Batch encode multiple images with CLIP Vision model.
+        
+        Args:
+            images: Image tensor [N, H, W, 3]
+        
+        Returns:
+            Vision embeddings [N, 257, vision_dim]
+        """
+        assert self.model is not None, "CLIP Vision model not loaded"
+        
+        with torch.inference_mode():
+            images = images.to(self.device)
+            
+            # Batch encode
+            output = self.model.encode_image(images)
+            
+            if hasattr(output, 'last_hidden_state'):
+                embedding = output.last_hidden_state
+            elif hasattr(output, 'image_embeds'):
+                embedding = output.image_embeds
+            else:
+                embedding = output
+            
+            result = embedding.cpu()
+            
+            del images, output
+            self._cleanup_gpu_memory()
+            
+            return result
+    
+    def process_vision_encode_crops(
+        self,
+        full_image: torch.Tensor,
+        crop_coords: list,
+        tile_size: int = 1024
+    ) -> list:
+        """
+        Crop full image and batch encode crops with CLIP Vision.
+        
+        This is the most efficient method - receives one full image,
+        crops on GPU, then batch encodes all crops at once.
+        
+        Args:
+            full_image: Full canvas [1, H, W, 3] in BHWC format
+            crop_coords: List of (x1, y1, x2, y2) crop regions
+            tile_size: Target crop size for encoding
+        
+        Returns:
+            List of vision embeddings, one per crop
+        """
+        assert self.model is not None, "CLIP Vision model not loaded"
+        
+        import torch.nn.functional as F
+        
+        with torch.inference_mode():
+            full_image = full_image.to(self.device)
+            
+            # Crop on GPU
+            crops = []
+            for (x1, y1, x2, y2) in crop_coords:
+                crop = full_image[:, y1:y2, x1:x2, :]  # [1, crop_h, crop_w, 3]
+                
+                # Resize to tile_size if needed
+                if crop.shape[1] != tile_size or crop.shape[2] != tile_size:
+                    crop_bchw = crop.permute(0, 3, 1, 2)  # BHWC → BCHW
+                    crop_bchw = F.interpolate(
+                        crop_bchw, size=(tile_size, tile_size),
+                        mode='bicubic', align_corners=False
+                    )
+                    crop = crop_bchw.permute(0, 2, 3, 1)  # BCHW → BHWC
+                
+                crops.append(crop)
+            
+            # Stack into batch
+            batch = torch.cat(crops, dim=0)  # [N, tile_size, tile_size, 3]
+            
+            logger.info(f"[CLIP_VISION-{self.worker_id}] Encoding {len(crops)} crops")
+            
+            # Batch encode
+            output = self.model.encode_image(batch)
+            
+            if hasattr(output, 'last_hidden_state'):
+                embeddings = output.last_hidden_state
+            elif hasattr(output, 'image_embeds'):
+                embeddings = output.image_embeds
+            else:
+                embeddings = output
+            
+            # Split back into list
+            result = [embeddings[i:i+1].cpu() for i in range(len(crop_coords))]
+            
+            del full_image, crops, batch, output, embeddings
+            self._cleanup_gpu_memory()
+            
+            logger.info(f"[CLIP_VISION-{self.worker_id}] Encoding complete: {len(result)} embeddings")
+            
+            return result
+
     def process_zimage_encode(self, text: str):
         """Encode text with Z-IMAGE (Qwen3-VL CLIP)."""
         if self.qwen3_encoder is None:
@@ -854,6 +1030,27 @@ class ModelWorker:
                             result = self.process_encode_vision(data["image"])
                         else:
                             result = {"error": f"Unknown CLIP command: {cmd}"}
+                    
+                    elif self.worker_type == WorkerType.CLIP_VISION:
+                        if cmd == "preload":
+                            result = {"success": True, "preloaded": True}
+                        elif cmd == "vision_encode":
+                            result = self.process_vision_encode(data["image"])
+                        elif cmd == "vision_encode_batch":
+                            result = self.process_vision_encode_batch(data["images"])
+                        elif cmd == "vision_encode_crops":
+                            result = self.process_vision_encode_crops(
+                                data["full_image"],
+                                data["crop_coords"],
+                                data.get("tile_size", 1024)
+                            )
+                        elif cmd == "load_model":
+                            # Reload with new config
+                            self.config_paths.update(data)
+                            self.reload_model()
+                            result = {"success": True, "reloaded": True}
+                        else:
+                            result = {"error": f"Unknown CLIP_VISION command: {cmd}"}
                     
                     logger.info(f"[{self.worker_type.value.upper()}-{self.worker_id}] Completed {cmd}")
                     

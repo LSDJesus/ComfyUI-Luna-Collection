@@ -57,6 +57,8 @@ QUEUE_THRESHOLD = 2
 SCALE_UP_DELAY_SEC = 1.0
 IDLE_TIMEOUT_SEC = 30.0
 SERVICE_TYPE = "full"
+CLIP_VISION_PATH = None
+CLIP_VISION_DEVICE = None
 
 config_loaded = False
 config_source = "hardcoded defaults"
@@ -82,6 +84,8 @@ try:
         IDLE_TIMEOUT_SEC,
         SERVICE_TYPE,
         ServiceType,
+        CLIP_VISION_PATH,
+        CLIP_VISION_DEVICE,
     )
     logger.info("[Config] [OK] Loaded config via package import (.config)")
     config_loaded = True
@@ -231,8 +235,12 @@ class LunaDaemon:
         self.config_paths: Dict[str, Optional[str]] = {
             'clip_l': CLIP_L_PATH,
             'clip_g': CLIP_G_PATH,
-            'embeddings': EMBEDDINGS_DIR
+            'embeddings': EMBEDDINGS_DIR,
+            'clip_vision': CLIP_VISION_PATH
         }
+        
+        # Vision device (defaults to CLIP device)
+        self.vision_device = CLIP_VISION_DEVICE or clip_device
         
         # Weight registry for CUDA IPC weight sharing
         try:
@@ -255,6 +263,8 @@ class LunaDaemon:
         
         # Worker pools
         self.clip_pool: Any = None
+        self.vision_pool: Any = None  # CLIP Vision worker pool
+        self.vision_device: str = clip_device  # Share device with CLIP by default
         
         # WebSocket monitoring
         self.ws_server: Any = None
@@ -273,6 +283,9 @@ class LunaDaemon:
         self.sam3_model_name: Optional[str] = None
         self.sam3_device: str = clip_device  # Use same device as CLIP by default
         self.models_lock = threading.Lock()
+        
+        # Request counters
+        self._vision_request_count = 0
         
         # Socket server
         self._running = False
@@ -409,6 +422,54 @@ class LunaDaemon:
                 return {"error": "CLIP pool not available"}
             # Route to CLIP pool - vision encoder shares infrastructure
             return self.clip_pool.submit(cmd, data)
+        
+        # CLIP Vision (Structural Anchoring) commands
+        elif cmd == "vision_encode":
+            self._vision_request_count += 1
+            if self.vision_pool is None:
+                return {"error": "CLIP Vision pool not available"}
+            return self.vision_pool.submit("vision_encode", data)
+        
+        elif cmd == "vision_encode_batch":
+            self._vision_request_count += 1
+            if self.vision_pool is None:
+                return {"error": "CLIP Vision pool not available"}
+            return self.vision_pool.submit("vision_encode_batch", data)
+        
+        elif cmd == "vision_encode_crops":
+            self._vision_request_count += 1
+            if self.vision_pool is None:
+                return {"error": "CLIP Vision pool not available"}
+            return self.vision_pool.submit("vision_encode_crops", data)
+        
+        elif cmd == "load_clip_vision":
+            # Load CLIP Vision model
+            model_path = data.get("model_path")
+            device = data.get("device")
+            
+            if not model_path:
+                return {"error": "model_path required"}
+            
+            if self.vision_pool is None:
+                return {"error": "CLIP Vision pool not available"}
+            
+            # Update config and trigger reload
+            return self.vision_pool.submit("load_model", {
+                "clip_vision": model_path,
+                "device": device or self.vision_device
+            })
+        
+        elif cmd == "vision_status":
+            # Get CLIP Vision model status
+            if self.vision_pool is None:
+                return {"loaded": False, "available": False}
+            
+            return {
+                "available": True,
+                "loaded": self.vision_pool.has_loaded_workers(),
+                "worker_count": self.vision_pool.active_worker_count(),
+                "pending_requests": self.vision_pool.pending_count()
+            }
         
         # SAM3 commands
         elif cmd == "load_sam3":
@@ -1295,6 +1356,22 @@ class LunaDaemon:
             )
             self.clip_pool.start()
             logger.info(f"[CLIP] Worker pool started on {self.clip_device}")
+        
+        # Start CLIP Vision pool if vision path is configured
+        vision_path = self.config_paths.get('clip_vision')
+        if vision_path:
+            self.vision_pool = WorkerPool(
+                worker_type=WorkerType.CLIP_VISION,
+                device=self.vision_device,
+                precision=CLIP_PRECISION,
+                config=self.scaling_config,
+                on_scale_event=self._on_scale_event,
+                config_paths=self.config_paths
+            )
+            self.vision_pool.start()
+            logger.info(f"[CLIP_VISION] Worker pool started on {self.vision_device}")
+        else:
+            logger.info("[CLIP_VISION] No vision model configured, pool not started")
         
         # Start WebSocket monitoring
         self.ws_server = WebSocketServer(

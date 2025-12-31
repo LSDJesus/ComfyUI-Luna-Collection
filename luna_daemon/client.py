@@ -402,6 +402,103 @@ class DaemonClient:
         return self._send_request(request)
     
     # =========================================================================
+    # CLIP Vision Operations (Structural Anchoring)
+    # =========================================================================
+    
+    def vision_available(self) -> bool:
+        """Check if CLIP Vision is available in daemon."""
+        try:
+            result = self._send_request({"cmd": "vision_status"})
+            return result.get("available", False) and result.get("loaded", False)
+        except:
+            return False
+    
+    def vision_status(self) -> dict:
+        """Get CLIP Vision pool status."""
+        return self._send_request({"cmd": "vision_status"})
+    
+    def load_clip_vision(self, model_path: str, device: Optional[str] = None) -> dict:
+        """Load CLIP Vision model in daemon."""
+        return self._send_request({
+            "cmd": "load_clip_vision",
+            "model_path": model_path,
+            "device": device
+        })
+    
+    def vision_encode(self, image: torch.Tensor) -> torch.Tensor:
+        """
+        Encode a single image with CLIP Vision via daemon.
+        
+        Args:
+            image: Image tensor [1, H, W, 3] or [H, W, 3]
+        
+        Returns:
+            Vision embedding [1, 257, vision_dim]
+        """
+        image_cpu = image.detach().cpu()
+        
+        result = self._send_request({
+            "cmd": "vision_encode",
+            "image": image_cpu
+        })
+        
+        del image_cpu
+        return result
+    
+    def vision_encode_batch(self, images: torch.Tensor) -> torch.Tensor:
+        """
+        Batch encode multiple images with CLIP Vision via daemon.
+        
+        Args:
+            images: Image tensor [N, H, W, 3]
+        
+        Returns:
+            Vision embeddings [N, 257, vision_dim]
+        """
+        images_cpu = images.detach().cpu()
+        
+        result = self._send_request({
+            "cmd": "vision_encode_batch",
+            "images": images_cpu
+        })
+        
+        del images_cpu
+        return result
+    
+    def vision_encode_crops(
+        self,
+        full_image: torch.Tensor,
+        crop_coords: list,
+        tile_size: int = 1024
+    ) -> list:
+        """
+        Crop full image and batch encode crops via daemon.
+        
+        This is the most efficient method - sends one full image,
+        daemon crops on GPU, then batch encodes all crops at once.
+        No PIL conversion, no multiple transfers!
+        
+        Args:
+            full_image: Full canvas [1, H, W, 3] in BHWC format
+            crop_coords: List of (x1, y1, x2, y2) crop regions
+            tile_size: Target crop size for encoding (default 1024)
+        
+        Returns:
+            List of vision embeddings, one per crop
+        """
+        image_cpu = full_image.detach().cpu()
+        
+        result = self._send_request({
+            "cmd": "vision_encode_crops",
+            "full_image": image_cpu,
+            "crop_coords": crop_coords,
+            "tile_size": tile_size
+        })
+        
+        del image_cpu
+        return result
+
+    # =========================================================================
     # LoRA Cache Operations
     # =========================================================================
     

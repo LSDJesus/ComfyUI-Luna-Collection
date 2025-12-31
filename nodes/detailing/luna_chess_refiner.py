@@ -8,6 +8,7 @@ perfect variance preservation.
 Architecture:
 - Chess pattern (even/odd passes) for seamless blending
 - Uses master noise scaffold (1:1 noise density)
+- Dynamic CLIP-ViT routing (daemon or local) for structural anchoring
 - Optional supersampling via Lanczos downscale
 - Respects refinement mask (lighter touch on semantic-refined areas)
 - Batched tile processing for VRAM efficiency
@@ -25,6 +26,9 @@ import comfy.sample
 import comfy.utils
 import comfy.model_management
 import comfy.sampler_helpers
+
+# Dynamic vision routing
+from .vision_routing import VisionRouter, get_vision_router
 
 
 def crop_conditioning_for_tile(conditioning, tile_region_px, canvas_size_px, scale_from=1.0):
@@ -112,12 +116,12 @@ class LunaChessRefiner:
     Global tiled refinement with chess pattern and optional supersampling.
     
     Performs final quality pass across entire image using batched tile
-    processing. Can optionally reduce denoise in areas already refined
-    by semantic detailer.
+    processing with fresh VAE encoding and optional CLIP-ViT structural anchoring.
     
     Key Features:
     - Chess pattern (even/odd) for seamless blending
-    - Variance-preserved noise slicing from master scaffold
+    - Fresh VAE encoding per tile (proper context)
+    - Optional per-tile CLIP-ViT structural anchoring
     - Smoothstep blending for invisible seams
     - Optional supersampling (Lanczos downscale)
     - Refinement mask awareness
@@ -209,6 +213,13 @@ class LunaChessRefiner:
                     "step": 0.05,
                     "tooltip": "Noise multiplier for masked (already refined) areas. 0.5 = half noise in those regions"
                 }),
+                "clip_vision": ("CLIP_VISION", {
+                    "tooltip": "CLIP-ViT model for structural anchoring (encodes each tile)"
+                }),
+                "use_structural_anchor": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Enable per-tile CLIP-ViT encoding for structural preservation"
+                }),
             }
         }
     
@@ -232,7 +243,9 @@ class LunaChessRefiner:
         scale: float,
         feathering: float,
         refinement_mask = None,
-        mask_noise_factor: float = 0.5
+        mask_noise_factor: float = 0.5,
+        clip_vision = None,
+        use_structural_anchor: bool = True
     ) -> tuple:
         """
         Perform global tiled refinement with chess pattern.
@@ -293,11 +306,30 @@ class LunaChessRefiner:
         total_tiles = rows * cols
         pbar = comfy.utils.ProgressBar(total_tiles)
         
+        # Determine if we're using structural anchoring
+        # Initialize vision router for dynamic daemon/local routing
+        vision_router = None
+        use_anchor = use_structural_anchor
+        
+        if use_structural_anchor:
+            vision_router = get_vision_router(clip_vision)
+            if vision_router.available:
+                if vision_router.using_daemon:
+                    print(f"[LunaChessRefiner] ✓ CLIP-ViT routing: DAEMON (GPU offload)")
+                else:
+                    print(f"[LunaChessRefiner] ✓ CLIP-ViT routing: LOCAL")
+            else:
+                print(f"[LunaChessRefiner] ⚠ No vision encoder available, using text-only")
+                use_anchor = False
+        else:
+            print(f"[LunaChessRefiner] Using text-only conditioning")
+        
         # Chess Pass 1: EVEN tiles
         latent_canvas, pixel_canvas = self._process_chess_pass(
             latent_canvas, latent_original, pixel_canvas, noise_slices, "even", rows, cols, tile_lat, overlap_h, overlap_w,
             model, positive, negative, vae, steps, cfg, seed, sampler, scheduler,
-            tile_batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar
+            tile_batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar,
+            vision_router, use_anchor, image
         )
         
         # Clear GPU cache between passes
@@ -307,7 +339,8 @@ class LunaChessRefiner:
         latent_canvas, pixel_canvas = self._process_chess_pass(
             latent_canvas, latent_original, pixel_canvas, noise_slices, "odd", rows, cols, tile_lat, overlap_h, overlap_w,
             model, positive, negative, vae, steps, cfg, seed + 1, sampler, scheduler,
-            tile_batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar
+            tile_batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar,
+            vision_router, use_anchor, image
         )
         
         # Clear GPU cache (pixel canvas is already on CPU, fully built)
@@ -360,16 +393,22 @@ class LunaChessRefiner:
     def _process_chess_pass(
         self, latent_canvas, latent_original, pixel_canvas, noise, parity, rows, cols, tile_size, ov_h, ov_w,
         model, pos, neg, vae, steps, cfg, seed, sampler_name, scheduler_name,
-        batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar
+        batch_size, blend_mask, latent_refinement_mask, mask_noise_factor, denoise, feathering, pbar,
+        vision_router=None, use_anchor=False, full_image=None
     ):
         """
         Process one chess pass (even or odd tiles).
         
-        Key fix: Extract tiles from latent_original (unchanged), composite onto latent_canvas.
-        This prevents artifacts from refining partially-refined latents.
+        CRITICAL FIX: Crop PIXELS and encode them fresh (like USDU does).
+        Slicing pre-encoded latents loses VAE's tile-local encoding context.
         
-        If latent_refinement_mask is provided, create per-tile noise_masks that reduce
-        noise in already-refined areas by mask_noise_factor.
+        Flow per batch:
+        1. Crop pixel tiles from pixel_canvas
+        2. Batch encode all tiles → fresh latents with proper VAE context
+        3. CLIP-ViT encode via dynamic router (daemon or local)
+        4. Slice scaffold noise (this is fine - no encoding issues)
+        5. Refine with fresh latents + scaffold noise + anchored conditioning
+        6. Composite refined latents and pixels back
         
         Returns both updated latent_canvas (GPU) and pixel_canvas (CPU).
         """
@@ -378,6 +417,11 @@ class LunaChessRefiner:
         
         H, W = latent_canvas.shape[2], latent_canvas.shape[3]
         device = latent_canvas.device
+        
+        # Pixel dimensions (latent * 8)
+        pixel_H = H * 8
+        pixel_W = W * 8
+        tile_size_px = tile_size * 8
         
         # Extract tiles for this parity
         tiles_data = []
@@ -397,21 +441,17 @@ class LunaChessRefiner:
                     
                     y1, x1 = y0 + tile_size, x0 + tile_size
                     
-                    # Extract crops FROM ORIGINAL (key fix!)
-                    lat_crop = latent_original[:, :, y0:y1, x0:x1]
-                    noise_crop = noise[:, :, y0:y1, x0:x1]
+                    # Calculate pixel coordinates
+                    y0_px = y0 * 8
+                    x0_px = x0 * 8
+                    y1_px = y1 * 8
+                    x1_px = x1 * 8
                     
-                    # Extract refinement mask crop if available
-                    mask_crop = None
-                    if latent_refinement_mask is not None:
-                        mask_crop = latent_refinement_mask[:, y0:y1, x0:x1]
-                    
+                    # Store tile info (no latent crop yet!)
                     tiles_data.append({
-                        "latent": lat_crop,
-                        "noise": noise_crop,
-                        "mask": mask_crop,
-                        "coords": (y0, x0, y1, x1),
-                        "grid_pos": (yi, xi),  # Store grid position for edge detection
+                        "coords_lat": (y0, x0, y1, x1),
+                        "coords_px": (y0_px, x0_px, y1_px, x1_px),
+                        "grid_pos": (yi, xi),
                         "is_edge": {
                             "top": yi == 0,
                             "bottom": yi == rows - 1,
@@ -424,28 +464,71 @@ class LunaChessRefiner:
         for i in range(0, len(tiles_data), batch_size):
             chunk = tiles_data[i:i + batch_size]
             
-            # Stack batch (clean latents from canvas)
-            batch_latents = torch.cat([t["latent"] for t in chunk], dim=0)
-            # Stack scaffold noise slices (1:1 matching, no resize needed)
-            batch_scaffold_noise = torch.cat([t["noise"] for t in chunk], dim=0)
+            # STEP 1: Crop PIXELS from canvas (BHWC format)
+            pixel_crops = []
+            for t in chunk:
+                y0_px, x0_px, y1_px, x1_px = t["coords_px"]
+                pixel_crop = pixel_canvas[:, y0_px:y1_px, x0_px:x1_px, :].clone()
+                pixel_crops.append(pixel_crop)
             
-            # Crop conditioning for each tile in the batch
-            # CRITICAL: Each tile needs conditioning that matches its spatial region
-            canvas_size_px = (W * 8, H * 8)  # Latent to pixel space (note: W, H order matches canvas shape)
+            # Stack into batch [N, H, W, C]
+            pixel_batch = torch.cat(pixel_crops, dim=0)
             
-            # Use global conditioning for the batch - same conditioning for all tiles
-            # This matches how Ultimate SD Upscale works (no per-tile conditioning)
-            batch_positive = pos
-            batch_negative = neg
+            # STEP 2: Encode pixels → fresh latents (SINGLE VAE CALL!)
+            # Convert BHWC → BCHW for VAE
+            pixel_batch_vae = pixel_batch.permute(0, 3, 1, 2).to(device)
             
-            # Create noise_mask if refinement mask provided
-            # noise_mask: 1.0 = full noise, mask_noise_factor = reduced noise in refined areas
+            with torch.no_grad():
+                batch_latents = vae.encode(pixel_batch_vae)  # Fresh encoding with tile context! ✨
+            
+            # STEP 3: Slice scaffold noise (this is fine - noise has no encoding context)
+            noise_crops = []
+            for t in chunk:
+                y0, x0, y1, x1 = t["coords_lat"]
+                noise_crop = noise[:, :, y0:y1, x0:x1]
+                noise_crops.append(noise_crop)
+            
+            batch_scaffold_noise = torch.cat(noise_crops, dim=0)
+            
+            # STEP 4: CLIP-ViT structural anchoring via dynamic router
+            anchored_positive = pos
+            if use_anchor and vision_router is not None and full_image is not None:
+                # Get crop coordinates in pixel space
+                tile_crop_coords = [(t["coords_px"][1], t["coords_px"][0], t["coords_px"][3], t["coords_px"][2]) 
+                                   for t in chunk]  # (x1, y1, x2, y2)
+                
+                # Actually we need (x1, y1, x2, y2) format - let me fix
+                tile_crop_coords = []
+                for t in chunk:
+                    y0_px, x0_px, y1_px, x1_px = t["coords_px"]
+                    tile_crop_coords.append((x0_px, y0_px, x1_px, y1_px))
+                
+                # Use router - handles daemon vs local automatically
+                vision_embeds_list = vision_router.encode_crops(
+                    full_image=full_image,
+                    crop_coords=tile_crop_coords,
+                    tile_size=tile_size * 8  # Pixel size
+                )
+                
+                # Stack embeddings for batch fusion
+                if vision_embeds_list:
+                    vision_embeds = torch.cat(vision_embeds_list, dim=0)
+                    anchored_positive = self._fuse_vision_conditioning_batch(
+                        pos, vision_embeds, len(chunk)
+                    )
+            
+            # STEP 5: Extract refinement mask crops if available
             batch_noise_mask = None
-            if chunk[0]["mask"] is not None:
-                mask_crops = torch.cat([t["mask"] for t in chunk], dim=0)  # [B, H, W]
+            if latent_refinement_mask is not None:
+                mask_crops = []
+                for t in chunk:
+                    y0, x0, y1, x1 = t["coords_lat"]
+                    mask_crop = latent_refinement_mask[:, y0:y1, x0:x1]
+                    mask_crops.append(mask_crop)
+                
+                mask_batch = torch.cat(mask_crops, dim=0)  # [B, H, W]
                 # Convert to noise scaling: unrefined=1.0, refined=mask_noise_factor
-                # mask_crops: 1.0 where refined, 0.0 where unrefined
-                batch_noise_mask = 1.0 - mask_crops * (1.0 - mask_noise_factor)
+                batch_noise_mask = 1.0 - mask_batch * (1.0 - mask_noise_factor)
                 batch_noise_mask = batch_noise_mask.unsqueeze(1).to(device)  # [B, 1, H, W]
             
             # Ensure same device
@@ -454,10 +537,13 @@ class LunaChessRefiner:
             # Apply noise mask to scaffold noise if available
             if batch_noise_mask is not None:
                 batch_scaffold_noise = batch_scaffold_noise * batch_noise_mask
-                print(f"[LunaChessRefiner] {parity.upper()} Batch {i//batch_size + 1}: {len(chunk)} tiles, denoise={denoise}, mask_factor={mask_noise_factor}")
+                print(f"[LunaChessRefiner] {parity.upper()} Batch {i//batch_size + 1}: {len(chunk)} tiles, "
+                      f"fresh VAE encode, denoise={denoise}, mask_factor={mask_noise_factor}")
             else:
-                print(f"[LunaChessRefiner] {parity.upper()} Batch {i//batch_size + 1}: {len(chunk)} tiles, denoise={denoise}")
+                print(f"[LunaChessRefiner] {parity.upper()} Batch {i//batch_size + 1}: {len(chunk)} tiles, "
+                      f"fresh VAE encode, denoise={denoise}")
             
+            # STEP 6: Refine with fresh latents + scaffold noise + anchored conditioning
             # Pass scaffold noise to sampler - it will scale by appropriate sigma based on denoise
             with torch.inference_mode():
                 refined_batch = comfy.sample.sample(
@@ -467,16 +553,16 @@ class LunaChessRefiner:
                     cfg=cfg,
                     sampler_name=sampler_name,
                     scheduler=scheduler_name,
-                    positive=batch_positive,        # List of per-tile conditioning
-                    negative=batch_negative,        # List of per-tile conditioning
-                    latent_image=batch_latents,     # Clean latent canvas
-                    denoise=denoise,                # Sampler handles sigma schedule
+                    positive=anchored_positive,     # With CLIP-ViT anchor if enabled
+                    negative=neg,
+                    latent_image=batch_latents,     # Fresh tile-encoded latents! ✨
+                    denoise=denoise,
                     disable_noise=False,            # Let sampler inject scaled noise
-                    start_step=None,                # Let denoise handle it
+                    start_step=None,
                     last_step=None,
                     force_full_denoise=True,
-                    noise_mask=None,                # We pre-scaled the noise instead
-                    sigmas=None,                    # Let sampler calculate from denoise
+                    noise_mask=None,                # We pre-scaled the noise
+                    sigmas=None,
                     callback=None,
                     disable_pbar=False,
                     seed=seed + i
@@ -486,13 +572,12 @@ class LunaChessRefiner:
             if refined_batch.device != device:
                 refined_batch = refined_batch.to(device)
             
-            # DECODE tiles directly to CPU (in smaller sub-batches if needed)
+            # STEP 6: Decode refined tiles to pixels (in sub-batches to save VRAM)
             refined_pixels_list = []
-            for j in range(0, refined_batch.shape[0], 4):  # Decode 4 at a time max
+            for j in range(0, refined_batch.shape[0], 4):
                 sub_batch = refined_batch[j:j+4]
                 with torch.no_grad():
                     decoded = vae.decode(sub_batch)
-                    # VAE decode returns BCHW, convert to BHWC
                     if decoded.dim() == 4 and decoded.shape[1] == 3:  # [B, C, H, W]
                         decoded = decoded.permute(0, 2, 3, 1)  # → [B, H, W, C]
                     decoded = decoded.cpu()
@@ -503,16 +588,16 @@ class LunaChessRefiner:
             refined_pixels = torch.cat(refined_pixels_list, dim=0)
             del refined_pixels_list
             
-            # Composite latent tiles onto latent canvas (GPU)
+            # STEP 7: Composite latent tiles onto latent canvas (GPU)
             self._composite_latent_tiles(latent_canvas, refined_batch, chunk, blend_mask, parity)
             
             # Free GPU memory before pixel compositing
-            del refined_batch, batch_latents, batch_scaffold_noise
+            del refined_batch, batch_latents, batch_scaffold_noise, pixel_batch, pixel_batch_vae
             if batch_noise_mask is not None:
                 del batch_noise_mask
             torch.cuda.empty_cache()
             
-            # Composite pixel tiles onto pixel canvas (CPU)
+            # STEP 8: Composite pixel tiles onto pixel canvas (CPU)
             self._composite_pixel_tiles(pixel_canvas, refined_pixels, chunk, tile_size, ov_h, ov_w, feathering, parity)
             
             # Free pixel batch
@@ -534,7 +619,7 @@ class LunaChessRefiner:
         
         for i, info in enumerate(chunk_info):
             refined_tile = refined_batch[i]
-            y0, x0, y1, x1 = info["coords"]
+            y0, x0, y1, x1 = info["coords_lat"]  # Use latent coords
             
             if use_blending:
                 current_bg = latent_canvas[:, :, y0:y1, x0:x1]
@@ -567,7 +652,7 @@ class LunaChessRefiner:
         
         for i, info in enumerate(chunk_info):
             refined_tile = refined_pixels[i:i+1]  # Keep batch dim [1, H, W, C]
-            y0_lat, x0_lat, y1_lat, x1_lat = info["coords"]
+            y0_lat, x0_lat, y1_lat, x1_lat = info["coords_lat"]  # Use latent coords
             
             # Convert latent coords to pixel coords
             y0 = y0_lat * 8
@@ -701,6 +786,60 @@ class LunaChessRefiner:
         
         # Convert back BCHW → BHWC
         return downscaled_chw.permute(0, 2, 3, 1)
+    
+    def _fuse_vision_conditioning_batch(self, text_cond, vision_embeds: torch.Tensor, batch_size: int):
+        """
+        Fuse CLIP-ViT vision embeddings with text conditioning for a batch of tiles.
+        
+        Creates structural anchors by blending vision features with text embeddings.
+        This preserves the spatial structure of each tile during refinement.
+        
+        Args:
+            text_cond: ComfyUI conditioning [(tensor [1, 77, dim], dict), ...]
+            vision_embeds: CLIP-ViT outputs [N, 257, vision_dim] (CLS + 256 patches per tile)
+            batch_size: Number of tiles in this batch
+        
+        Returns:
+            Fused conditioning with vision embeddings incorporated
+        """
+        fused = []
+        
+        for emb, cond_dict in text_cond:
+            # Get dimensions
+            text_dim = emb.shape[-1]
+            vision_dim = vision_embeds.shape[-1]
+            
+            # Create modified dict with vision embedding
+            new_dict = cond_dict.copy()
+            
+            # Use mean of CLS tokens across batch as pooled anchor
+            # This provides a batch-averaged structural reference
+            vision_cls_batch = vision_embeds[:, 0, :]  # [N, vision_dim]
+            vision_pooled = vision_cls_batch.mean(dim=0, keepdim=True)  # [1, vision_dim]
+            
+            if "pooled_output" in new_dict:
+                existing_pooled = new_dict["pooled_output"]
+                
+                # Match dimensions if needed
+                if vision_dim != existing_pooled.shape[-1]:
+                    if vision_dim > existing_pooled.shape[-1]:
+                        vision_pooled = vision_pooled[:, :existing_pooled.shape[-1]]
+                    else:
+                        padding = torch.zeros(1, existing_pooled.shape[-1] - vision_dim, 
+                                            device=vision_pooled.device)
+                        vision_pooled = torch.cat([vision_pooled, padding], dim=-1)
+                
+                # Blend 50/50 with existing pooled output
+                new_dict["pooled_output"] = existing_pooled * 0.5 + vision_pooled * 0.5
+            else:
+                # Store as structural anchor reference
+                new_dict["structural_anchor"] = vision_pooled
+            
+            # Replicate embedding for batch
+            batched_emb = emb.repeat(batch_size, 1, 1)
+            fused.append([batched_emb, new_dict])
+        
+        return fused
 
 
 # Node registration

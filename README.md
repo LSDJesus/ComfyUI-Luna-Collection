@@ -13,11 +13,11 @@ Luna Collection is a vertically integrated image generation stack designed for e
 ## 📝 Latest Updates (v2.2)
 
 🎨 **Luna Semantic Detailer Suite** - Surgical pyramid-based refinement system
-- **Pyramid Noise Generator**: Model-aware aspect ratio selection (SDXL buckets), multi-scale scaffolds with variance correction
+- **Native Canvas Downscale**: Variable variance correction (0.0-1.0) for soft draft generation, optional area conditioning downscale
 - **Scaffold Upscaler**: GPU-accelerated Lanczos, edge-preserving + texture coherence for artifact-free upscaling
 - **SAM3 Detector**: Semantic concept detection with pre-encoded conditioning, per-concept prompts, hierarchical layers
 - **Semantic Detailer**: Batched 1:1 refinement at 1024px, chainable for multi-layer LoRA specialization, dual canvas (pixel+latent) for perfect integration
-- **Chess Refiner**: Global tile refinement with supersampling (0.25-1.0x), chess pattern for seamless blending, refinement mask awareness
+- **Chess Refiner**: Global tile refinement with fresh VAE encoding per tile, chess pattern for seamless blending, refinement mask awareness
 - **Full daemon integration**: SAM3 runs on secondary GPU, shared CLIP encoding for multi-detection batching
 
 ✨ **Luna Batch Upscale Refine** - Production-grade tiled upscaler with scaffolding noise + chess-pattern batching

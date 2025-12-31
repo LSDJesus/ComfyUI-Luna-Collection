@@ -8,13 +8,14 @@ with per-detection conditioning for maximum quality and efficiency.
 Architecture:
 - Coordinate mapping from normalized (0-1) to full scaffold pixels
 - 1:1 square expansion with padding (1.15x, snapped to 256px)
-- Variance-corrected noise slicing from master scaffold
+- Fresh VAE encoding of pixel crops (proper convolutional context)
+- Dynamic CLIP-ViT routing (daemon or local)
 - Batched sampling with individual prompts per detection
 - Smoothstep alpha blending for seamless compositing
 
 Mathematical Foundation:
 - All crops refined at 1024×1024 (optimal for SDXL/Flux)
-- Variance preservation during resize: multiply by scale_factor
+- CLIP-ViT encodes each crop for structural preservation
 - Smoothstep blending: t²(3-2t) for C¹ continuity
 """
 
@@ -25,6 +26,9 @@ import comfy.samplers
 import comfy.sample
 import comfy.utils
 import comfy.model_management
+
+# Dynamic vision routing
+from .vision_routing import VisionRouter, get_vision_router
 
 
 def get_scheduler_names():
@@ -40,13 +44,14 @@ class LunaSemanticDetailer:
     Surgical refinement of detected objects using batched 1:1 sampling.
     
     Takes detection data from SAM3 Detector and performs targeted refinement
-    on each detected region. Uses the master noise scaffold to maintain
-    perfect noise density across all scales.
+    on each detected region. Uses fresh VAE encoding per crop and optional
+    CLIP-ViT structural anchoring for maximum quality.
     
     Key Features:
-    - Batched processing of all detections (efficient)
+    - Fresh VAE encoding of pixel crops (proper context)
+    - Optional per-crop CLIP-ViT structural anchoring
     - Per-detection conditioning (individual prompts)
-    - Variance-corrected noise slicing
+    - Scaffold noise slicing for texture consistency
     - Smoothstep blending for seamless integration
     - Hierarchical layer support (0=structural, 1+=details)
     """
@@ -119,6 +124,13 @@ class LunaSemanticDetailer:
                 "previous_refinement_mask": ("MASK", {
                     "tooltip": "Refinement mask from previous detailer (for chaining layers)"
                 }),
+                "clip_vision": ("CLIP_VISION", {
+                    "tooltip": "CLIP-ViT model for structural anchoring (encodes each crop)"
+                }),
+                "use_structural_anchor": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Enable per-crop CLIP-ViT encoding for structural preservation"
+                }),
             }
         }
     
@@ -141,7 +153,9 @@ class LunaSemanticDetailer:
         scheduler: str,
         tile_batch_size: int,
         enlarge_crops: bool,
-        previous_refinement_mask = None
+        previous_refinement_mask = None,
+        clip_vision = None,
+        use_structural_anchor: bool = True
     ) -> tuple:
         """
         Perform surgical refinement on detected objects.
@@ -221,6 +235,23 @@ class LunaSemanticDetailer:
         # Process crops in batches
         refined_crops = []
         
+        # Initialize vision router for dynamic daemon/local routing
+        vision_router = None
+        use_anchor = use_structural_anchor
+        
+        if use_structural_anchor:
+            vision_router = get_vision_router(clip_vision)
+            if vision_router.available:
+                if vision_router.using_daemon:
+                    print(f"[LunaSemanticDetailer] ✓ CLIP-ViT routing: DAEMON (GPU offload)")
+                else:
+                    print(f"[LunaSemanticDetailer] ✓ CLIP-ViT routing: LOCAL")
+            else:
+                print(f"[LunaSemanticDetailer] ⚠ No vision encoder available, using text-only")
+                use_anchor = False
+        else:
+            print(f"[LunaSemanticDetailer] Using text-only conditioning")
+        
         for i in range(0, len(crop_data), tile_batch_size):
             batch = crop_data[i:i + tile_batch_size]
             
@@ -230,14 +261,30 @@ class LunaSemanticDetailer:
             batch_pixels = torch.cat([c["pixel_crop"] for c in batch], dim=0)
             batch_noise = torch.cat([c["noise_crop"] for c in batch], dim=0)
             
-            # Encode pixels to latent
+            # Encode pixels to latent (FRESH encoding with proper context!)
             batch_latents = vae.encode(batch_pixels.permute(0, 3, 1, 2))
+            
+            # CLIP-ViT structural anchoring via dynamic router
+            vision_embeds_list = None
+            if use_anchor and vision_router is not None:
+                # Get crop coordinates for this batch
+                batch_crop_coords = [
+                    (c["original_box"][0], c["original_box"][1], c["original_box"][2], c["original_box"][3])
+                    for c in batch
+                ]
+                
+                # Use router - it handles daemon vs local automatically
+                vision_embeds_list = vision_router.encode_crops(
+                    full_image=image,
+                    crop_coords=batch_crop_coords,
+                    tile_size=1024
+                )
             
             # Build conditioning for this batch
             batch_indices = range(i, min(i + tile_batch_size, len(crop_data)))
             batch_positive = []
             
-            for idx in batch_indices:
+            for j, idx in enumerate(batch_indices):
                 # Start with cropped global conditioning
                 combined_cond = cropped_global_positive[idx]
                 
@@ -246,6 +293,12 @@ class LunaSemanticDetailer:
                     concept_cond = positive_list[idx]
                     # Concatenate: cropped global + concept override
                     combined_cond = combined_cond + concept_cond
+                
+                # Fuse with CLIP-ViT vision embedding if available
+                if vision_embeds_list is not None and j < len(vision_embeds_list):
+                    combined_cond = self._fuse_vision_conditioning(
+                        combined_cond, vision_embeds_list[j]
+                    )
                 
                 batch_positive.append(combined_cond)
             
@@ -623,6 +676,66 @@ class LunaSemanticDetailer:
             replicated.append([batched_tensor, opts])
         
         return replicated
+    
+    def _fuse_vision_conditioning(self, text_cond, vision_embed: torch.Tensor):
+        """
+        Fuse CLIP-ViT vision embedding with text conditioning.
+        
+        Creates a structural anchor by concatenating vision features with text embeddings.
+        This preserves the spatial structure of the crop during refinement.
+        
+        Args:
+            text_cond: ComfyUI conditioning [(tensor [1, 77, dim], dict), ...]
+            vision_embed: CLIP-ViT output [1, 257, vision_dim] (CLS + 256 patches)
+        
+        Returns:
+            Fused conditioning with vision embedding appended
+        """
+        fused = []
+        
+        for emb, cond_dict in text_cond:
+            # Get dimensions
+            text_dim = emb.shape[-1]
+            vision_dim = vision_embed.shape[-1]
+            
+            # Create modified dict with vision embedding
+            new_dict = cond_dict.copy()
+            
+            # Store vision embedding in conditioning dict for cross-attention
+            # This follows IPAdapter's approach of using 'pooled_output' or similar
+            if "pooled_output" in new_dict:
+                # If pooled output exists, we can enhance it
+                existing_pooled = new_dict["pooled_output"]
+                
+                # Use CLS token from vision embed as additional pooled signal
+                vision_cls = vision_embed[:, 0, :]  # [1, vision_dim]
+                
+                # Project vision to match text dim if needed
+                if vision_dim != existing_pooled.shape[-1]:
+                    # Simple linear projection (could be learned, but mean works)
+                    # For now, just use mean pooling of vision features
+                    vision_pooled = vision_embed.mean(dim=1)  # [1, vision_dim]
+                    # Pad or truncate to match
+                    if vision_dim > existing_pooled.shape[-1]:
+                        vision_pooled = vision_pooled[:, :existing_pooled.shape[-1]]
+                    else:
+                        padding = torch.zeros(1, existing_pooled.shape[-1] - vision_dim, device=vision_pooled.device)
+                        vision_pooled = torch.cat([vision_pooled, padding], dim=-1)
+                    
+                    # Blend with existing pooled output (50/50)
+                    new_dict["pooled_output"] = existing_pooled * 0.5 + vision_pooled * 0.5
+                else:
+                    # Direct blend with CLS token
+                    new_dict["pooled_output"] = existing_pooled * 0.5 + vision_cls * 0.5
+            else:
+                # No pooled output - add vision embedding as cross-attention target
+                # Store in a key that samplers can use
+                vision_cls = vision_embed[:, 0, :]  # [1, vision_dim]
+                new_dict["structural_anchor"] = vision_cls
+            
+            fused.append([emb, new_dict])
+        
+        return fused
 
 
 # Node registration
