@@ -123,7 +123,11 @@ class Sam3Image(torch.nn.Module):
         """Retrieve correct image features from backbone output."""
         if "backbone_fpn" in backbone_out:
             if "id_mapping" in backbone_out and backbone_out["id_mapping"] is not None:
-                img_ids = backbone_out["id_mapping"][img_ids]
+                # Ensure img_ids is on the same device as id_mapping
+                id_mapping = backbone_out["id_mapping"]
+                if img_ids.device != id_mapping.device:
+                    img_ids = img_ids.to(id_mapping.device)
+                img_ids = id_mapping[img_ids]
                 # If this assert fails, it likely means we're requesting different img_ids (perhaps a different frame?)
                 # We currently don't expect this to happen. We could technically trigger a recompute here,
                 # but likely at the cost of a cpu<->gpu sync point, which would deteriorate perf
@@ -151,7 +155,12 @@ class Sam3Image(torch.nn.Module):
         # note: we allow using a list (or other indexable types) of tensors as img_batch
         # (e.g. for async frame loading in demo). In this case we index img_batch.tensors directly
         if isinstance(img_batch, torch.Tensor):
-            image = img_batch[unique_ids]
+            # Ensure unique_ids is on same device as img_batch or CPU for indexing
+            if unique_ids.device != img_batch.device:
+                unique_ids_for_index = unique_ids.cpu() if img_batch.device.type == 'cpu' else unique_ids.to(img_batch.device)
+            else:
+                unique_ids_for_index = unique_ids
+            image = img_batch[unique_ids_for_index]
         elif unique_ids.numel() == 1:
             image = img_batch[unique_ids.item()].unsqueeze(0)
         else:
@@ -184,6 +193,10 @@ class Sam3Image(torch.nn.Module):
         # index text features (note that regardless of early or late fusion, the batch size of
         # `txt_feats` is always the number of *prompts* in the encoder)
         txt_ids = find_input.text_ids
+        # Ensure txt_ids is on the same device as language_features
+        device = backbone_out["language_features"].device
+        if txt_ids.device != device:
+            txt_ids = txt_ids.to(device)
         txt_feats = backbone_out["language_features"][:, txt_ids]
         txt_masks = backbone_out["language_mask"][txt_ids]
 

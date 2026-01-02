@@ -704,11 +704,14 @@ class DaemonSAM3:
             if result.get("success"):
                 results_by_label = result.get("results_by_label", {})
                 
-                # Deserialize masks
+                # Deserialize masks and convert to PyTorch tensors
+                import torch
                 for label, detections in results_by_label.items():
                     for det in detections:
                         if "mask" in det:
-                            det["mask"] = np.array(det["mask"])
+                            # Convert numpy array to PyTorch tensor
+                            mask_np = np.array(det["mask"])
+                            det["mask"] = torch.from_numpy(mask_np)
                 
                 return results_by_label
             else:

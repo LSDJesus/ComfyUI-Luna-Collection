@@ -1,21 +1,17 @@
 """
-Luna Detailing Suite - Tiled refinement and semantic detailing nodes
+Detailing Utilities - COMPATIBILITY SHIM
 
-This package provides:
-- LunaChessRefiner: Chess pattern tiled upscaling/refinement
-- LunaSemanticDetailer: Detection-based region refinement
-- LunaSAM3Detector: SAM3 grounding/detection via daemon
+This module re-exports from the new split modules for backwards compatibility.
+New code should import directly from:
+- tile_ops
+- image_utils  
+- conditioning_utils
+- refinement_engine
 
-Shared utilities are organized into focused modules:
-- tile_ops: Tile extraction, compositing, chess grid calculation
-- image_utils: Image resizing, masks, blending, noise
-- conditioning_utils: Model conditioning, IP-Adapter, VAE wrappers
-- refinement_engine: Core batched inference engine
+This file will be deprecated in a future version.
 """
 
-# =============================================================================
-# Tile Operations
-# =============================================================================
+# Re-export everything for backwards compatibility
 from .tile_ops import (
     TileInfo,
     extract_tiles,
@@ -24,9 +20,6 @@ from .tile_ops import (
     calculate_latent_chess_grid,
 )
 
-# =============================================================================
-# Image Utilities
-# =============================================================================
 from .image_utils import (
     resize_image,
     lanczos_resize,
@@ -39,9 +32,6 @@ from .image_utils import (
     encode_vision_crops,
 )
 
-# =============================================================================
-# Conditioning Utilities
-# =============================================================================
 from .conditioning_utils import (
     encode_pixels,
     decode_latents,
@@ -51,9 +41,6 @@ from .conditioning_utils import (
     fuse_vision_conditioning_batch,
 )
 
-# =============================================================================
-# Refinement Engine
-# =============================================================================
 from .refinement_engine import (
     RefinementBatch,
     RefinementConfig,
@@ -64,9 +51,6 @@ from .refinement_engine import (
 )
 
 
-# =============================================================================
-# All Exports
-# =============================================================================
 __all__ = [
     # Tile Operations
     "TileInfo",

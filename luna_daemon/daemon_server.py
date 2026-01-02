@@ -13,6 +13,14 @@ This is the main entry point for the daemon.
 import os
 import sys
 
+# CRITICAL: Set attention mode BEFORE any ComfyUI imports
+# Check for LUNA_ATTENTION_MODE env var (set by ComfyUI startup)
+if "LUNA_ATTENTION_MODE" in os.environ:
+    attention_mode = os.environ["LUNA_ATTENTION_MODE"]
+    # ComfyUI uses ATTN_PRECISION internally
+    os.environ["ATTN_PRECISION"] = attention_mode
+    print(f"[Luna.Daemon] Using attention mode: {attention_mode}")
+
 # CRITICAL: Force PyTorch to use legacy CUDA allocator for IPC support
 # The options in this PyTorch version are 'native' and 'cudaMallocAsync'
 # 'native' is the standard caching allocator which supports legacy IPC
@@ -540,6 +548,13 @@ class LunaDaemon:
                 
                 # Build SAM3 video predictor (contains detector for image segmentation)
                 logger.info(f"[Daemon] Building SAM3 model with checkpoint: {checkpoint_path}")
+                
+                # CRITICAL: Set the default CUDA device for SAM3 operations
+                # This ensures ALL tensor operations default to cuda:1, not cuda:0
+                device_index = int(device.split(':')[1]) if ':' in device else 0
+                torch.cuda.set_device(device_index)
+                logger.info(f"[Daemon] Set default CUDA device to: {torch.cuda.current_device()}")
+                
                 video_predictor = Sam3VideoPredictor(
                     checkpoint_path=checkpoint_path,
                     bpe_path=str(bpe_path),
@@ -554,6 +569,8 @@ class LunaDaemon:
                 # Create processor
                 processor = Sam3Processor(sam3_model)
                 processor.device = device
+                # Sync processor device state with actual model device
+                processor.sync_device_with_model()
                 
                 # Store references (keep video_predictor alive for model lifecycle)
                 self.sam3_model = sam3_model
@@ -678,27 +695,31 @@ class LunaDaemon:
                 
                 logger.info(f"[Daemon] Running SAM3 batch detection for {len(prompts)} prompts")
                 
-                with torch.inference_mode():
-                    # Set the image ONCE (computes backbone features)
-                    inference_state = self.sam3_processor.set_image(pil_image)
-                    
-                    all_results = {}
-                    
-                    # Run each prompt (reuses backbone features)
-                    for prompt_info in prompts:
-                        if isinstance(prompt_info, str):
-                            # Simple string prompt
-                            prompt_text = prompt_info
-                            threshold = default_threshold
-                            label = prompt_text
-                        else:
-                            # Dict with prompt, threshold, label
-                            prompt_text = prompt_info.get("prompt", prompt_info.get("text", ""))
-                            threshold = prompt_info.get("threshold", default_threshold)
-                            label = prompt_info.get("label", prompt_text)
+                # CRITICAL: Force ALL tensor operations to use the daemon's SAM3 device
+                # This ensures no tensors are accidentally created on cuda:0 (ComfyUI's device)
+                device = self.sam3_device
+                with torch.cuda.device(device):
+                    with torch.inference_mode():
+                        # Set the image ONCE (computes backbone features)
+                        inference_state = self.sam3_processor.set_image(pil_image)
                         
-                        if not prompt_text:
-                            continue
+                        all_results = {}
+                        
+                        # Run each prompt (reuses backbone features)
+                        for prompt_info in prompts:
+                            if isinstance(prompt_info, str):
+                                # Simple string prompt
+                                prompt_text = prompt_info
+                                threshold = default_threshold
+                                label = prompt_text
+                            else:
+                                # Dict with prompt, threshold, label
+                                prompt_text = prompt_info.get("prompt", prompt_info.get("text", ""))
+                                threshold = prompt_info.get("threshold", default_threshold)
+                                label = prompt_info.get("label", prompt_text)
+                            
+                            if not prompt_text:
+                                continue
                         
                         # Run detection for this prompt
                         output = self.sam3_processor.set_text_prompt(
@@ -879,6 +900,11 @@ class LunaDaemon:
                             self.config_paths[component] = path
                     
                     logger.info(f"[Daemon] Updated config_paths: {self.config_paths}")
+                    
+                    # Store vision model path if provided
+                    if "vision" in required_components:
+                        self.config_paths["clip_vision"] = required_components["vision"]
+                        logger.info(f"[Daemon] Vision model path set: {required_components['vision']}")
                     
                     # Ensure workers exist (they'll use the updated config_paths)
                     if not self.clip_pool and any(c in required_components for c in ["clip_l", "clip_g"]):

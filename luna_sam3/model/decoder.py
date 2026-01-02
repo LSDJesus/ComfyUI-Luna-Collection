@@ -356,6 +356,11 @@ class TransformerDecoder(nn.Module):
             assert coords_h.shape == (H,)
             assert coords_w.shape == (W,)
 
+        # Ensure boxes_xyxy is on the same device as coords
+        target_device = coords_h.device
+        if boxes_xyxy.device != target_device:
+            boxes_xyxy = boxes_xyxy.to(target_device)
+
         deltas_y = coords_h.view(1, -1, 1) - boxes_xyxy.reshape(-1, 1, 4)[:, :, 1:4:2]
         deltas_y = deltas_y.view(bs, num_queries, -1, 2)
         deltas_x = coords_w.view(1, -1, 1) - boxes_xyxy.reshape(-1, 1, 4)[:, :, 0:3:2]

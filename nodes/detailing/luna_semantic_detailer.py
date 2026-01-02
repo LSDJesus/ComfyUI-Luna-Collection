@@ -310,7 +310,8 @@ class LunaSemanticDetailer:
             batch_noise = torch.cat([c["noise_crop"] for c in batch], dim=0)
             
             # Encode pixels to latent (FRESH encoding with proper context!)
-            batch_latents = vae.encode(batch_pixels.permute(0, 3, 1, 2))
+            # ComfyUI's vae.encode() expects BHWC format and handles conversion internally
+            batch_latents = vae.encode(batch_pixels)
             
             # === IP-ADAPTER STRUCTURAL ANCHORING (TRUE BATCHING) ===
             # Key insight: Latent[i] only sees Embed[i] - no averaging!
@@ -548,8 +549,14 @@ class LunaSemanticDetailer:
                 noise_1024 = noise_1024 * scale_factor
             
             # Prepare mask at 1024×1024
+            # Ensure mask is 2D before unsqueezing
+            mask = det["mask"]
+            if mask.ndim == 3:
+                # Mask is already [1, H, W] or [C, H, W], squeeze to [H, W]
+                mask = mask.squeeze(0)
+            
             mask_resized = F.interpolate(
-                det["mask"].unsqueeze(0).unsqueeze(0).float(),
+                mask.unsqueeze(0).unsqueeze(0).float(),
                 size=(1024, 1024),
                 mode='bilinear',
                 align_corners=False

@@ -117,6 +117,90 @@ class LunaBatchPromptExtractor:
         
         return prompt, embeddings
     
+    def extract_civitai_workflow(self, workflow_json: dict) -> Optional[Dict[str, Any]]:
+        """Extract prompts from CivitAI workflow format
+        
+        CivitAI stores ComfyUI workflows with an optional 'extraMetadata' field
+        that contains a simpler format with prompt/negativePrompt.
+        """
+        metadata = {
+            "positive_prompt": "",
+            "negative_prompt": "",
+            "loras": [],
+            "embeddings": [],
+            "extra": {}
+        }
+        
+        # Method 1: Try extraMetadata field (CivitAI format)
+        if "extraMetadata" in workflow_json:
+            try:
+                extra_meta = workflow_json["extraMetadata"]
+                if isinstance(extra_meta, str):
+                    extra_meta = json.loads(extra_meta)
+                
+                if "prompt" in extra_meta:
+                    metadata["positive_prompt"] = extra_meta["prompt"]
+                if "negativePrompt" in extra_meta:
+                    metadata["negative_prompt"] = extra_meta["negativePrompt"]
+                
+                # Extract additional metadata
+                if "steps" in extra_meta:
+                    metadata["extra"]["steps"] = extra_meta["steps"]
+                if "cfgScale" in extra_meta:
+                    metadata["extra"]["cfg"] = extra_meta["cfgScale"]
+                if "sampler" in extra_meta:
+                    metadata["extra"]["sampler"] = extra_meta["sampler"]
+                if "seed" in extra_meta:
+                    metadata["extra"]["seed"] = extra_meta["seed"]
+                
+                # Parse LoRAs from prompts
+                if metadata["positive_prompt"]:
+                    metadata["positive_prompt"], loras = self.parse_loras_from_prompt(metadata["positive_prompt"])
+                    metadata["loras"].extend(loras)
+                
+                if metadata["negative_prompt"]:
+                    metadata["negative_prompt"], loras = self.parse_loras_from_prompt(metadata["negative_prompt"])
+                    metadata["loras"].extend(loras)
+                
+                return metadata
+            except Exception as e:
+                print(f"[LunaBatchPromptExtractor] Error parsing extraMetadata: {e}")
+        
+        # Method 2: Parse workflow nodes (standard ComfyUI format)
+        # Look for CLIPTextEncode nodes (node ID "6" and "7" are common for pos/neg)
+        positive_texts = []
+        negative_texts = []
+        
+        for node_id, node in workflow_json.items():
+            if isinstance(node, dict):
+                class_type = node.get('class_type', '')
+                
+                # Check if it's a CLIP text encode node
+                if 'CLIPTextEncode' in class_type or 'smZ CLIPTextEncode' in class_type:
+                    inputs = node.get('inputs', {})
+                    text = inputs.get('text', '')
+                    
+                    # Determine if positive or negative based on meta title
+                    meta = node.get('_meta', {})
+                    title = meta.get('title', '').lower()
+                    
+                    if 'negative' in title:
+                        negative_texts.append(text)
+                    elif 'positive' in title or text:  # Default to positive if unclear
+                        positive_texts.append(text)
+        
+        if positive_texts:
+            metadata["positive_prompt"] = " ".join(positive_texts)
+            metadata["positive_prompt"], loras = self.parse_loras_from_prompt(metadata["positive_prompt"])
+            metadata["loras"].extend(loras)
+        
+        if negative_texts:
+            metadata["negative_prompt"] = " ".join(negative_texts)
+            metadata["negative_prompt"], loras = self.parse_loras_from_prompt(metadata["negative_prompt"])
+            metadata["loras"].extend(loras)
+        
+        return metadata if (metadata["positive_prompt"] or metadata["negative_prompt"]) else None
+    
     def extract_comfyui_metadata(self, image_path: str) -> Optional[Dict[str, Any]]:
         """Extract full metadata from ComfyUI workflow"""
         try:
@@ -513,6 +597,17 @@ class LunaBatchPromptExtractor:
             
             # Clean up the prompt text
             prompt_text = prompt_text.strip().strip('\x00')
+            
+            # Check if it's JSON (CivitAI workflow format)
+            if prompt_text.startswith('{') and '"class_type"' in prompt_text:
+                try:
+                    workflow_data = json.loads(prompt_text)
+                    civitai_metadata = self.extract_civitai_workflow(workflow_data)
+                    if civitai_metadata:
+                        return civitai_metadata
+                except Exception as e:
+                    print(f"[LunaBatchPromptExtractor] Failed to parse JSON workflow: {e}")
+                    # Fall through to text parsing
             
             # Check if it looks like A1111 format
             if "Negative prompt:" in prompt_text or "Steps:" in prompt_text:

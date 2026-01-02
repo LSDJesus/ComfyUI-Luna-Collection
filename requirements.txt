@@ -4,4 +4,4 @@ numpy>=1.21.0
 Pillow>=9.0.0
 pydantic>=1.10.0
 psutil>=5.9.0
-bitsandbytes>=0.41.0  # Optional: NF4/INT8 quantization for QLoRA workflows
+bitsandbytes>=0.41.0

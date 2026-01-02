@@ -212,6 +212,21 @@ class ModelWorker:
         import comfy.sd  # type: ignore
         import comfy.utils  # type: ignore
         
+        # Force attention mode if set by parent process
+        if "LUNA_ATTENTION_MODE" in os.environ:
+            try:
+                import comfy.model_management as mm
+                attention_mode = os.environ["LUNA_ATTENTION_MODE"]
+                # Force the attention mode
+                if attention_mode == "sage":
+                    mm.attention_function = mm.attention_sage_masked
+                    logger.info(f"[{self.worker_type.value.upper()}-{self.worker_id}] Forced attention mode: sage")
+                elif attention_mode == "sdp":
+                    mm.attention_function = mm.attention_pytorch
+                    logger.info(f"[{self.worker_type.value.upper()}-{self.worker_id}] Forced attention mode: pytorch")
+            except Exception as e:
+                logger.warning(f"[{self.worker_type.value.upper()}-{self.worker_id}] Could not set attention mode: {e}")
+        
         if self.worker_type == WorkerType.VAE:
             logger.info(f"[VAE-{self.worker_id}] Loading VAE model...")
             
