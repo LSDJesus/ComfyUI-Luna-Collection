@@ -343,6 +343,12 @@ class LunaDaemon:
                     "total_gb": round(total / 1024**3, 2)
                 }
         
+        # Weight registry model details
+        if hasattr(self, 'weight_registry') and self.weight_registry:
+            info["weight_registry_models"] = self.weight_registry.get_model_details()
+        else:
+            info["weight_registry_models"] = []
+        
         return info
     
     def _delayed_shutdown(self):

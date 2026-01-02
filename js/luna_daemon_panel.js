@@ -26,6 +26,8 @@ let panelState = {
     gpus: [],
     vaeLoaded: false,
     clipLoaded: false,
+    weightRegistryModels: [],
+    comfyuiVram: null,
 };
 
 // Create the panel element
@@ -251,6 +253,63 @@ function createPanelContent() {
             }
         </div>
         
+        ${panelState.comfyuiVram ? `
+        <div class="section">
+            <div class="section-title">ComfyUI Instance VRAM</div>
+            <div class="stat-row">
+                <span class="stat-label">Device</span>
+                <span class="stat-value">${panelState.comfyuiVram.device}</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Used</span>
+                <span class="stat-value">${panelState.comfyuiVram.used_gb} / ${panelState.comfyuiVram.total_gb} GB</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Usage</span>
+                <span class="stat-value">${panelState.comfyuiVram.percent}%</span>
+            </div>
+            <div class="vram-bar">
+                <div class="vram-fill" style="width: ${panelState.comfyuiVram.percent}%; ${panelState.comfyuiVram.percent > 90 ? 'background: #f87171;' : ''}"></div>
+            </div>
+            ${panelState.comfyuiVram.loaded_models_count !== undefined ? `
+            <div class="stat-row" style="margin-top: 8px;">
+                <span class="stat-label">Loaded Models</span>
+                <span class="stat-value">${panelState.comfyuiVram.loaded_models_count}</span>
+            </div>
+            ` : ''}
+        </div>
+        ` : ''}
+        
+        ${panelState.weightRegistryModels && panelState.weightRegistryModels.length > 0 ? `
+        <div class="section">
+            <div class="section-title">Daemon Weight Registry</div>
+            <div class="models-list" style="max-height: 300px; overflow-y: auto;">
+                ${panelState.weightRegistryModels.map(model => `
+                    <div class="model-item" style="margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.02); border-radius: 4px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 500; color: #4ade80;">${model.type.toUpperCase()}</div>
+                                <div style="font-size: 11px; opacity: 0.7; margin-top: 2px; word-break: break-all;">
+                                    ${model.path || model.clip_l_path || model.key}
+                                </div>
+                            </div>
+                            <div style="text-align: right; margin-left: 8px; white-space: nowrap;">
+                                <div style="font-weight: 600; color: #fbbf24;">${model.memory_gb} GB</div>
+                                <div style="font-size: 10px; opacity: 0.6; margin-top: 2px;">${model.tensor_count} tensors</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 10px; opacity: 0.5; margin-top: 4px;">
+                            Device: ${model.device}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            <div style="margin-top: 8px; padding: 6px; background: rgba(251, 191, 36, 0.1); border-radius: 4px; font-size: 11px;">
+                <strong>Total:</strong> ${panelState.weightRegistryModels.reduce((sum, m) => sum + m.memory_gb, 0).toFixed(2)} GB across ${panelState.weightRegistryModels.length} model(s)
+            </div>
+        </div>
+        ` : ''}
+        
         <div class="section">
             <div class="section-title">Device Configuration</div>
             <div id="luna-device-config">
@@ -347,6 +406,8 @@ async function fetchDaemonStatus() {
             panelState.gpus = data.gpus || [];
             panelState.vaeLoaded = data.vae_loaded || false;
             panelState.clipLoaded = data.clip_loaded || false;
+            panelState.weightRegistryModels = data.weight_registry_models || [];
+            panelState.comfyuiVram = data.comfyui_vram || null;
         } else {
             panelState.running = false;
             panelState.error = "API Error: " + response.status;

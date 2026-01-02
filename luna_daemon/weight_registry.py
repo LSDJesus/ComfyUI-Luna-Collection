@@ -203,9 +203,76 @@ class WeightRegistry:
             "path": entry.get("path") or entry.get("clip_l_path")
         }
     
+    def _get_tensor_memory_mb(self, ipc_handles: Dict[str, Dict]) -> float:
+        """
+        Calculate total memory usage of a model from its IPC handles.
+        
+        Args:
+            ipc_handles: Dict of IPC handle metadata
+        
+        Returns:
+            Memory usage in MB
+        """
+        total_bytes = 0
+        for name, handle_data in ipc_handles.items():
+            shape = handle_data.get("shape", [])
+            dtype_str = handle_data.get("dtype", "torch.float32")
+            
+            # Calculate element count
+            num_elements = 1
+            for dim in shape:
+                num_elements *= dim
+            
+            # Get bytes per element based on dtype
+            dtype_sizes = {
+                "torch.float32": 4,
+                "torch.float16": 2,
+                "torch.bfloat16": 2,
+                "torch.int32": 4,
+                "torch.int64": 8,
+                "torch.int8": 1,
+                "torch.uint8": 1,
+            }
+            bytes_per_element = dtype_sizes.get(dtype_str, 4)  # Default to 4 if unknown
+            
+            total_bytes += num_elements * bytes_per_element
+        
+        return total_bytes / (1024 * 1024)  # Convert to MB
+    
     def list_loaded_models(self) -> List[str]:
         """Get list of all loaded model keys."""
         return list(self.weights.keys())
+    
+    def get_model_details(self) -> List[Dict[str, Any]]:
+        """
+        Get detailed information about all loaded models including VRAM usage.
+        
+        Returns:
+            List of dicts with model metadata and memory info
+        """
+        models = []
+        for key, entry in self.weights.items():
+            memory_mb = self._get_tensor_memory_mb(entry["ipc_handles"])
+            
+            model_info = {
+                "key": key,
+                "type": entry["type"],
+                "device": entry["device"],
+                "memory_mb": round(memory_mb, 2),
+                "memory_gb": round(memory_mb / 1024, 3),
+                "tensor_count": len(entry["ipc_handles"])
+            }
+            
+            # Add path information
+            if entry["type"] == "vae":
+                model_info["path"] = entry.get("path", "unknown")
+            elif entry["type"] == "clip":
+                model_info["clip_l_path"] = entry.get("clip_l_path", "unknown")
+                model_info["clip_g_path"] = entry.get("clip_g_path", "unknown")
+            
+            models.append(model_info)
+        
+        return models
     
     def unload(self, model_key: str) -> bool:
         """

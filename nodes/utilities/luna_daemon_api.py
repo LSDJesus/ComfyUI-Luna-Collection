@@ -113,6 +113,9 @@ def register_routes():
                 for model_name in clip_pool.get("loaded_models", []):
                     models_loaded.append(f"CLIP: {model_name}")
             
+            # Get weight registry models (detailed info with VRAM)
+            weight_registry_models = info.get("weight_registry_models", [])
+            
             # Get VRAM info
             vram_info = info.get("vram", {})
             total_vram_gb = sum(v.get("total_gb", 0) for v in vram_info.values())
@@ -143,6 +146,32 @@ def register_routes():
                     "is_daemon_device": is_daemon_device
                 })
             
+            # Get ComfyUI VRAM usage if available
+            comfyui_vram = {}
+            try:
+                import comfy.model_management as mm
+                if hasattr(mm, 'get_total_memory'):
+                    # Get main inference device info
+                    device = mm.get_torch_device()
+                    total_mem = mm.get_total_memory(device) / (1024**3)  # Convert to GB
+                    free_mem = mm.get_free_memory(device) / (1024**3)
+                    used_mem = total_mem - free_mem
+                    
+                    comfyui_vram = {
+                        "device": str(device),
+                        "total_gb": round(total_mem, 2),
+                        "used_gb": round(used_mem, 2),
+                        "free_gb": round(free_mem, 2),
+                        "percent": round((used_mem / total_mem * 100) if total_mem > 0 else 0, 1)
+                    }
+                    
+                    # Try to get loaded models info
+                    if hasattr(mm, 'current_loaded_models'):
+                        loaded_models = mm.current_loaded_models
+                        comfyui_vram["loaded_models_count"] = len(loaded_models)
+            except Exception as e:
+                logger.debug(f"Could not get ComfyUI VRAM info: {e}")
+            
             return web.json_response({
                 "running": True,
                 "device": info.get("devices", {}).get("clip", CLIP_DEVICE),
@@ -159,6 +188,8 @@ def register_routes():
                 "gpus": gpus,
                 "vae_loaded": vae_pool.get("workers_count", 0) > 0,
                 "clip_loaded": clip_pool.get("workers_count", 0) > 0,
+                "weight_registry_models": weight_registry_models,
+                "comfyui_vram": comfyui_vram,
             })
             
         except Exception as e:
