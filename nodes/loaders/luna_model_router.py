@@ -894,7 +894,6 @@ class LunaModelRouter:
             # UNet/diffusion model only - preserve fp8 precision to avoid 2x VRAM expansion
             import torch
             detected_precision = self._detect_model_precision(model_path)
-            model_options = {}
             
             # Map precision strings to torch dtypes
             # Important: Preserve exact fp8 variant (e4m3fn, e4m3fn_scaled, e5m2)
@@ -908,11 +907,15 @@ class LunaModelRouter:
                 "fp32": torch.float32,
             }
             
-            if detected_precision in precision_dtype_map:
-                model_options["dtype"] = precision_dtype_map[detected_precision]
-                print(f"[LunaModelRouter] Preserving {detected_precision} precision during load (will use {precision_dtype_map[detected_precision]})")
+            # Get the dtype to preserve
+            dtype_to_use = precision_dtype_map.get(detected_precision)
             
-            model = comfy.sd.load_unet(model_path, model_options=model_options if model_options else None)
+            if dtype_to_use:
+                print(f"[LunaModelRouter] Preserving {detected_precision} precision during load")
+                model = comfy.sd.load_unet(model_path, dtype=dtype_to_use)
+            else:
+                print(f"[LunaModelRouter] Loading UNet with auto-detect precision")
+                model = comfy.sd.load_unet(model_path)
         
         # Return model and the path to use for daemon registration
         return model, output_name, model_path
@@ -1128,11 +1131,16 @@ class LunaModelRouter:
             if hasattr(torch, 'float8_e8m0fnu'):
                 precision_dtype_map["fp8_e8m0fnu"] = torch.float8_e8m0fnu
             
-            if detected_precision in precision_dtype_map:
-                model_options["dtype"] = precision_dtype_map[detected_precision]
-                print(f"[LunaModelRouter] Preserving {detected_precision} precision during load (will use {precision_dtype_map[detected_precision]})")
+            # Get the dtype to preserve
+            dtype_to_use = precision_dtype_map.get(detected_precision)
             
-            model = comfy.sd.load_unet(path, model_options=model_options if model_options else None)
+            if dtype_to_use:
+                print(f"[LunaModelRouter] Preserving {detected_precision} precision during load")
+                model = comfy.sd.load_unet(path, dtype=dtype_to_use)
+            else:
+                print(f"[LunaModelRouter] Loading UNet with auto-detect precision")
+                model = comfy.sd.load_unet(path)
+            
             return model
     
     def _load_gguf_model(self, path: str) -> Any:
