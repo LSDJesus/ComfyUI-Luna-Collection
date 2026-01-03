@@ -57,9 +57,9 @@ class LunaGGUFConverter:
                     "default": "",
                     "tooltip": "Directory to save converted GGUF (UNet only, VAE/CLIP stripped)"
                 }),
-                "quantization": (["F16", "Q4_0", "Q4_K_M", "Q4_K_S", "Q5_0", "Q5_K_M", "Q8_0"], {
-                    "default": "Q4_K_M",
-                    "tooltip": "Q4_K_M recommended (best quality ~2GB), Q4_0 for compatibility"
+                "quantization": (["F16", "Q4_0", "Q4_K", "Q4_K_S", "Q5_0", "Q5_K_M", "Q8_0"], {
+                    "default": "Q4_K",
+                    "tooltip": "Q4_K recommended (best quality ~2GB), Q4_0 for compatibility"
                 }),
             },
             "optional": {

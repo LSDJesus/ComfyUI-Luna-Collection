@@ -176,7 +176,7 @@ def get_conversion_output_dir(conversion_type: str) -> str:
     
     ComfyUI directory structure:
     - models/diffusion_models/converted/ ← fp16, bf16, fp8, int8, nf4 (precision/BNB)
-    - models/unet/converted/ ← GGUF Q8_0, Q4_K_M, etc.
+    - models/unet/converted/ ← GGUF Q8_0, Q4_K, etc.
     
     Args:
         conversion_type: 'precision', 'bnb', or 'gguf'
@@ -241,7 +241,7 @@ def generate_converted_filename(
     
     Args:
         source_path: Path to source model
-        target_precision: Target precision/quantization (fp16, bf16, fp8, nf4, int8, Q4_K_M, etc.)
+        target_precision: Target precision/quantization (fp16, bf16, fp8, nf4, int8, Q4_K, etc.)
         conversion_type: 'precision', 'bnb', or 'gguf'
     
     Returns:
@@ -449,7 +449,7 @@ def suggest_conversion(source_path: str, target_precision: str) -> Tuple[str, Op
     
     Determines whether to use:
     - Precision converter (fp16, bf16, fp8_e4m3fn)
-    - GGUF (Q4_K_M, Q4_K_S, Q8_0, etc.)
+    - GGUF (Q4_K, Q4_K_S, Q8_0, etc.)
     
     Note: BitsAndBytes (nf4) removed - cannot be properly serialized to safetensors.
     Use fp8_e4m3fn_scaled or GGUF instead.
@@ -465,8 +465,8 @@ def suggest_conversion(source_path: str, target_precision: str) -> Tuple[str, Op
     # BnB types removed - nf4 doesn't work with safetensors serialization
     # gguf_types - accept both with and without 'gguf_' prefix
     gguf_types = [
-        'Q4_0', 'Q4_K_S', 'Q4_K_M', 'Q5_0', 'Q5_K_M', 'Q8_0',
-        'gguf_Q4_0', 'gguf_Q4_K_S', 'gguf_Q4_K_M', 'gguf_Q5_0', 'gguf_Q5_K_M', 'gguf_Q8_0'
+        'Q4_0', 'Q4_K_S', 'Q4_K', 'Q5_0', 'Q5_K_M', 'Q8_0',
+        'gguf_Q4_0', 'gguf_Q4_K_S', 'gguf_Q4_K', 'gguf_Q5_0', 'gguf_Q5_K_M', 'gguf_Q8_0'
     ]
     
     # Normalize GGUF precision - strip 'gguf_' prefix if present

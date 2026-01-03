@@ -70,7 +70,7 @@ def convert_to_gguf(
     Args:
         src_path: Path to source checkpoint
         dst_path: Path to save converted GGUF file
-        quant_type: GGUF quantization type (Q4_K_M, Q8_0, etc.)
+        quant_type: GGUF quantization type (Q4_K, Q8_0, etc.)
     
     Returns:
         Tuple of (original_size_mb, converted_size_mb)

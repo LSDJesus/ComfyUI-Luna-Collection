@@ -10,7 +10,7 @@ A single node that handles all model loading scenarios with explicit user contro
 │  MODEL NAME:       [ponyDiffusionV6XL.safetensors ▼]  ← populated by source │
 │  MODEL TYPE:       [SD1.5] [SDXL] [SDXL+Vision] [Flux] [Flux+Vision] [SD3] [Z-IMAGE] │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  DYNAMIC LOADER:   [✓ Enable] → [fp8_e4m3fn ▼] [Q8_0 ▼] [Q4_K_M ▼]         │
+│  DYNAMIC LOADER:   [✓ Enable] → [fp8_e4m3fn ▼] [Q8_0 ▼] [Q4_K ▼]         │
 │                    Auto-converts and caches optimized UNet                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  CLIP 1:          [clip_l.safetensors ▼]     ← Required for all types      │
@@ -506,9 +506,9 @@ class LunaModelRouter:
     # fp8: 75% VRAM reduction, native on Ada/Blackwell
     # BnB: QLoRA-compatible quantization, widely used for fine-tuning
     # GGUF: Integer quantization using GPU tensor cores
-    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "fp8_e4m3fn_scaled", "fp8_e5m2", "gguf_Q8_0", "gguf_Q4_K_M"]
+    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "fp8_e4m3fn_scaled", "fp8_e5m2", "gguf_Q8_0", "gguf_Q4_K"]
     # Note: nf4 removed - BitsAndBytes 4-bit cannot be properly serialized to safetensors
-    # Use fp8_e4m3fn_scaled (50% size, RTX 40+) or gguf_Q4_K_M (28% size, all GPUs) instead
+    # Use fp8_e4m3fn_scaled (50% size, RTX 40+) or gguf_Q4_K (28% size, all GPUs) instead
     
     # Daemon routing modes
     DAEMON_MODES = ["auto", "force_daemon", "force_local"]
@@ -1010,11 +1010,11 @@ class LunaModelRouter:
         - Precision (fp16/bf16/fp8): models/diffusion_models/converted/{basename}_{precision}.safetensors
         - GGUF (Q4/Q8): models/diffusion_models/gguf/{basename}_{precision}.gguf
         
-        Note: BitsAndBytes (nf4) removed - use GGUF Q4_K_M for 4-bit quantization.
+        Note: BitsAndBytes (nf4) removed - use GGUF Q4_K for 4-bit quantization.
         
         Args:
             model_path: Path to source model
-            precision: Target precision (fp16, bf16, fp8_e4m3fn, gguf_Q4_K_M, gguf_Q8_0, etc.)
+            precision: Target precision (fp16, bf16, fp8_e4m3fn, gguf_Q4_K, gguf_Q8_0, etc.)
         
         Returns:
             Tuple of (loaded_model, converted_path)

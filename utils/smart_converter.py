@@ -51,7 +51,7 @@ def smart_convert(
     
     Args:
         source_path: Path to source model
-        target_precision: Target precision (fp16, bf16, fp8, nf4, int8, Q4_K_M, etc.)
+        target_precision: Target precision (fp16, bf16, fp8, nf4, int8, Q4_K, etc.)
     
     Returns:
         Tuple of (model_path, was_newly_converted)

@@ -13,7 +13,7 @@ Supported UNet precisions:
 - nf4: 4-bit NormalFloat (BitsAndBytes, QLoRA standard)
 - int8: 8-bit integer (BitsAndBytes, 50% VRAM reduction)
 - gguf_Q8_0: 8-bit GGUF (Ampere INT8 tensor cores)
-- gguf_Q4_K_M: 4-bit GGUF (Blackwell INT4 tensor cores!)
+- gguf_Q4_K: 4-bit GGUF (Blackwell INT4 tensor cores!)
 
 Workflow:
 1. Select any checkpoint from your FP16 library
@@ -119,7 +119,7 @@ class LunaDynamicModelLoader:
         "nf4 (4-bit BitsAndBytes, QLoRA standard)",
         "int8 (8-bit BitsAndBytes, 50% VRAM)",
         "gguf_Q8_0 (Ampere INT8 tensor cores)",
-        "gguf_Q4_K_M (Blackwell INT4 tensor cores)",
+        "gguf_Q4_K (Blackwell INT4 tensor cores)",
     ]
     
     @classmethod

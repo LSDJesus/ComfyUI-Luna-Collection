@@ -4,7 +4,7 @@ Adapted from ComfyUI-GGUF by City96 (Apache-2.0)
 https://github.com/city96/ComfyUI-GGUF
 
 Single-step conversion using gguf.quants.quantize() for proper Q4/Q8 compression.
-Achieves ~70% size reduction for Q4_K_M (6.6GB → ~2GB).
+Achieves ~70% size reduction for Q4_K (6.6GB → ~2GB).
 """
 
 import os
@@ -56,7 +56,7 @@ def detect_model_architecture(state_dict: dict) -> str:
     return "sd1"
 
 
-def write_quantized_gguf(source_checkpoint: str, tensors: Dict, output_path: str, quant_type: str = "Q4_K_M", unet_only: bool = True):
+def write_quantized_gguf(source_checkpoint: str, tensors: Dict, output_path: str, quant_type: str = "Q4_K", unet_only: bool = True):
     """
     Write tensors directly to quantized GGUF using gguf.quants.quantize().
     Based on ComfyUI-GGUF's convert.py approach.
@@ -72,14 +72,12 @@ def write_quantized_gguf(source_checkpoint: str, tensors: Dict, output_path: str
     quant_map = {
         "F16": gguf.GGMLQuantizationType.F16,
         "Q4_0": gguf.GGMLQuantizationType.Q4_0,
-        "Q4_K_S": gguf.GGMLQuantizationType.Q4_K_S,
-        "Q4_K_M": gguf.GGMLQuantizationType.Q4_K_M,
-        "Q5_0": gguf.GGMLQuantizationType.Q5_0,
-        "Q5_K_M": gguf.GGMLQuantizationType.Q5_K_M,
+        "Q4_K": gguf.GGMLQuantizationType.Q4_K,
+        "Q6_K": gguf.GGMLQuantizationType.Q6_K,
         "Q8_0": gguf.GGMLQuantizationType.Q8_0,
     }
     
-    target_qtype = quant_map.get(quant_type, gguf.GGMLQuantizationType.Q4_K_M)
+    target_qtype = quant_map.get(quant_type, gguf.GGMLQuantizationType.Q4_K)
     
     # Create GGUF writer
     writer = gguf.GGUFWriter(output_path, arch=arch)
@@ -138,7 +136,7 @@ def write_quantized_gguf(source_checkpoint: str, tensors: Dict, output_path: str
 def convert_checkpoint_to_gguf(
     source_checkpoint: str,
     output_directory: str,
-    quantization: str = "Q4_K_M",
+    quantization: str = "Q4_K",
     output_filename: str = "",
     unet_only: bool = True
 ) -> Tuple[str, int, float]:
