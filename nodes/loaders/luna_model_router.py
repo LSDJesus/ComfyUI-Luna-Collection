@@ -1107,16 +1107,26 @@ class LunaModelRouter:
             model_options = {}
             
             # Map precision strings to torch dtypes
-            # Important: Preserve exact fp8 variant (e4m3fn, e4m3fn_scaled, e5m2)
+            # Note: _scaled variants use the base dtype; scaling is handled at higher levels
             precision_dtype_map = {
-                "fp8_e4m3fn": torch.float8_e4m3fn,
-                "fp8_e4m3fn_scaled": torch.float8_e4m3fn_scaled,
-                "fp8_e5m2": torch.float8_e5m2,
-                "fp8": torch.float8_e4m3fn,  # Fallback for old detections
                 "fp16": torch.float16,
                 "bf16": torch.bfloat16,
                 "fp32": torch.float32,
             }
+            
+            # Add float8 dtypes if available (requires PyTorch 2.1+)
+            if hasattr(torch, 'float8_e4m3fn'):
+                precision_dtype_map["fp8_e4m3fn"] = torch.float8_e4m3fn
+                precision_dtype_map["fp8_e4m3fn_scaled"] = torch.float8_e4m3fn  # _scaled uses base dtype
+                precision_dtype_map["fp8"] = torch.float8_e4m3fn  # Fallback for old detections
+            if hasattr(torch, 'float8_e4m3fnuz'):
+                precision_dtype_map["fp8_e4m3fnuz"] = torch.float8_e4m3fnuz
+            if hasattr(torch, 'float8_e5m2'):
+                precision_dtype_map["fp8_e5m2"] = torch.float8_e5m2
+            if hasattr(torch, 'float8_e5m2fnuz'):
+                precision_dtype_map["fp8_e5m2fnuz"] = torch.float8_e5m2fnuz
+            if hasattr(torch, 'float8_e8m0fnu'):
+                precision_dtype_map["fp8_e8m0fnu"] = torch.float8_e8m0fnu
             
             if detected_precision in precision_dtype_map:
                 model_options["dtype"] = precision_dtype_map[detected_precision]
