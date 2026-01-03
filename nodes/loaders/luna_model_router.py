@@ -507,7 +507,9 @@ class LunaModelRouter:
     # fp8: 75% VRAM reduction, native on Ada/Blackwell
     # BnB: QLoRA-compatible quantization, widely used for fine-tuning
     # GGUF: Integer quantization using GPU tensor cores
-    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "fp8_e4m3fn_scaled", "fp8_e5m2", "nf4", "gguf_Q8_0", "gguf_Q4_K_M"]
+    PRECISION_OPTIONS = ["None", "bf16", "fp16", "fp8_e4m3fn", "fp8_e4m3fn_scaled", "fp8_e5m2", "gguf_Q8_0", "gguf_Q4_K_M"]
+    # Note: nf4 removed - BitsAndBytes 4-bit cannot be properly serialized to safetensors
+    # Use fp8_e4m3fn_scaled (50% size, RTX 40+) or gguf_Q4_K_M (28% size, all GPUs) instead
     
     # Daemon routing modes
     DAEMON_MODES = ["auto", "force_daemon", "force_local"]
@@ -928,7 +930,8 @@ class LunaModelRouter:
         loading the entire model into memory.
         
         Returns:
-            Precision string: "fp16", "bf16", "fp8", "int8", "nf4", or "unknown"
+            Precision string: "fp16", "bf16", "fp8", "int8", or "unknown"
+            Note: nf4 detection removed - use GGUF Q4 variants instead
         """
         try:
             from safetensors import safe_open
@@ -1006,12 +1009,13 @@ class LunaModelRouter:
         
         Output locations (standardized):
         - Precision (fp16/bf16/fp8): models/diffusion_models/converted/{basename}_{precision}.safetensors
-        - BitsAndBytes (nf4/int8): models/diffusion_models/converted/{basename}_{precision}.safetensors
         - GGUF (Q4/Q8): models/diffusion_models/gguf/{basename}_{precision}.gguf
+        
+        Note: BitsAndBytes (nf4) removed - use GGUF Q4_K_M for 4-bit quantization.
         
         Args:
             model_path: Path to source model
-            precision: Target precision (fp16, bf16, fp8_e4m3fn, nf4, int8, Q4_K_M, etc.)
+            precision: Target precision (fp16, bf16, fp8_e4m3fn, gguf_Q4_K_M, gguf_Q8_0, etc.)
         
         Returns:
             Tuple of (loaded_model, converted_path)
@@ -1087,27 +1091,10 @@ class LunaModelRouter:
             pass
         
         # Route to appropriate loader
-        if dtype_hint == 'int8':
-            print(f"[LunaModelRouter] Detected INT8 format, using specialized loader")
-            from .luna_quantized_loader import LunaINT8Loader
-            loader = LunaINT8Loader()
-            result = loader.load_int8_unet(path, target_dtype="auto")
-            return result[0]
-        
-        elif dtype_hint == 'nf4':
-            print(f"[LunaModelRouter] Detected NF4 format, using specialized loader")
-            from .luna_quantized_loader import LunaNF4Loader
-            loader = LunaNF4Loader()
-            result = loader.load_nf4_unet(path)
-            return result[0]
-        
-        else:
-            # Standard float format (fp16, bf16, fp8, etc.)
-            # Preserve the original precision to avoid 2x VRAM expansion
-            import torch
-            print(f"[LunaModelRouter] Using standard UNet loader with precision preservation")
-            detected_precision = self._detect_model_precision(path)
-            model_options = {}
+        # Note: int8/nf4 loaders removed - use GGUF Q4/Q8 for quantization instead
+        # Standard float format (fp16, bf16, fp8, etc.)
+        # ComfyUI's load_unet() preserves the precision from the file
+        detected_precision = self._detect_model_precision(path)
             
             # Map precision strings to torch dtypes
             # Note: _scaled variants use the base dtype; scaling is handled at higher levels

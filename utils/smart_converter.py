@@ -66,7 +66,9 @@ def smart_convert(
     
     # Step 2: Determine conversion type and check for existing
     try:
-        conv_type, existing = suggest_conversion(source_path, target_precision)
+        conv_type, existing, normalized_precision = suggest_conversion(source_path, target_precision)
+        # Use normalized precision for the rest of the conversion process
+        target_precision = normalized_precision
     except ValueError as e:
         print(f"[SmartConvert] Error: {e}")
         raise

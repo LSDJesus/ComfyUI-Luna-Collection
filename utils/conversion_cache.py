@@ -443,36 +443,47 @@ def get_conversion_stats(conversion_type: str = 'precision') -> dict:
 # Conversion Suggestion
 # =============================================================================
 
-def suggest_conversion(source_path: str, target_precision: str) -> Tuple[str, Optional[str]]:
+def suggest_conversion(source_path: str, target_precision: str) -> Tuple[str, Optional[str], str]:
     """
     Suggest best conversion approach.
     
     Determines whether to use:
     - Precision converter (fp16, bf16, fp8_e4m3fn)
-    - BitsAndBytes (nf4, int8)
     - GGUF (Q4_K_M, Q4_K_S, Q8_0, etc.)
+    
+    Note: BitsAndBytes (nf4) removed - cannot be properly serialized to safetensors.
+    Use fp8_e4m3fn_scaled or GGUF instead.
     
     Args:
         source_path: Path to source model
-        target_precision: Target precision/quantization
+        target_precision: Target precision/quantization (e.g., 'fp8_e4m3fn', 'gguf_Q8_0')
     
     Returns:
-        Tuple of (conversion_type, existing_model_path or None)
+        Tuple of (conversion_type, existing_model_path or None, normalized_precision)
     """
     precision_types = ['fp16', 'bf16', 'fp8', 'fp8_e4m3fn', 'fp8_e4m3fn_scaled', 'fp8_e5m2']
-    bnb_types = ['nf4']
-    gguf_types = ['Q4_0', 'Q4_K_S', 'Q4_K_M', 'Q5_0', 'Q5_K_M', 'Q8_0']
+    # BnB types removed - nf4 doesn't work with safetensors serialization
+    # gguf_types - accept both with and without 'gguf_' prefix
+    gguf_types = [
+        'Q4_0', 'Q4_K_S', 'Q4_K_M', 'Q5_0', 'Q5_K_M', 'Q8_0',
+        'gguf_Q4_0', 'gguf_Q4_K_S', 'gguf_Q4_K_M', 'gguf_Q5_0', 'gguf_Q5_K_M', 'gguf_Q8_0'
+    ]
+    
+    # Normalize GGUF precision - strip 'gguf_' prefix if present
+    normalized_precision = target_precision
+    if target_precision.startswith('gguf_'):
+        normalized_precision = target_precision[5:]  # Remove 'gguf_' prefix
     
     if target_precision in precision_types:
         conv_type = 'precision'
-    elif target_precision in bnb_types:
-        conv_type = 'bnb'
-    elif target_precision in gguf_types:
+    elif target_precision in gguf_types or normalized_precision in gguf_types:
         conv_type = 'gguf'
+        # Use normalized precision for GGUF operations
+        target_precision = normalized_precision
     else:
         raise ValueError(f"Unknown precision type: {target_precision}")
     
-    # Check if already converted
+    # Check if already converted (use normalized precision)
     existing = find_existing_conversion(source_path, target_precision, conv_type)
     
-    return (conv_type, existing)
+    return (conv_type, existing, target_precision)
