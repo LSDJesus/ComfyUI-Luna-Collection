@@ -63,7 +63,7 @@ def check_llama_cpp_version() -> Dict[str, Any]:
         has_qwen3_support = False
         try:
             # The JamePeng fork has updated llama.cpp that supports Qwen3-VL natively
-            from llama_cpp import llama_cpp as llama_cpp_backend
+            import llama_cpp
             has_qwen3_support = True
         except:
             pass

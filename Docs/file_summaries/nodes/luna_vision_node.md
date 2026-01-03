@@ -23,7 +23,7 @@ Key Methods:
 - LunaVisionNode._local_qwen3_vision_encode(mmproj_path, image, model_path) -> torch.Tensor
 
 ## Dependencies
-torch, numpy, folder_paths (optional), comfy.sd/utils (optional), luna_daemon.client (optional), llama_cpp (optional), transformers (optional)
+torch, numpy, folder_paths (optional), comfy.sd/utils (optional), luna_daemon.client (optional), llama_cpp_python (optional), transformers (optional)
 
 ## Integration Points
 Luna Model Router (clip_vision output), Luna Config Gateway (vision_embed input), Luna Daemon for vision encoding, CLIP Vision models, Qwen3-VL mmproj
