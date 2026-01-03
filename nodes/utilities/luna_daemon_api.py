@@ -121,6 +121,8 @@ def register_routes():
             total_vram_gb = sum(v.get("total_gb", 0) for v in vram_info.values())
             used_vram_gb = sum(v.get("used_gb", 0) for v in vram_info.values())
             
+            logger.debug(f"[Luna.DaemonAPI] VRAM info from daemon: {vram_info}")
+            
             # Build GPU array for multi-GPU display
             gpus = []
             daemon_clip_device = info.get("devices", {}).get("clip", "cuda:0")
@@ -169,6 +171,8 @@ def register_routes():
                     if hasattr(mm, 'current_loaded_models'):
                         loaded_models = mm.current_loaded_models
                         comfyui_vram["loaded_models_count"] = len(loaded_models)
+                    
+                    logger.debug(f"[Luna.DaemonAPI] ComfyUI VRAM: {comfyui_vram}")
             except Exception as e:
                 logger.debug(f"Could not get ComfyUI VRAM info: {e}")
             

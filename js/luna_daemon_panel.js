@@ -212,25 +212,57 @@ function createPanelContent() {
         </div>
         
         <div class="section">
-            <div class="section-title">VRAM - Multi-GPU</div>
+            <div class="section-title">VRAM Monitor</div>
             ${panelState.gpus.length > 0 
                 ? (() => {
-                    console.log(`[Luna Panel] Building UI for ${panelState.gpus.length} GPUs:`, panelState.gpus);
-                    return panelState.gpus.map(gpu => `
-                        <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color);">
-                            <div class="stat-row">
-                                <span class="stat-label">GPU ${gpu.id}${gpu.is_daemon_device ? ' (Daemon)' : ''}</span>
-                                <span class="stat-value">${gpu.reserved_gb} / ${gpu.total_gb} GB</span>
+                    console.log(`[Luna Panel] Building unified VRAM monitor for ${panelState.gpus.length} GPUs:`, panelState.gpus);
+                    
+                    // Create a map of GPU usage breakdown
+                    return panelState.gpus.map(gpu => {
+                        // Determine if this GPU has ComfyUI or Daemon usage
+                        const comfyuiGpuId = panelState.comfyuiVram ? panelState.comfyuiVram.device.split(':')[1] || '0' : null;
+                        const isComfyuiDevice = comfyuiGpuId === gpu.id;
+                        const isDaemonDevice = gpu.is_daemon_device;
+                        
+                        // Calculate breakdown
+                        const comfyuiUsageGb = isComfyuiDevice && panelState.comfyuiVram ? panelState.comfyuiVram.used_gb : 0;
+                        const daemonUsageGb = isDaemonDevice ? gpu.reserved_gb : 0;
+                        const totalUsageGb = gpu.reserved_gb;
+                        
+                        return `
+                            <div style="margin-bottom: 16px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 6px; border-left: 3px solid ${isDaemonDevice ? '#4ade80' : isComfyuiDevice ? '#60a5fa' : 'var(--border-color)'};">
+                                <div class="stat-row" style="margin-bottom: 6px;">
+                                    <span style="font-weight: 600; font-size: 13px;">GPU ${gpu.id}</span>
+                                    <span style="font-weight: 600;">${totalUsageGb} / ${gpu.total_gb} GB (${gpu.percent}%)</span>
+                                </div>
+                                <div class="vram-bar" style="margin-bottom: 10px;">
+                                    <div class="vram-fill" style="width: ${gpu.percent}%; ${gpu.percent > 90 ? 'background: #f87171;' : ''}"></div>
+                                </div>
+                                
+                                <div style="font-size: 11px; opacity: 0.9; line-height: 1.8;">
+                                    <div class="stat-row" style="opacity: 0.7;">
+                                        <span>Total Usage</span>
+                                        <span>${totalUsageGb.toFixed(2)} GB</span>
+                                    </div>
+                                    ${isComfyuiDevice ? `
+                                    <div class="stat-row">
+                                        <span style="color: #60a5fa;">ComfyUI Usage</span>
+                                        <span style="color: #60a5fa;">${comfyuiUsageGb.toFixed(2)} GB</span>
+                                    </div>
+                                    ` : ''}
+                                    ${isDaemonDevice ? `
+                                    <div class="stat-row">
+                                        <span style="color: #4ade80;">Daemon Usage</span>
+                                        <span style="color: #4ade80;">${daemonUsageGb.toFixed(2)} GB</span>
+                                    </div>
+                                    ` : ''}
+                                    ${!isComfyuiDevice && !isDaemonDevice ? `
+                                    <div style="opacity: 0.5; text-align: center; padding: 4px 0;">No tracked usage</div>
+                                    ` : ''}
+                                </div>
                             </div>
-                            <div class="stat-row" style="font-size: 11px; opacity: 0.7;">
-                                <span>${gpu.name}</span>
-                                <span>${gpu.percent}%</span>
-                            </div>
-                            <div class="vram-bar">
-                                <div class="vram-fill" style="width: ${gpu.percent}%; ${gpu.percent > 90 ? 'background: #f87171;' : ''}"></div>
-                            </div>
-                        </div>
-                    `).join('');
+                        `;
+                    }).join('');
                 })()
                 
                 : `
@@ -252,33 +284,6 @@ function createPanelContent() {
                 `
             }
         </div>
-        
-        ${panelState.comfyuiVram ? `
-        <div class="section">
-            <div class="section-title">ComfyUI Instance VRAM</div>
-            <div class="stat-row">
-                <span class="stat-label">Device</span>
-                <span class="stat-value">${panelState.comfyuiVram.device}</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Used</span>
-                <span class="stat-value">${panelState.comfyuiVram.used_gb} / ${panelState.comfyuiVram.total_gb} GB</span>
-            </div>
-            <div class="stat-row">
-                <span class="stat-label">Usage</span>
-                <span class="stat-value">${panelState.comfyuiVram.percent}%</span>
-            </div>
-            <div class="vram-bar">
-                <div class="vram-fill" style="width: ${panelState.comfyuiVram.percent}%; ${panelState.comfyuiVram.percent > 90 ? 'background: #f87171;' : ''}"></div>
-            </div>
-            ${panelState.comfyuiVram.loaded_models_count !== undefined ? `
-            <div class="stat-row" style="margin-top: 8px;">
-                <span class="stat-label">Loaded Models</span>
-                <span class="stat-value">${panelState.comfyuiVram.loaded_models_count}</span>
-            </div>
-            ` : ''}
-        </div>
-        ` : ''}
         
         ${panelState.weightRegistryModels && panelState.weightRegistryModels.length > 0 ? `
         <div class="section">
