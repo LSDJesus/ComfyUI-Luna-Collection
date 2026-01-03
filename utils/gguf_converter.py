@@ -37,13 +37,40 @@ def get_unet_keys(state_dict: dict) -> dict:
     return unet_keys
 
 
+def detect_model_architecture(state_dict: dict) -> str:
+    """
+    Detect model architecture from state dict.
+    Returns architecture string compatible with ComfyUI-GGUF.
+    
+    Supported: flux, sd1, sdxl, sd3, aura, hidream, cosmos, ltxv, hyvid, wan, lumina2, qwen_image
+    """
+    # Check for Flux architecture
+    if any("double_blocks" in key for key in state_dict.keys()):
+        return "flux"
+    
+    # Check for SD3 architecture  
+    if any("joint_blocks" in key for key in state_dict.keys()):
+        return "sd3"
+    
+    # Check for SDXL (has add_embedding and larger transformer blocks)
+    if any("add_embedding" in key for key in state_dict.keys()):
+        return "sdxl"
+    
+    # Default to SD1.5
+    return "sd1"
+
+
 def write_f16_gguf(source_checkpoint: str, tensors: Dict, output_path: str, unet_only: bool = True, target_quant: str = "F16"):
     """Write tensors to F16 GGUF file."""
     if not HAS_GGUF:
         raise RuntimeError("gguf library required: pip install gguf")
     
+    # Detect architecture from tensor keys
+    arch = detect_model_architecture(tensors)
+    print(f"[GGUF Converter] Detected architecture: {arch}")
+    
     metadata = {
-        "general.architecture": "stable-diffusion",
+        "general.architecture": arch,  # Use detected architecture
         "general.name": Path(source_checkpoint).stem,
         "general.quantization": "F16",
         "luna.source_file": source_checkpoint,
@@ -51,7 +78,7 @@ def write_f16_gguf(source_checkpoint: str, tensors: Dict, output_path: str, unet
         "luna.dtype": target_quant,  # What the final dtype will be after quantization
     }
     
-    writer = gguf.GGUFWriter(output_path, arch="stable-diffusion")
+    writer = gguf.GGUFWriter(output_path, arch=arch)  # Pass detected arch to writer
     
     # Add metadata
     for key, value in metadata.items():
