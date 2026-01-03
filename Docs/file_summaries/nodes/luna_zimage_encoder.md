@@ -18,7 +18,7 @@ Unified Z-IMAGE prompt input, AI enhancement, and conditioning encoder. Combines
 - `torch`, `numpy` - Tensor operations and image processing
 - `folder_paths` - ComfyUI model path resolution
 - `node_helpers` - Optional ComfyUI node utilities
-- `llama_cpp` - GGUF model support (optional)
+- `llama_cpp_python` - GGUF model support (optional)
 - `PIL` (Pillow) - Image format conversion
 - `transformers` - Model loading and processing (optional)
 

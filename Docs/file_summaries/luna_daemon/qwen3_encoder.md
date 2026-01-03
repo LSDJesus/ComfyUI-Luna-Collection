@@ -27,7 +27,7 @@ N/A
 
 ## Dependencies
 - `transformers` (for HuggingFace models)
-- `llama_cpp` (for GGUF models)
+- `llama_cpp_python` (for GGUF models)
 - `PIL` (for image processing)
 
 ## Integration Points

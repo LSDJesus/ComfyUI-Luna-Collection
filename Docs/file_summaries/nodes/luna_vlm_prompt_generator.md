@@ -24,7 +24,7 @@ os, gc, typing (TYPE_CHECKING, Tuple, Optional, Any, Dict), torch, numpy, folder
 - LunaVLMPromptGenerator._parse_result(result, mode) -> Tuple[str, str]
 
 ## Dependencies
-torch, numpy, folder_paths (optional), luna_daemon.client (optional), llama_cpp (optional), transformers (optional)
+torch, numpy, folder_paths (optional), luna_daemon.client (optional), llama_cpp_python (optional), transformers (optional)
 
 ## Integration Points
 Luna Model Router (llm output), Luna Daemon for VLM generation, supports GGUF and safetensors models, preset prompt modes
