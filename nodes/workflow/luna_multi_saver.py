@@ -431,6 +431,21 @@ class LunaMultiSaver:
         try:
             client = DaemonClient()
             
+            # Parse timestamp once for consistent time across all images
+            try:
+                timestamp = datetime.strptime(batch_timestamp, "%Y_%m_%d_%H%M%S")
+            except:
+                timestamp = datetime.now()
+            
+            # Parse model info once
+            model_path, model_name, model_dir = self._parse_model_info(model_name_raw)
+            
+            # Process path templates once (same for all images)
+            processed_save_path = self._process_template(save_path, model_path, model_name, model_dir, timestamp, filename_index)
+            processed_filename_base = self._process_template(filename, model_path, model_name, model_dir, timestamp, filename_index)
+            if not processed_filename_base:
+                processed_filename_base = f"{batch_timestamp}_{model_name}"
+            
             # Collect image data for daemon
             images_for_daemon = []
             for image, affix, subdir, fmt in filtered_images:
@@ -443,54 +458,72 @@ class LunaMultiSaver:
                 else:
                     image_np = np.array(image_np)
                 
-                # Ensure proper shape and range
+                # Handle batch dimension - process each image in the batch
                 if image_np.ndim == 4:
-                    image_np = image_np[0]
-                if image_np.max() <= 1.0:
-                    image_np = (image_np * 255).astype(np.uint8)
+                    # Batch of images - process each one
+                    for batch_idx in range(image_np.shape[0]):
+                        single_image_np = image_np[batch_idx]
+                        
+                        # Ensure proper range
+                        if single_image_np.max() <= 1.0:
+                            single_image_np = (single_image_np * 255).astype(np.uint8)
+                        else:
+                            single_image_np = single_image_np.astype(np.uint8)
+                        
+                        # Build final directory path
+                        if processed_save_path:
+                            if subdir:
+                                final_save_dir = os.path.join(processed_save_path, affix)
+                            else:
+                                final_save_dir = processed_save_path
+                        else:
+                            # Empty path = root
+                            if subdir:
+                                final_save_dir = affix
+                            else:
+                                final_save_dir = ""
+                        
+                        # Build final filename with affix and batch index if needed
+                        if image_np.shape[0] > 1:
+                            final_filename = f"{processed_filename_base}_{affix}_{batch_idx}"
+                        else:
+                            final_filename = f"{processed_filename_base}_{affix}"
+                        
+                        images_for_daemon.append({
+                            "image": single_image_np,
+                            "save_dir": final_save_dir,
+                            "filename": final_filename,
+                            "format": fmt
+                        })
                 else:
-                    image_np = image_np.astype(np.uint8)
-                
-                # Pre-process paths and filenames using our template logic
-                # Parse timestamp for consistent time across templates
-                try:
-                    timestamp = datetime.strptime(batch_timestamp, "%Y_%m_%d_%H%M%S")
-                except:
-                    timestamp = datetime.now()
-                
-                # Parse model info
-                model_path, model_name, model_dir = self._parse_model_info(model_name_raw)
-                
-                # Process save_path template
-                processed_path = self._process_template(save_path, model_path, model_name, model_dir, timestamp, filename_index)
-                
-                # Process filename template
-                processed_filename = self._process_template(filename, model_path, model_name, model_dir, timestamp, filename_index)
-                if not processed_filename:
-                    processed_filename = f"{batch_timestamp}_{model_name}"
-                
-                # Build final directory path
-                if processed_path:
-                    if subdir:
-                        final_save_dir = os.path.join(processed_path, affix)
+                    # Single image (3D tensor)
+                    if image_np.max() <= 1.0:
+                        image_np = (image_np * 255).astype(np.uint8)
                     else:
-                        final_save_dir = processed_path
-                else:
-                    # Empty path = root
-                    if subdir:
-                        final_save_dir = affix
+                        image_np = image_np.astype(np.uint8)
+                    
+                    # Build final directory path
+                    if processed_save_path:
+                        if subdir:
+                            final_save_dir = os.path.join(processed_save_path, affix)
+                        else:
+                            final_save_dir = processed_save_path
                     else:
-                        final_save_dir = ""
-                
-                # Build final filename with affix
-                final_filename = f"{processed_filename}_{affix}"
-                
-                images_for_daemon.append({
-                    "image": image_np,
-                    "save_dir": final_save_dir,  # Pre-processed directory path
-                    "filename": final_filename,   # Pre-processed filename (no extension yet)
-                    "format": fmt
-                })
+                        # Empty path = root
+                        if subdir:
+                            final_save_dir = affix
+                        else:
+                            final_save_dir = ""
+                    
+                    # Build final filename with affix
+                    final_filename = f"{processed_filename_base}_{affix}"
+                    
+                    images_for_daemon.append({
+                        "image": image_np,
+                        "save_dir": final_save_dir,
+                        "filename": final_filename,
+                        "format": fmt
+                    })
             
             # Build daemon request - much simpler now, no templates needed
             save_request = {
