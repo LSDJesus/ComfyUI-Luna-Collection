@@ -144,11 +144,11 @@ def batch_check_conversions(source_path: str, precisions: list) -> dict:
     
     for precision in precisions:
         try:
-            conv_type, existing = suggest_conversion(source_path, precision)
+            conv_type, existing, normalized_precision = suggest_conversion(source_path, precision)
             if existing:
                 results[precision] = (True, existing)
             else:
-                path = get_converted_model_path(source_path, precision, conv_type)
+                path = get_converted_model_path(source_path, normalized_precision, conv_type)
                 results[precision] = (False, path)
         except Exception as e:
             print(f"[SmartConvert] Error checking {precision}: {e}")

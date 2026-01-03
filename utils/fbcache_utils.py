@@ -10,10 +10,12 @@ transformer blocks and UNet/Flux models.
 import contextlib
 import dataclasses
 import unittest
+import unittest.mock
 from collections import defaultdict
-from typing import DefaultDict, Dict
+from typing import DefaultDict, Dict, Optional
 
 import torch
+from torch import Tensor
 
 
 @dataclasses.dataclass
@@ -196,24 +198,32 @@ class CachedTransformerBlocks(torch.nn.Module):
             if args:
                 img = args[0]
                 args = args[1:]
-            else:
+            elif img_arg_name and img_arg_name in kwargs:
                 img = kwargs.pop(img_arg_name)
+            else:
+                img = None
             if args:
                 txt = args[0]
                 args = args[1:]
-            else:
+            elif txt_arg_name and txt_arg_name in kwargs:
                 txt = kwargs.pop(txt_arg_name)
+            else:
+                txt = None
         else:
             if args:
                 txt = args[0]
                 args = args[1:]
-            else:
+            elif txt_arg_name and txt_arg_name in kwargs:
                 txt = kwargs.pop(txt_arg_name)
+            else:
+                txt = None
             if args:
                 img = args[0]
                 args = args[1:]
-            else:
+            elif img_arg_name and img_arg_name in kwargs:
                 img = kwargs.pop(img_arg_name)
+            else:
+                img = None
         hidden_states = img
         encoder_hidden_states = txt
         if self.residual_diff_threshold <= 0.0:
@@ -237,7 +247,7 @@ class CachedTransformerBlocks(torch.nn.Module):
                     if not self.return_hidden_states_first:
                         hidden_states, encoder_hidden_states = encoder_hidden_states, hidden_states
             if self.single_transformer_blocks is not None:
-                hidden_states = torch.cat(
+                hidden_states = torch.cat(  # type: ignore[arg-type]
                     [hidden_states, encoder_hidden_states]
                     if self.cat_hidden_states_first else
                     [encoder_hidden_states, hidden_states],
@@ -548,7 +558,7 @@ def create_patch_unet_model__forward(model,
             set_buffer("hidden_states_residual", hidden_states_residual)
         torch._dynamo.graph_break()
 
-        h = h.type(x.dtype)
+        h = h.type(x.dtype)  # type: ignore[union-attr]
 
         if self.predict_codebook_ids:
             return self.id_predictor(h)
@@ -697,10 +707,10 @@ def create_patch_flux_forward_orig(model,
         txt_ids: Tensor,
         timesteps: Tensor,
         y: Tensor,
-        guidance: Tensor = None,
+        guidance: Optional[Tensor] = None,
         control=None,
         transformer_options={},
-        attn_mask: Tensor = None,
+        attn_mask: Optional[Tensor] = None,
     ) -> Tensor:
         patches_replace = transformer_options.get("patches_replace", {})
         if img.ndim != 3 or txt.ndim != 3:
@@ -798,7 +808,7 @@ def create_patch_flux_forward_orig(model,
 
         torch._dynamo.graph_break()
         if can_use_cache:
-            img = apply_prev_hidden_states_residual(img)
+            img = apply_prev_hidden_states_residual(img)  # type: ignore[assignment]
         else:
             img, hidden_states_residual = call_remaining_blocks(
                 self,

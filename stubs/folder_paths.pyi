@@ -1,9 +1,11 @@
 """Type stubs for ComfyUI folder_paths module."""
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Tuple, Set
 
 base_path: str
 models_dir: str
+folder_names_and_paths: Dict[str, Tuple[List[str], Set[str]]]
+supported_pt_extensions: Set[str]
 
 def get_filename_list(folder_name: str) -> List[str]: ...
 def get_full_path(folder_name: str, filename: str) -> Optional[str]: ...

@@ -7,6 +7,7 @@ without external dependencies. Based on wavespeed's fbcache_node.py.
 import contextlib
 import unittest.mock
 import torch
+from typing import Optional, Callable
 
 import fbcache_utils
 
@@ -46,16 +47,22 @@ def apply_fbcache_to_model(
         del model_sampling
         
         @torch.compiler.disable()
-        def validate_use_cache(use_cached):
-            nonlocal consecutive_cache_hits
-            use_cached = use_cached and end_sigma <= current_timestep <= start_sigma
+        def validate_use_cache_inner(use_cached):
+            nonlocal consecutive_cache_hits, current_timestep
+            # Only check sigma range if timestep and sigmas are all defined
+            if (current_timestep is not None and 
+                start_sigma is not None and 
+                end_sigma is not None):
+                use_cached = use_cached and end_sigma <= current_timestep <= start_sigma
             use_cached = use_cached and (max_consecutive_cache_hits < 0
                                          or consecutive_cache_hits
                                          < max_consecutive_cache_hits)
             consecutive_cache_hits = consecutive_cache_hits + 1 if use_cached else 0
             return use_cached
+        validate_use_cache = validate_use_cache_inner
     else:
-        validate_use_cache = None
+        # Type hint to satisfy Pylance - this will be reassigned if validate_use_cache_fn is provided
+        validate_use_cache: Optional[Callable[[bool], bool]] = None
     
     prev_timestep = None
     prev_input_state = None

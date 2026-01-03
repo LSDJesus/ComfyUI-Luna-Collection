@@ -56,7 +56,6 @@ Smart Loading (Z-IMAGE):
 """
 
 from __future__ import annotations
-
 import os
 from pathlib import Path
 from typing import Tuple, Optional, Any, Dict, List
@@ -901,7 +900,7 @@ class LunaModelRouter:
             # Important: Preserve exact fp8 variant (e4m3fn, e4m3fn_scaled, e5m2)
             precision_dtype_map = {
                 "fp8_e4m3fn": torch.float8_e4m3fn,
-                "fp8_e4m3fn_scaled": torch.float8_e4m3fn_scaled,
+                "fp8_e4m3fn_scaled": torch.float8_e4m3fn,
                 "fp8_e5m2": torch.float8_e5m2,
                 "fp8": torch.float8_e4m3fn,  # Fallback for old detections
                 "fp16": torch.float16,
@@ -1073,6 +1072,7 @@ class LunaModelRouter:
         import os
         from pathlib import Path
         import json
+        import torch
         
         print(f"[LunaModelRouter] Loading safetensors: {path}")
         
@@ -1096,39 +1096,39 @@ class LunaModelRouter:
         # ComfyUI's load_unet() preserves the precision from the file
         detected_precision = self._detect_model_precision(path)
             
-            # Map precision strings to torch dtypes
-            # Note: _scaled variants use the base dtype; scaling is handled at higher levels
-            precision_dtype_map = {
-                "fp16": torch.float16,
-                "bf16": torch.bfloat16,
-                "fp32": torch.float32,
-            }
+        # Map precision strings to torch dtypes
+        # Note: _scaled variants use the base dtype; scaling is handled at higher levels
+        precision_dtype_map = {
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+            "fp32": torch.float32,
+        }
             
-            # Add float8 dtypes if available (requires PyTorch 2.1+)
-            if hasattr(torch, 'float8_e4m3fn'):
-                precision_dtype_map["fp8_e4m3fn"] = torch.float8_e4m3fn
-                precision_dtype_map["fp8_e4m3fn_scaled"] = torch.float8_e4m3fn  # _scaled uses base dtype
-                precision_dtype_map["fp8"] = torch.float8_e4m3fn  # Fallback for old detections
-            if hasattr(torch, 'float8_e4m3fnuz'):
-                precision_dtype_map["fp8_e4m3fnuz"] = torch.float8_e4m3fnuz
-            if hasattr(torch, 'float8_e5m2'):
-                precision_dtype_map["fp8_e5m2"] = torch.float8_e5m2
-            if hasattr(torch, 'float8_e5m2fnuz'):
-                precision_dtype_map["fp8_e5m2fnuz"] = torch.float8_e5m2fnuz
-            if hasattr(torch, 'float8_e8m0fnu'):
-                precision_dtype_map["fp8_e8m0fnu"] = torch.float8_e8m0fnu
+        # Add float8 dtypes if available (requires PyTorch 2.1+)
+        if hasattr(torch, 'float8_e4m3fn'):
+            precision_dtype_map["fp8_e4m3fn"] = torch.float8_e4m3fn
+            precision_dtype_map["fp8_e4m3fn_scaled"] = torch.float8_e4m3fn  # _scaled uses base dtype
+            precision_dtype_map["fp8"] = torch.float8_e4m3fn  # Fallback for old detections
+        if hasattr(torch, 'float8_e4m3fnuz'):
+            precision_dtype_map["fp8_e4m3fnuz"] = torch.float8_e4m3fnuz
+        if hasattr(torch, 'float8_e5m2'):
+            precision_dtype_map["fp8_e5m2"] = torch.float8_e5m2
+        if hasattr(torch, 'float8_e5m2fnuz'):
+            precision_dtype_map["fp8_e5m2fnuz"] = torch.float8_e5m2fnuz
+        if hasattr(torch, 'float8_e8m0fnu'):
+            precision_dtype_map["fp8_e8m0fnu"] = torch.float8_e8m0fnu
             
-            # Get the dtype to preserve
-            dtype_to_use = precision_dtype_map.get(detected_precision)
+        # Get the dtype to preserve
+        dtype_to_use = precision_dtype_map.get(detected_precision)
             
-            if dtype_to_use:
-                print(f"[LunaModelRouter] Preserving {detected_precision} precision during load")
-                model = comfy.sd.load_unet(path, dtype=dtype_to_use)
-            else:
-                print(f"[LunaModelRouter] Loading UNet with auto-detect precision")
-                model = comfy.sd.load_unet(path)
+        if dtype_to_use:
+            print(f"[LunaModelRouter] Preserving {detected_precision} precision during load")
+            model = comfy.sd.load_unet(path, dtype=dtype_to_use)
+        else:
+            print(f"[LunaModelRouter] Loading UNet with auto-detect precision")
+            model = comfy.sd.load_unet(path)
             
-            return model
+        return model
     
     def _load_gguf_model(self, path: str) -> Any:
         """Load GGUF model file directly from path.

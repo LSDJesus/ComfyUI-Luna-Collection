@@ -59,7 +59,7 @@ class LunaBatchUpscaleRefine:
     FUNCTION = "refine"
     CATEGORY = "Luna/Upscaling"
     
-    def refine(self, image, upscale_model, scale, tile_batch_size, denoise, steps, cfg, seed, sampler, scheduler, 
+    def refine(self, image, upscale_model, scale, tile_batch_size, denoise: float, steps, cfg, seed, sampler, scheduler, 
                blending_mode, feathering, use_tiled_vae, model=None, positive=None, negative=None, vae=None, luna_pipe=None):
         
         # 0. INPUT VALIDATION & UNPACKING

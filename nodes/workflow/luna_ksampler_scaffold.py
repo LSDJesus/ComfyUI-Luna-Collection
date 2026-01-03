@@ -12,6 +12,7 @@ Test scenario:
 
 import torch
 import comfy.samplers
+import comfy.sample
 
 # Import common_ksampler from ComfyUI's nodes.py file
 try:

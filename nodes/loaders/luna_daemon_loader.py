@@ -147,9 +147,8 @@ class LunaDaemonVAELoader:
         if not vae_path or not os.path.exists(vae_path):
             raise RuntimeError(f"VAE not found: {vae_name}")
         
-        # Create proxy VAE - we don't have type detection for file-based loading
-        # Default to sdxl, user can specify different VAE loader if needed
-        proxy_vae = DaemonVAE(source_vae=None, vae_type='sdxl', use_existing=False)
+        # Create proxy VAE with path
+        proxy_vae = DaemonVAE(vae_path=vae_path, source_vae=None, vae_type='sdxl')
         # Note: This legacy loader doesn't have access to the actual VAE object,
         # so it can only work if the daemon already has a matching VAE loaded.
         # Use LunaCheckpointTunnel for full functionality.
@@ -320,12 +319,16 @@ class LunaCheckpointTunnel:
         status_parts = []
         
         # Create proxy VAE
+        # For daemon VAE, we need to provide a path. If VAE is already loaded in daemon,
+        # we can create a lightweight proxy. Otherwise, register the source VAE.
+        vae_path_str = getattr(vae, 'vae_path', '') if hasattr(vae, 'vae_path') else ''
+        
         if vae_already_loaded:
             status_parts.append(f"VAE({vae_type}): sharing")
-            proxy_vae = DaemonVAE(source_vae=None, vae_type=vae_type, use_existing=True)
+            proxy_vae = DaemonVAE(vae_path=vae_path_str, source_vae=None, vae_type=vae_type)
         else:
             status_parts.append(f"VAE({vae_type}): registering")
-            proxy_vae = DaemonVAE(source_vae=vae, vae_type=vae_type, use_existing=False)
+            proxy_vae = DaemonVAE(vae_path=vae_path_str, source_vae=vae, vae_type=vae_type)
         
         # Create proxy CLIP based on architecture
         if is_zimage:
@@ -469,7 +472,7 @@ class LunaUNetTunnel:
             
             # Use available VAE (prefer exact match, fall back to sdxl)
             use_vae_type = vae_type if vae_type in loaded_vaes else 'sdxl_vae'
-            output_vae = DaemonVAE(source_vae=None, vae_type=use_vae_type, use_existing=True)
+            output_vae = DaemonVAE(vae_path='', source_vae=None, vae_type=use_vae_type)
             status_parts.append(f"VAE: daemon ({use_vae_type})")
         
         # Handle CLIP
