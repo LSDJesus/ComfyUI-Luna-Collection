@@ -451,32 +451,64 @@ class LunaMultiSaver:
                 else:
                     image_np = image_np.astype(np.uint8)
                 
+                # Pre-process paths and filenames using our template logic
+                # Parse timestamp for consistent time across templates
+                try:
+                    timestamp = datetime.strptime(batch_timestamp, "%Y_%m_%d_%H%M%S")
+                except:
+                    timestamp = datetime.now()
+                
+                # Parse model info
+                model_path, model_name, model_dir = self._parse_model_info(model_name_raw)
+                
+                # Process save_path template
+                processed_path = self._process_template(save_path, model_path, model_name, model_dir, timestamp, filename_index)
+                
+                # Process filename template
+                processed_filename = self._process_template(filename, model_path, model_name, model_dir, timestamp, filename_index)
+                if not processed_filename:
+                    processed_filename = f"{batch_timestamp}_{model_name}"
+                
+                # Build final directory path
+                if processed_path:
+                    if subdir:
+                        final_save_dir = os.path.join(processed_path, affix)
+                    else:
+                        final_save_dir = processed_path
+                else:
+                    # Empty path = root
+                    if subdir:
+                        final_save_dir = affix
+                    else:
+                        final_save_dir = ""
+                
+                # Build final filename with affix
+                final_filename = f"{processed_filename}_{affix}"
+                
                 images_for_daemon.append({
                     "image": image_np,
-                    "affix": affix,
-                    "format": fmt,
-                    "subdir": subdir
+                    "save_dir": final_save_dir,  # Pre-processed directory path
+                    "filename": final_filename,   # Pre-processed filename (no extension yet)
+                    "format": fmt
                 })
             
-            # Build daemon request
+            # Build daemon request - much simpler now, no templates needed
             save_request = {
-                "save_path": save_path,
-                "filename": filename,
-                "model_name": model_name_raw or "",
                 "quality_gate": quality_gate,
                 "min_quality_threshold": min_quality_threshold,
                 "png_compression": png_compression,
                 "lossy_quality": lossy_quality,
                 "lossless_webp": lossless_webp,
                 "embed_workflow": embed_workflow,
-                "filename_index": filename_index,
                 "custom_metadata": custom_metadata,
                 "metadata": metadata or {},
                 "prompt": prompt,
                 "extra_pnginfo": extra_pnginfo,
                 "images": images_for_daemon,
                 "output_dir": self.output_dir,
-                "timestamp": datetime.now().isoformat(),
+                "model_name": model_name,  # Just for metadata embedding
+                "model_path": model_path,  # Just for metadata embedding
+                "timestamp": batch_timestamp,  # For metadata embedding
             }
             
             # Submit to daemon
