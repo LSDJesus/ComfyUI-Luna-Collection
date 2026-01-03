@@ -22,7 +22,7 @@ except ImportError:
     HAS_GGUF = False
 
 try:
-    from llama_cpp import llama_cpp
+    import llama_cpp_python
     HAS_LLAMA = True
 except ImportError:
     HAS_LLAMA = False
@@ -120,7 +120,7 @@ def quantize_gguf(f16_path: str, output_path: str, quant_type: str) -> bool:
     
     ftype = ftype_map.get(quant_type, 13)  # Default Q4_K_M
     
-    params = llama_cpp.llama_model_quantize_default_params()
+    params = llama_cpp_python.llama_model_quantize_default_params()
     params.ftype = ftype
     params.nthread = os.cpu_count() or 4
     
@@ -130,7 +130,7 @@ def quantize_gguf(f16_path: str, output_path: str, quant_type: str) -> bool:
     print(f"[LunaGGUF]   Quantizing (ftype={ftype}, threads={params.nthread})...")
     
     try:
-        result = llama_cpp.llama_model_quantize(
+        result = llama_cpp_python.llama_model_quantize(
             input_bytes,
             output_bytes,
             ctypes.pointer(params)
