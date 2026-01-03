@@ -282,26 +282,30 @@ class ModelWorker:
                     emb_dir = None
                 
                 # Force device context before loading
-                # ComfyUI's load_clip() will use the current default device
+                # We need to set the torch device globally before load_clip() is called
                 import comfy.model_management
-                old_device = comfy.model_management.get_torch_device()
+                old_device_index = torch.cuda.current_device() if torch.cuda.is_available() else None
                 try:
-                    # Temporarily set default device to our target device
-                    comfy.model_management.set_vram_to = self.device
+                    # Parse device string (e.g., "cuda:1" → device_id=1)
+                    if self.device.startswith("cuda:"):
+                        device_id = int(self.device.split(":")[1])
+                        torch.cuda.set_device(device_id)
                     
+                    # Now load_clip() will use the correct device context
                     self.model = comfy.sd.load_clip(
                         ckpt_paths=clip_paths,
                         embedding_directory=emb_dir,
                         clip_type=clip_type
                     )
                     
-                    # Explicitly move model to our device
+                    # Explicitly move model to our device (redundant but ensures safety)
                     if hasattr(self.model, 'cond_stage_model'):
                         self.model.cond_stage_model.to(self.device)
                     
                 finally:
-                    # Restore original device
-                    comfy.model_management.set_vram_to = old_device
+                    # Restore original CUDA device
+                    if old_device_index is not None and torch.cuda.is_available():
+                        torch.cuda.set_device(old_device_index)
                 
                 # Track loaded models
                 for i, path in enumerate(clip_paths):
@@ -1310,6 +1314,48 @@ class WorkerPool:
             daemon=True
         )
         self._scaling_thread.start()
+    
+    def preload_models(self, timeout: float = 60.0) -> bool:
+        """
+        Eagerly load models in a worker without waiting for requests.
+        
+        Forces immediate model loading when a workflow is registered,
+        avoiding lazy loading delays and ensuring models are on the correct device.
+        
+        Sends a dummy request to trigger the lazy load mechanism, then waits
+        for the worker to load its models before returning.
+        
+        Args:
+            timeout: Maximum time to wait for model loading (seconds)
+        
+        Returns:
+            True if models loaded successfully, False if timeout/error
+        """
+        # Scale up one worker if none exist
+        if len(self.workers) == 0:
+            logger.info(f"[{self.worker_type.value.upper()}] No workers exist, creating initial worker for preload")
+            worker = self.scale_up()
+            if not worker:
+                logger.error(f"[{self.worker_type.value.upper()}] Failed to create worker for preload")
+                return False
+        
+        # Get first worker (guaranteed to exist after scale_up)
+        worker = self.workers[0]
+        
+        logger.info(f"[{self.worker_type.value.upper()}] Triggering eager load in worker {worker.worker_id}...")
+        
+        # Send a dummy preload request to trigger lazy loading
+        try:
+            result = self.submit("preload", {})
+            if isinstance(result, dict) and result.get("success"):
+                logger.info(f"[{self.worker_type.value.upper()}] [OK] Models loaded successfully on {worker.device}")
+                return True
+            else:
+                logger.error(f"[{self.worker_type.value.upper()}] Preload returned: {result}")
+                return False
+        except Exception as e:
+            logger.error(f"[{self.worker_type.value.upper()}] Preload request failed: {e}")
+            return False
     
     def stop(self):
         """Stop all workers."""
