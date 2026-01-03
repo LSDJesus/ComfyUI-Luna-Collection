@@ -3,13 +3,14 @@ Luna GGUF Converter Utility - Proper Q4/Q8 quantization using llama-cpp-python
 
 Two-step process:
 1. Convert safetensors → F16 GGUF
-2. Quantize F16 GGUF → Q4/Q8 GGUF using llama.cpp
+2. Quantize F16 GGUF → Q4/Q8 GGUF using llama.cpp CLI
 
 This ensures proper ~70% compression for Q4 (6.6GB → ~2GB)
 """
 
 import os
-import ctypes
+import sys
+import subprocess
 from pathlib import Path
 from typing import Tuple, Dict
 
@@ -21,6 +22,7 @@ try:
 except ImportError:
     HAS_GGUF = False
 
+# Check for llama-cpp-python package (for quantize tool)
 try:
     import llama_cpp
     HAS_LLAMA = True
@@ -102,44 +104,49 @@ def write_f16_gguf(source_checkpoint: str, tensors: Dict, output_path: str, unet
 
 
 def quantize_gguf(f16_path: str, output_path: str, quant_type: str) -> bool:
-    """Quantize F16 GGUF to Q4/Q8 using llama-cpp-python."""
+    """Quantize F16 GGUF to Q4/Q8 using llama-cpp-python quantize tool."""
     if not HAS_LLAMA:
         print("[LunaGGUF] llama-cpp-python not available")
         print("[LunaGGUF] Install: pip install llama-cpp-python")
         return False
     
-    # Map to llama.cpp ftype codes
-    ftype_map = {
-        "Q4_0": 2,     # LLAMA_FTYPE_MOSTLY_Q4_0
-        "Q4_K_S": 12,  # LLAMA_FTYPE_MOSTLY_Q4_K_S
-        "Q4_K_M": 13,  # LLAMA_FTYPE_MOSTLY_Q4_K_M
-        "Q5_0": 7,     # LLAMA_FTYPE_MOSTLY_Q5_0
-        "Q5_K_M": 15,  # LLAMA_FTYPE_MOSTLY_Q5_K_M
-        "Q8_0": 7,     # LLAMA_FTYPE_MOSTLY_Q8_0
-    }
+    # Find the quantize executable from llama-cpp-python
+    # It's installed as a script in the Python environment
+    quantize_script = os.path.join(os.path.dirname(sys.executable), "llama-quantize")
+    if os.name == 'nt':  # Windows
+        quantize_script += ".exe"
     
-    ftype = ftype_map.get(quant_type, 13)  # Default Q4_K_M
+    if not os.path.exists(quantize_script):
+        # Try alternate location (in Scripts folder on Windows)
+        scripts_dir = os.path.join(os.path.dirname(sys.executable), "Scripts")
+        quantize_script = os.path.join(scripts_dir, "llama-quantize.exe" if os.name == 'nt' else "llama-quantize")
     
-    params = llama_cpp.llama_model_quantize_default_params()
-    params.ftype = ftype
-    params.nthread = os.cpu_count() or 4
+    if not os.path.exists(quantize_script):
+        print(f"[LunaGGUF] llama-quantize tool not found")
+        print(f"[LunaGGUF] Expected at: {quantize_script}")
+        print(f"[LunaGGUF] Reinstall: pip install --force-reinstall llama-cpp-python")
+        return False
     
-    input_bytes = f16_path.encode('utf-8')
-    output_bytes = output_path.encode('utf-8')
-    
-    print(f"[LunaGGUF]   Quantizing (ftype={ftype}, threads={params.nthread})...")
+    print(f"[LunaGGUF]   Quantizing with llama-quantize...")
+    print(f"[LunaGGUF]   Tool: {quantize_script}")
+    print(f"[LunaGGUF]   Type: {quant_type}")
     
     try:
-        result = llama_cpp.llama_model_quantize(
-            input_bytes,
-            output_bytes,
-            ctypes.pointer(params)
+        # Call quantize tool: llama-quantize input.gguf output.gguf Q4_K_M
+        result = subprocess.run(
+            [quantize_script, f16_path, output_path, quant_type],
+            capture_output=True,
+            text=True,
+            check=False
         )
         
-        if result == 0:
+        if result.returncode == 0:
+            print(f"[LunaGGUF]   ✓ Quantization complete")
             return True
         else:
-            print(f"[LunaGGUF]   Error code: {result}")
+            print(f"[LunaGGUF]   ✗ Quantization failed")
+            print(f"[LunaGGUF]   stdout: {result.stdout}")
+            print(f"[LunaGGUF]   stderr: {result.stderr}")
             return False
             
     except Exception as e:
