@@ -891,8 +891,28 @@ class LunaModelRouter:
             )
             model = out[0]
         else:
-            # UNet/diffusion model only
-            model = comfy.sd.load_unet(model_path)
+            # UNet/diffusion model only - preserve fp8 precision to avoid 2x VRAM expansion
+            import torch
+            detected_precision = self._detect_model_precision(model_path)
+            model_options = {}
+            
+            # Map precision strings to torch dtypes
+            # Important: Preserve exact fp8 variant (e4m3fn, e4m3fn_scaled, e5m2)
+            precision_dtype_map = {
+                "fp8_e4m3fn": torch.float8_e4m3fn,
+                "fp8_e4m3fn_scaled": torch.float8_e4m3fn_scaled,
+                "fp8_e5m2": torch.float8_e5m2,
+                "fp8": torch.float8_e4m3fn,  # Fallback for old detections
+                "fp16": torch.float16,
+                "bf16": torch.bfloat16,
+                "fp32": torch.float32,
+            }
+            
+            if detected_precision in precision_dtype_map:
+                model_options["dtype"] = precision_dtype_map[detected_precision]
+                print(f"[LunaModelRouter] Preserving {detected_precision} precision during load (will use {precision_dtype_map[detected_precision]})")
+            
+            model = comfy.sd.load_unet(model_path, model_options=model_options if model_options else None)
         
         # Return model and the path to use for daemon registration
         return model, output_name, model_path
@@ -939,13 +959,15 @@ class LunaModelRouter:
                             return "unknown"
                         
                         # Map torch dtypes to our precision strings
+                        # Important: Preserve fp8 variant (e4m3fn vs e5m2 vs scaled) to avoid type mismatches
                         dtype_map = {
                             'torch.float16': 'fp16',
                             'torch.bfloat16': 'bf16',
                             'torch.float32': 'fp32',
-                            'torch.float8_e4m3fn': 'fp8',
+                            'torch.float8_e4m3fn': 'fp8_e4m3fn',     # Preserve variant
+                            'torch.float8_e4m3fn_scaled': 'fp8_e4m3fn_scaled',  # Preserve scaled variant
+                            'torch.float8_e5m2': 'fp8_e5m2',         # Preserve variant
                             'torch.int8': 'int8',
-                            'torch.float8_e5m2': 'fp8',
                         }
                         
                         dtype_str = str(dtype)
@@ -1078,8 +1100,29 @@ class LunaModelRouter:
         
         else:
             # Standard float format (fp16, bf16, fp8, etc.)
-            print(f"[LunaModelRouter] Using standard UNet loader")
-            model = comfy.sd.load_unet(path)
+            # Preserve the original precision to avoid 2x VRAM expansion
+            import torch
+            print(f"[LunaModelRouter] Using standard UNet loader with precision preservation")
+            detected_precision = self._detect_model_precision(path)
+            model_options = {}
+            
+            # Map precision strings to torch dtypes
+            # Important: Preserve exact fp8 variant (e4m3fn, e4m3fn_scaled, e5m2)
+            precision_dtype_map = {
+                "fp8_e4m3fn": torch.float8_e4m3fn,
+                "fp8_e4m3fn_scaled": torch.float8_e4m3fn_scaled,
+                "fp8_e5m2": torch.float8_e5m2,
+                "fp8": torch.float8_e4m3fn,  # Fallback for old detections
+                "fp16": torch.float16,
+                "bf16": torch.bfloat16,
+                "fp32": torch.float32,
+            }
+            
+            if detected_precision in precision_dtype_map:
+                model_options["dtype"] = precision_dtype_map[detected_precision]
+                print(f"[LunaModelRouter] Preserving {detected_precision} precision during load (will use {precision_dtype_map[detected_precision]})")
+            
+            model = comfy.sd.load_unet(path, model_options=model_options if model_options else None)
             return model
     
     def _load_gguf_model(self, path: str) -> Any:
